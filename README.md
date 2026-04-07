@@ -1,4 +1,4 @@
-# gpui-wgpu
+# wgpui
 
 A fork of [GPUI](https://gpui.rs) (Zed's GPU-accelerated UI framework) with a unified **wgpu + winit** backend, replacing the original per-platform Metal, Blade, and Direct3D renderers.
 
@@ -12,9 +12,5 @@ A fork of [GPUI](https://gpui.rs) (Zed's GPU-accelerated UI framework) with a un
 
 ```toml
 [dependencies]
-gpui = { package = "gpui-ce", version = "0.3" }
+wgpui = { version = "0.3.3" }
 ```
-
-## License
-
-Apache-2.0
