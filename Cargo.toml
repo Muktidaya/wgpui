@@ -1,7 +1,7 @@
 [workspace]
 members = [
     ".",           
-    "tooling/macros",
+    "tooling/derive",
 ]
 default-members = [
     ".",       
@@ -9,12 +9,12 @@ default-members = [
 resolver = "3"
 
 [package]
-name = "gpui-ce"
+name = "wgpui"
 version = "0.3.3"
 edition = "2024"
 authors = ["Nathan Sobo <nathan@zed.dev>"]
 description = "A community fork of Zed's GPU-accelerated UI framework"
-repository = "https://github.com/gpui-ce/gpui-ce"
+repository = "https://github.com/muktidaya/wgpui"
 publish = true
 license = "Apache-2.0"
 homepage = "https://gpui-ce.github.io/"
@@ -32,7 +32,7 @@ test-support = [
     "util/test-support",
     "http_client/test-support",
 ]
-inspector = ["gpui-ce-macros/inspector"]
+inspector = ["wgpui_derive/inspector"]
 leak-detection = ["backtrace"]
 runtime_shaders = []
 windows-manifest = []
@@ -57,7 +57,7 @@ derive_more = { version = "2.1.1", features = ["full"] }
 etagere = "0.2"
 futures = "0.3"
 futures-concurrency = "7"
-gpui-ce-macros = { path = "./tooling/macros", features = ["inspector"] }
+wgpui_derive = { path = "./tooling/derive", version = "0.3.3", features = ["inspector"] }
 http_client = { package = "gpui_http_client", version = "0.2.2" }
 image = "0.25.1"
 inventory = "0.3.19"
@@ -72,7 +72,6 @@ pin-project = "1.1.10"
 pollster = "0.4.0"
 postage = { version = "0.5", features = ["futures-traits"] }
 profiling = "1"
-priority-threadpool = { git = "https://github.com/mdeand/priority-threadpool" }
 rand = "0.10"
 raw-window-handle = "0.6"
 refineable = { package = "gpui_refineable", version = "0.2.2" }

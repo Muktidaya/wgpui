@@ -5,7 +5,7 @@
 #![allow(unused_mut)] // False positives in platform specific code
 
 extern crate self as gpui;
-extern crate gpui_ce_macros as gpui_macros;
+extern crate wgpui_derive as gpui_macros;
 
 #[macro_use]
 mod action;
@@ -87,7 +87,7 @@ pub use elements::*;
 pub use executor::*;
 pub use geometry::*;
 pub use global::*;
-pub use gpui_ce_macros::{AppContext, IntoElement, Render, VisualContext, register_action, test};
+pub use wgpui_derive::{AppContext, IntoElement, Render, VisualContext, register_action, test};
 pub use http_client;
 pub use input::*;
 pub use inspector::*;

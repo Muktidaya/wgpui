@@ -2163,106 +2163,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpui-ce"
-version = "0.3.3"
-dependencies = [
- "anyhow",
- "async-channel 2.5.0",
- "async-task",
- "backtrace",
- "block",
- "bytemuck",
- "chrono",
- "circular-buffer",
- "cocoa",
- "cocoa-foundation",
- "core-foundation 0.10.0",
- "core-foundation-sys",
- "core-graphics 0.24.0",
- "core-text 21.0.0",
- "core-video",
- "cosmic-text",
- "ctor",
- "derive_more 2.1.1",
- "dispatch2",
- "env_logger",
- "etagere",
- "flume",
- "font-kit",
- "foreign-types",
- "futures",
- "futures-concurrency",
- "gpui-ce-macros",
- "gpui_collections",
- "gpui_http_client",
- "gpui_refineable",
- "gpui_sum_tree",
- "gpui_util",
- "gpui_util_macros",
- "image",
- "inventory",
- "itertools",
- "libc",
- "log",
- "lyon",
- "mach2",
- "metal 0.29.0",
- "num_cpus",
- "objc",
- "objc2 0.6.4",
- "objc2-metal 0.3.2",
- "oo7",
- "parking",
- "parking_lot",
- "pathfinder_geometry",
- "pin-project",
- "pollster 0.4.0",
- "postage",
- "pretty_assertions",
- "priority-threadpool",
- "profiling",
- "proptest",
- "rand 0.10.0",
- "raw-window-handle",
- "resvg",
- "schemars",
- "seahash",
- "semver",
- "serde",
- "serde_json",
- "slotmap",
- "smallvec",
- "smol",
- "spin 0.10.0",
- "stacksafe",
- "strum",
- "swash",
- "taffy",
- "thiserror 2.0.18",
- "unicode-segmentation",
- "usvg",
- "uuid",
- "waker-fn",
- "web-time",
- "wgpu",
- "windows-core 0.61.2",
- "windows-numerics 0.2.0",
- "windows-registry 0.5.3",
- "winit",
-]
-
-[[package]]
-name = "gpui-ce-macros"
-version = "0.1.0"
-dependencies = [
- "gpui-ce",
- "heck",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "gpui_collections"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3120,14 +3020,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lockfree"
-version = "0.5.1"
-source = "git+https://github.com/mdeand/priority-threadpool#28df6ed5ebef6818f2ea0cde9bfd99d3067d42ce"
-dependencies = [
- "owned-alloc",
-]
-
-[[package]]
 name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3949,12 +3841,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "owned-alloc"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30fceb411f9a12ff9222c5f824026be368ff15dc2f13468d850c7d3f502205d6"
-
-[[package]]
 name = "owned_ttf_parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4207,15 +4093,6 @@ checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
 dependencies = [
  "proc-macro2",
  "syn",
-]
-
-[[package]]
-name = "priority-threadpool"
-version = "0.1.0"
-source = "git+https://github.com/mdeand/priority-threadpool#28df6ed5ebef6818f2ea0cde9bfd99d3067d42ce"
-dependencies = [
- "async-task",
- "lockfree",
 ]
 
 [[package]]
@@ -6617,6 +6494,105 @@ dependencies = [
  "js-sys",
  "log",
  "web-sys",
+]
+
+[[package]]
+name = "wgpui"
+version = "0.3.3"
+dependencies = [
+ "anyhow",
+ "async-channel 2.5.0",
+ "async-task",
+ "backtrace",
+ "block",
+ "bytemuck",
+ "chrono",
+ "circular-buffer",
+ "cocoa",
+ "cocoa-foundation",
+ "core-foundation 0.10.0",
+ "core-foundation-sys",
+ "core-graphics 0.24.0",
+ "core-text 21.0.0",
+ "core-video",
+ "cosmic-text",
+ "ctor",
+ "derive_more 2.1.1",
+ "dispatch2",
+ "env_logger",
+ "etagere",
+ "flume",
+ "font-kit",
+ "foreign-types",
+ "futures",
+ "futures-concurrency",
+ "gpui_collections",
+ "gpui_http_client",
+ "gpui_refineable",
+ "gpui_sum_tree",
+ "gpui_util",
+ "gpui_util_macros",
+ "image",
+ "inventory",
+ "itertools",
+ "libc",
+ "log",
+ "lyon",
+ "mach2",
+ "metal 0.29.0",
+ "num_cpus",
+ "objc",
+ "objc2 0.6.4",
+ "objc2-metal 0.3.2",
+ "oo7",
+ "parking",
+ "parking_lot",
+ "pathfinder_geometry",
+ "pin-project",
+ "pollster 0.4.0",
+ "postage",
+ "pretty_assertions",
+ "profiling",
+ "proptest",
+ "rand 0.10.0",
+ "raw-window-handle",
+ "resvg",
+ "schemars",
+ "seahash",
+ "semver",
+ "serde",
+ "serde_json",
+ "slotmap",
+ "smallvec",
+ "smol",
+ "spin 0.10.0",
+ "stacksafe",
+ "strum",
+ "swash",
+ "taffy",
+ "thiserror 2.0.18",
+ "unicode-segmentation",
+ "usvg",
+ "uuid",
+ "waker-fn",
+ "web-time",
+ "wgpu",
+ "wgpui_derive",
+ "windows-core 0.61.2",
+ "windows-numerics 0.2.0",
+ "windows-registry 0.5.3",
+ "winit",
+]
+
+[[package]]
+name = "wgpui_derive"
+version = "0.3.3"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wgpui",
 ]
 
 [[package]]

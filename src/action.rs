@@ -1,12 +1,12 @@
 use anyhow::{Context as _, Result};
 use collections::HashMap;
-pub use gpui_ce_macros::Action;
-pub use no_action::{NoAction, is_no_action};
+pub use no_action::{is_no_action, NoAction};
 use serde_json::json;
 use std::{
     any::{Any, TypeId},
     fmt::Display,
 };
+pub use wgpui_derive::Action;
 
 /// Defines and registers unit structs that can be used as actions. For more complex data types, derive `Action`.
 ///

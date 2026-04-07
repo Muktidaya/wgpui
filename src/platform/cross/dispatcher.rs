@@ -1,8 +1,8 @@
+use super::priority_pool::ThreadPool;
 use crate::{
-    GLOBAL_THREAD_TIMINGS, PlatformDispatcher, Priority, PriorityQueueSender,
-    RunnableVariant, THREAD_TIMINGS, ThreadTaskTimings,
+    PlatformDispatcher, Priority, PriorityQueueSender, RunnableVariant, ThreadTaskTimings,
+    GLOBAL_THREAD_TIMINGS, THREAD_TIMINGS,
 };
-use priority_threadpool::ThreadPool;
 use std::thread::ThreadId;
 use winit::event_loop::EventLoopProxy;
 
@@ -92,7 +92,7 @@ impl PlatformDispatcher for Dispatcher {
     }
 }
 
-impl priority_threadpool::Priority for Priority {
+impl super::priority_pool::Priority for Priority {
     const COUNT: usize = 3;
 
     fn index(&self) -> usize {

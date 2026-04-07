@@ -1,4 +1,5 @@
 pub mod atlas;
+mod priority_pool;
 pub mod dispatcher;
 pub mod keyboard;
 pub mod platform;

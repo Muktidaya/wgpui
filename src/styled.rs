@@ -1,11 +1,11 @@
 use crate::{
-    self as gpui, AbsoluteLength, AlignContent, AlignItems, BorderStyle, CursorStyle,
-    DefiniteLength, Display, Fill, FlexDirection, FlexWrap, Font, FontFeatures, FontStyle,
-    FontWeight, GridPlacement, Hsla, JustifyContent, Length, SharedString, StrikethroughStyle,
-    StyleRefinement, TextAlign, TextOverflow, TextStyleRefinement, UnderlineStyle, WhiteSpace, px,
-    relative, rems,
+    self as gpui, px, relative, rems, AbsoluteLength, AlignContent, AlignItems, BorderStyle,
+    CursorStyle, DefiniteLength, Display, Fill, FlexDirection, FlexWrap, Font, FontFeatures,
+    FontStyle, FontWeight, GridPlacement, Hsla, JustifyContent, Length, SharedString,
+    StrikethroughStyle, StyleRefinement, TextAlign, TextOverflow, TextStyleRefinement,
+    UnderlineStyle, WhiteSpace,
 };
-pub use gpui_ce_macros::{
+pub use wgpui_derive::{
     border_style_methods, box_shadow_style_methods, cursor_style_methods, margin_style_methods,
     overflow_style_methods, padding_style_methods, position_style_methods,
     visibility_style_methods,
@@ -17,21 +17,21 @@ const ELLIPSIS: SharedString = SharedString::new_static("…");
 // gate on rust-analyzer so rust-analyzer never needs to expand this macro, it takes up to 10 seconds to expand due to inefficiencies in rust-analyzers proc-macro srv
 #[cfg_attr(
     all(any(feature = "inspector", debug_assertions), not(rust_analyzer)),
-    gpui_ce_macros::derive_inspector_reflection
+    wgpui_derive::derive_inspector_reflection
 )]
 pub trait Styled: Sized {
     /// Returns a reference to the style memory of this element.
     fn style(&mut self) -> &mut StyleRefinement;
 
-    gpui_ce_macros::style_helpers!();
-    gpui_ce_macros::visibility_style_methods!();
-    gpui_ce_macros::margin_style_methods!();
-    gpui_ce_macros::padding_style_methods!();
-    gpui_ce_macros::position_style_methods!();
-    gpui_ce_macros::overflow_style_methods!();
-    gpui_ce_macros::cursor_style_methods!();
-    gpui_ce_macros::border_style_methods!();
-    gpui_ce_macros::box_shadow_style_methods!();
+    wgpui_derive::style_helpers!();
+    wgpui_derive::visibility_style_methods!();
+    wgpui_derive::margin_style_methods!();
+    wgpui_derive::padding_style_methods!();
+    wgpui_derive::position_style_methods!();
+    wgpui_derive::overflow_style_methods!();
+    wgpui_derive::cursor_style_methods!();
+    wgpui_derive::border_style_methods!();
+    wgpui_derive::box_shadow_style_methods!();
 
     /// Sets the display type of the element to `block`.
     /// [Docs](https://tailwindcss.com/docs/display)
