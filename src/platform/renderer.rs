@@ -4,7 +4,7 @@ use crate::{
     AtlasTextureId, AtlasTile, DevicePixels, GpuSpecs, Hsla, LinearColorStop, MonochromeSprite,
     PlatformAtlas, PrimitiveBatch, Quad, ScaledPixels, Scene, TransformationMatrix, color,
     geometry,
-    platform::cross::{atlas::WgpuAtlas, render_context::WgpuContext},
+    platform::{atlas::WgpuAtlas, render_context::WgpuContext},
 };
 
 #[allow(dead_code)]
@@ -628,21 +628,21 @@ impl WgpuPipelines {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("quads_shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("shaders/quads.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/quads.wgsl").into()),
             });
 
         let shadows_shader = context
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("shadows_shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("shaders/shadows.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/shadows.wgsl").into()),
             });
 
         let underlines_shader = context
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("underlines_shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("shaders/underlines.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/underlines.wgsl").into()),
             });
 
         let mono_sprite_shader =
@@ -651,7 +651,7 @@ impl WgpuPipelines {
                 .create_shader_module(wgpu::ShaderModuleDescriptor {
                     label: Some("mono_sprites shader"),
                     source: wgpu::ShaderSource::Wgsl(
-                        include_str!("shaders/mono_sprites.wgsl").into(),
+                        include_str!("../shaders/mono_sprites.wgsl").into(),
                     ),
                 });
 
@@ -661,7 +661,7 @@ impl WgpuPipelines {
                 .create_shader_module(wgpu::ShaderModuleDescriptor {
                     label: Some("poly_sprites shader"),
                     source: wgpu::ShaderSource::Wgsl(
-                        include_str!("shaders/poly_sprites.wgsl").into(),
+                        include_str!("../shaders/poly_sprites.wgsl").into(),
                     ),
                 });
 
@@ -883,7 +883,7 @@ impl WgpuPipelines {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("surfaces_shader"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("shaders/surfaces.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/surfaces.wgsl").into()),
             });
 
         let surfaces_bind_group_layout =
@@ -1192,7 +1192,7 @@ pub struct WgpuRenderer {
 
     // cache bind groups for each double-buffered surface (index 0/1)
     surface_bind_groups:
-        Mutex<HashMap<crate::platform::cross::surface_registry::SurfaceId, [wgpu::BindGroup; 2]>>,
+        Mutex<HashMap<crate::platform::surface_registry::SurfaceId, [wgpu::BindGroup; 2]>>,
 }
 
 impl WgpuRenderer {
@@ -1323,7 +1323,7 @@ impl WgpuRenderer {
         self.atlas.before_frame(&mut command_encoder);
 
         // keep track of which surface ids we rendered this frame
-        let mut seen_surfaces: Vec<crate::platform::cross::surface_registry::SurfaceId> =
+        let mut seen_surfaces: Vec<crate::platform::surface_registry::SurfaceId> =
             Vec::new();
 
         let color_adjustments = ColorAdjustments {

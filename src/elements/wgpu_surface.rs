@@ -5,7 +5,7 @@ use refineable::Refineable as _;
 use crate::{
     App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement, LayoutId,
     Pixels, Style, StyleRefinement, Styled, Window,
-    platform::cross::surface_registry::{SurfaceId, SurfaceRegistry},
+    platform::surface_registry::{SurfaceId, SurfaceRegistry},
 };
 
 /// Inner state shared across clones of `WgpuSurfaceHandle`.

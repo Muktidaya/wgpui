@@ -1,7 +1,7 @@
 use crate::{
     Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow, Point, Size,
     WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
-    platform::cross::{
+    platform::{
         atlas::WgpuAtlas,
         dispatcher::CrossEvent,
         render_context::WgpuContext,

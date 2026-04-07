@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     AtlasTextureId, AtlasTile, Background, Bounds, ContentMask, Corners, Edges, Hsla, Pixels,
     Point, Radians, ScaledPixels, Size, bounds_tree::BoundsTree,
-    platform::cross::surface_registry::SurfaceId, point,
+    platform::surface_registry::SurfaceId, point,
 };
 use std::{
     fmt::Debug,

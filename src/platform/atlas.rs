@@ -8,7 +8,7 @@ use wgpu::util::DeviceExt;
 use crate::{
     AtlasKey, AtlasTextureId, AtlasTextureKind, AtlasTile, Bounds, DevicePixels, PlatformAtlas,
     Point, Size,
-    platform::{AtlasTextureList, cross::render_context::WgpuContext},
+    platform::{AtlasTextureList, render_context::WgpuContext},
 };
 
 pub(crate) struct WgpuAtlas(Mutex<WgpuAtlasState>);

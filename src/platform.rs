@@ -1,13 +1,21 @@
 mod app_menu;
-mod keyboard;
 mod keystroke;
 
 #[cfg(any(test, feature = "test-support"))]
 mod test;
 
-pub(crate) mod cross;
+pub(crate) mod atlas;
+pub(crate) mod dispatcher;
+pub(crate) mod keyboard;
+pub(crate) mod platform;
+mod priority_pool;
+pub(crate) mod render_context;
+pub(crate) mod renderer;
+pub(crate) mod surface_registry;
+pub(crate) mod text_system;
+pub(crate) mod window;
 
-use crate::platform::cross::platform::CrossPlatform;
+use crate::platform::platform::CrossPlatform;
 use crate::{
     Action, AnyWindowHandle, App, AsyncWindowContext, BackgroundExecutor, Bounds,
     DEFAULT_WINDOW_SIZE, DevicePixels, DispatchEventResult, Font, FontId, FontMetrics, FontRun,

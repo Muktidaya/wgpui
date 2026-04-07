@@ -3263,7 +3263,7 @@ impl Window {
     pub fn paint_wgpu_surface(
         &mut self,
         bounds: Bounds<Pixels>,
-        surface_id: crate::platform::cross::surface_registry::SurfaceId,
+        surface_id: crate::platform::surface_registry::SurfaceId,
     ) {
         use crate::{PaintSurface, scene::SurfaceContent};
 

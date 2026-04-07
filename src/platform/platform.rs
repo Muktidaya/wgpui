@@ -3,7 +3,7 @@ use crate::{
     KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, ModifiersChangedEvent, MouseButton,
     MouseDownEvent, MouseExitEvent, MouseMoveEvent, MouseUpEvent, Pixels, Platform, PlatformInput,
     PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent, Size,
-    platform::cross::{
+    platform::{
         dispatcher::{CrossEvent, Dispatcher},
         keyboard::CrossKeyboardLayout,
         render_context::WgpuContext,
