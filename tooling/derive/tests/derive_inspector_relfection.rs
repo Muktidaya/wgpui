@@ -64,6 +64,7 @@ impl Transform for Number {
     }
 }
 
+#[cfg(not(rust_analyzer))]
 #[test]
 fn test_derive_inspector_reflection() {
     use transform_reflection::*;

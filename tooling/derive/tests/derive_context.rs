@@ -1,3 +1,4 @@
+#[cfg(not(rust_analyzer))]
 #[test]
 #[ignore = "VisualContext trait shape differs between wgpui and gpui-ce macro output"]
 fn test_derive_context() {
