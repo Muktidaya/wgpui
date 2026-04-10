@@ -1,5 +1,7 @@
 mod app_menu;
 mod keystroke;
+#[cfg(target_os = "macos")]
+mod macos_menu;
 
 #[cfg(any(test, feature = "test-support"))]
 mod test;

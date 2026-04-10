@@ -1,8 +1,9 @@
 use crate::{
     BackgroundExecutor, Capslock, DevicePixels, DummyKeyboardMapper, ForegroundExecutor,
     KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, ModifiersChangedEvent, MouseButton,
-    MouseDownEvent, MouseExitEvent, MouseMoveEvent, MouseUpEvent, Pixels, Platform, PlatformInput,
-    PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent, Size,
+    MouseDownEvent, MouseExitEvent, MouseMoveEvent, MouseUpEvent, OwnedMenu, Pixels, Platform,
+    PlatformInput, PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent,
+    Size,
     platform::{
         dispatcher::{CrossEvent, Dispatcher},
         keyboard::CrossKeyboardLayout,
@@ -14,11 +15,17 @@ use crate::{
 };
 use anyhow::Result;
 use collections::FxHashMap;
-use std::{cell::Cell, rc::Rc, sync::Arc, time::Instant};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+    sync::Arc,
+    time::Instant,
+};
 use winit::event_loop::ActiveEventLoop;
 
 thread_local! {
     static ACTIVE_CONTEXT: Cell<Option<(*const ActiveEventLoop, *mut AppState)>> = Cell::new(None);
+    static ACTIVE_PLATFORM: Cell<Option<*const CrossPlatform>> = Cell::new(None);
 }
 
 // Helper to access the context
@@ -27,6 +34,13 @@ fn with_active_context<R>(f: impl FnOnce(&ActiveEventLoop, &mut AppState) -> R) 
         let (loop_ptr, app_ptr) = storage.get()?;
         // SAFETY: We strictly manage these pointers during winit callbacks
         unsafe { Some(f(&*loop_ptr, &mut *app_ptr)) }
+    })
+}
+
+pub(crate) fn with_active_platform<R>(f: impl FnOnce(&CrossPlatform) -> R) -> Option<R> {
+    ACTIVE_PLATFORM.with(|platform| {
+        let platform = platform.get()?;
+        unsafe { Some(f(&*platform)) }
     })
 }
 
@@ -39,6 +53,7 @@ pub(crate) struct CrossPlatform {
     event_loop: Cell<Option<winit::event_loop::EventLoop<CrossEvent>>>,
     event_loop_proxy: winit::event_loop::EventLoopProxy<CrossEvent>,
     callbacks: PlatformCallbacks,
+    menus: RefCell<Option<Vec<OwnedMenu>>>,
 }
 
 #[derive(Default)]
@@ -87,7 +102,49 @@ impl CrossPlatform {
             event_loop: Cell::new(Some(event_loop)),
             event_loop_proxy,
             callbacks: PlatformCallbacks::default(),
+            menus: RefCell::new(None),
         })
+    }
+
+    pub(crate) fn perform_menu_action(&self, action_identifier: usize) {
+        #[cfg(target_os = "macos")]
+        crate::platform::macos_menu::with_action(action_identifier, |action| {
+            if let Some(mut callback) = self.callbacks.on_app_menu_action.take() {
+                callback(action);
+                self.callbacks.on_app_menu_action.set(Some(callback));
+            }
+        });
+    }
+
+    pub(crate) fn validate_menu_action(&self, action_identifier: usize) -> bool {
+        #[cfg(target_os = "macos")]
+        {
+            return crate::platform::macos_menu::with_action(action_identifier, |action| {
+                if let Some(mut callback) = self.callbacks.on_validate_app_menu_command.take() {
+                    let is_enabled = callback(action);
+                    self.callbacks
+                        .on_validate_app_menu_command
+                        .set(Some(callback));
+                    is_enabled
+                } else {
+                    true
+                }
+            })
+            .unwrap_or(false);
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = action_identifier;
+            false
+        }
+    }
+
+    pub(crate) fn will_open_app_menu(&self) {
+        if let Some(mut callback) = self.callbacks.on_will_open_app_menu.take() {
+            callback();
+            self.callbacks.on_will_open_app_menu.set(Some(callback));
+        }
     }
 }
 
@@ -121,9 +178,9 @@ impl Platform for CrossPlatform {
             },
         };
 
-        event_loop
-            .run_app(&mut app_state)
-            .expect("Failed to run App");
+        ACTIVE_PLATFORM.with(|platform| platform.set(Some(self as *const CrossPlatform)));
+        event_loop.run_app(&mut app_state).expect("Failed to run App");
+        ACTIVE_PLATFORM.with(|platform| platform.set(None));
     }
 
     fn quit(&self) {
@@ -265,7 +322,16 @@ impl Platform for CrossPlatform {
         self.callbacks.on_reopen.set(Some(callback));
     }
 
-    fn set_menus(&self, _menus: Vec<crate::Menu>, _keymap: &crate::Keymap) {}
+    fn set_menus(&self, menus: Vec<crate::Menu>, keymap: &crate::Keymap) {
+        let owned_menus = menus.into_iter().map(crate::Menu::owned).collect::<Vec<_>>();
+        self.menus.replace(Some(owned_menus.clone()));
+        #[cfg(target_os = "macos")]
+        crate::platform::macos_menu::install_menus(owned_menus, keymap);
+    }
+
+    fn get_menus(&self) -> Option<Vec<crate::OwnedMenu>> {
+        self.menus.borrow().clone()
+    }
 
     fn set_dock_menu(&self, _menu: Vec<crate::MenuItem>, _keymap: &crate::Keymap) {}
 

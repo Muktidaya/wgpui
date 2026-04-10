@@ -120,7 +120,19 @@ foreign-types = "0.5"
 mach2 = "0.5"
 metal = "0.29"
 objc = "0.2"
-objc2 = { version = "0.6", optional = true }
+objc2 = "0.5.2"
+objc2-app-kit = { version = "0.2.2", features = [
+    "NSApplication",
+    "NSCell",
+    "NSMenu",
+    "NSMenuItem",
+    "NSEvent",
+] }
+objc2-foundation = { version = "0.2.2", features = [
+    "NSProcessInfo",
+    "NSString",
+    "NSObject",
+] }
 objc2-metal = { version = "0.3", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))'.dependencies]
