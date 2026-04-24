@@ -11,10 +11,6 @@ use cosmic_text::{
 };
 use itertools::Itertools;
 use parking_lot::RwLock;
-use pathfinder_geometry::{
-    rect::{RectF, RectI},
-    vector::{Vector2F, Vector2I},
-};
 use smallvec::SmallVec;
 use std::{borrow::Cow, sync::Arc};
 
@@ -487,6 +483,94 @@ impl TryFrom<&FontFeatures> for CosmicFontFeatures {
     }
 }
 
+#[derive(Clone, Copy)]
+struct RectF {
+    origin_x: f32,
+    origin_y: f32,
+    width: f32,
+    height: f32,
+}
+
+impl RectF {
+    fn origin_x(&self) -> f32 {
+        self.origin_x
+    }
+
+    fn origin_y(&self) -> f32 {
+        self.origin_y
+    }
+
+    fn width(&self) -> f32 {
+        self.width
+    }
+
+    fn height(&self) -> f32 {
+        self.height
+    }
+}
+
+#[derive(Clone, Copy)]
+struct RectI {
+    origin_x: i32,
+    origin_y: i32,
+    width: i32,
+    height: i32,
+}
+
+impl RectI {
+    fn origin_x(&self) -> i32 {
+        self.origin_x
+    }
+
+    fn origin_y(&self) -> i32 {
+        self.origin_y
+    }
+
+    fn width(&self) -> i32 {
+        self.width
+    }
+
+    fn height(&self) -> i32 {
+        self.height
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Vector2I {
+    x: i32,
+    y: i32,
+}
+
+impl Vector2I {
+    fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+
+    fn x(&self) -> i32 {
+        self.x
+    }
+
+    fn y(&self) -> i32 {
+        self.y
+    }
+}
+
+#[derive(Clone, Copy)]
+struct Vector2F {
+    x: f32,
+    y: f32,
+}
+
+impl Vector2F {
+    fn x(&self) -> f32 {
+        self.x
+    }
+
+    fn y(&self) -> f32 {
+        self.y
+    }
+}
+
 impl From<RectF> for Bounds<f32> {
     fn from(rect: RectF) -> Self {
         Bounds {
@@ -548,15 +632,47 @@ impl From<FontStyle> for cosmic_text::Style {
     }
 }
 
-fn font_into_properties(font: &crate::Font) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
+#[derive(Clone, Copy, PartialEq)]
+enum FontMatchStyle {
+    Normal,
+    Italic,
+    Oblique,
+}
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+struct FontMatchWeight(f32);
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+struct FontMatchStretch(f32);
+
+impl FontMatchStretch {
+    const ULTRA_CONDENSED: Self = Self(0.5);
+    const EXTRA_CONDENSED: Self = Self(0.625);
+    const CONDENSED: Self = Self(0.75);
+    const SEMI_CONDENSED: Self = Self(0.875);
+    const NORMAL: Self = Self(1.0);
+    const SEMI_EXPANDED: Self = Self(1.125);
+    const EXPANDED: Self = Self(1.25);
+    const EXTRA_EXPANDED: Self = Self(1.5);
+    const ULTRA_EXPANDED: Self = Self(2.0);
+}
+
+#[derive(Clone, Copy)]
+struct FontMatchProperties {
+    style: FontMatchStyle,
+    weight: FontMatchWeight,
+    stretch: FontMatchStretch,
+}
+
+fn font_into_properties(font: &crate::Font) -> FontMatchProperties {
+    FontMatchProperties {
         style: match font.style {
-            crate::FontStyle::Normal => font_kit::properties::Style::Normal,
-            crate::FontStyle::Italic => font_kit::properties::Style::Italic,
-            crate::FontStyle::Oblique => font_kit::properties::Style::Oblique,
+            crate::FontStyle::Normal => FontMatchStyle::Normal,
+            crate::FontStyle::Italic => FontMatchStyle::Italic,
+            crate::FontStyle::Oblique => FontMatchStyle::Oblique,
         },
-        weight: font_kit::properties::Weight(font.weight.0),
-        stretch: Default::default(),
+        weight: FontMatchWeight(font.weight.0),
+        stretch: FontMatchStretch::NORMAL,
     }
 }
 
@@ -565,11 +681,9 @@ fn font_into_properties(font: &crate::Font) -> font_kit::properties::Properties 
 /// zed-font-kit fork which made that module public.
 /// https://drafts.csswg.org/css-fonts-3/#font-style-matching
 fn find_best_match(
-    candidates: &[font_kit::properties::Properties],
-    query: &font_kit::properties::Properties,
+    candidates: &[FontMatchProperties],
+    query: &FontMatchProperties,
 ) -> Result<usize> {
-    use font_kit::properties::{Stretch, Style, Weight};
-
     let mut matching_set: Vec<usize> = (0..candidates.len()).collect();
     if matching_set.is_empty() {
         anyhow::bail!("no candidate fonts");
@@ -581,7 +695,7 @@ fn find_best_match(
         .any(|&index| candidates[index].stretch == query.stretch)
     {
         query.stretch
-    } else if query.stretch <= Stretch::NORMAL {
+    } else if query.stretch <= FontMatchStretch::NORMAL {
         match matching_set
             .iter()
             .filter(|&&index| candidates[index].stretch < query.stretch)
@@ -626,9 +740,21 @@ fn find_best_match(
 
     // Step 4b (`font-style`).
     let style_preference = match query.style {
-        Style::Italic => [Style::Italic, Style::Oblique, Style::Normal],
-        Style::Oblique => [Style::Oblique, Style::Italic, Style::Normal],
-        Style::Normal => [Style::Normal, Style::Oblique, Style::Italic],
+        FontMatchStyle::Italic => [
+            FontMatchStyle::Italic,
+            FontMatchStyle::Oblique,
+            FontMatchStyle::Normal,
+        ],
+        FontMatchStyle::Oblique => [
+            FontMatchStyle::Oblique,
+            FontMatchStyle::Italic,
+            FontMatchStyle::Normal,
+        ],
+        FontMatchStyle::Normal => [
+            FontMatchStyle::Normal,
+            FontMatchStyle::Oblique,
+            FontMatchStyle::Italic,
+        ],
     };
     let matching_style = *style_preference
         .iter()
@@ -646,21 +772,21 @@ fn find_best_match(
         .any(|&index| candidates[index].weight == query.weight)
     {
         query.weight
-    } else if query.weight >= Weight(400.0)
-        && query.weight < Weight(450.0)
+    } else if query.weight >= FontMatchWeight(400.0)
+        && query.weight < FontMatchWeight(450.0)
         && matching_set
             .iter()
-            .any(|&index| candidates[index].weight == Weight(500.0))
+            .any(|&index| candidates[index].weight == FontMatchWeight(500.0))
     {
-        Weight(500.0)
-    } else if query.weight >= Weight(450.0)
-        && query.weight <= Weight(500.0)
+        FontMatchWeight(500.0)
+    } else if query.weight >= FontMatchWeight(450.0)
+        && query.weight <= FontMatchWeight(500.0)
         && matching_set
             .iter()
-            .any(|&index| candidates[index].weight == Weight(400.0))
+            .any(|&index| candidates[index].weight == FontMatchWeight(400.0))
     {
-        Weight(400.0)
-    } else if query.weight <= Weight(500.0) {
+        FontMatchWeight(400.0)
+    } else if query.weight <= FontMatchWeight(500.0) {
         match matching_set
             .iter()
             .filter(|&&index| candidates[index].weight <= query.weight)
@@ -711,25 +837,24 @@ fn find_best_match(
 
 fn face_info_into_properties(
     face_info: &cosmic_text::fontdb::FaceInfo,
-) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
+) -> FontMatchProperties {
+    FontMatchProperties {
         style: match face_info.style {
-            cosmic_text::Style::Normal => font_kit::properties::Style::Normal,
-            cosmic_text::Style::Italic => font_kit::properties::Style::Italic,
-            cosmic_text::Style::Oblique => font_kit::properties::Style::Oblique,
+            cosmic_text::Style::Normal => FontMatchStyle::Normal,
+            cosmic_text::Style::Italic => FontMatchStyle::Italic,
+            cosmic_text::Style::Oblique => FontMatchStyle::Oblique,
         },
-        // both libs use the same values for weight
-        weight: font_kit::properties::Weight(face_info.weight.0.into()),
+        weight: FontMatchWeight(face_info.weight.0.into()),
         stretch: match face_info.stretch {
-            cosmic_text::Stretch::Condensed => font_kit::properties::Stretch::CONDENSED,
-            cosmic_text::Stretch::Expanded => font_kit::properties::Stretch::EXPANDED,
-            cosmic_text::Stretch::ExtraCondensed => font_kit::properties::Stretch::EXTRA_CONDENSED,
-            cosmic_text::Stretch::ExtraExpanded => font_kit::properties::Stretch::EXTRA_EXPANDED,
-            cosmic_text::Stretch::Normal => font_kit::properties::Stretch::NORMAL,
-            cosmic_text::Stretch::SemiCondensed => font_kit::properties::Stretch::SEMI_CONDENSED,
-            cosmic_text::Stretch::SemiExpanded => font_kit::properties::Stretch::SEMI_EXPANDED,
-            cosmic_text::Stretch::UltraCondensed => font_kit::properties::Stretch::ULTRA_CONDENSED,
-            cosmic_text::Stretch::UltraExpanded => font_kit::properties::Stretch::ULTRA_EXPANDED,
+            cosmic_text::Stretch::Condensed => FontMatchStretch::CONDENSED,
+            cosmic_text::Stretch::Expanded => FontMatchStretch::EXPANDED,
+            cosmic_text::Stretch::ExtraCondensed => FontMatchStretch::EXTRA_CONDENSED,
+            cosmic_text::Stretch::ExtraExpanded => FontMatchStretch::EXTRA_EXPANDED,
+            cosmic_text::Stretch::Normal => FontMatchStretch::NORMAL,
+            cosmic_text::Stretch::SemiCondensed => FontMatchStretch::SEMI_CONDENSED,
+            cosmic_text::Stretch::SemiExpanded => FontMatchStretch::SEMI_EXPANDED,
+            cosmic_text::Stretch::UltraCondensed => FontMatchStretch::ULTRA_CONDENSED,
+            cosmic_text::Stretch::UltraExpanded => FontMatchStretch::ULTRA_EXPANDED,
         },
     }
 }
