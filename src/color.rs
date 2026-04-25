@@ -528,7 +528,7 @@ impl Hsla {
     ///
     /// Example:
     /// ```
-    /// let color = gpui::red();
+    /// let color = wgpui::red();
     /// let faded_color = color.opacity(0.5);
     /// assert_eq!(faded_color.a, 0.5);
     /// ```
@@ -537,7 +537,7 @@ impl Hsla {
     ///
     /// Example:
     /// ```
-    /// use gpui::hsla;
+    /// use wgpui::hsla;
     /// let color = hsla(0.7, 1.0, 0.5, 0.7); // A saturated blue
     /// let faded_color = color.opacity(0.16);
     /// assert!((faded_color.a - 0.112).abs() < 1e-6);
@@ -560,7 +560,7 @@ impl Hsla {
     ///
     /// Example:
     /// ```
-    /// let color = gpui::red();
+    /// let color = wgpui::red();
     /// let red_color = color.alpha(0.25);
     /// assert_eq!(red_color.a, 0.25);
     /// ```
@@ -569,7 +569,7 @@ impl Hsla {
     ///
     /// Example:
     /// ```
-    /// use gpui::hsla;
+    /// use wgpui::hsla;
     /// let color = hsla(0.7, 1.0, 0.5, 0.7); // A saturated blue
     /// let faded_color = color.alpha(0.25);
     /// assert_eq!(faded_color.a, 0.25);

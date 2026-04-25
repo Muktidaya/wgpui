@@ -1,10 +1,10 @@
-//! Test support for GPUI.
+//! Test support for WGPUI.
 //!
-//! GPUI provides first-class support for testing, which includes a macro to run test that rely on having a context,
+//! WGPUI provides first-class support for testing, which includes a macro to run test that rely on having a context,
 //! and a test implementation of the `ForegroundExecutor` and `BackgroundExecutor` which ensure that your tests run
 //! deterministically even in the face of arbitrary parallelism.
 //!
-//! The output of the `gpui::test` macro is understood by other rust test runners, so you can use it with `cargo test`
+//! The output of the `wgpui::test` macro is understood by other rust test runners, so you can use it with `cargo test`
 //! or `cargo-nextest`, or another runner of your choice.
 //!
 //! To make it possible to test collaborative user interfaces (like Zed) you can ask for as many different contexts
@@ -13,14 +13,14 @@
 //! ## Example
 //!
 //! ```
-//! use gpui;
+//! use wgpui;
 //!
-//! #[gpui::test]
+//! #[wgpui::test]
 //! async fn test_example(cx: &TestAppContext) {
 //!   assert!(true)
 //! }
 //!
-//! #[gpui::test]
+//! #[wgpui::test]
 //! async fn test_collaboration_example(cx_a: &TestAppContext, cx_b: &TestAppContext) {
 //!   assert!(true)
 //! }
@@ -35,7 +35,7 @@ use std::{
 };
 
 /// Run the given test function with the configured parameters.
-/// This is intended for use with the `gpui::test` macro
+/// This is intended for use with the `wgpui::test` macro
 /// and generally should not be used directly.
 pub fn run_test(
     num_iterations: usize,

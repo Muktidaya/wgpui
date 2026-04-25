@@ -2,7 +2,7 @@ use crate::{FontId, FontRun, Pixels, PlatformTextSystem, SharedString, TextRun, 
 use collections::HashMap;
 use std::{borrow::Cow, iter, sync::Arc};
 
-/// The GPUI line wrapper, used to wrap lines of text to a given width.
+/// The WGPUI line wrapper, used to wrap lines of text to a given width.
 pub struct LineWrapper {
     platform_text_system: Arc<dyn PlatformTextSystem>,
     pub(crate) font_id: FontId,

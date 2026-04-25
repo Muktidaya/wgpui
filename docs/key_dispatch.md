@@ -1,6 +1,6 @@
 # Key Dispatch
 
-GPUI is designed for keyboard-first interactivity.
+WGPUI is designed for keyboard-first interactivity.
 
 To expose functionality to the mouse, you render a button with a click handler.
 
@@ -10,10 +10,10 @@ Actions are similar to framework-level events like `MouseDown`, `KeyDown`, etc, 
 
 ```rust
 mod menu {
-    #[gpui::action]
+    #[wgpui::action]
     struct MoveUp;
 
-    #[gpui::action]
+    #[wgpui::action]
     struct MoveDown;
 }
 ```
@@ -22,7 +22,7 @@ Actions are frequently unit structs, for which we have a macro. The above could 
 
 ```rust
 mod menu {
-    actions!(gpui, [MoveUp, MoveDown]);
+    actions!(wgpui, [MoveUp, MoveDown]);
 }
 ```
 
@@ -30,7 +30,7 @@ Actions can also be more complex types:
 
 ```rust
 mod menu {
-    #[gpui::action]
+    #[wgpui::action]
     struct Move {
         direction: Direction,
         select: bool,

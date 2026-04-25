@@ -8,7 +8,7 @@ pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
     let item_span = item.span();
     let Ok(func) = parse2::<ItemFn>(item) else {
         return quote_spanned! { item_span =>
-            compile_error!("#[gpui::property_test] must be placed on a function");
+            compile_error!("#[wgpui::property_test] must be placed on a function");
         };
     };
 
@@ -32,7 +32,7 @@ pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
     let cx_teardowns = parsed_args.cx_teardowns;
 
     let proptest_args = quote! {
-        #[strategy = ::gpui::seed_strategy()] __seed: u64,
+        #[strategy = ::wgpui::seed_strategy()] __seed: u64,
         #proptest_args
     };
 
@@ -43,7 +43,7 @@ pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
             #cx_teardowns
         },
         Some(_) => quote! {
-            let foreground_executor = gpui::ForegroundExecutor::new(std::sync::Arc::new(dispatcher.clone()));
+            let foreground_executor = wgpui::ForegroundExecutor::new(std::sync::Arc::new(dispatcher.clone()));
             #cx_vars
             foreground_executor.block_test(#inner_fn_name(#inner_args));
             #cx_teardowns
@@ -53,11 +53,11 @@ pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
     quote! {
         #arg_errors
 
-        #[::gpui::proptest::property_test(proptest_path = "::gpui::proptest", #args)]
+        #[::wgpui::proptest::property_test(proptest_path = "::wgpui::proptest", #args)]
         fn #test_name(#proptest_args) {
             #inner_fn
 
-            ::gpui::run_test_once(
+            ::wgpui::run_test_once(
                 __seed,
                 Box::new(move |dispatcher| {
                     #run_test_body
@@ -105,7 +105,7 @@ fn remove_cxs(parsed: &mut ParsedArgs, args: &mut Vec<FnArg>, test_name: &Ident)
         ix += 1;
 
         parsed.cx_vars.extend(quote!(
-            let mut #cx_varname = gpui::TestAppContext::build(
+            let mut #cx_varname = wgpui::TestAppContext::build(
                 dispatcher.clone(),
                 Some(stringify!(#test_name)),
             );
@@ -147,7 +147,7 @@ fn remove_background_executor(parsed: &mut ParsedArgs, args: &mut Vec<FnArg>) {
         parsed.inner_fn_decl_args.extend(quote!(#arg,));
         parsed
             .inner_fn_args
-            .extend(quote!(gpui::BackgroundExecutor::new(std::sync::Arc::new(
+            .extend(quote!(wgpui::BackgroundExecutor::new(std::sync::Arc::new(
                 dispatcher.clone()
             )),));
 

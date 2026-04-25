@@ -1183,11 +1183,11 @@ impl sum_tree::SeekTarget<'_, ListItemSummary, ListItemSummary> for Height {
 #[cfg(test)]
 mod test {
 
-    use gpui::{ScrollDelta, ScrollWheelEvent};
+    use wgpui::{ScrollDelta, ScrollWheelEvent};
 
-    use crate::{self as gpui, TestAppContext};
+    use crate::{self as wgpui, TestAppContext};
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_reset_after_paint_before_scroll(cx: &mut TestAppContext) {
         use crate::{
             AppContext, Context, Element, IntoElement, ListState, Render, Styled, Window, div,
@@ -1199,7 +1199,7 @@ mod test {
         let state = ListState::new(5, crate::ListAlignment::Top, px(10.));
 
         // Ensure that the list is scrolled to the top
-        state.scroll_to(gpui::ListOffset {
+        state.scroll_to(wgpui::ListOffset {
             item_ix: 0,
             offset_in_item: px(0.0),
         });
@@ -1235,7 +1235,7 @@ mod test {
         assert_eq!(state.logical_scroll_top().offset_in_item, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_by_positive_and_negative_distance(cx: &mut TestAppContext) {
         use crate::{
             AppContext, Context, Element, IntoElement, ListState, Render, Styled, Window, div,

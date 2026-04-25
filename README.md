@@ -1,6 +1,6 @@
 # wgpui
 
-A fork of [GPUI](https://gpui.rs) (Zed's GPU-accelerated UI framework) with a unified **wgpu + winit** backend, replacing the original per-platform Metal, Blade, and Direct3D renderers.
+A fork of [WGPUI](https://wgpui.rs) (Zed's GPU-accelerated UI framework) with a unified **wgpu + winit** backend, replacing the original per-platform Metal, Blade, and Direct3D renderers.
 
 ## What changed
 

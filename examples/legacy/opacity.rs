@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::Result;
-use gpui::{
+use wgpui::{
     App, Application, AssetSource, Bounds, BoxShadow, ClickEvent, Context, SharedString, Task,
     Window, WindowBounds, WindowOptions, div, hsla, img, point, prelude::*, px, rgb, size, svg,
 };
@@ -80,7 +80,7 @@ impl Render for HelloWorld {
                     .justify_center()
                     .items_center()
                     .border_1()
-                    .text_color(gpui::blue())
+                    .text_color(wgpui::blue())
                     .child(div().child("This is background text.")),
             )
             .child(
@@ -96,10 +96,10 @@ impl Render for HelloWorld {
                     .flex()
                     .justify_center()
                     .items_center()
-                    .bg(gpui::white())
+                    .bg(wgpui::white())
                     .border_3()
-                    .border_color(gpui::red())
-                    .text_color(gpui::yellow())
+                    .border_color(wgpui::red())
+                    .text_color(wgpui::yellow())
                     .child(
                         div()
                             .flex()
@@ -108,9 +108,9 @@ impl Render for HelloWorld {
                             .justify_center()
                             .items_center()
                             .size(px(300.))
-                            .bg(gpui::blue())
+                            .bg(wgpui::blue())
                             .border_3()
-                            .border_color(gpui::black())
+                            .border_color(wgpui::black())
                             .shadow(vec![BoxShadow {
                                 color: hsla(0.0, 0.0, 0.0, 0.5),
                                 blur_radius: px(1.0),
@@ -126,17 +126,17 @@ impl Render for HelloWorld {
                                     .justify_center()
                                     .items_center()
                                     .p_4()
-                                    .bg(gpui::black())
-                                    .text_color(gpui::white())
+                                    .bg(wgpui::black())
+                                    .text_color(wgpui::white())
                                     .text_decoration_2()
                                     .text_decoration_wavy()
-                                    .text_decoration_color(gpui::red())
+                                    .text_decoration_color(wgpui::red())
                                     .child(format!("opacity: {:.1}", self.opacity)),
                             )
                             .child(
                                 svg()
                                     .path("image/arrow_circle.svg")
-                                    .text_color(gpui::black())
+                                    .text_color(wgpui::black())
                                     .text_2xl()
                                     .size_8(),
                             )

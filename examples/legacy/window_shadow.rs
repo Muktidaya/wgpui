@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, CursorStyle, Decorations, HitboxBehavior, Hsla, MouseButton,
     Pixels, Point, ResizeEdge, Size, Window, WindowBackgroundAppearance, WindowBounds,
     WindowDecorations, WindowOptions, black, canvas, div, green, point, prelude::*, px, rgb, size,
@@ -28,7 +28,7 @@ impl Render for WindowShadow {
             .map(|div| match decorations {
                 Decorations::Server => div,
                 Decorations::Client { tiling, .. } => div
-                    .bg(gpui::transparent_black())
+                    .bg(wgpui::transparent_black())
                     .child(
                         canvas(
                             |_bounds, window, _cx| {
@@ -104,7 +104,7 @@ impl Render for WindowShadow {
                             .when(!tiling.left, |div| div.border_l(border_size))
                             .when(!tiling.right, |div| div.border_r(border_size))
                             .when(!tiling.is_tiled(), |div| {
-                                div.shadow(vec![gpui::BoxShadow {
+                                div.shadow(vec![wgpui::BoxShadow {
                                     color: Hsla {
                                         h: 0.,
                                         s: 0.,
@@ -120,7 +120,7 @@ impl Render for WindowShadow {
                     .on_mouse_move(|_e, _, cx| {
                         cx.stop_propagation();
                     })
-                    .bg(gpui::rgb(0xCCCCFF))
+                    .bg(wgpui::rgb(0xCCCCFF))
                     .size_full()
                     .flex()
                     .flex_col()
@@ -144,7 +144,7 @@ impl Render for WindowShadow {
                                         .w(px(200.0))
                                         .h(px(100.0))
                                         .bg(green())
-                                        .shadow(vec![gpui::BoxShadow {
+                                        .shadow(vec![wgpui::BoxShadow {
                                             color: Hsla {
                                                 h: 0.,
                                                 s: 0.,

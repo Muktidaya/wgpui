@@ -1,6 +1,6 @@
 use crate::{App, BorrowAppContext};
 
-/// A marker trait for types that can be stored in GPUI's global state.
+/// A marker trait for types that can be stored in WGPUI's global state.
 ///
 /// This trait exists to provide type-safe access to globals by ensuring only
 /// types that implement [`Global`] can be used with the accessor methods. For

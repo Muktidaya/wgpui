@@ -69,7 +69,7 @@ pub struct RenderablePromptHandle {
 }
 
 /// Use this function in conjunction with [App::set_prompt_builder] to force
-/// GPUI to always use the fallback prompt renderer.
+/// WGPUI to always use the fallback prompt renderer.
 pub fn fallback_prompt_renderer(
     level: PromptLevel,
     message: &str,
@@ -90,7 +90,7 @@ pub fn fallback_prompt_renderer(
     handle.with_view(renderer, window, cx)
 }
 
-/// The default GPUI fallback for rendering prompts, when the platform doesn't support it.
+/// The default WGPUI fallback for rendering prompts, when the platform doesn't support it.
 pub struct FallbackPromptRenderer {
     _level: PromptLevel,
     message: String,

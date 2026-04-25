@@ -240,7 +240,7 @@ impl Platform for CrossPlatform {
                         .titlebar
                         .and_then(|t| t.title)
                         .map(|t| t.to_string())
-                        .unwrap_or_else(|| "GPUI".into()),
+                        .unwrap_or_else(|| "WGPUI".into()),
                 )
                 .with_inner_size(winit::dpi::LogicalSize::new(
                     bounds.size.width.0 as f64,
@@ -651,7 +651,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
             }
 
             winit::event::WindowEvent::ModifiersChanged(new_modifiers) => {
-                let modifiers = winit_modifiers_to_gpui(new_modifiers.state());
+                let modifiers = winit_modifiers_to_wgpui(new_modifiers.state());
                 self.current_modifiers = modifiers;
 
                 window.0.state.modifiers.set(modifiers);
@@ -713,7 +713,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
 
             winit::event::WindowEvent::MouseInput { state, button, .. } => {
                 let position = window.0.state.mouse_position.get();
-                let mouse_button = winit_mouse_button_to_gpui(button);
+                let mouse_button = winit_mouse_button_to_wgpui(button);
                 let modifiers = self.current_modifiers;
 
                 match state {
@@ -850,7 +850,7 @@ impl ClickState {
     }
 }
 
-fn winit_modifiers_to_gpui(modifiers: winit::keyboard::ModifiersState) -> Modifiers {
+fn winit_modifiers_to_wgpui(modifiers: winit::keyboard::ModifiersState) -> Modifiers {
     Modifiers {
         control: modifiers.control_key(),
         alt: modifiers.alt_key(),
@@ -860,7 +860,7 @@ fn winit_modifiers_to_gpui(modifiers: winit::keyboard::ModifiersState) -> Modifi
     }
 }
 
-fn winit_mouse_button_to_gpui(button: winit::event::MouseButton) -> MouseButton {
+fn winit_mouse_button_to_wgpui(button: winit::event::MouseButton) -> MouseButton {
     match button {
         winit::event::MouseButton::Left => MouseButton::Left,
         winit::event::MouseButton::Right => MouseButton::Right,

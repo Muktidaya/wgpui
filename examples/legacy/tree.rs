@@ -2,7 +2,7 @@
 //! handle deep hierarchies (even though it cannot just yet!).
 use std::sync::LazyLock;
 
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
     size,
 };
@@ -10,7 +10,7 @@ use gpui::{
 struct Tree {}
 
 static DEPTH: LazyLock<u64> = LazyLock::new(|| {
-    std::env::var("GPUI_TREE_DEPTH")
+    std::env::var("WGPUI_TREE_DEPTH")
         .ok()
         .and_then(|depth| depth.parse().ok())
         .unwrap_or_else(|| 50)
@@ -19,7 +19,8 @@ static DEPTH: LazyLock<u64> = LazyLock::new(|| {
 impl Render for Tree {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let mut depth = *DEPTH;
-        static COLORS: [gpui::Hsla; 4] = [gpui::red(), gpui::blue(), gpui::green(), gpui::yellow()];
+        static COLORS: [wgpui::Hsla; 4] =
+            [wgpui::red(), wgpui::blue(), wgpui::green(), wgpui::yellow()];
         let mut colors = COLORS.iter().cycle().copied();
         let mut next_div = || div().p_0p5().bg(colors.next().unwrap());
         let mut innermost_node = next_div();

@@ -144,7 +144,7 @@ impl TestScheduler {
     }
 
     /// Allocate a new session ID for foreground task scheduling.
-    /// This is used by GPUI's TestDispatcher to map dispatcher instances to sessions.
+    /// This is used by WGPUI's TestDispatcher to map dispatcher instances to sessions.
     pub fn allocate_session_id(&self) -> SessionId {
         let mut state = self.state.lock();
         state.next_session_id.0 += 1;
@@ -186,7 +186,7 @@ impl TestScheduler {
     /// Execute one tick of the scheduler, processing expired timers and running
     /// at most one task. Returns true if any work was done.
     ///
-    /// This is the public interface for GPUI's TestDispatcher to drive task execution.
+    /// This is the public interface for WGPUI's TestDispatcher to drive task execution.
     pub fn tick(&self) -> bool {
         self.step_filtered(false)
     }

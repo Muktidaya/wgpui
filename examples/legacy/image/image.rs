@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::Result;
-use gpui::{
+use wgpui::{
     App, AppContext, Application, AssetSource, Bounds, Context, ImageSource, KeyBinding, Menu,
     MenuItem, Point, SharedString, SharedUri, TitlebarOptions, Window, WindowBounds, WindowOptions,
     actions, div, img, prelude::*, px, rgb, size,
@@ -75,7 +75,7 @@ impl Render for ImageShowcase {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .id("main")
-            .bg(gpui::white())
+            .bg(wgpui::white())
             .overflow_y_scroll()
             .p_5()
             .size_full()
@@ -155,7 +155,7 @@ fn main() {
             base: manifest_dir.join("examples"),
         })
         .run(move |cx: &mut App| {
-            let http_client = ReqwestClient::user_agent("gpui example").unwrap();
+            let http_client = ReqwestClient::user_agent("wgpui example").unwrap();
             cx.set_http_client(Arc::new(http_client));
 
             cx.activate(true);

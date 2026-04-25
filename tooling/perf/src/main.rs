@@ -31,7 +31,7 @@
 //!
 //! ## Comparing runs
 //! Passing `--json=ident` will save per-crate run files in `.perf-runs`, e.g.
-//! `cargo perf-test -p gpui -- --json=blah` will result in `.perf-runs/blah.gpui.json`
+//! `cargo perf-test -p wgpui -- --json=blah` will result in `.perf-runs/blah.wgpui.json`
 //! being created (unless no tests were run). These results can be automatically
 //! compared. To do so, run `cargo perf-compare new-ident old-ident`.
 //!
@@ -109,8 +109,8 @@ impl OutputKind<'_> {
                     "FATAL: Empty filename specified!"
                 );
                 // Get the test binary's crate's name; a path like
-                // target/release-fast/deps/gpui-061ff76c9b7af5d7
-                // would be reduced to just "gpui".
+                // target/release-fast/deps/wgpui-061ff76c9b7af5d7
+                // would be reduced to just "wgpui".
                 let test_bin_stripped = Path::new(t_bin)
                     .file_name()
                     .unwrap()

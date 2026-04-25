@@ -1,6 +1,6 @@
 //! Async Tasks Example
 //!
-//! This example demonstrates different async patterns in GPUI:
+//! This example demonstrates different async patterns in WGPUI:
 //!
 //! 1. `cx.spawn` - Foreground tasks for UI updates
 //! 2. `cx.background_spawn` - Background tasks for heavy computation
@@ -12,7 +12,7 @@ mod example_prelude;
 
 use std::time::Duration;
 
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Colors, Context, Entity, Render, Task, Window, WindowBounds,
     WindowOptions, div, prelude::*, px, size,
 };
@@ -265,7 +265,7 @@ impl Render for AsyncTasksExample {
                             .child(
                                 div()
                                     .text_xl()
-                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_weight(wgpui::FontWeight::BOLD)
                                     .text_color(colors.text)
                                     .child("Async Tasks"),
                             )
@@ -341,7 +341,7 @@ impl Render for AsyncTasksExample {
                             .child(
                                 div()
                                     .text_2xl()
-                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_weight(wgpui::FontWeight::BOLD)
                                     .text_color(colors.text)
                                     .child(format!("{}", cancellable.counter)),
                             )
@@ -457,7 +457,7 @@ fn demo_section(
                 .child(
                     div()
                         .text_sm()
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .font_weight(wgpui::FontWeight::SEMIBOLD)
                         .text_color(colors.text)
                         .child(title),
                 )
@@ -473,10 +473,10 @@ fn demo_section(
 
 fn button(
     colors: &Colors,
-    id: impl Into<gpui::ElementId>,
+    id: impl Into<wgpui::ElementId>,
     label: &'static str,
     disabled: bool,
-) -> gpui::Stateful<gpui::Div> {
+) -> wgpui::Stateful<wgpui::Div> {
     let disabled_bg = colors.surface_hover;
     let bg = colors.accent;
     let bg_hover = colors.accent_hover;
@@ -504,9 +504,9 @@ fn button(
 
 fn secondary_button(
     colors: &Colors,
-    id: impl Into<gpui::ElementId>,
+    id: impl Into<wgpui::ElementId>,
     label: &'static str,
-) -> gpui::Stateful<gpui::Div> {
+) -> wgpui::Stateful<wgpui::Div> {
     let bg = colors.surface_hover;
     let bg_hover = colors.border;
     let text = colors.text;
@@ -540,7 +540,7 @@ fn progress_bar(colors: &Colors, progress: u32) -> impl IntoElement {
                 .h_full()
                 .rounded_full()
                 .bg(bar_fill)
-                .w(gpui::relative(clamped as f32 / 100.0)),
+                .w(wgpui::relative(clamped as f32 / 100.0)),
         )
 }
 

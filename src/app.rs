@@ -121,7 +121,7 @@ impl Drop for AppRefMut<'_> {
     }
 }
 
-/// A reference to a GPUI application, typically constructed in the `main` function of your app.
+/// A reference to a WGPUI application, typically constructed in the `main` function of your app.
 /// You won't interact with this type much outside of initial configuration and startup.
 pub struct Application(Rc<AppCell>);
 
@@ -132,7 +132,7 @@ impl Application {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         #[cfg(any(test, feature = "test-support"))]
-        log::info!("GPUI was compiled in test mode");
+        log::info!("WGPUI was compiled in test mode");
 
         Self(App::new_app(
             current_platform(false),
@@ -2035,7 +2035,7 @@ impl App {
         }
     }
 
-    /// Set the prompt renderer for GPUI. This will replace the default or platform specific
+    /// Set the prompt renderer for WGPUI. This will replace the default or platform specific
     /// prompts with this custom implementation.
     pub fn set_prompt_builder(
         &mut self,
@@ -2058,7 +2058,7 @@ impl App {
         self.prompt_builder = Some(PromptBuilder::Default);
     }
 
-    /// Remove an asset from GPUI's cache
+    /// Remove an asset from WGPUI's cache
     pub fn remove_asset<A: Asset>(&mut self, source: &A::Source) {
         let asset_id = (TypeId::of::<A>(), hash(source));
         self.loading_assets.remove(&asset_id);
@@ -2094,7 +2094,7 @@ impl App {
         FocusHandle::new(&self.focus_handles)
     }
 
-    /// Tell GPUI that an entity has changed and observers of it should be notified.
+    /// Tell WGPUI that an entity has changed and observers of it should be notified.
     pub fn notify(&mut self, entity_id: EntityId) {
         let window_invalidators = mem::take(
             self.window_invalidators_by_entity
@@ -2159,7 +2159,7 @@ impl App {
         self.inspector_element_registry.register(f);
     }
 
-    /// Initializes gpui's default colors for the application.
+    /// Initializes wgpui's default colors for the application.
     ///
     /// These colors can be accessed through `cx.default_colors()`.
     pub fn init_colors(&mut self) {
@@ -2433,7 +2433,7 @@ impl HttpClient for NullHttpClient {
     }
 }
 
-/// A mutable reference to an entity owned by GPUI
+/// A mutable reference to an entity owned by WGPUI
 pub struct GpuiBorrow<'a, T> {
     inner: Option<Lease<T>>,
     app: &'a mut App,
@@ -2492,7 +2492,7 @@ mod test {
     use crate::{AppContext, TestAppContext};
 
     #[test]
-    fn test_gpui_borrow() {
+    fn test_wgpui_borrow() {
         let cx = TestAppContext::single();
         let observation_count = Rc::new(RefCell::new(0));
 

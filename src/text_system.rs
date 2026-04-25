@@ -45,7 +45,7 @@ pub(crate) const SUBPIXEL_VARIANTS_X: u8 = 4;
 
 pub(crate) const SUBPIXEL_VARIANTS_Y: u8 = 1;
 
-/// The GPUI text rendering sub system.
+/// The WGPUI text rendering sub system.
 pub struct TextSystem {
     platform_text_system: Arc<dyn PlatformTextSystem>,
     font_ids_by_font: RwLock<FxHashMap<Font, Result<FontId>>>,
@@ -323,7 +323,7 @@ impl TextSystem {
     }
 }
 
-/// The GPUI text layout subsystem.
+/// The WGPUI text layout subsystem.
 #[derive(Deref)]
 pub struct WindowTextSystem {
     line_layout_cache: LineLayoutCache,

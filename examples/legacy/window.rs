@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, KeyBinding, PromptButton, PromptLevel, Window, WindowBounds,
     WindowKind, WindowOptions, actions, div, prelude::*, px, rgb, size,
 };
@@ -36,8 +36,8 @@ impl Render for SubWindow {
                         .flex()
                         .h(px(32.))
                         .px_4()
-                        .bg(gpui::blue())
-                        .text_color(gpui::white())
+                        .bg(wgpui::blue())
+                        .text_color(wgpui::white())
                         .w_full()
                         .child(
                             div()

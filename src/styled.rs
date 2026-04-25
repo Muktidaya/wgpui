@@ -1,5 +1,5 @@
 use crate::{
-    self as gpui, px, relative, rems, AbsoluteLength, AlignContent, AlignItems, BorderStyle,
+    self as wgpui, px, relative, rems, AbsoluteLength, AlignContent, AlignItems, BorderStyle,
     CursorStyle, DefiniteLength, Display, Fill, FlexDirection, FlexWrap, Font, FontFeatures,
     FontStyle, FontWeight, GridPlacement, Hsla, JustifyContent, Length, SharedString,
     StrikethroughStyle, StyleRefinement, TextAlign, TextOverflow, TextStyleRefinement,

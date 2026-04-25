@@ -1,7 +1,7 @@
 //! Creating Components Example
 //!
 //! This example demonstrates three different approaches to creating interactive
-//! stateful components in GPUI:
+//! stateful components in WGPUI:
 //!
 //! 1. `use_state` - Hook-like state scoped to an element's lifetime
 //! 2. `RenderOnce` - Stateless component that receives state from parent
@@ -11,7 +11,7 @@
 mod example_prelude;
 
 use example_prelude::init_example;
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Colors, Context, Entity, IntoElement, Render, RenderOnce, Window,
     WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
@@ -373,7 +373,7 @@ impl Render for CreatingComponentsExample {
                     .child(
                         div()
                             .text_2xl()
-                            .font_weight(gpui::FontWeight::BOLD)
+                            .font_weight(wgpui::FontWeight::BOLD)
                             .text_color(colors.text)
                             .child("Creating Components"),
                     )
@@ -381,7 +381,7 @@ impl Render for CreatingComponentsExample {
                         div()
                             .text_sm()
                             .text_color(colors.text_muted)
-                            .child("Three approaches to stateful components in GPUI"),
+                            .child("Three approaches to stateful components in WGPUI"),
                     ),
             )
             .child(

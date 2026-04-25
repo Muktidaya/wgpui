@@ -20,7 +20,7 @@ pub fn derive_action(input: TokenStream) -> TokenStream {
     derive_action::derive_action(input)
 }
 
-/// This can be used to register an action with the GPUI runtime when you want to manually implement
+/// This can be used to register an action with the WGPUI runtime when you want to manually implement
 /// the `Action` trait. Typically you should use the `Action` derive macro or `actions!` macro
 /// instead.
 #[proc_macro]
@@ -47,11 +47,11 @@ pub fn derive_render(input: TokenStream) -> TokenStream {
 /// Failure to add the attribute causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate gpui_macros;
-/// # #[macro_use] extern crate gpui;
+/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui;
 /// #[derive(AppContext)]
 /// struct MyContext<'a> {
-///     app: &'a mut gpui::App
+///     app: &'a mut wgpui::App
 /// }
 /// ```
 #[proc_macro_derive(AppContext, attributes(app))]
@@ -67,24 +67,24 @@ pub fn derive_app_context(input: TokenStream) -> TokenStream {
 /// Failure to add both attributes causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate gpui_macros;
-/// # #[macro_use] extern crate gpui;
+/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
 ///     #[app]
-///     app: &'a mut gpui::App,
-///     window: &'b mut gpui::Window
+///     app: &'a mut wgpui::App,
+///     window: &'b mut wgpui::Window
 /// }
 /// ```
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate gpui_macros;
-/// # #[macro_use] extern crate gpui;
+/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
-///     app: &'a mut gpui::App,
+///     app: &'a mut wgpui::App,
 ///     #[window]
-///     window: &'b mut gpui::Window
+///     window: &'b mut wgpui::Window
 /// }
 /// ```
 #[proc_macro_derive(VisualContext, attributes(window, app))]
@@ -92,7 +92,7 @@ pub fn derive_visual_context(input: TokenStream) -> TokenStream {
     derive_visual_context::derive_visual_context(input)
 }
 
-/// Used by GPUI to generate the style helpers.
+/// Used by WGPUI to generate the style helpers.
 #[proc_macro]
 #[doc(hidden)]
 pub fn style_helpers(input: TokenStream) -> TokenStream {
@@ -147,7 +147,7 @@ pub fn box_shadow_style_methods(input: TokenStream) -> TokenStream {
     styles::box_shadow_style_methods(input)
 }
 
-/// `#[gpui::test]` can be used to annotate test functions that run with GPUI support.
+/// `#[wgpui::test]` can be used to annotate test functions that run with WGPUI support.
 ///
 /// It supports both synchronous and asynchronous tests, and can provide you with
 /// as many `TestAppContext` instances as you need.
@@ -155,7 +155,7 @@ pub fn box_shadow_style_methods(input: TokenStream) -> TokenStream {
 /// test harness (`cargo test` or `cargo-nextest`).
 ///
 /// ```
-/// #[gpui::test]
+/// #[wgpui::test]
 /// async fn test_foo(mut cx: &TestAppContext) { }
 /// ```
 ///
@@ -167,18 +167,18 @@ pub fn box_shadow_style_methods(input: TokenStream) -> TokenStream {
 ///
 /// # Arguments
 ///
-/// - `#[gpui::test]` with no arguments runs once with the seed `0` or `SEED` env var if set.
-/// - `#[gpui::test(seed = 10)]` runs once with the seed `10`.
-/// - `#[gpui::test(seeds(10, 20, 30))]` runs three times with seeds `10`, `20`, and `30`.
-/// - `#[gpui::test(iterations = 5)]` runs five times, providing as seed the values in the range `0..5`.
-/// - `#[gpui::test(retries = 3)]` runs up to four times if it fails to try and make it pass.
-/// - `#[gpui::test(on_failure = "crate::test::report_failure")]` will call the specified function after the
+/// - `#[wgpui::test]` with no arguments runs once with the seed `0` or `SEED` env var if set.
+/// - `#[wgpui::test(seed = 10)]` runs once with the seed `10`.
+/// - `#[wgpui::test(seeds(10, 20, 30))]` runs three times with seeds `10`, `20`, and `30`.
+/// - `#[wgpui::test(iterations = 5)]` runs five times, providing as seed the values in the range `0..5`.
+/// - `#[wgpui::test(retries = 3)]` runs up to four times if it fails to try and make it pass.
+/// - `#[wgpui::test(on_failure = "crate::test::report_failure")]` will call the specified function after the
 ///   tests fail so that you can write out more detail about the failure.
 ///
 /// You can combine `iterations = ...` with `seeds(...)`:
-/// - `#[gpui::test(iterations = 5, seed = 10)]` is equivalent to `#[gpui::test(seeds(0, 1, 2, 3, 4, 10))]`.
-/// - `#[gpui::test(iterations = 5, seeds(10, 20, 30)]` is equivalent to `#[gpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
-/// - `#[gpui::test(seeds(10, 20, 30), iterations = 5]` is equivalent to `#[gpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
+/// - `#[wgpui::test(iterations = 5, seed = 10)]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10))]`.
+/// - `#[wgpui::test(iterations = 5, seeds(10, 20, 30)]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
+/// - `#[wgpui::test(seeds(10, 20, 30), iterations = 5]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
 ///
 /// # Environment Variables
 ///
@@ -189,17 +189,17 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
     test::test(args, function)
 }
 
-/// A variant of `#[gpui::test]` that supports property-based testing.
+/// A variant of `#[wgpui::test]` that supports property-based testing.
 ///
-/// A property test, much like a standard GPUI randomized test, allows testing
+/// A property test, much like a standard WGPUI randomized test, allows testing
 /// claims of the form "for any possible X, Y should hold". For example:
 /// ```
-/// #[gpui::property_test]
+/// #[wgpui::property_test]
 /// fn test_arithmetic(x: i32, y: i32) {
 ///     assert!(x == y || x < y || x > y);
 /// }
 /// ```
-/// Standard GPUI randomized tests provide you with an instance of `StdRng` to
+/// Standard WGPUI randomized tests provide you with an instance of `StdRng` to
 /// generate random data in a controlled manner. Property-based tests have some
 /// advantages, however:
 /// - Shrinking - the harness also understands a notion of the "complexity" of a
@@ -215,13 +215,13 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
 /// Property tests work best when all inputs can be generated up-front and kept
 /// in a simple data structure. Sometimes, this isn't possible - for example, if
 /// a test needs to make a random decision based on the current state of some
-/// structure. In this case, a standard GPUI randomized test may be more
+/// structure. In this case, a standard WGPUI randomized test may be more
 /// suitable.
 ///
 /// ## Customizing random values
 ///
 /// This macro is based on the [`#[proptest::property_test]`] macro, but handles
-/// some of the same GPUI-specific arguments as `#[gpui::test]`. Specifically,
+/// some of the same WGPUI-specific arguments as `#[wgpui::test]`. Specifically,
 /// `&{mut,} TestAppContext` and `BackgroundExecutor` work as normal. `StdRng`
 /// arguments are **explicitly forbidden**, since they break shrinking, and are
 /// a common footgun.
@@ -233,11 +233,11 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
 ///
 /// Random values of type `T` are generated by a `Strategy<Value = T>` object.
 /// Some types have a canonical `Strategy` - these types also implement
-/// `Arbitrary`. Parameters to a `#[gpui::property_test]`, by default, use a
+/// `Arbitrary`. Parameters to a `#[wgpui::property_test]`, by default, use a
 /// type's `Arbitrary` implementation. If you'd like to provide a custom
 /// strategy, you can use `#[strategy = ...]` on the argument:
 /// ```
-/// #[gpui::property_test]
+/// #[wgpui::property_test]
 /// fn int_test(#[strategy = 1..10] x: i32, #[strategy = "[a-zA-Z0-9]{20}"] s: String) {
 ///   assert!(s.len() > (x as usize));
 /// }
@@ -248,7 +248,7 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
 ///
 /// ## Scheduler
 ///
-/// Similar to `#[gpui::test]`, this macro will choose random seeds for the test
+/// Similar to `#[wgpui::test]`, this macro will choose random seeds for the test
 /// scheduler. It uses `.no_shrink()` to tell proptest that all seeds are
 /// roughly equivalent in terms of "complexity". If `$SEED` is set, it will
 /// affect **ONLY** the seed passed to the scheduler. To control other values,
@@ -271,9 +271,9 @@ pub fn property_test(args: TokenStream, function: TokenStream) -> TokenStream {
 /// following functions:
 ///
 /// ```ignore
-/// pub fn methods::<T: TheTrait + 'static>() -> Vec<gpui::inspector_reflection::FunctionReflection<T>>;
+/// pub fn methods::<T: TheTrait + 'static>() -> Vec<wgpui::inspector_reflection::FunctionReflection<T>>;
 ///
-/// pub fn find_method::<T: TheTrait + 'static>() -> Option<gpui::inspector_reflection::FunctionReflection<T>>;
+/// pub fn find_method::<T: TheTrait + 'static>() -> Option<wgpui::inspector_reflection::FunctionReflection<T>>;
 /// ```
 ///
 /// The `invoke` method on `FunctionReflection` will run the method. `FunctionReflection` also

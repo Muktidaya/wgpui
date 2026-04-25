@@ -1,5 +1,5 @@
-use gpui::{App, Application, Context, Render, Window, WindowOptions, div, img, prelude::*};
 use std::path::PathBuf;
+use wgpui::{App, Application, Context, Render, Window, WindowOptions, div, img, prelude::*};
 
 struct GifViewer {
     gif_path: PathBuf,
@@ -16,7 +16,7 @@ impl Render for GifViewer {
         div().size_full().child(
             img(self.gif_path.clone())
                 .size_full()
-                .object_fit(gpui::ObjectFit::Contain)
+                .object_fit(wgpui::ObjectFit::Contain)
                 .id("gif"),
         )
     }

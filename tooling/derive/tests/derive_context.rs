@@ -1,8 +1,8 @@
 #[cfg(not(rust_analyzer))]
 #[test]
-#[ignore = "VisualContext trait shape differs between wgpui and gpui-ce macro output"]
+#[ignore = "VisualContext trait shape differs between wgpui and wgpui-ce macro output"]
 fn test_derive_context() {
-    use gpui::{App, Window};
+    use wgpui::{App, Window};
     use wgpui_derive::{AppContext, VisualContext};
 
     #[derive(AppContext, VisualContext)]

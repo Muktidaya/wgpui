@@ -1637,7 +1637,7 @@ impl Image {
         self.id
     }
 
-    /// Use the GPUI `use_asset` API to make this image renderable
+    /// Use the WGPUI `use_asset` API to make this image renderable
     pub fn use_render_image(
         self: Arc<Self>,
         window: &mut Window,
@@ -1648,7 +1648,7 @@ impl Image {
             .and_then(|result| result.ok())
     }
 
-    /// Use the GPUI `get_asset` API to make this image renderable
+    /// Use the WGPUI `get_asset` API to make this image renderable
     pub fn get_render_image(
         self: Arc<Self>,
         window: &mut Window,
@@ -1659,7 +1659,7 @@ impl Image {
             .and_then(|result| result.ok())
     }
 
-    /// Use the GPUI `remove_asset` API to drop this image, if possible.
+    /// Use the WGPUI `remove_asset` API to drop this image, if possible.
     pub fn remove_asset(self: Arc<Self>, cx: &mut App) {
         ImageSource::Image(self).remove_asset(cx);
     }

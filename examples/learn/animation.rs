@@ -1,6 +1,6 @@
 //! Animation Example
 //!
-//! This example demonstrates animation capabilities in GPUI:
+//! This example demonstrates animation capabilities in WGPUI:
 //!
 //! 1. Basic animations with `with_animation`
 //! 2. Easing functions - ease_in_out, bounce, linear
@@ -13,10 +13,10 @@ mod example_prelude;
 use std::time::Duration;
 
 use anyhow::Result;
-use gpui::{
+use wgpui::{
     Animation, AnimationExt as _, App, Application, AssetSource, Bounds, Colors, Context, Hsla,
     SharedString, Transformation, Window, WindowBounds, WindowOptions, bounce, div, ease_in_out,
-    linear, percentage, prelude::*, px, size as gpui_size, svg,
+    linear, percentage, prelude::*, px, size as wgpui_size, svg,
 };
 
 struct Assets {}
@@ -71,7 +71,7 @@ impl Render for AnimationExample {
                             .child(
                                 div()
                                     .text_xl()
-                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_weight(wgpui::FontWeight::BOLD)
                                     .text_color(colors.text)
                                     .child("Animation Patterns"),
                             )
@@ -79,7 +79,7 @@ impl Render for AnimationExample {
                                 div()
                                     .text_sm()
                                     .text_color(colors.text_muted)
-                                    .child("Animations, easing, and transformations in GPUI"),
+                                    .child("Animations, easing, and transformations in WGPUI"),
                             ),
                     )
                     .child(section(
@@ -194,7 +194,7 @@ fn scale_example(colors: &Colors) -> impl IntoElement {
                             .with_easing(bounce(linear)),
                         |svg, delta| {
                             let scale = 0.8 + (delta * 0.4);
-                            svg.with_transformation(Transformation::scale(gpui_size(scale, scale)))
+                            svg.with_transformation(Transformation::scale(wgpui_size(scale, scale)))
                         },
                     ),
             ),
@@ -231,7 +231,7 @@ fn combined_example(colors: &Colors) -> impl IntoElement {
                             let scale = 0.7 + (delta * 0.6);
                             svg.with_transformation(
                                 Transformation::rotate(percentage(delta))
-                                    .with_scaling(gpui_size(scale, scale)),
+                                    .with_scaling(wgpui_size(scale, scale)),
                             )
                         },
                     ),
@@ -252,7 +252,7 @@ fn section(colors: &Colors, title: &'static str, content: impl IntoElement) -> i
         .child(
             div()
                 .text_sm()
-                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .font_weight(wgpui::FontWeight::SEMIBOLD)
                 .text_color(colors.text)
                 .child(title),
         )
@@ -263,7 +263,7 @@ fn main() {
     Application::new()
         .with_assets(Assets {})
         .run(|cx: &mut App| {
-            let bounds = Bounds::centered(None, gpui_size(px(500.), px(650.)), cx);
+            let bounds = Bounds::centered(None, wgpui_size(px(500.), px(650.)), cx);
             cx.open_window(
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),

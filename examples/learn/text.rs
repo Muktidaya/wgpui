@@ -1,6 +1,6 @@
 //! Text Example
 //!
-//! This example demonstrates text capabilities in GPUI:
+//! This example demonstrates text capabilities in WGPUI:
 //!
 //! 1. Text Styling - Font sizes, weights, and colors
 //! 2. Text Alignment - Left, center, right alignment
@@ -13,7 +13,7 @@
 mod example_prelude;
 
 use example_prelude::init_example;
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Colors, Context, FontStyle, FontWeight, Hsla, Render, StyledText,
     TextOverflow, Window, WindowBounds, WindowOptions, div, prelude::*, px, relative, size,
 };

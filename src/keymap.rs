@@ -220,8 +220,8 @@ impl Keymap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate as gpui;
-    use gpui::NoAction;
+    use crate as wgpui;
+    use wgpui::NoAction;
 
     actions!(
         test_only,

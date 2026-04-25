@@ -12,7 +12,7 @@ use std::{
     cell::RefCell, future::Future, ops::Deref, path::PathBuf, rc::Rc, sync::Arc, time::Duration,
 };
 
-/// A TestAppContext is provided to tests created with `#[gpui::test]`, it provides
+/// A TestAppContext is provided to tests created with `#[wgpui::test]`, it provides
 /// an implementation of `Context` with additional methods that are useful in tests.
 #[derive(Clone)]
 pub struct TestAppContext {
@@ -120,7 +120,7 @@ impl AppContext for TestAppContext {
 }
 
 impl TestAppContext {
-    /// Creates a new `TestAppContext`. Usually you can rely on `#[gpui::test]` to do this for you.
+    /// Creates a new `TestAppContext`. Usually you can rely on `#[wgpui::test]` to do this for you.
     pub fn build(dispatcher: TestDispatcher, fn_name: Option<&'static str>) -> Self {
         let arc_dispatcher = Arc::new(dispatcher.clone());
         let background_executor = BackgroundExecutor::new(arc_dispatcher.clone());

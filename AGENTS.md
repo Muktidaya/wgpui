@@ -12,7 +12,7 @@
   - Example: avoid `let _ = client.request(...).await?;` - use `client.request(...).await?;` instead
 * When implementing async operations that may fail, ensure errors propagate to the UI layer so users get meaningful feedback.
 * Never create files with `mod.rs` paths - prefer `src/some_module.rs` instead of `src/some_module/mod.rs`.
-* When creating new crates, prefer specifying the library root path in `Cargo.toml` using `[lib] path = "...rs"` instead of the default `lib.rs`, to maintain consistent and descriptive naming (e.g., `gpui.rs` or `main.rs`).
+* When creating new crates, prefer specifying the library root path in `Cargo.toml` using `[lib] path = "...rs"` instead of the default `lib.rs`, to maintain consistent and descriptive naming (e.g., `wgpui.rs` or `main.rs`).
 * Avoid creative additions unless explicitly requested
 * Use full words for variable names (no abbreviations like "q" for "queue")
 * Use variable shadowing to scope clones in async contexts for clarity, minimizing the lifetime of borrowed references.
@@ -26,9 +26,9 @@
   });
   ```
 
-# GPUI
+# WGPUI
 
-GPUI is a UI framework which also provides primitives for state and concurrency management.
+WGPUI is a UI framework which also provides primitives for state and concurrency management.
 
 ## Context
 
@@ -129,7 +129,7 @@ Other entities can then register a callback to handle these events by doing `cx.
 
 ## Recent API changes
 
-GPUI has had some changes to its APIs. Always write code using the new APIs:
+WGPUI has had some changes to its APIs. Always write code using the new APIs:
 
 * `spawn` methods now take async closures (`AsyncFn`), and so should be called like `cx.spawn(async move |cx| ...)`.
 * Use `Entity<T>`. This replaces `Model<T>` and `View<T>` which no longer exist and should NEVER be used.

@@ -131,7 +131,7 @@ impl<'a, T: 'static> Context<'a, T> {
         })
     }
 
-    /// Register a callback to be invoked when GPUI releases this entity.
+    /// Register a callback to be invoked when WGPUI releases this entity.
     pub fn on_release(&self, on_release: impl FnOnce(&mut T, &mut App) + 'static) -> Subscription
     where
         T: 'static,
@@ -225,7 +225,7 @@ impl<'a, T: 'static> Context<'a, T> {
         })
     }
 
-    /// Tell GPUI that this entity has changed and observers of it should be notified.
+    /// Tell WGPUI that this entity has changed and observers of it should be notified.
     pub fn notify(&mut self) {
         self.app.notify(self.entity_state.entity_id);
     }
@@ -246,7 +246,7 @@ impl<'a, T: 'static> Context<'a, T> {
 
     /// Convenience method for accessing view state in an event callback.
     ///
-    /// Many GPUI callbacks take the form of `Fn(&E, &mut Window, &mut App)`,
+    /// Many WGPUI callbacks take the form of `Fn(&E, &mut Window, &mut App)`,
     /// but it's often useful to be able to access view state in these
     /// callbacks. This method provides a convenient way to do so.
     pub fn listener<E: ?Sized>(

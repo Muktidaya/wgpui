@@ -1,13 +1,13 @@
 //! Custom Drawing Example
 //!
-//! This example demonstrates custom drawing in GPUI using:
+//! This example demonstrates custom drawing in WGPUI using:
 //!
 //! 1. `canvas` element - For direct painting control
 //! 2. `PathBuilder` - Creating custom vector shapes
 //! 3. `window.paint_*` methods - Drawing quads, paths, and more
 //! 4. Interactive drawing - Responding to mouse events
 
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Colors, Context, Hsla, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, Path, PathBuilder, Pixels, Point, Render, Rgba, Window, WindowBounds,
     WindowOptions, canvas, div, fill, point, prelude::*, px, rgb, size,
@@ -351,7 +351,7 @@ impl Render for DrawingCanvas {
 // Main Application View
 
 struct CustomDrawingExample {
-    drawing_canvas: gpui::Entity<DrawingCanvas>,
+    drawing_canvas: wgpui::Entity<DrawingCanvas>,
 }
 
 impl CustomDrawingExample {
@@ -386,7 +386,7 @@ impl Render for CustomDrawingExample {
                             .child(
                                 div()
                                     .text_xl()
-                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_weight(wgpui::FontWeight::BOLD)
                                     .text_color(colors.text)
                                     .child("Custom Drawing"),
                             )
@@ -448,7 +448,7 @@ fn section(
                 .child(
                     div()
                         .text_sm()
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .font_weight(wgpui::FontWeight::SEMIBOLD)
                         .text_color(colors.text)
                         .child(title),
                 )

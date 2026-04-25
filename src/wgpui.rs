@@ -1,11 +1,11 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
-#![allow(clippy::type_complexity)] // Not useful, GPUI makes heavy use of callbacks
+#![allow(clippy::type_complexity)] // Not useful, WGPUI makes heavy use of callbacks
 #![allow(clippy::collapsible_else_if)] // False positives in platform specific code
 #![allow(unused_mut)] // False positives in platform specific code
 
-extern crate self as gpui;
-extern crate wgpui_derive as gpui_macros;
+extern crate self as wgpui;
+extern crate wgpui_derive as wgpui_macros;
 
 #[macro_use]
 mod action;
@@ -16,7 +16,7 @@ mod asset_cache;
 mod assets;
 mod bounds_tree;
 mod color;
-/// The default colors used by GPUI.
+/// The default colors used by WGPUI.
 pub mod default_colors;
 mod element;
 mod elements;
@@ -57,7 +57,7 @@ mod window;
 #[cfg(doc)]
 pub mod _ownership_and_data_flow;
 
-/// Do not touch, here be dragons for use by gpui_macros and such.
+/// Do not touch, here be dragons for use by wgpui_macros and such.
 #[doc(hidden)]
 pub mod private {
     pub use anyhow;
@@ -68,7 +68,7 @@ pub mod private {
 }
 
 mod seal {
-    /// A mechanism for restricting implementations of a trait to only those in GPUI.
+    /// A mechanism for restricting implementations of a trait to only those in WGPUI.
     /// See: <https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/>
     pub trait Sealed {}
 }
@@ -125,7 +125,7 @@ pub use util::{FutureExt, Timeout, arc_cow::ArcCow};
 pub use view::*;
 pub use window::*;
 
-/// The context trait, allows the different contexts in GPUI to be used
+/// The context trait, allows the different contexts in WGPUI to be used
 /// interchangeably for certain operations.
 pub trait AppContext {
     /// The result type for this context, used for async contexts that
@@ -214,7 +214,7 @@ impl<T: 'static> Reservation<T> {
     }
 }
 
-/// This trait is used for the different visual contexts in GPUI that
+/// This trait is used for the different visual contexts in WGPUI that
 /// require a window to be present.
 pub trait VisualContext: AppContext {
     /// Returns the handle of the window associated with this context.
@@ -247,7 +247,7 @@ pub trait VisualContext: AppContext {
         V: Focusable;
 }
 
-/// A trait for tying together the types of a GPUI entity and the events it can
+/// A trait for tying together the types of a WGPUI entity and the events it can
 /// emit.
 pub trait EventEmitter<E: Any>: 'static {}
 
@@ -312,7 +312,7 @@ impl<T> Flatten<T> for Result<T> {
     }
 }
 
-/// Information about the GPU GPUI is running on.
+/// Information about the GPU WGPUI is running on.
 #[derive(Default, Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct GpuSpecs {
     /// Whether the GPU is really a fake (like `llvmpipe`) running on the CPU.

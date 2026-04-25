@@ -1,14 +1,14 @@
-use gpui::AppContext;
-use gpui::Styled;
-/// Example: WgpuSurface with secondary render thread
-/// Demonstrates using the WgpuSurface element with a dedicated render thread
-use gpui::{
-    App, Application, Context, Render, WgpuSurfaceHandle, Window, WindowOptions, div, prelude::*,
-    rgb, wgpu_surface,
-};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+use wgpui::AppContext;
+use wgpui::Styled;
+/// Example: WgpuSurface with secondary render thread
+/// Demonstrates using the WgpuSurface element with a dedicated render thread
+use wgpui::{
+    App, Application, Context, Render, WgpuSurfaceHandle, Window, WindowOptions, div, prelude::*,
+    rgb, wgpu_surface,
+};
 
 // utilities for our cube vertex format
 use bytemuck::{Pod, Zeroable};
@@ -48,22 +48,22 @@ impl Render for SurfaceExample {
         // The surface element will display the front buffer
         // Overlay a debug border and label for visibility
         div()
-            .w(gpui::px(1720.0))
-            .h(gpui::px(1080.0))
+            .w(wgpui::px(1720.0))
+            .h(wgpui::px(1080.0))
             .border_4()
             .border_color(rgb(0xff00ff))
             .rounded_lg()
             .shadow_xl()
             .bg(rgb(0x151a29))
-            .m(gpui::px(8.0))
+            .m(wgpui::px(8.0))
             .child(
                 wgpu_surface(self.surface.clone()).absolute().inset_0(), // Fill parent div
             )
             .child(
                 div()
                     .absolute()
-                    .top(gpui::px(4.0))
-                    .left(gpui::px(8.0))
+                    .top(wgpui::px(4.0))
+                    .left(wgpui::px(8.0))
                     .text_color(rgb(0xff00ff))
                     .text_xl()
                     .child(format!("FPS: {:.1}", self.display_fps)),

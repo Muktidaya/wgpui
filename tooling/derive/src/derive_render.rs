@@ -8,11 +8,11 @@ pub fn derive_render(input: TokenStream) -> TokenStream {
     let (impl_generics, type_generics, where_clause) = ast.generics.split_for_impl();
 
     let r#gen = quote! {
-        impl #impl_generics gpui::Render for #type_name #type_generics
+        impl #impl_generics wgpui::Render for #type_name #type_generics
         #where_clause
         {
-            fn render(&mut self, _window: &mut gpui::Window, _cx: &mut gpui::Context<Self>) -> impl gpui::Element {
-                gpui::Empty
+            fn render(&mut self, _window: &mut wgpui::Window, _cx: &mut wgpui::Context<Self>) -> impl wgpui::Element {
+                wgpui::Empty
             }
         }
     };

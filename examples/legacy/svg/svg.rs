@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use gpui::{
+use wgpui::{
     App, Application, AssetSource, Bounds, Context, SharedString, Window, WindowBounds,
     WindowOptions, div, prelude::*, px, rgb, size, svg,
 };

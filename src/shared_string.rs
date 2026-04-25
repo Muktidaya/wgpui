@@ -8,7 +8,7 @@ use std::{
 };
 use util::arc_cow::ArcCow;
 
-/// A shared string is an immutable string that can be cheaply cloned in GPUI
+/// A shared string is an immutable string that can be cheaply cloned in WGPUI
 /// tasks. Essentially an abstraction over an `Arc<str>` and `&'static str`,
 #[derive(Deref, DerefMut, Eq, PartialEq, PartialOrd, Ord, Hash, Clone)]
 pub struct SharedString(ArcCow<'static, str>);

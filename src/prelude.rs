@@ -1,4 +1,4 @@
-//! The GPUI prelude is a collection of traits and types that are widely used
+//! The WGPUI prelude is a collection of traits and types that are widely used
 //! throughout the library. It is recommended to import this prelude into your
 //! application to avoid having to import each trait individually.
 

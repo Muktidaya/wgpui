@@ -17,7 +17,7 @@ description = "A community fork of Zed's GPU-accelerated UI framework"
 repository = "https://github.com/muktidaya/wgpui"
 publish = true
 license = "Apache-2.0"
-homepage = "https://gpui-ce.github.io/"
+homepage = "https://wgpui-ce.github.io/"
 readme = "README.md"
 keywords = ["desktop", "gui", "immediate"]
 categories = ["gui"]
@@ -38,8 +38,8 @@ runtime_shaders = []
 windows-manifest = []
 
 [lib]
-name = "gpui"
-path = "src/gpui.rs"
+name = "wgpui"
+path = "src/wgpui.rs"
 doctest = false
 
 [dependencies]
@@ -158,7 +158,7 @@ unicode-segmentation = "1.10"
 util = { package = "gpui_util", version = "0.2.2", features = ["test-support"] }
 
 # ============================================================================
-# Learn Examples - Educational examples for learning GPUI
+# Learn Examples - Educational examples for learning WGPUI
 # ============================================================================
 
 [[example]]

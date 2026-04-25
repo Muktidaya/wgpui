@@ -1,6 +1,6 @@
 //! Example Prelude
 //!
-//! Common helpers for GPUI examples. Import with:
+//! Common helpers for WGPUI examples. Import with:
 //!
 //! ```ignore
 //! #[path = "../prelude.rs"]
@@ -8,7 +8,7 @@
 //! use example_prelude::init_example;
 //! ```
 
-use gpui::{App, KeyBinding, Menu, MenuItem, SharedString, actions};
+use wgpui::{App, KeyBinding, Menu, MenuItem, SharedString, actions};
 
 actions!(example, [Quit, CloseWindow]);
 

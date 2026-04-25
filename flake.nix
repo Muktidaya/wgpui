@@ -59,7 +59,7 @@
         ];
 
         commonArgs = {
-          pname = "gpui-ce";
+          pname = "wgpui";
           version = "0.3.3";
 
           inherit src;
@@ -94,7 +94,7 @@
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-        gpui = craneLib.buildPackage (
+        wgpui = craneLib.buildPackage (
           commonArgs
           // {
             inherit cargoArtifacts;
@@ -102,10 +102,10 @@
         );
       in
       {
-        packages.default = gpui;
+        packages.default = wgpui;
 
         devShells.default = pkgs.mkShell {
-          inputsFrom = [ gpui ];
+          inputsFrom = [ wgpui ];
           packages = [ toolchain ];
 
           shellHook = ''

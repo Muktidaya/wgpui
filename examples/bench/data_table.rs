@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc, time::Duration};
 
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels, Point,
     Render, SharedString, UniformListScrollHandle, Window, WindowBounds, WindowOptions, canvas,
     div, point, prelude::*, px, rgb, size, uniform_list,
@@ -121,11 +121,11 @@ impl Quote {
         (self.last_done - self.prev_close) / self.prev_close * 100.0
     }
 
-    fn change_color(&self) -> gpui::Hsla {
+    fn change_color(&self) -> wgpui::Hsla {
         if self.change() > 0.0 {
-            gpui::green()
+            wgpui::green()
         } else {
-            gpui::red()
+            wgpui::red()
         }
     }
 
@@ -144,7 +144,7 @@ impl TableRow {
         Self { ix, quote }
     }
 
-    fn render_cell(&self, key: &str, width: Pixels, color: gpui::Hsla) -> impl IntoElement {
+    fn render_cell(&self, key: &str, width: Pixels, color: wgpui::Hsla) -> impl IntoElement {
         div()
             .whitespace_nowrap()
             .truncate()
@@ -374,7 +374,7 @@ impl DataTable {
 impl Render for DataTable {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
-            .bg(gpui::white())
+            .bg(wgpui::white())
             .text_sm()
             .size_full()
             .p_4()

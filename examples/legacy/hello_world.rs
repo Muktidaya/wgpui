@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, SharedString, Window, WindowBounds, WindowOptions, div,
     prelude::*, px, rgb, size,
 };
@@ -30,57 +30,57 @@ impl Render for HelloWorld {
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::red())
+                            .bg(wgpui::red())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
-                            .border_color(gpui::white()),
+                            .border_color(wgpui::white()),
                     )
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::green())
+                            .bg(wgpui::green())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
-                            .border_color(gpui::white()),
+                            .border_color(wgpui::white()),
                     )
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::blue())
+                            .bg(wgpui::blue())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
-                            .border_color(gpui::white()),
+                            .border_color(wgpui::white()),
                     )
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::yellow())
+                            .bg(wgpui::yellow())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
-                            .border_color(gpui::white()),
+                            .border_color(wgpui::white()),
                     )
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::black())
+                            .bg(wgpui::black())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
                             .rounded_md()
-                            .border_color(gpui::white()),
+                            .border_color(wgpui::white()),
                     )
                     .child(
                         div()
                             .size_8()
-                            .bg(gpui::white())
+                            .bg(wgpui::white())
                             .border_1()
                             .border_dashed()
                             .rounded_md()
-                            .border_color(gpui::black()),
+                            .border_color(wgpui::black()),
                     ),
             )
     }

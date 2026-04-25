@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Application, Bounds, Context, FocusHandle, KeyBinding, Window, WindowBounds,
     WindowOptions, actions, div, prelude::*, px, rgb, size,
 };

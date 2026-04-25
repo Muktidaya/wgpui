@@ -3269,7 +3269,7 @@ impl Window {
 
         self.invalidator.debug_assert_paint();
 
-        if !std::env::var("GPUI_BENCHMARK").is_ok() {
+        if !std::env::var("WGPUI_BENCHMARK").is_ok() {
             let scale_factor = self.scale_factor();
             let bounds = bounds.scale(scale_factor);
             let content_mask = self.content_mask().scale(scale_factor);
@@ -3381,7 +3381,7 @@ impl Window {
     }
 
     /// Obtain the bounds computed for the given LayoutId relative to the window. This method will usually be invoked by
-    /// GPUI itself automatically in order to pass your element its `Bounds` automatically.
+    /// WGPUI itself automatically in order to pass your element its `Bounds` automatically.
     ///
     /// This method should only be called as part of element drawing.
     pub fn layout_bounds(&mut self, layout_id: LayoutId) -> Bounds<Pixels> {
@@ -4302,7 +4302,7 @@ impl Window {
     {
         let prompt_builder = cx.prompt_builder.take();
         let Some(prompt_builder) = prompt_builder else {
-            unreachable!("Re-entrant window prompting is not supported by GPUI");
+            unreachable!("Re-entrant window prompting is not supported by WGPUI");
         };
 
         let answers = answers

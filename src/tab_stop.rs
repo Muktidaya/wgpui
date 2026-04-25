@@ -200,7 +200,7 @@ impl TabStopMap {
         let handle = self.insertion_history[order.node_insertion_index].focus_handle();
         debug_assert!(
             handle.is_some(),
-            "The order node did not correspond to an element, this is a GPUI bug"
+            "The order node did not correspond to an element, this is a WGPUI bug"
         );
         handle.cloned()
     }

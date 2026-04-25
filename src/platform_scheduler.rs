@@ -20,7 +20,7 @@ use std::{
 
 /// A production implementation of [`Scheduler`] that wraps a [`PlatformDispatcher`].
 ///
-/// This allows GPUI to use the scheduler crate's executor types with the platform's
+/// This allows WGPUI to use the scheduler crate's executor types with the platform's
 /// native dispatch mechanisms (e.g., Grand Central Dispatch on macOS).
 pub struct PlatformScheduler {
     dispatcher: Arc<dyn PlatformDispatcher>,

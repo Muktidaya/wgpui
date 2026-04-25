@@ -1,6 +1,6 @@
 //! Interactive Elements Example
 //!
-//! This example demonstrates interactive patterns in GPUI:
+//! This example demonstrates interactive patterns in WGPUI:
 //!
 //! 1. Click events - single click, double click, click count
 //! 2. Hover states - hover styling and on_hover callbacks
@@ -11,7 +11,7 @@
 mod example_prelude;
 
 use example_prelude::init_example;
-use gpui::{
+use wgpui::{
     App, Application, Bounds, ClickEvent, Colors, Context, Entity, Half, Hsla, IntoElement,
     MouseButton, MouseMoveEvent, Pixels, Point, Render, Window, WindowBounds, WindowOptions, div,
     prelude::*, px, size,
@@ -54,7 +54,7 @@ impl Render for ClickDemo {
             .child(
                 div()
                     .text_sm()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .text_color(colors.text)
                     .child("Click Events"),
             )
@@ -148,7 +148,7 @@ impl Render for HoverDemo {
             .child(
                 div()
                     .text_sm()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .text_color(colors.text)
                     .child("Hover Events"),
             )
@@ -257,7 +257,7 @@ impl Render for MouseEventsDemo {
             .child(
                 div()
                     .text_sm()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .text_color(colors.text)
                     .child("Mouse Events"),
             )
@@ -360,7 +360,7 @@ impl DragData {
 // Render trait for DragData allows it to be rendered as drag feedback
 impl Render for DragData {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        let size = gpui::size(px(80.), px(40.));
+        let size = wgpui::size(px(80.), px(40.));
 
         // Position the drag preview at the cursor
         div()
@@ -374,7 +374,7 @@ impl Render for DragData {
                     .w(size.width)
                     .h(size.height)
                     .bg(self.color.opacity(0.8))
-                    .text_color(gpui::white())
+                    .text_color(wgpui::white())
                     .text_xs()
                     .rounded_md()
                     .shadow_lg()
@@ -408,7 +408,7 @@ impl Render for DragDropDemo {
             .child(
                 div()
                     .text_sm()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .text_color(colors.text)
                     .child("Drag and Drop"),
             )
@@ -525,15 +525,14 @@ impl Render for InteractiveElementsExample {
                             .child(
                                 div()
                                     .text_xl()
-                                    .font_weight(gpui::FontWeight::BOLD)
+                                    .font_weight(wgpui::FontWeight::BOLD)
                                     .text_color(colors.text)
                                     .child("Interactive Elements"),
                             )
                             .child(
-                                div()
-                                    .text_sm()
-                                    .text_color(colors.text_muted)
-                                    .child("Click, hover, mouse events, and drag-and-drop in GPUI"),
+                                div().text_sm().text_color(colors.text_muted).child(
+                                    "Click, hover, mouse events, and drag-and-drop in WGPUI",
+                                ),
                             ),
                     )
                     .child(

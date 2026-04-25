@@ -46,12 +46,12 @@ pub struct WgpuSurfaceHandle {
 }
 
 impl WgpuSurfaceHandle {
-    /// Returns true when the GPUI_BENCHMARK environment variable is set.
-    /// In benchmark mode gpui bypasses the compositor entirely and
+    /// Returns true when the WGPUI_BENCHMARK environment variable is set.
+    /// In benchmark mode wgpui bypasses the compositor entirely and
     /// operations like `present()` become no-ops so the render thread can
     /// drive the GPU at full speed.
     fn benchmark_mode() -> bool {
-        std::env::var("GPUI_BENCHMARK").is_ok()
+        std::env::var("WGPUI_BENCHMARK").is_ok()
     }
     pub(crate) fn new(
         device: wgpu::Device,

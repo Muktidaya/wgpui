@@ -1,6 +1,6 @@
 # Contexts
 
-GPUI makes extensive use of _context parameters_ (typically named `cx`) to provide access to application state and services. These contexts are references passed to functions, enabling interaction with global state, windows, entities, and system services.
+WGPUI makes extensive use of _context parameters_ (typically named `cx`) to provide access to application state and services. These contexts are references passed to functions, enabling interaction with global state, windows, entities, and system services.
 
 ---
 

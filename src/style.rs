@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 /// Use this struct for interfacing with the 'debug_below' styling from your own elements.
 /// If a parent element has this style set on it, then this struct will be set as a global in
-/// GPUI.
+/// WGPUI.
 #[cfg(debug_assertions)]
 pub struct DebugBelow;
 
@@ -170,7 +170,7 @@ pub struct Style {
     /// The only way to scroll horizontally is to hold down `Shift` while scrolling, which then changes the scroll axis
     /// to the X axis.
     ///
-    /// Currently, GPUI operates differently from the web in that it will scroll an element in either the X or Y axis
+    /// Currently, WGPUI operates differently from the web in that it will scroll an element in either the X or Y axis
     /// when scrolling with just the mouse wheel. This causes problems when scrolling in a vertical list that contains
     /// horizontally-scrollable elements, as when you get to the horizontally-scrollable elements the scroll will be
     /// hijacked.
@@ -348,7 +348,7 @@ pub enum TextAlign {
     Right,
 }
 
-/// The properties that can be used to style text in GPUI
+/// The properties that can be used to style text in WGPUI
 #[derive(Refineable, Clone, Debug, PartialEq)]
 #[refineable(Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct TextStyle {
