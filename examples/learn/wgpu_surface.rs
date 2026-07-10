@@ -116,7 +116,7 @@ fn main() {
                     // --- GPU cube: spinning, facelit cube ---
                     use wgpu::util::DeviceExt;
                     thread_local! {
-                        static RESOURCES: std::cell::RefCell<Option<CubeResources>> = std::cell::RefCell::new(None);
+                        static RESOURCES: std::cell::RefCell<Option<CubeResources>> = const { std::cell::RefCell::new(None) };
                     }
 
                     let t = frame as f32 * 0.01;
@@ -339,10 +339,10 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
                                 });
 
                                 *r = Some(CubeResources{
-                                    pipeline: pipeline.clone(),
-                                    uniform_buf: uniform_buf.clone(),
-                                    bind_group: bind_group.clone(),
-                                    vert_buf: vertex_buf.clone(),
+                                    pipeline,
+                                    uniform_buf,
+                                    bind_group,
+                                    vert_buf: vertex_buf,
                                     vertex_count,
                                 });
                             }
@@ -415,8 +415,8 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
             // construct entity and keep handle in outer scope
             let handle = cx.new(|_cx| SurfaceExample { surface, fps_rx, display_fps: 0.0 });
             // timer thread: wake once per second and push fps into channel
-            let fps_shared = fps_data.clone();
-            let tx_clone = fps_tx.clone();
+            let fps_shared = fps_data;
+            let tx_clone = fps_tx;
             thread::spawn(move || {
                 loop {
                     std::thread::sleep(Duration::from_secs(1));

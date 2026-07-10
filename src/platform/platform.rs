@@ -24,8 +24,8 @@ use std::{
 use winit::event_loop::ActiveEventLoop;
 
 thread_local! {
-    static ACTIVE_CONTEXT: Cell<Option<(*const ActiveEventLoop, *mut AppState)>> = Cell::new(None);
-    static ACTIVE_PLATFORM: Cell<Option<*const CrossPlatform>> = Cell::new(None);
+    static ACTIVE_CONTEXT: Cell<Option<(*const ActiveEventLoop, *mut AppState)>> = const { Cell::new(None) };
+    static ACTIVE_PLATFORM: Cell<Option<*const CrossPlatform>> = const { Cell::new(None) };
 }
 
 // Helper to access the context
@@ -91,7 +91,7 @@ impl CrossPlatform {
 
         let dispatcher = Arc::new(Dispatcher::new(main_tx, event_loop_proxy.clone()));
         let background_executor = BackgroundExecutor::new(dispatcher.clone());
-        let foreground_executor = ForegroundExecutor::new(dispatcher.clone());
+        let foreground_executor = ForegroundExecutor::new(dispatcher);
 
         Ok(Self {
             background_executor,
@@ -179,7 +179,9 @@ impl Platform for CrossPlatform {
         };
 
         ACTIVE_PLATFORM.with(|platform| platform.set(Some(self as *const CrossPlatform)));
-        event_loop.run_app(&mut app_state).expect("Failed to run App");
+        event_loop
+            .run_app(&mut app_state)
+            .expect("Failed to run App");
         ACTIVE_PLATFORM.with(|platform| platform.set(None));
     }
 
@@ -323,7 +325,10 @@ impl Platform for CrossPlatform {
     }
 
     fn set_menus(&self, menus: Vec<crate::Menu>, keymap: &crate::Keymap) {
-        let owned_menus = menus.into_iter().map(crate::Menu::owned).collect::<Vec<_>>();
+        let owned_menus = menus
+            .into_iter()
+            .map(crate::Menu::owned)
+            .collect::<Vec<_>>();
         self.menus.replace(Some(owned_menus.clone()));
         #[cfg(target_os = "macos")]
         crate::platform::macos_menu::install_menus(owned_menus, keymap);
@@ -932,7 +937,7 @@ fn winit_key_to_keystroke(
                     && !modifiers.alt
                 {
                     if modifiers.shift {
-                        Some(ch.to_uppercase().to_string())
+                        Some(ch.to_uppercase())
                     } else {
                         Some(ch.to_string())
                     }

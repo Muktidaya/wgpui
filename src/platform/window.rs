@@ -2,20 +2,19 @@ use crate::{
     Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow, Point, Size,
     WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
     platform::{
-        atlas::WgpuAtlas,
-        dispatcher::CrossEvent,
-        render_context::WgpuContext,
+        atlas::WgpuAtlas, dispatcher::CrossEvent, render_context::WgpuContext,
         renderer::WgpuRenderer,
     },
 };
 use std::{
     cell::{Cell, OnceCell, RefCell},
+    rc::Rc,
     sync::Arc,
 };
 use winit::event_loop::EventLoopProxy;
 
 #[derive(Clone)]
-pub struct CrossWindow(pub(crate) Arc<CrossWindowInner>);
+pub struct CrossWindow(pub(crate) Rc<CrossWindowInner>);
 
 pub(crate) struct CrossWindowInner {
     pub(crate) winit_window: OnceCell<Arc<winit::window::Window>>,
@@ -69,11 +68,13 @@ impl CrossWindow {
         wgpu_context: Arc<WgpuContext>,
         event_loop_proxy: EventLoopProxy<CrossEvent>,
     ) -> Self {
-        Self(Arc::new(CrossWindowInner {
+        let sprite_atlas = Arc::new(WgpuAtlas::new(wgpu_context.clone()));
+
+        Self(Rc::new(CrossWindowInner {
             winit_window: OnceCell::new(),
-            wgpu_context: wgpu_context.clone(),
+            wgpu_context,
             renderer: OnceCell::new(),
-            sprite_atlas: Arc::new(WgpuAtlas::new(wgpu_context.clone())),
+            sprite_atlas,
             event_loop_proxy,
             state: CrossWindowState::default(),
         }))
@@ -104,8 +105,7 @@ impl CrossWindow {
     }
 
     pub(crate) fn window(&self) -> &winit::window::Window {
-        &*self
-            .0
+        self.0
             .winit_window
             .get()
             .expect("winit_window should be initialized")
@@ -342,11 +342,7 @@ impl PlatformWindow for CrossWindow {
         // Build the present trigger: sends a CrossEvent to wake the event loop
         // and request a redraw for this window.
         let proxy = self.0.event_loop_proxy.clone();
-        let window_id = self
-            .0
-            .winit_window
-            .get()
-            .map(|w| w.id());
+        let window_id = self.0.winit_window.get().map(|w| w.id());
         let present_trigger: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
             if let Some(wid) = window_id {
                 let _ = proxy.send_event(CrossEvent::SurfacePresent(wid));
@@ -354,11 +350,7 @@ impl PlatformWindow for CrossWindow {
         });
 
         // capture winit window Arc so handle can request redraw directly
-        let winit_arc = self
-            .0
-            .winit_window
-            .get()
-            .cloned();
+        let winit_arc = self.0.winit_window.get().cloned();
         Some(WgpuSurfaceHandle::new(
             ctx.device.clone(),
             ctx.queue.clone(),

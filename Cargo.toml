@@ -24,18 +24,88 @@ categories = ["gui"]
 autoexamples = false
 
 [features]
-default = ["windows-manifest"]
+default = ["font-kit", "wayland", "x11", "windows-manifest"]
 test-support = [
     "leak-detection",
-    "backtrace",
     "collections/test-support",
     "util/test-support",
     "http_client/test-support",
+    "wayland",
+    "x11",
 ]
+as-raw-xcb-connection = []
+ashpd = []
+bitflags = []
+blade-graphics = []
+blade-macros = []
+blade-util = []
+bytemuck = []
+calloop-wayland-source = []
+cosmic-text = []
+filedescriptor = []
+font-kit = []
 inspector = ["wgpui_derive/inspector"]
 leak-detection = ["backtrace"]
+macos-blade = [
+    "blade-graphics",
+    "blade-macros",
+    "blade-util",
+    "bytemuck",
+    "objc2",
+    "objc2-metal",
+]
+objc2 = []
+open = []
 runtime_shaders = []
+scap = []
+screen-capture = ["scap"]
+wayland = [
+    "bitflags",
+    "blade-graphics",
+    "blade-macros",
+    "blade-util",
+    "bytemuck",
+    "ashpd",
+    "cosmic-text",
+    "font-kit",
+    "calloop-wayland-source",
+    "wayland-backend",
+    "wayland-client",
+    "wayland-cursor",
+    "wayland-protocols",
+    "wayland-protocols-plasma",
+    "wayland-protocols-wlr",
+    "filedescriptor",
+    "xkbcommon",
+    "open",
+]
+wayland-backend = []
+wayland-client = []
+wayland-cursor = []
+wayland-protocols = []
+wayland-protocols-plasma = []
+wayland-protocols-wlr = []
 windows-manifest = []
+x11 = [
+    "blade-graphics",
+    "blade-macros",
+    "blade-util",
+    "bytemuck",
+    "ashpd",
+    "cosmic-text",
+    "font-kit",
+    "as-raw-xcb-connection",
+    "x11rb",
+    "xkbcommon",
+    "xim",
+    "x11-clipboard",
+    "filedescriptor",
+    "open",
+]
+x11-clipboard = []
+x11rb = []
+xim = []
+xkbcommon = []
 
 [lib]
 name = "wgpui"

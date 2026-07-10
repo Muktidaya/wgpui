@@ -235,7 +235,7 @@ impl WgpuAtlasState {
         let bytes_per_pixel = texture.bytes_per_pixel();
         let unpadded_bytes_per_row = bounds.size.width.to_bytes(bytes_per_pixel) as usize;
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize;
-        let padded_bytes_per_row = (unpadded_bytes_per_row + align - 1) / align * align;
+        let padded_bytes_per_row = unpadded_bytes_per_row.div_ceil(align) * align;
         let height = bounds.size.height.0 as usize;
 
         let padded_data = if padded_bytes_per_row != unpadded_bytes_per_row {

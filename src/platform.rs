@@ -22,10 +22,9 @@ use crate::{
     Action, AnyWindowHandle, App, AsyncWindowContext, BackgroundExecutor, Bounds,
     DEFAULT_WINDOW_SIZE, DevicePixels, DispatchEventResult, Font, FontId, FontMetrics, FontRun,
     ForegroundExecutor, GlyphId, GpuSpecs, ImageSource, Keymap, LineLayout, Pixels, PlatformInput,
-    Point, Priority, RenderGlyphParams, RenderImage, RenderImageParams,
-    RenderSvgParams, RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString, Size, SvgRenderer,
-    SystemWindowTab, Task, TaskTiming, ThreadTaskTimings, Window, WindowControlArea,
-    hash, point, px, size,
+    Point, Priority, RenderGlyphParams, RenderImage, RenderImageParams, RenderSvgParams,
+    RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString, Size, SvgRenderer, SystemWindowTab,
+    Task, TaskTiming, ThreadTaskTimings, Window, WindowControlArea, hash, point, px, size,
 };
 use anyhow::Result;
 use async_task::Runnable;
@@ -193,7 +192,7 @@ pub trait PlatformDisplay: Send + Sync + Debug {
     }
 }
 
-/// Metadata for a given [ScreenCaptureSource]
+/// Metadata for a given `ScreenCaptureSource`.
 #[derive(Clone)]
 pub struct SourceMetadata {
     /// Opaque identifier of this screen.

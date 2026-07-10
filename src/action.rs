@@ -1,6 +1,6 @@
 use anyhow::{Context as _, Result};
 use collections::HashMap;
-pub use no_action::{is_no_action, NoAction};
+pub use no_action::{NoAction, is_no_action};
 use serde_json::json;
 use std::{
     any::{Any, TypeId},

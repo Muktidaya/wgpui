@@ -520,9 +520,9 @@ impl StateInner {
             });
         }
 
-        if self.scroll_handler.is_some() {
-            let visible_range = self.visible_range(height, scroll_top);
-            self.scroll_handler.as_mut().unwrap()(
+        let visible_range = self.visible_range(height, scroll_top);
+        if let Some(scroll_handler) = &mut self.scroll_handler {
+            scroll_handler(
                 &ListScrollEvent {
                     visible_range,
                     count: self.items.summary().count,

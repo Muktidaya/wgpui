@@ -835,9 +835,7 @@ fn find_best_match(
         .context("no matching font found")
 }
 
-fn face_info_into_properties(
-    face_info: &cosmic_text::fontdb::FaceInfo,
-) -> FontMatchProperties {
+fn face_info_into_properties(face_info: &cosmic_text::fontdb::FaceInfo) -> FontMatchProperties {
     FontMatchProperties {
         style: match face_info.style {
             cosmic_text::Style::Normal => FontMatchStyle::Normal,

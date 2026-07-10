@@ -77,7 +77,7 @@ pub trait EntityInputHandler: 'static + Sized {
     }
 }
 
-/// The canonical implementation of [`crate::PlatformInputHandler`]. Call [`Window::handle_input`]
+/// The canonical implementation of `crate::PlatformInputHandler`. Call [`Window::handle_input`]
 /// with an instance during your element's paint.
 pub struct ElementInputHandler<V> {
     view: Entity<V>,

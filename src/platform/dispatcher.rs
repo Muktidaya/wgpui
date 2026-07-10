@@ -1,7 +1,7 @@
 use super::priority_pool::ThreadPool;
 use crate::{
-    PlatformDispatcher, Priority, PriorityQueueSender, RunnableVariant, ThreadTaskTimings,
-    GLOBAL_THREAD_TIMINGS, THREAD_TIMINGS,
+    GLOBAL_THREAD_TIMINGS, PlatformDispatcher, Priority, PriorityQueueSender, RunnableVariant,
+    THREAD_TIMINGS, ThreadTaskTimings,
 };
 use std::thread::ThreadId;
 use winit::event_loop::EventLoopProxy;

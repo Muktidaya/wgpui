@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// An opaque identifier for a registered WGPU surface.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -57,13 +57,7 @@ impl SurfaceRegistry {
     }
 
     /// Resize both buffers, creating new textures.
-    pub fn resize(
-        &self,
-        device: &wgpu::Device,
-        id: SurfaceId,
-        width: u32,
-        height: u32,
-    ) {
+    pub fn resize(&self, device: &wgpu::Device, id: SurfaceId, width: u32, height: u32) {
         let mut surfaces = self.surfaces.lock().unwrap();
         if let Some(db) = surfaces.get_mut(&id) {
             if db.width == width && db.height == height {
@@ -122,9 +116,7 @@ impl SurfaceRegistry {
     /// Access the view at the given index (0 or 1).
     pub fn view_at(&self, id: SurfaceId, idx: usize) -> Option<wgpu::TextureView> {
         let surfaces = self.surfaces.lock().unwrap();
-        surfaces
-            .get(&id)
-            .and_then(|db| db.views.get(idx).cloned())
+        surfaces.get(&id).and_then(|db| db.views.get(idx).cloned())
     }
 
     /// Get the current size of a surface.
@@ -151,7 +143,8 @@ impl SurfaceRegistry {
     /// sending duplicate events while one is already queued.
     pub fn set_present_pending(&self, id: SurfaceId) -> bool {
         if let Some(db) = self.surfaces.lock().unwrap().get(&id) {
-            db.present_pending.swap(true, std::sync::atomic::Ordering::Relaxed)
+            db.present_pending
+                .swap(true, std::sync::atomic::Ordering::Relaxed)
         } else {
             false
         }
@@ -160,7 +153,8 @@ impl SurfaceRegistry {
     /// Query whether a present is still pending (not yet consumed).
     pub fn is_present_pending(&self, id: SurfaceId) -> bool {
         if let Some(db) = self.surfaces.lock().unwrap().get(&id) {
-            db.present_pending.load(std::sync::atomic::Ordering::Relaxed)
+            db.present_pending
+                .load(std::sync::atomic::Ordering::Relaxed)
         } else {
             false
         }
@@ -170,7 +164,8 @@ impl SurfaceRegistry {
     /// the next frame (in `paint_wgpu_surface`).
     pub fn clear_present_pending(&self, id: SurfaceId) {
         if let Some(db) = self.surfaces.lock().unwrap().get(&id) {
-            db.present_pending.store(false, std::sync::atomic::Ordering::Relaxed);
+            db.present_pending
+                .store(false, std::sync::atomic::Ordering::Relaxed);
         }
     }
 

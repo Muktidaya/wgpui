@@ -40,9 +40,9 @@ use crate::{
     Keymap, Keystroke, LayoutId, Menu, MenuItem, OwnedMenu, PathPromptOptions, Pixels, Platform,
     PlatformDisplay, PlatformKeyboardLayout, PlatformKeyboardMapper, Point, Priority,
     PromptBuilder, PromptButton, PromptHandle, PromptLevel, Render, RenderImage,
-    RenderablePromptHandle, Reservation, SharedString, SubscriberSet,
-    Subscription, SvgRenderer, Task, TextSystem, Window, WindowAppearance, WindowHandle, WindowId,
-    WindowInvalidator, current_platform,
+    RenderablePromptHandle, Reservation, SharedString, SubscriberSet, Subscription, SvgRenderer,
+    Task, TextSystem, Window, WindowAppearance, WindowHandle, WindowId, WindowInvalidator,
+    current_platform,
     default_colors::{Colors, GlobalColors},
     hash, init_app_menus,
 };

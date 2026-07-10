@@ -58,22 +58,24 @@ impl<P: Priority> ThreadPool<P> {
                 let inner = Arc::clone(&inner);
                 std::thread::Builder::new()
                     .name(format!("wgpui-worker-{ix}"))
-                    .spawn(move || loop {
-                        let task = {
-                            let mut guard = inner.shared.lock().unwrap();
-                            loop {
-                                if guard.stopped {
-                                    return;
+                    .spawn(move || {
+                        loop {
+                            let task = {
+                                let mut guard = inner.shared.lock().unwrap();
+                                loop {
+                                    if guard.stopped {
+                                        return;
+                                    }
+                                    if let Some(task) =
+                                        guard.queues.iter_mut().find_map(|q| q.pop_front())
+                                    {
+                                        break task;
+                                    }
+                                    guard = inner.condvar.wait(guard).unwrap();
                                 }
-                                if let Some(task) =
-                                    guard.queues.iter_mut().find_map(|q| q.pop_front())
-                                {
-                                    break task;
-                                }
-                                guard = inner.condvar.wait(guard).unwrap();
-                            }
-                        };
-                        task();
+                            };
+                            task();
+                        }
                     })
                     .expect("failed to spawn worker thread")
             })

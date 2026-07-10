@@ -213,10 +213,7 @@ impl WgpuSurface {
     /// Register a callback invoked when the element's layout bounds change.
     /// The surface textures are automatically resized; use this to recreate
     /// any external resources that depend on the size.
-    pub fn on_resize(
-        mut self,
-        callback: impl Fn(u32, u32, &WgpuSurfaceHandle) + 'static,
-    ) -> Self {
+    pub fn on_resize(mut self, callback: impl Fn(u32, u32, &WgpuSurfaceHandle) + 'static) -> Self {
         self.on_resize = Some(Box::new(callback));
         self
     }

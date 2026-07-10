@@ -1,5 +1,3 @@
-#![cfg(target_os = "macos")]
-
 use std::cell::RefCell;
 
 use objc2::rc::Retained;
@@ -10,7 +8,7 @@ use objc2_app_kit::{
     NSMenuDelegate, NSMenuItem, NSMenuItemValidation,
 };
 use objc2_foundation::{
-    NSInteger, MainThreadMarker, NSObject, NSObjectProtocol, NSProcessInfo, NSString, ns_string,
+    MainThreadMarker, NSInteger, NSObject, NSObjectProtocol, NSProcessInfo, NSString, ns_string,
 };
 
 use crate::{Action, Keymap, Modifiers, OwnedMenu, OwnedMenuItem, SystemMenuType};
@@ -256,13 +254,7 @@ fn build_menu_item(
         OwnedMenuItem::Submenu(submenu) => {
             let title = NSString::from_str(submenu.name.as_ref());
             let item = empty_menu_item(title.as_ref(), main_thread_marker);
-            let submenu = build_owned_menu(
-                submenu,
-                target,
-                keymap,
-                actions,
-                main_thread_marker,
-            );
+            let submenu = build_owned_menu(submenu, target, keymap, actions, main_thread_marker);
             item.setSubmenu(Some(&submenu));
             item
         }

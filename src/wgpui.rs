@@ -87,7 +87,6 @@ pub use elements::*;
 pub use executor::*;
 pub use geometry::*;
 pub use global::*;
-pub use wgpui_derive::{AppContext, IntoElement, Render, VisualContext, register_action, test};
 pub use http_client;
 pub use input::*;
 pub use inspector::*;
@@ -100,6 +99,7 @@ pub use profiler::*;
 pub(crate) use queue::{PriorityQueueReceiver, PriorityQueueSender};
 pub use refineable::*;
 pub use scene::*;
+pub use wgpui_derive::{AppContext, IntoElement, Render, VisualContext, register_action, test};
 // Re-export scheduler types selectively to avoid ambiguity with executor wrappers.
 // Types like Task, BackgroundExecutor, ForegroundExecutor, FallibleTask, and Priority
 // are re-exported via the executor module which wraps them.
