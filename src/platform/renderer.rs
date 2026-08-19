@@ -364,68 +364,19 @@ struct SurfacesData {
     s_texture: wgpu::Sampler,
 }
 
-#[allow(dead_code)]
+#[repr(C)]
+#[derive(Clone, Copy)]
 struct PathSprite {
-    bounds: geometry::Bounds<f32>,
+    bounds: [f32; 4],
 }
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-#[allow(dead_code)]
 struct PathRasterizationVertex {
-    xy_position: geometry::Point<ScaledPixels>,
-    st_position: geometry::Point<f32>,
+    xy_position: [f32; 2],
+    st_position: [f32; 2],
     color: color::Background,
-    bounds: geometry::Bounds<f32>,
-}
-
-impl PathRasterizationVertex {
-    #[allow(dead_code)]
-    const VERTEX_ATTRIBUTES: &'static [wgpu::VertexAttribute; 10] = &{
-        let color_vertex_attributes = map_attributes(
-            color::Background::VERTEX_ATTRIBUTES,
-            2,
-            std::mem::offset_of!(PathRasterizationVertex, color) as wgpu::BufferAddress,
-        );
-
-        let bounds_vertex_attributes = map_attributes(
-            Bounds::VERTEX_ATTRIBUTES,
-            8,
-            std::mem::offset_of!(PathRasterizationVertex, bounds) as wgpu::BufferAddress,
-        );
-
-        [
-            wgpu::VertexAttribute {
-                offset: std::mem::offset_of!(PathRasterizationVertex, xy_position)
-                    as wgpu::BufferAddress,
-                shader_location: 0,
-                format: wgpu::VertexFormat::Float32x2,
-            },
-            wgpu::VertexAttribute {
-                offset: std::mem::offset_of!(PathRasterizationVertex, st_position)
-                    as wgpu::BufferAddress,
-                shader_location: 1,
-                format: wgpu::VertexFormat::Float32x2,
-            },
-            color_vertex_attributes[0],
-            color_vertex_attributes[1],
-            color_vertex_attributes[2],
-            color_vertex_attributes[3],
-            color_vertex_attributes[4],
-            color_vertex_attributes[5],
-            bounds_vertex_attributes[0],
-            bounds_vertex_attributes[1],
-        ]
-    };
-
-    #[allow(dead_code)]
-    fn layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<PathRasterizationVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: Self::VERTEX_ATTRIBUTES,
-        }
-    }
+    bounds: [f32; 4],
 }
 
 impl AtlasTextureId {
@@ -606,6 +557,8 @@ struct WgpuPipelines {
     mono_sprites_bind_group_layout: wgpu::BindGroupLayout,
     poly_sprites_bind_group_layout: wgpu::BindGroupLayout,
     surfaces_bind_group_layout: wgpu::BindGroupLayout,
+    path_rasterization_bind_group_layout: wgpu::BindGroupLayout,
+    path_sprites_bind_group_layout: wgpu::BindGroupLayout,
 
     globals_bind_group: wgpu::BindGroup,
     color_adjustments_bind_group: wgpu::BindGroup,
@@ -616,6 +569,8 @@ struct WgpuPipelines {
     mono_sprites_pipeline: wgpu::RenderPipeline,
     poly_sprites_pipeline: wgpu::RenderPipeline,
     surfaces_pipeline: wgpu::RenderPipeline,
+    path_rasterization_pipeline: wgpu::RenderPipeline,
+    paths_pipeline: wgpu::RenderPipeline,
 }
 
 impl WgpuPipelines {
@@ -624,6 +579,35 @@ impl WgpuPipelines {
         surface_configuration: &wgpu::SurfaceConfiguration,
         _path_sample_count: u32,
     ) -> Self {
+        let path_rasterization_shader =
+            context
+                .device
+                .create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label: Some("path_rasterization_shader"),
+                    source: wgpu::ShaderSource::Wgsl(
+                        format!(
+                            "{}\n{}",
+                            include_str!("../shaders/path_common.wgsl"),
+                            include_str!("../shaders/path_rasterization.wgsl")
+                        )
+                        .into(),
+                    ),
+                });
+
+        let paths_shader = context
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("paths_shader"),
+                source: wgpu::ShaderSource::Wgsl(
+                    format!(
+                        "{}\n{}",
+                        include_str!("../shaders/path_common.wgsl"),
+                        include_str!("../shaders/paths.wgsl")
+                    )
+                    .into(),
+                ),
+            });
+
         let quads_shader = context
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -759,7 +743,7 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("quads_pipeline_layout"),
-                    bind_group_layouts: &[&globals_bind_group_layout, &quads_bind_group_layout],
+                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&quads_bind_group_layout)],
                     immediate_size: 0,
                 });
 
@@ -785,7 +769,7 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("shadows_pipeline_layout"),
-                    bind_group_layouts: &[&globals_bind_group_layout, &shadows_bind_group_layout],
+                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&shadows_bind_group_layout)],
                     immediate_size: 0,
                 });
 
@@ -812,8 +796,8 @@ impl WgpuPipelines {
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("underlines_pipeline_layout"),
                     bind_group_layouts: &[
-                        &globals_bind_group_layout,
-                        &underlines_bind_group_layout,
+                        Some(&globals_bind_group_layout),
+                        Some(&underlines_bind_group_layout),
                     ],
                     immediate_size: 0,
                 });
@@ -841,10 +825,10 @@ impl WgpuPipelines {
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Mono sprites pipeline layout"),
                     bind_group_layouts: &[
-                        &globals_bind_group_layout,
-                        &color_adjustments_bind_group_layout,
-                        &sprites_bind_group_layout,
-                        &mono_sprites_bind_group_layout,
+                        Some(&globals_bind_group_layout),
+                        Some(&color_adjustments_bind_group_layout),
+                        Some(&sprites_bind_group_layout),
+                        Some(&mono_sprites_bind_group_layout),
                     ],
                     immediate_size: 0,
                 });
@@ -872,9 +856,9 @@ impl WgpuPipelines {
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Poly sprites pipeline layout"),
                     bind_group_layouts: &[
-                        &globals_bind_group_layout,
-                        &sprites_bind_group_layout,
-                        &poly_sprites_bind_group_layout,
+                        Some(&globals_bind_group_layout),
+                        Some(&sprites_bind_group_layout),
+                        Some(&poly_sprites_bind_group_layout),
                     ],
                     immediate_size: 0,
                 });
@@ -926,9 +910,74 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("surfaces_pipeline_layout"),
-                    bind_group_layouts: &[&globals_bind_group_layout, &surfaces_bind_group_layout],
+                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&surfaces_bind_group_layout)],
                     immediate_size: 0,
                 });
+
+        let path_rasterization_bind_group_layout =
+            context
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("path_rasterization_bind_group_layout"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+
+        let path_sprites_bind_group_layout =
+            context
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("path_sprites_bind_group_layout"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+
+        let path_rasterization_pipeline_layout =
+            context
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("path_rasterization_pipeline_layout"),
+                    bind_group_layouts: &[
+                        Some(&globals_bind_group_layout),
+                        Some(&path_rasterization_bind_group_layout),
+                    ],
+                    immediate_size: 0,
+                });
+
+        let paths_pipeline_layout =
+            context
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("paths_pipeline_layout"),
+                    bind_group_layouts: &[
+                        Some(&globals_bind_group_layout),
+                        Some(&path_sprites_bind_group_layout),
+                        Some(&sprites_bind_group_layout),
+                    ],
+                    immediate_size: 0,
+                });
+
+        let path_rasterization_targets = &[Some(wgpu::ColorTargetState {
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+            write_mask: wgpu::ColorWrites::ALL,
+        })];
 
         let globals_bind_group = context
             .device
@@ -1137,6 +1186,63 @@ impl WgpuPipelines {
                     cache: None,
                 },
             ),
+
+            path_rasterization_bind_group_layout,
+            path_sprites_bind_group_layout,
+
+            path_rasterization_pipeline: context.device.create_render_pipeline(
+                &wgpu::RenderPipelineDescriptor {
+                    label: Some("path_rasterization"),
+                    layout: Some(&path_rasterization_pipeline_layout),
+                    vertex: wgpu::VertexState {
+                        module: &path_rasterization_shader,
+                        entry_point: Some("vs_path_rasterization"),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        buffers: &[],
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        topology: wgpu::PrimitiveTopology::TriangleList,
+                        ..Default::default()
+                    },
+                    depth_stencil: None,
+                    fragment: Some(wgpu::FragmentState {
+                        module: &path_rasterization_shader,
+                        entry_point: Some("fs_path_rasterization"),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        targets: path_rasterization_targets,
+                    }),
+                    multisample: wgpu::MultisampleState::default(),
+                    multiview_mask: None,
+                    cache: None,
+                },
+            ),
+
+            paths_pipeline: context.device.create_render_pipeline(
+                &wgpu::RenderPipelineDescriptor {
+                    label: Some("paths"),
+                    layout: Some(&paths_pipeline_layout),
+                    vertex: wgpu::VertexState {
+                        module: &paths_shader,
+                        entry_point: Some("vs_path"),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        buffers: &[],
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        topology: wgpu::PrimitiveTopology::TriangleStrip,
+                        ..Default::default()
+                    },
+                    depth_stencil: None,
+                    fragment: Some(wgpu::FragmentState {
+                        module: &paths_shader,
+                        entry_point: Some("fs_path"),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        targets: color_targets,
+                    }),
+                    multisample: wgpu::MultisampleState::default(),
+                    multiview_mask: None,
+                    cache: None,
+                },
+            ),
         }
     }
 }
@@ -1152,17 +1258,17 @@ impl RenderingParameters {
     fn from_env() -> Self {
         use std::env;
 
-        let path_sample_count = env::var("ZED_PATH_SAMPLE_COUNT")
+        let path_sample_count = env::var("WGPUI_PATH_SAMPLE_COUNT")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(4);
-        let gamma = env::var("ZED_FONTS_GAMMA")
+        let gamma = env::var("WGPUI_FONTS_GAMMA")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(1.8_f32)
             .clamp(1.0, 2.2);
         let gamma_ratios = crate::platform::get_gamma_correction_ratios(gamma);
-        let grayscale_enhanced_contrast = env::var("ZED_FONTS_GRAYSCALE_ENHANCED_CONTRAST")
+        let grayscale_enhanced_contrast = env::var("WGPUI_FONTS_GRAYSCALE_ENHANCED_CONTRAST")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(1.0_f32)
@@ -1190,6 +1296,9 @@ pub struct WgpuRenderer {
     pipelines: WgpuPipelines,
     rendering_parameters: RenderingParameters,
 
+    path_intermediate_texture: Option<wgpu::Texture>,
+    path_intermediate_view: Option<wgpu::TextureView>,
+
     // cache bind groups for each double-buffered surface (index 0/1)
     surface_bind_groups:
         Mutex<HashMap<crate::platform::surface_registry::SurfaceId, [wgpu::BindGroup; 2]>>,
@@ -1211,7 +1320,7 @@ impl WgpuRenderer {
             context
                 .instance
                 .create_surface_unsafe(wgpu::SurfaceTargetUnsafe::RawHandle {
-                    raw_display_handle: window.display_handle()?.as_raw(),
+                    raw_display_handle: Some(window.display_handle()?.as_raw()),
                     raw_window_handle: window.window_handle()?.as_raw(),
                 })?
         };
@@ -1262,6 +1371,7 @@ impl WgpuRenderer {
         let surface_configuration = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
+            color_space: wgpu::SurfaceColorSpace::Auto,
             width,
             height,
             present_mode,
@@ -1298,7 +1408,7 @@ impl WgpuRenderer {
         // Configure the surface for presentation before the first draw call.
         surface.configure(&context.device, &surface_configuration);
 
-        Ok(Self {
+        let mut renderer = Self {
             context: context.clone(),
             surface,
             surface_configuration,
@@ -1308,8 +1418,12 @@ impl WgpuRenderer {
             surface_params_buffer,
             pipelines,
             rendering_parameters: RenderingParameters::from_env(),
+            path_intermediate_texture: None,
+            path_intermediate_view: None,
             surface_bind_groups: Mutex::new(HashMap::new()),
-        })
+        };
+        renderer.ensure_path_intermediate();
+        Ok(renderer)
     }
 
     pub fn draw(&self, scene: &Scene) {
@@ -1399,10 +1513,11 @@ impl WgpuRenderer {
                 });
         }
 
-        let surface_texture = self
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture");
+        let surface_texture = match self.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(texture)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(texture) => texture,
+            _ => return,
+        };
 
         let quads_bind_group = self
             .context
@@ -1484,25 +1599,26 @@ impl WgpuRenderer {
                     }],
                 });
 
-        {
-            let mut pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("main"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &surface_texture
-                        .texture
-                        .create_view(&wgpu::TextureViewDescriptor::default()),
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: wgpu::StoreOp::Store,
-                    },
-                    resolve_target: None,
-                    depth_slice: None,
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
+        let frame_view = surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let mut pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("main"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &frame_view,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+                resolve_target: None,
+                depth_slice: None,
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
 
             let mut quads_first_instance: u32 = 0;
             let mut shadows_first_instance: u32 = 0;
@@ -1733,11 +1849,33 @@ impl WgpuRenderer {
                             }
                         }
                     }
-                    // TODO(mdeand): Implement paths rendering.
-                    PrimitiveBatch::Paths(_) => {}
+                    PrimitiveBatch::Paths(paths) => {
+                        drop(pass);
+                        let rasterized = self.rasterize_paths(&mut command_encoder, paths);
+                        pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                            label: Some("main_continued"),
+                            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                view: &frame_view,
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Load,
+                                    store: wgpu::StoreOp::Store,
+                                },
+                                resolve_target: None,
+                                depth_slice: None,
+                            })],
+                            depth_stencil_attachment: None,
+                            timestamp_writes: None,
+                            occlusion_query_set: None,
+                            multiview_mask: None,
+                        });
+                        if rasterized {
+                            self.composite_paths(&mut pass, paths);
+                        }
+                    }
                 }
             }
-        }
+
+        drop(pass);
 
         // remove cached bind groups for surfaces that disappeared this frame
         {
@@ -1745,8 +1883,7 @@ impl WgpuRenderer {
             cache.retain(|id, _| seen_surfaces.contains(id));
         }
         self.context.queue.submit(Some(command_encoder.finish()));
-
-        surface_texture.present();
+        self.context.queue.present(surface_texture);
     }
 
     pub fn update_drawable_size(&mut self, size: geometry::Size<DevicePixels>) {
@@ -1754,6 +1891,215 @@ impl WgpuRenderer {
         self.surface_configuration.height = size.height.0 as u32;
         self.surface
             .configure(&self.context.device, &self.surface_configuration);
+        self.ensure_path_intermediate();
+    }
+
+    fn ensure_path_intermediate(&mut self) {
+        let width = self.surface_configuration.width.max(1);
+        let height = self.surface_configuration.height.max(1);
+        let texture = self.context.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("path_intermediate"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        self.path_intermediate_view =
+            Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        self.path_intermediate_texture = Some(texture);
+    }
+
+    fn rasterize_paths(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        paths: &[crate::Path<crate::ScaledPixels>],
+    ) -> bool {
+        let mut vertices = Vec::new();
+        for path in paths {
+            let clipped = path.clipped_bounds();
+            let bounds = [
+                clipped.origin.x.0,
+                clipped.origin.y.0,
+                clipped.size.width.0,
+                clipped.size.height.0,
+            ];
+            vertices.extend(path.vertices.iter().map(|vertex| PathRasterizationVertex {
+                xy_position: [vertex.xy_position.x.0, vertex.xy_position.y.0],
+                st_position: [vertex.st_position.x, vertex.st_position.y],
+                color: path.color,
+                bounds,
+            }));
+        }
+        if vertices.is_empty() {
+            return false;
+        }
+
+        let Some(path_view) = self.path_intermediate_view.as_ref() else {
+            return false;
+        };
+
+        unsafe fn as_bytes<T>(slice: &[T]) -> &[u8] {
+            unsafe {
+                std::slice::from_raw_parts(
+                    slice.as_ptr() as *const u8,
+                    std::mem::size_of_val(slice),
+                )
+            }
+        }
+
+        self.context
+            .queue
+            .write_buffer(&self.context.path_vertices_buffer, 0, unsafe {
+                as_bytes(&vertices)
+            });
+
+        let vertices_bind_group =
+            self.context
+                .device
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("path_rasterization_bind_group"),
+                    layout: &self.pipelines.path_rasterization_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &self.context.path_vertices_buffer,
+                            offset: 0,
+                            size: None,
+                        }),
+                    }],
+                });
+
+        {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("path_rasterization_pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: path_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                        store: wgpu::StoreOp::Store,
+                    },
+                    depth_slice: None,
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_pipeline(&self.pipelines.path_rasterization_pipeline);
+            pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+            pass.set_bind_group(1, &vertices_bind_group, &[]);
+            pass.draw(0..vertices.len() as u32, 0..1);
+        }
+
+        true
+    }
+
+    fn composite_paths(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        paths: &[crate::Path<crate::ScaledPixels>],
+    ) {
+        let Some(path_view) = self.path_intermediate_view.as_ref() else {
+            return;
+        };
+        if paths.is_empty() {
+            return;
+        }
+
+        let first = &paths[0];
+        let sprites: Vec<PathSprite> = if paths.last().map(|path| &path.order) == Some(&first.order)
+        {
+            paths
+                .iter()
+                .map(|path| {
+                    let clipped = path.clipped_bounds();
+                    PathSprite {
+                        bounds: [
+                            clipped.origin.x.0,
+                            clipped.origin.y.0,
+                            clipped.size.width.0,
+                            clipped.size.height.0,
+                        ],
+                    }
+                })
+                .collect()
+        } else {
+            let mut clipped = first.clipped_bounds();
+            for path in paths.iter().skip(1) {
+                clipped = clipped.union(&path.clipped_bounds());
+            }
+            vec![PathSprite {
+                bounds: [
+                    clipped.origin.x.0,
+                    clipped.origin.y.0,
+                    clipped.size.width.0,
+                    clipped.size.height.0,
+                ],
+            }]
+        };
+
+        unsafe fn as_bytes<T>(slice: &[T]) -> &[u8] {
+            unsafe {
+                std::slice::from_raw_parts(
+                    slice.as_ptr() as *const u8,
+                    std::mem::size_of_val(slice),
+                )
+            }
+        }
+
+        self.context
+            .queue
+            .write_buffer(&self.context.path_sprites_buffer, 0, unsafe {
+                as_bytes(&sprites)
+            });
+
+        let sprites_bind_group = self
+            .context
+            .device
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("path_sprites_bind_group"),
+                layout: &self.pipelines.path_sprites_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &self.context.path_sprites_buffer,
+                        offset: 0,
+                        size: None,
+                    }),
+                }],
+            });
+
+        let texture_bind_group =
+            self.context
+                .device
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("path_intermediate_texture_bind_group"),
+                    layout: &self.pipelines.sprites_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(path_view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&self.atlas_sampler),
+                        },
+                    ],
+                });
+
+        pass.set_pipeline(&self.pipelines.paths_pipeline);
+        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+        pass.set_bind_group(1, &sprites_bind_group, &[]);
+        pass.set_bind_group(2, &texture_bind_group, &[]);
+        pass.draw(0..4, 0..sprites.len() as u32);
     }
 
     #[allow(dead_code)]
@@ -1777,8 +2123,8 @@ impl WgpuRenderer {
         self.surface_configuration.alpha_mode = if transparent {
             wgpu::CompositeAlphaMode::PreMultiplied
         } else {
-            // TODO(mdeand): Support for non-X11?
-            // wgpu::CompositeAlphaMode::Opaque
+            // Opaque vs premultiplied is compositor-dependent; Inherit lets
+            // wgpu pick a mode the surface actually supports.
             wgpu::CompositeAlphaMode::Inherit
         };
         self.surface

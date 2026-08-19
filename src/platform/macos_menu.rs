@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use objc2::rc::Retained;
 use objc2::runtime::{ProtocolObject, Sel};
-use objc2::{ClassType, DeclaredClass, declare_class, msg_send_id, mutability, sel};
+use objc2::{MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
     NSApplication, NSControlStateValueOff, NSControlStateValueOn, NSEventModifierFlags, NSMenu,
     NSMenuDelegate, NSMenuItem, NSMenuItemValidation,
@@ -23,26 +23,20 @@ struct MenuRuntime {
     actions: Vec<Box<dyn Action>>,
 }
 
-declare_class!(
+define_class!(
+    #[unsafe(super(NSObject))]
+    #[thread_kind = MainThreadOnly]
+    #[name = "WGPUIAppMenuTarget"]
+    #[ivars = ()]
     struct MenuTarget;
-
-    unsafe impl ClassType for MenuTarget {
-        type Super = NSObject;
-        type Mutability = mutability::MainThreadOnly;
-        const NAME: &'static str = "WGPUIAppMenuTarget";
-    }
-
-    impl DeclaredClass for MenuTarget {
-        type Ivars = ();
-    }
 
     unsafe impl NSObjectProtocol for MenuTarget {}
 
     #[allow(non_snake_case)]
     unsafe impl NSMenuItemValidation for MenuTarget {
-        #[method(validateMenuItem:)]
+        #[unsafe(method(validateMenuItem:))]
         fn validateMenuItem(&self, menu_item: &NSMenuItem) -> bool {
-            let action_identifier = unsafe { menu_item.tag() };
+            let action_identifier = menu_item.tag();
             super::platform::with_active_platform(|platform| {
                 platform.validate_menu_action(action_identifier as usize)
             })
@@ -52,7 +46,7 @@ declare_class!(
 
     #[allow(non_snake_case)]
     unsafe impl NSMenuDelegate for MenuTarget {
-        #[method(menuNeedsUpdate:)]
+        #[unsafe(method(menuNeedsUpdate:))]
         fn menuNeedsUpdate(&self, _menu: &NSMenu) {
             super::platform::with_active_platform(|platform| {
                 platform.will_open_app_menu();
@@ -60,10 +54,10 @@ declare_class!(
         }
     }
 
-    unsafe impl MenuTarget {
-        #[method(performMenuAction:)]
+    impl MenuTarget {
+        #[unsafe(method(performMenuAction:))]
         fn perform_menu_action(&self, sender: &NSMenuItem) {
-            let action_identifier = unsafe { sender.tag() };
+            let action_identifier = sender.tag();
             super::platform::with_active_platform(|platform| {
                 platform.perform_menu_action(action_identifier as usize);
             });
@@ -73,9 +67,8 @@ declare_class!(
 
 impl MenuTarget {
     fn new(main_thread_marker: MainThreadMarker) -> Retained<Self> {
-        let this = main_thread_marker.alloc();
-        let this = this.set_ivars(());
-        unsafe { msg_send_id![super(this), init] }
+        let this = MenuTarget::alloc(main_thread_marker).set_ivars(());
+        unsafe { msg_send![super(this), init] }
     }
 }
 
@@ -105,9 +98,7 @@ pub(crate) fn install_menus(menus: Vec<OwnedMenu>, keymap: &Keymap) {
         main_menu.addItem(&menu_item);
 
         if owned_menu.name.as_ref() == "Window" {
-            unsafe {
-                application.setWindowsMenu(Some(&submenu));
-            }
+            application.setWindowsMenu(Some(&submenu));
         }
     }
 
@@ -165,9 +156,7 @@ fn build_application_menu(
     );
     services_item.setSubmenu(Some(&services_menu));
     app_menu.addItem(&services_item);
-    unsafe {
-        application.setServicesMenu(Some(&services_menu));
-    }
+    application.setServicesMenu(Some(&services_menu));
 
     let hide_title = ns_string!("Hide ").stringByAppendingString(&process_name);
     app_menu.addItem(&menu_item(
@@ -223,9 +212,7 @@ fn build_owned_menu(
 ) -> Retained<NSMenu> {
     let title = NSString::from_str(owned_menu.name.as_ref());
     let menu = menu(title.as_ref(), main_thread_marker);
-    unsafe {
-        menu.setDelegate(Some(ProtocolObject::from_ref(target)));
-    }
+    menu.setDelegate(Some(ProtocolObject::from_ref(target)));
     for owned_menu_item in &owned_menu.items {
         let item = build_menu_item(owned_menu_item, target, keymap, actions, main_thread_marker);
         menu.addItem(&item);
@@ -307,9 +294,7 @@ fn key_equivalent_for_action(
 
 fn menu(title: &NSString, main_thread_marker: MainThreadMarker) -> Retained<NSMenu> {
     let menu = NSMenu::new(main_thread_marker);
-    unsafe {
-        menu.setTitle(title);
-    }
+    menu.setTitle(title);
     menu
 }
 
@@ -341,32 +326,30 @@ fn menu_item(
         item.setKeyEquivalent(key_equivalent.as_ref());
     }
     item.setKeyEquivalentModifierMask(event_modifiers(modifiers.unwrap_or_default()));
-    unsafe {
-        item.setState(if checked {
-            NSControlStateValueOn
-        } else {
-            NSControlStateValueOff
-        });
-    }
+    item.setState(if checked {
+        NSControlStateValueOn
+    } else {
+        NSControlStateValueOff
+    });
     item
 }
 
 fn event_modifiers(modifiers: Modifiers) -> NSEventModifierFlags {
     let mut flags = NSEventModifierFlags::empty();
     if modifiers.control {
-        flags |= NSEventModifierFlags::NSEventModifierFlagControl;
+        flags |= NSEventModifierFlags::Control;
     }
     if modifiers.alt {
-        flags |= NSEventModifierFlags::NSEventModifierFlagOption;
+        flags |= NSEventModifierFlags::Option;
     }
     if modifiers.shift {
-        flags |= NSEventModifierFlags::NSEventModifierFlagShift;
+        flags |= NSEventModifierFlags::Shift;
     }
     if modifiers.platform {
-        flags |= NSEventModifierFlags::NSEventModifierFlagCommand;
+        flags |= NSEventModifierFlags::Command;
     }
     if modifiers.function {
-        flags |= NSEventModifierFlags::NSEventModifierFlagFunction;
+        flags |= NSEventModifierFlags::Function;
     }
     flags
 }

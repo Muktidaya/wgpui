@@ -15,21 +15,23 @@ pub struct WgpuContext {
     pub(super) mono_sprites_buffer: wgpu::Buffer,
     pub(super) poly_sprites_buffer: wgpu::Buffer,
     pub(super) color_adjustments_buffer: wgpu::Buffer,
+    pub(super) path_vertices_buffer: wgpu::Buffer,
+    pub(super) path_sprites_buffer: wgpu::Buffer,
 
     pub(crate) surface_registry: Arc<SurfaceRegistry>,
 }
 
 impl WgpuContext {
     pub fn new() -> anyhow::Result<Self> {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
-        });
+        let mut instance_descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
+        instance_descriptor.backends = wgpu::Backends::all();
+        let instance = wgpu::Instance::new(instance_descriptor);
 
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: None,
             force_fallback_adapter: false,
+            apply_limit_buckets: false,
         }))?;
 
         let (device, queue) =
@@ -51,7 +53,7 @@ impl WgpuContext {
         let quads_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Quads Buffer"),
             // TODO(mdeand): Determine appropriate size
-            size: 1024 * 1024, // 1 MB buffer for quads, for now. (:
+            size: 16 * 1024 * 1024,
             usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::STORAGE,
@@ -61,7 +63,7 @@ impl WgpuContext {
         let mono_sprites_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Monosprites Buffer"),
             // TODO(mdeand): Determine appropriate size, or make resizable.
-            size: 1024 * 1024,
+            size: 16 * 1024 * 1024,
             usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::STORAGE,
@@ -70,7 +72,7 @@ impl WgpuContext {
 
         let shadows_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Shadows Buffer"),
-            size: 1024 * 1024,
+            size: 16 * 1024 * 1024,
             usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::STORAGE,
@@ -79,7 +81,7 @@ impl WgpuContext {
 
         let underlines_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Underlines Buffer"),
-            size: 1024 * 1024,
+            size: 16 * 1024 * 1024,
             usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::STORAGE,
@@ -88,7 +90,7 @@ impl WgpuContext {
 
         let poly_sprites_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Poly Sprites Buffer"),
-            size: 1024 * 1024,
+            size: 16 * 1024 * 1024,
             usage: wgpu::BufferUsages::VERTEX
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::STORAGE,
@@ -101,6 +103,20 @@ impl WgpuContext {
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::UNIFORM,
+            mapped_at_creation: false,
+        });
+
+        let path_vertices_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Path Vertices Buffer"),
+            size: 16 * 1024 * 1024,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let path_sprites_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Path Sprites Buffer"),
+            size: 1024 * 1024,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -117,6 +133,8 @@ impl WgpuContext {
             mono_sprites_buffer,
             poly_sprites_buffer,
             color_adjustments_buffer,
+            path_vertices_buffer,
+            path_sprites_buffer,
 
             surface_registry: Arc::new(SurfaceRegistry::new()),
         })

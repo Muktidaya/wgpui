@@ -10,102 +10,31 @@ resolver = "3"
 
 [package]
 name = "wgpui"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2024"
-authors = ["Nathan Sobo <nathan@zed.dev>"]
-description = "A community fork of Zed's GPU-accelerated UI framework"
+authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
+description = "Independent wgpu + winit UI framework (community fork of GPUI / GPUI-CE 0.3.3)"
 repository = "https://github.com/muktidaya/wgpui"
 publish = true
 license = "Apache-2.0"
-homepage = "https://wgpui-ce.github.io/"
+homepage = "https://github.com/muktidaya/wgpui"
 readme = "README.md"
 keywords = ["desktop", "gui", "immediate"]
 categories = ["gui"]
 autoexamples = false
 
 [features]
-default = ["font-kit", "wayland", "x11", "windows-manifest"]
+default = ["font-kit", "windows-manifest"]
 test-support = [
     "leak-detection",
     "collections/test-support",
     "util/test-support",
     "http_client/test-support",
-    "wayland",
-    "x11",
 ]
-as-raw-xcb-connection = []
-ashpd = []
-bitflags = []
-blade-graphics = []
-blade-macros = []
-blade-util = []
-bytemuck = []
-calloop-wayland-source = []
-cosmic-text = []
-filedescriptor = []
 font-kit = []
 inspector = ["wgpui_derive/inspector"]
 leak-detection = ["backtrace"]
-macos-blade = [
-    "blade-graphics",
-    "blade-macros",
-    "blade-util",
-    "bytemuck",
-    "objc2",
-    "objc2-metal",
-]
-objc2 = []
-open = []
-runtime_shaders = []
-scap = []
-screen-capture = ["scap"]
-wayland = [
-    "bitflags",
-    "blade-graphics",
-    "blade-macros",
-    "blade-util",
-    "bytemuck",
-    "ashpd",
-    "cosmic-text",
-    "font-kit",
-    "calloop-wayland-source",
-    "wayland-backend",
-    "wayland-client",
-    "wayland-cursor",
-    "wayland-protocols",
-    "wayland-protocols-plasma",
-    "wayland-protocols-wlr",
-    "filedescriptor",
-    "xkbcommon",
-    "open",
-]
-wayland-backend = []
-wayland-client = []
-wayland-cursor = []
-wayland-protocols = []
-wayland-protocols-plasma = []
-wayland-protocols-wlr = []
 windows-manifest = []
-x11 = [
-    "blade-graphics",
-    "blade-macros",
-    "blade-util",
-    "bytemuck",
-    "ashpd",
-    "cosmic-text",
-    "font-kit",
-    "as-raw-xcb-connection",
-    "x11rb",
-    "xkbcommon",
-    "xim",
-    "x11-clipboard",
-    "filedescriptor",
-    "open",
-]
-x11-clipboard = []
-x11rb = []
-xim = []
-xkbcommon = []
 
 [lib]
 name = "wgpui"
@@ -114,6 +43,7 @@ doctest = false
 
 [dependencies]
 anyhow = "1.0.86"
+arboard = "3"
 async-channel = "2"
 async-task = "4.7"
 backtrace = { version = "0.3", optional = true }
@@ -121,35 +51,37 @@ bytemuck = { version = "1.24", features = ["derive"] }
 chrono = "0.4"
 circular-buffer = "1.0"
 collections = { package = "gpui_collections", version = "0.2.2" }
-cosmic-text = "0.18.2"
+cosmic-text = "0.19"
 ctor = "0.6.3"
 derive_more = { version = "2.1.1", features = ["full"] }
 etagere = "0.2"
 futures = "0.3"
 futures-concurrency = "7"
-wgpui_derive = { path = "./tooling/derive", version = "0.3.3", features = ["inspector"] }
+wgpui_derive = { path = "./tooling/derive", version = "0.3.4", features = ["inspector"] }
 http_client = { package = "gpui_http_client", version = "0.2.2" }
-image = "0.25.1"
+image = "0.25"
 inventory = "0.3.19"
 itertools = "0.14.0"
 libc = "0.2"
 log = { version = "0.4.16", features = ["kv_unstable_serde", "serde"] }
 lyon = "1.0"
 num_cpus = "1.13"
+open = "5"
 parking = "2.0.0"
 parking_lot = "0.12.1"
 pin-project = "1.1.10"
-pollster = "0.4.0"
+pollster = "1"
 postage = { version = "0.5", features = ["futures-traits"] }
 profiling = "1"
 rand = "0.10"
 raw-window-handle = "0.6"
 refineable = { package = "gpui_refineable", version = "0.2.2" }
-resvg = { version = "0.47.0", default-features = false, features = [
+resvg = { version = "0.48.1", default-features = false, features = [
     "text",
     "system-fonts",
     "memmap-fonts",
 ] }
+rfd = "0.15"
 schemars = { version = "1.0", features = ["indexmap2"] }
 seahash = "4.1"
 semver = { version = "1.0", features = ["serde"] }
@@ -162,46 +94,42 @@ spin = "0.10.0"
 stacksafe = "1.0"
 strum = { version = "0.28.0", features = ["derive"] }
 sum_tree = { package = "gpui_sum_tree", version = "0.2.2" }
-taffy = "=0.9.0"
+taffy = "0.13"
 thiserror = "2.0.12"
 util = { package = "gpui_util", version = "0.2.2" }
 util_macros = { package = "gpui_util_macros", version = "0.2.2" }
-usvg = { version = "0.47.0", default-features = false }
+usvg = { version = "0.48.1", default-features = false }
 uuid = { version = "1.1.2", features = ["v4", "v5", "v7", "serde"] }
 waker-fn = "1.2.0"
 web-time = "1"
-wgpu = "28"
-winit = "0.30.12"
+wgpu = "30"
+winit = "0.30.13"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block = "0.1"
-cocoa = "=0.26.0"
-cocoa-foundation = "=0.2.0"
-core-foundation = "=0.10.0"
+cocoa = "0.26"
+cocoa-foundation = "0.2"
+core-foundation = "0.10"
 core-foundation-sys = "0.8.6"
 core-graphics = "0.24"
-core-text = "21"
-core-video = { version = "0.4.3", features = ["metal"] }
 dispatch2 = "0.3.1"
 flume = "0.12"
 foreign-types = "0.5"
 mach2 = "0.5"
-metal = "0.29"
 objc = "0.2"
-objc2 = "0.5.2"
-objc2-app-kit = { version = "0.2.2", features = [
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", features = [
     "NSApplication",
     "NSCell",
     "NSMenu",
     "NSMenuItem",
     "NSEvent",
 ] }
-objc2-foundation = { version = "0.2.2", features = [
+objc2-foundation = { version = "0.3.2", features = [
     "NSProcessInfo",
     "NSString",
     "NSObject",
 ] }
-objc2-metal = { version = "0.3", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
 flume = "0.12"
@@ -212,9 +140,9 @@ oo7 = { version = "0.6", default-features = false, features = [
 swash = "0.2.6"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-core = "0.61"
+windows-core = "0.62"
 windows-numerics = "0.2"
-windows-registry = "0.5"
+windows-registry = "0.6"
 
 [dev-dependencies]
 backtrace = "0.3"
@@ -266,6 +194,10 @@ path = "examples/learn/text.rs"
 [[example]]
 name = "wgpu_surface"
 path = "examples/learn/wgpu_surface.rs"
+
+[[example]]
+name = "paths"
+path = "examples/learn/paths.rs"
 
 # ============================================================================
 # Bench Examples - Performance benchmarks

@@ -654,7 +654,6 @@ impl AtlasKey {
     #[cfg_attr(
         all(
             any(target_os = "linux", target_os = "freebsd"),
-            not(any(feature = "x11", feature = "wayland"))
         ),
         allow(dead_code)
     )]
@@ -747,7 +746,7 @@ pub(crate) struct AtlasTile {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub(crate) struct AtlasTextureId {
-    // We use u32 instead of usize for Metal Shader Language compatibility
+    // Packed as u32 so atlas ids stay shader-friendly on wgpu.
     pub(crate) index: u32,
     pub(crate) kind: AtlasTextureKind,
 }
@@ -757,7 +756,6 @@ pub(crate) struct AtlasTextureId {
 #[cfg_attr(
     all(
         any(target_os = "linux", target_os = "freebsd"),
-        not(any(feature = "x11", feature = "wayland"))
     ),
     allow(dead_code)
 )]
@@ -793,7 +791,7 @@ impl PlatformInputHandler {
         Self { cx, handler }
     }
 
-    fn selected_text_range(&mut self, ignore_disabled_input: bool) -> Option<UTF16Selection> {
+    pub(crate) fn selected_text_range(&mut self, ignore_disabled_input: bool) -> Option<UTF16Selection> {
         self.cx
             .update(|window, cx| {
                 self.handler
@@ -824,7 +822,7 @@ impl PlatformInputHandler {
             .flatten()
     }
 
-    fn replace_text_in_range(&mut self, replacement_range: Option<Range<usize>>, text: &str) {
+    pub(crate) fn replace_text_in_range(&mut self, replacement_range: Option<Range<usize>>, text: &str) {
         self.cx
             .update(|window, cx| {
                 self.handler
@@ -852,13 +850,13 @@ impl PlatformInputHandler {
             .ok();
     }
 
-    fn unmark_text(&mut self) {
+    pub(crate) fn unmark_text(&mut self) {
         self.cx
             .update(|window, cx| self.handler.unmark_text(window, cx))
             .ok();
     }
 
-    fn bounds_for_range(&mut self, range_utf16: Range<usize>) -> Option<Bounds<Pixels>> {
+    pub(crate) fn bounds_for_range(&mut self, range_utf16: Range<usize>) -> Option<Bounds<Pixels>> {
         self.cx
             .update(|window, cx| self.handler.bounds_for_range(range_utf16, window, cx))
             .ok()
@@ -913,8 +911,8 @@ pub struct UTF16Selection {
     pub reversed: bool,
 }
 
-/// Zed's interface for handling text input from the platform's IME system
-/// This is currently a 1:1 exposure of the NSTextInputClient API:
+/// WGPUI's interface for handling text input from the platform IME system.
+/// The method set is modeled on AppKit's NSTextInputClient:
 ///
 /// <https://developer.apple.com/documentation/appkit/nstextinputclient>
 pub trait InputHandler: 'static {
@@ -1056,8 +1054,8 @@ pub struct WindowOptions {
     /// Window minimum size
     pub window_min_size: Option<Size<Pixels>>,
 
-    /// Whether to use client or server side decorations. Wayland only
-    /// Note that this may be ignored.
+    /// Whether to use client or server side decorations.
+    /// Honored where the compositor exposes the choice; otherwise ignored.
     pub window_decorations: Option<WindowDecorations>,
 
     /// Tab group name, allows opening the window as a native tab on macOS 10.12+. Windows with the same tabbing identifier will be grouped together.

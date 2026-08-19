@@ -207,7 +207,7 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
                                 let pipeline_layout =
                                     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                                         label: Some("CubePipelineLayout"),
-                                        bind_group_layouts: &[&bind_group_layout],
+                                        bind_group_layouts: &[Some(&bind_group_layout)],
                                         immediate_size: 0,
                                     });
                                 let pipeline =
@@ -217,7 +217,7 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
                                         vertex: wgpu::VertexState {
                                             module: &shader,
                                             entry_point: Some("vs_main"),
-                                            buffers: &[wgpu::VertexBufferLayout {
+                                            buffers: &[Some(wgpu::VertexBufferLayout {
                                                 array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
                                                 step_mode: wgpu::VertexStepMode::Vertex,
                                                 attributes: &[
@@ -237,7 +237,7 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
                                                         shader_location: 2,
                                                     },
                                                 ],
-                                            }],
+                                            })],
                                             compilation_options: wgpu::PipelineCompilationOptions::default(),
                                         },
                                         fragment: Some(wgpu::FragmentState {
@@ -256,8 +256,8 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
                                         },
                                         depth_stencil: Some(wgpu::DepthStencilState {
                                             format: wgpu::TextureFormat::Depth24Plus,
-                                            depth_write_enabled: true,
-                                            depth_compare: wgpu::CompareFunction::Less,
+                                            depth_write_enabled: Some(true),
+                                            depth_compare: Some(wgpu::CompareFunction::Less),
                                             stencil: wgpu::StencilState::default(),
                                             bias: wgpu::DepthBiasState::default(),
                                         }),

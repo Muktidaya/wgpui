@@ -1,6 +1,6 @@
 use crate::{
-    Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow, Point, Size,
-    WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
+    AnyWindowHandle, Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow,
+    Point, Size, WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
     platform::{
         atlas::WgpuAtlas, dispatcher::CrossEvent, render_context::WgpuContext,
         renderer::WgpuRenderer,
@@ -22,6 +22,8 @@ pub(crate) struct CrossWindowInner {
     pub(crate) wgpu_context: Arc<WgpuContext>,
     pub(crate) sprite_atlas: Arc<WgpuAtlas>,
     pub(crate) event_loop_proxy: EventLoopProxy<CrossEvent>,
+    pub(crate) handle: AnyWindowHandle,
+    pub(crate) hovered: Cell<bool>,
     pub(crate) state: CrossWindowState,
 }
 
@@ -67,6 +69,7 @@ impl CrossWindow {
     pub(crate) fn new(
         wgpu_context: Arc<WgpuContext>,
         event_loop_proxy: EventLoopProxy<CrossEvent>,
+        handle: AnyWindowHandle,
     ) -> Self {
         let sprite_atlas = Arc::new(WgpuAtlas::new(wgpu_context.clone()));
 
@@ -76,8 +79,26 @@ impl CrossWindow {
             renderer: OnceCell::new(),
             sprite_atlas,
             event_loop_proxy,
+            handle,
+            hovered: Cell::new(false),
             state: CrossWindowState::default(),
         }))
+    }
+
+    pub(crate) fn handle(&self) -> crate::AnyWindowHandle {
+        self.0.handle
+    }
+
+    pub(crate) fn set_hovered(&self, hovered: bool) {
+        let was_hovered = self.0.hovered.replace(hovered);
+        if was_hovered != hovered {
+            self.0
+                .state
+                .callbacks
+                .invoke_mut(&self.0.state.callbacks.on_hover_status_change, |callback| {
+                    callback(hovered);
+                });
+        }
     }
 
     pub(crate) fn initialize(&self, winit_window: winit::window::Window) {
@@ -179,14 +200,13 @@ impl PlatformWindow for CrossWindow {
         match self.window().theme() {
             Some(winit::window::Theme::Light) => WindowAppearance::Light,
             Some(winit::window::Theme::Dark) => WindowAppearance::Dark,
-            // TODO(mdeand): Non-optimal catch-all.
             None => WindowAppearance::default(),
         }
     }
 
     fn display(&self) -> Option<std::rc::Rc<dyn crate::PlatformDisplay>> {
-        // TODO(mdeand): Add support for querying the display.
-        None
+        let monitor = self.window().current_monitor()?;
+        Some(crate::platform::platform::display_for_winit_monitor(&monitor))
     }
 
     fn mouse_position(&self) -> Point<Pixels> {
@@ -232,8 +252,7 @@ impl PlatformWindow for CrossWindow {
     }
 
     fn is_hovered(&self) -> bool {
-        // TODO(mdeand): Add support for tracking hover status.
-        false
+        self.0.hovered.get()
     }
 
     fn set_title(&mut self, title: &str) {
@@ -241,7 +260,7 @@ impl PlatformWindow for CrossWindow {
     }
 
     fn set_background_appearance(&self, _background_appearance: WindowBackgroundAppearance) {
-        // TODO(mdeand): Add support for setting the background appearance.
+        // Window chrome transparency is not implemented in 0.3.4.
     }
 
     fn minimize(&self) {
@@ -369,11 +388,22 @@ impl PlatformWindow for CrossWindow {
     }
 
     fn gpu_specs(&self) -> Option<crate::GpuSpecs> {
-        // TODO(mdeand): Retrieve GPU specs from the graphics context.
-        None
+        self.0
+            .renderer
+            .get()
+            .map(|renderer| renderer.borrow().gpu_specs())
     }
 
-    fn update_ime_position(&self, _bounds: crate::Bounds<crate::Pixels>) {}
+    fn update_ime_position(&self, bounds: crate::Bounds<crate::Pixels>) {
+        let window = self.window();
+        window.set_ime_cursor_area(
+            winit::dpi::LogicalPosition::new(bounds.origin.x.0 as f64, bounds.origin.y.0 as f64),
+            winit::dpi::LogicalSize::new(
+                bounds.size.width.0 as f64,
+                bounds.size.height.0 as f64,
+            ),
+        );
+    }
 }
 
 impl raw_window_handle::HasDisplayHandle for CrossWindow {

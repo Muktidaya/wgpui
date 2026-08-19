@@ -28,7 +28,7 @@
 
 # WGPUI
 
-WGPUI is a UI framework which also provides primitives for state and concurrency management.
+WGPUI is an independent GPU UI framework for Rust. It keeps a GPUI-shaped programming model (`App`, `Entity`, `Window`, flexbox `div`s, actions) and renders through a unified **wgpu + winit** backend. The discriminating API is `WgpuSurface` in the element tree. It is not a drop-in for GPUI-CE git main or Zed GPUI.
 
 ## Context
 
@@ -123,9 +123,9 @@ When a view's state has changed in a way that may affect its rendering, it shoul
 
 ## Entity events
 
-While updating an entity (`cx: Context<T>`), it can emit an event using `cx.emit(event)`. Entities register which events they can emit by declaring `impl EventEmittor<EventType> for EntityType {}`.
+While updating an entity (`cx: Context<T>`), it can emit an event using `cx.emit(event)`. Entities register which events they can emit by declaring `impl EventEmitter<EventType> for EntityType {}`.
 
-Other entities can then register a callback to handle these events by doing `cx.subscribe(other_entity, |this, other_entity, event, cx| ...)`. This will return a `Subscription` which deregisters the callback when dropped.  Typically `cx.subscribe` happens when creating a new entity and the subscriptions are stored in a `_subscriptions: Vec<Subscription>` field.
+Other entities can then register a callback to handle these events by doing `cx.subscribe(other_entity, |this, other_entity, event, cx| ...)`. This will return a `Subscription` which deregisters the callback when dropped. Typically `cx.subscribe` happens when creating a new entity and the subscriptions are stored in a `_subscriptions: Vec<Subscription>` field.
 
 ## Recent API changes
 
@@ -140,4 +140,4 @@ WGPUI has had some changes to its APIs. Always write code using the new APIs:
 
 ## General guidelines
 
-- Use `./script/clippy` instead of `cargo clippy`
+- Use `./scripts/clippy` instead of `cargo clippy`

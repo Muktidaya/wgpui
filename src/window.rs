@@ -59,8 +59,8 @@ pub use prompts::*;
 
 pub(crate) const DEFAULT_WINDOW_SIZE: Size<Pixels> = size(px(1536.), px(864.));
 
-/// A 6:5 aspect ratio minimum window size to be used for functional,
-/// additional-to-main-Zed windows, like the settings and rules library windows.
+/// A 6:5 aspect ratio minimum window size for auxiliary windows
+/// (settings, inspectors, and similar).
 pub const DEFAULT_ADDITIONAL_WINDOW_SIZE: Size<Pixels> = Size {
     width: Pixels(900.),
     height: Pixels(750.),
@@ -4728,7 +4728,8 @@ impl Window {
                 }
             });
         } else if let Some(event) = event.downcast_ref::<crate::ScrollWheelEvent>() {
-            // This should be kept in sync with SCROLL_LINES in x11 platform.
+            // Line-delta scrolling uses a conventional 3 lines per notch
+            // (same constant historically used on Linux X11 backends).
             const SCROLL_LINES: f32 = 3.0;
             const SCROLL_PIXELS_PER_LAYER: f32 = 36.0;
             let delta_y = event

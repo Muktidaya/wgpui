@@ -1,9 +1,10 @@
 use crate::{
-    BackgroundExecutor, Capslock, DevicePixels, DummyKeyboardMapper, ForegroundExecutor,
-    KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, ModifiersChangedEvent, MouseButton,
-    MouseDownEvent, MouseExitEvent, MouseMoveEvent, MouseUpEvent, OwnedMenu, Pixels, Platform,
-    PlatformInput, PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent,
-    Size,
+    BackgroundExecutor, Bounds, Capslock, DevicePixels, DisplayId, DummyKeyboardMapper,
+    ExternalPaths, FileDropEvent, ForegroundExecutor, KeyDownEvent, KeyUpEvent, Keystroke,
+    Modifiers, ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseExitEvent, MouseMoveEvent,
+    MouseUpEvent, OwnedMenu, Pixels, Platform, PlatformDisplay, PlatformInput,
+    PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent, Size, point, px,
+    size,
     platform::{
         dispatcher::{CrossEvent, Dispatcher},
         keyboard::CrossKeyboardLayout,
@@ -11,7 +12,6 @@ use crate::{
         text_system::CosmicTextSystem,
         window::CrossWindow,
     },
-    point,
 };
 use anyhow::Result;
 use collections::FxHashMap;
@@ -53,6 +53,7 @@ pub(crate) struct CrossPlatform {
     event_loop: Cell<Option<winit::event_loop::EventLoop<CrossEvent>>>,
     event_loop_proxy: winit::event_loop::EventLoopProxy<CrossEvent>,
     callbacks: PlatformCallbacks,
+    displays: RefCell<Vec<Rc<dyn crate::PlatformDisplay>>>,
     menus: RefCell<Option<Vec<OwnedMenu>>>,
 }
 
@@ -73,6 +74,7 @@ struct AppState {
     current_modifiers: Modifiers,
     pressed_button: Option<MouseButton>,
     click_state: ClickState,
+    hover_paths: Vec<std::path::PathBuf>,
 }
 
 struct ClickState {
@@ -102,6 +104,7 @@ impl CrossPlatform {
             event_loop: Cell::new(Some(event_loop)),
             event_loop_proxy,
             callbacks: PlatformCallbacks::default(),
+            displays: RefCell::new(Vec::new()),
             menus: RefCell::new(None),
         })
     }
@@ -176,6 +179,7 @@ impl Platform for CrossPlatform {
                 last_time: None,
                 current_count: 0,
             },
+            hover_paths: Vec::new(),
         };
 
         ACTIVE_PLATFORM.with(|platform| platform.set(Some(self as *const CrossPlatform)));
@@ -195,44 +199,52 @@ impl Platform for CrossPlatform {
     }
 
     fn restart(&self, _binary_path: Option<std::path::PathBuf>) {
-        log::warn!("restart is not yet implemented on this platform");
+        log::warn!("restart is not implemented in WGPUI 0.3.4");
     }
 
     fn activate(&self, _ignoring_other_apps: bool) {}
 
     fn hide(&self) {
-        log::warn!("hide is not yet implemented on this platform");
+        log::warn!("hide is not implemented in WGPUI 0.3.4");
     }
 
     fn hide_other_apps(&self) {
-        log::warn!("hide_other_apps is not yet implemented on this platform");
+        log::warn!("hide_other_apps is not implemented in WGPUI 0.3.4");
     }
 
     fn unhide_other_apps(&self) {
-        log::warn!("unhide_other_apps is not yet implemented on this platform");
+        log::warn!("unhide_other_apps is not implemented in WGPUI 0.3.4");
     }
 
     fn displays(&self) -> Vec<Rc<dyn crate::PlatformDisplay>> {
-        // TODO(mdeand): Add support for multiple displays.
-        vec![]
+        self.displays.borrow().clone()
     }
 
     fn primary_display(&self) -> Option<Rc<dyn crate::PlatformDisplay>> {
-        // TODO(mdeand): Add support for multiple displays and primary display.
-        None
+        self.displays.borrow().first().cloned()
     }
 
     fn active_window(&self) -> Option<crate::AnyWindowHandle> {
-        // TODO(mdeand): Add support for tracking active window.
-        None
+        with_active_context(|_, app_state| {
+            app_state
+                .windows
+                .values()
+                .find(|window| window.window().has_focus())
+                .map(|window| window.handle())
+        })
+        .flatten()
     }
 
     fn open_window(
         &self,
-        _handle: crate::AnyWindowHandle,
+        handle: crate::AnyWindowHandle,
         options: crate::WindowParams,
     ) -> anyhow::Result<Box<dyn crate::PlatformWindow>> {
-        let window = CrossWindow::new(self.wgpu_context.clone(), self.event_loop_proxy.clone());
+        let window = CrossWindow::new(
+            self.wgpu_context.clone(),
+            self.event_loop_proxy.clone(),
+            handle,
+        );
 
         let success = with_active_context(|event_loop, app_state| {
             let bounds = options.bounds;
@@ -252,6 +264,7 @@ impl Platform for CrossPlatform {
             let winit_window = event_loop
                 .create_window(attributes)
                 .expect("Failed to create window");
+            winit_window.set_ime_allowed(true);
             let window_id = winit_window.id();
 
             window.initialize(winit_window);
@@ -271,8 +284,15 @@ impl Platform for CrossPlatform {
         crate::WindowAppearance::default()
     }
 
-    fn open_url(&self, _url: &str) {
-        log::warn!("open_url is not yet implemented on this platform");
+    fn open_url(&self, url: &str) {
+        let url = url.to_string();
+        self.background_executor
+            .spawn(async move {
+                if let Err(error) = open::that(&url) {
+                    log::warn!("open_url failed: {error}");
+                }
+            })
+            .detach();
     }
 
     fn on_open_urls(&self, callback: Box<dyn FnMut(Vec<String>)>) {
@@ -281,26 +301,59 @@ impl Platform for CrossPlatform {
 
     fn register_url_scheme(&self, _url: &str) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "register_url_scheme is not yet implemented on this platform"
+            "register_url_scheme is not implemented in WGPUI 0.3.4"
         )))
     }
 
     fn prompt_for_paths(
         &self,
-        _options: crate::PathPromptOptions,
+        options: crate::PathPromptOptions,
     ) -> futures::channel::oneshot::Receiver<anyhow::Result<Option<Vec<std::path::PathBuf>>>> {
         let (sender, receiver) = futures::channel::oneshot::channel();
-        let _ = sender.send(Ok(None));
+        let files = options.files;
+        let directories = options.directories;
+        let multiple = options.multiple;
+        let prompt = options.prompt;
+        self.foreground_executor
+            .spawn(async move {
+                let mut dialog = rfd::FileDialog::new();
+                if let Some(prompt) = prompt {
+                    dialog = dialog.set_title(prompt.to_string());
+                }
+                let paths = if directories && !files {
+                    if multiple {
+                        dialog.pick_folders()
+                    } else {
+                        dialog.pick_folder().map(|path| vec![path])
+                    }
+                } else if multiple {
+                    dialog.pick_files()
+                } else {
+                    dialog.pick_file().map(|path| vec![path])
+                };
+                let _ = sender.send(Ok(paths));
+            })
+            .detach();
         receiver
     }
 
     fn prompt_for_new_path(
         &self,
-        _directory: &std::path::Path,
-        _suggested_name: Option<&str>,
+        directory: &std::path::Path,
+        suggested_name: Option<&str>,
     ) -> futures::channel::oneshot::Receiver<anyhow::Result<Option<std::path::PathBuf>>> {
         let (sender, receiver) = futures::channel::oneshot::channel();
-        let _ = sender.send(Ok(None));
+        let directory = directory.to_path_buf();
+        let suggested_name = suggested_name.map(str::to_string);
+        self.foreground_executor
+            .spawn(async move {
+                let mut dialog = rfd::FileDialog::new().set_directory(&directory);
+                if let Some(name) = suggested_name {
+                    dialog = dialog.set_file_name(name);
+                }
+                let _ = sender.send(Ok(dialog.save_file()));
+            })
+            .detach();
         receiver
     }
 
@@ -308,12 +361,42 @@ impl Platform for CrossPlatform {
         false
     }
 
-    fn reveal_path(&self, _path: &std::path::Path) {
-        log::warn!("reveal_path is not yet implemented on this platform");
+    fn reveal_path(&self, path: &std::path::Path) {
+        let path = path.to_path_buf();
+        self.background_executor
+            .spawn(async move {
+                #[cfg(target_os = "macos")]
+                {
+                    if let Err(error) = smol::process::Command::new("open")
+                        .arg("-R")
+                        .arg(&path)
+                        .status()
+                        .await
+                    {
+                        log::warn!("reveal_path failed: {error}");
+                    }
+                    return;
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    let parent = path.parent().unwrap_or(&path);
+                    if let Err(error) = open::that(parent) {
+                        log::warn!("reveal_path failed: {error}");
+                    }
+                }
+            })
+            .detach();
     }
 
-    fn open_with_system(&self, _path: &std::path::Path) {
-        log::warn!("open_with_system is not yet implemented on this platform");
+    fn open_with_system(&self, path: &std::path::Path) {
+        let path = path.to_path_buf();
+        self.background_executor
+            .spawn(async move {
+                if let Err(error) = open::that(&path) {
+                    log::warn!("open_with_system failed: {error}");
+                }
+            })
+            .detach();
     }
 
     fn on_quit(&self, callback: Box<dyn FnMut()>) {
@@ -338,7 +421,9 @@ impl Platform for CrossPlatform {
         self.menus.borrow().clone()
     }
 
-    fn set_dock_menu(&self, _menu: Vec<crate::MenuItem>, _keymap: &crate::Keymap) {}
+    fn set_dock_menu(&self, _menu: Vec<crate::MenuItem>, _keymap: &crate::Keymap) {
+        log::warn!("set_dock_menu is not implemented in WGPUI 0.3.4");
+    }
 
     fn on_app_menu_action(&self, callback: Box<dyn FnMut(&dyn crate::Action)>) {
         self.callbacks.on_app_menu_action.set(Some(callback));
@@ -360,23 +445,46 @@ impl Platform for CrossPlatform {
 
     fn path_for_auxiliary_executable(&self, _name: &str) -> anyhow::Result<std::path::PathBuf> {
         Err(anyhow::anyhow!(
-            "path_for_auxiliary_executable is not yet implemented on this platform"
+            "path_for_auxiliary_executable is not implemented in WGPUI 0.3.4"
         ))
     }
 
-    fn set_cursor_style(&self, _style: crate::CursorStyle) {}
+    fn set_cursor_style(&self, style: crate::CursorStyle) {
+        with_active_context(|_, app_state| {
+            let Some(window) = app_state
+                .windows
+                .values()
+                .find(|window| window.window().has_focus())
+            else {
+                return;
+            };
+            let winit_window = window.window();
+            winit_window.set_cursor_visible(style != crate::CursorStyle::None);
+            winit_window.set_cursor(cursor_icon(style));
+        });
+    }
 
     fn should_auto_hide_scrollbars(&self) -> bool {
-        // TODO(mdeand): How do we want to implement this? For now, just return false.
         false
     }
 
-    fn write_to_clipboard(&self, _item: crate::ClipboardItem) {
-        log::warn!("write_to_clipboard is not yet implemented on this platform");
+    fn write_to_clipboard(&self, item: crate::ClipboardItem) {
+        let Some(text) = item.text() else {
+            log::warn!("clipboard write skipped: no text entries");
+            return;
+        };
+        match arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(text)) {
+            Ok(()) => {}
+            Err(error) => log::warn!("write_to_clipboard failed: {error}"),
+        }
     }
 
     fn read_from_clipboard(&self) -> Option<crate::ClipboardItem> {
-        None
+        arboard::Clipboard::new()
+            .ok()?
+            .get_text()
+            .ok()
+            .map(crate::ClipboardItem::new_string)
     }
 
     fn write_credentials(
@@ -386,7 +494,7 @@ impl Platform for CrossPlatform {
         _password: &[u8],
     ) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "write_credentials is not yet implemented on this platform"
+            "write_credentials is not implemented in WGPUI 0.3.4"
         )))
     }
 
@@ -395,13 +503,13 @@ impl Platform for CrossPlatform {
         _url: &str,
     ) -> crate::Task<anyhow::Result<Option<(String, Vec<u8>)>>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "read_credentials is not yet implemented on this platform"
+            "read_credentials is not implemented in WGPUI 0.3.4"
         )))
     }
 
     fn delete_credentials(&self, _url: &str) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "delete_credentials is not yet implemented on this platform"
+            "delete_credentials is not implemented in WGPUI 0.3.4"
         )))
     }
 
@@ -414,7 +522,7 @@ impl Platform for CrossPlatform {
     }
 
     fn on_keyboard_layout_change(&self, _callback: Box<dyn FnMut()>) {
-        // TODO(mdeand): Is this possible to implement in a cross-platform way?
+        // Keyboard layout change notifications are not wired in 0.3.4.
     }
 }
 
@@ -469,6 +577,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         self.set_active_context(event_loop);
 
         self.drain_main_queue();
+        refresh_displays(event_loop);
 
         // Do NOT unconditionally request_redraw() here. Rendering is driven
         // by three sources:
@@ -500,6 +609,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         if let Some(on_finish_launching) = self.on_finish_launching.take() {
             on_finish_launching();
         }
+        refresh_displays(event_loop);
 
         self.clear_active_context();
     }
@@ -683,6 +793,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                 );
 
                 window.0.state.mouse_position.set(position);
+                window.set_hovered(true);
 
                 let platform_event = PlatformInput::MouseMove(MouseMoveEvent {
                     position,
@@ -700,6 +811,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
             }
 
             winit::event::WindowEvent::CursorLeft { .. } => {
+                window.set_hovered(false);
                 let position = window.0.state.mouse_position.get();
                 let platform_event = PlatformInput::MouseExited(MouseExitEvent {
                     position,
@@ -803,6 +915,47 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .invoke_mut(&window.0.state.callbacks.on_input, |cb| {
                         cb(platform_event.clone());
                     });
+            }
+
+            winit::event::WindowEvent::Ime(ime) => {
+                handle_ime(&window, ime);
+            }
+
+            winit::event::WindowEvent::DroppedFile(path) => {
+                self.hover_paths.push(path);
+                let position = window.0.state.mouse_position.get();
+                let paths = ExternalPaths(self.hover_paths.drain(..).collect());
+                dispatch_input(
+                    &window,
+                    PlatformInput::FileDrop(FileDropEvent::Entered { position, paths }),
+                );
+                dispatch_input(
+                    &window,
+                    PlatformInput::FileDrop(FileDropEvent::Submit { position }),
+                );
+            }
+
+            winit::event::WindowEvent::HoveredFile(path) => {
+                let position = window.0.state.mouse_position.get();
+                let first = self.hover_paths.is_empty();
+                self.hover_paths.push(path);
+                if first {
+                    let paths = ExternalPaths(self.hover_paths.iter().cloned().collect());
+                    dispatch_input(
+                        &window,
+                        PlatformInput::FileDrop(FileDropEvent::Entered { position, paths }),
+                    );
+                } else {
+                    dispatch_input(
+                        &window,
+                        PlatformInput::FileDrop(FileDropEvent::Pending { position }),
+                    );
+                }
+            }
+
+            winit::event::WindowEvent::HoveredFileCancelled => {
+                self.hover_paths.clear();
+                dispatch_input(&window, PlatformInput::FileDrop(FileDropEvent::Exited));
             }
 
             _ => (),
@@ -955,4 +1108,155 @@ fn winit_key_to_keystroke(
         key,
         key_char,
     })
+}
+
+fn refresh_displays(event_loop: &ActiveEventLoop) {
+    with_active_platform(|platform| {
+        let displays = event_loop
+            .available_monitors()
+            .enumerate()
+            .map(|(index, monitor)| {
+                Rc::new(WinitDisplay::from_monitor(index as u32, &monitor))
+                    as Rc<dyn PlatformDisplay>
+            })
+            .collect();
+        *platform.displays.borrow_mut() = displays;
+    });
+}
+
+fn dispatch_input(window: &CrossWindow, event: PlatformInput) {
+    window
+        .0
+        .state
+        .callbacks
+        .invoke_mut(&window.0.state.callbacks.on_input, |callback| {
+            callback(event.clone());
+        });
+}
+
+fn handle_ime(window: &CrossWindow, ime: winit::event::Ime) {
+    let mut input_handler = window.0.state.input_handler.borrow_mut();
+    let Some(handler) = input_handler.as_mut() else {
+        return;
+    };
+    match ime {
+        winit::event::Ime::Enabled => {}
+        winit::event::Ime::Preedit(text, cursor) => {
+            if text.is_empty() {
+                handler.unmark_text();
+            } else {
+                let selected = cursor.map(|(start, end)| {
+                    byte_offset_to_utf16(&text, start)..byte_offset_to_utf16(&text, end)
+                });
+                handler.replace_and_mark_text_in_range(None, &text, selected);
+            }
+        }
+        winit::event::Ime::Commit(text) => {
+            handler.replace_text_in_range(None, &text);
+            handler.unmark_text();
+        }
+        winit::event::Ime::Disabled => {
+            handler.unmark_text();
+        }
+    }
+}
+
+fn byte_offset_to_utf16(text: &str, byte: usize) -> usize {
+    text.get(..byte.min(text.len()))
+        .map(|prefix| prefix.encode_utf16().count())
+        .unwrap_or_else(|| text.encode_utf16().count())
+}
+
+fn cursor_icon(style: crate::CursorStyle) -> winit::window::CursorIcon {
+    use crate::CursorStyle;
+    use winit::window::CursorIcon;
+    match style {
+        CursorStyle::Arrow => CursorIcon::Default,
+        CursorStyle::IBeam => CursorIcon::Text,
+        CursorStyle::Crosshair => CursorIcon::Crosshair,
+        CursorStyle::ClosedHand => CursorIcon::Grabbing,
+        CursorStyle::OpenHand => CursorIcon::Grab,
+        CursorStyle::PointingHand => CursorIcon::Pointer,
+        CursorStyle::ResizeLeft => CursorIcon::WResize,
+        CursorStyle::ResizeRight => CursorIcon::EResize,
+        CursorStyle::ResizeLeftRight => CursorIcon::EwResize,
+        CursorStyle::ResizeUp => CursorIcon::NResize,
+        CursorStyle::ResizeDown => CursorIcon::SResize,
+        CursorStyle::ResizeUpDown => CursorIcon::NsResize,
+        CursorStyle::ResizeUpLeftDownRight => CursorIcon::NeswResize,
+        CursorStyle::ResizeUpRightDownLeft => CursorIcon::NwseResize,
+        CursorStyle::ResizeColumn => CursorIcon::ColResize,
+        CursorStyle::ResizeRow => CursorIcon::RowResize,
+        CursorStyle::IBeamCursorForVerticalLayout => CursorIcon::VerticalText,
+        CursorStyle::OperationNotAllowed => CursorIcon::NotAllowed,
+        CursorStyle::DragLink => CursorIcon::Alias,
+        CursorStyle::DragCopy => CursorIcon::Copy,
+        CursorStyle::ContextualMenu => CursorIcon::ContextMenu,
+        CursorStyle::None => CursorIcon::Default,
+    }
+}
+
+#[derive(Debug)]
+struct WinitDisplay {
+    id: DisplayId,
+    uuid: uuid::Uuid,
+    bounds: Bounds<Pixels>,
+}
+
+impl WinitDisplay {
+    fn from_monitor(index: u32, monitor: &winit::monitor::MonitorHandle) -> Self {
+        let scale = monitor.scale_factor() as f32;
+        let position = monitor.position();
+        let physical = monitor.size();
+        let origin = point(
+            px(position.x as f32 / scale),
+            px(position.y as f32 / scale),
+        );
+        let bounds_size = size(
+            px(physical.width as f32 / scale),
+            px(physical.height as f32 / scale),
+        );
+        let name = monitor
+            .name()
+            .unwrap_or_else(|| "unnamed-display".into());
+        let uuid = uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, name.as_bytes());
+        Self {
+            id: DisplayId(index),
+            uuid,
+            bounds: Bounds::new(origin, bounds_size),
+        }
+    }
+}
+
+pub(crate) fn display_for_winit_monitor(
+    monitor: &winit::monitor::MonitorHandle,
+) -> Rc<dyn PlatformDisplay> {
+    let name = monitor
+        .name()
+        .unwrap_or_else(|| "unnamed-display".into());
+    let uuid = uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, name.as_bytes());
+    with_active_platform(|platform| {
+        platform
+            .displays
+            .borrow()
+            .iter()
+            .find(|display| display.uuid().ok() == Some(uuid))
+            .cloned()
+    })
+    .flatten()
+    .unwrap_or_else(|| Rc::new(WinitDisplay::from_monitor(0, monitor)))
+}
+
+impl PlatformDisplay for WinitDisplay {
+    fn id(&self) -> DisplayId {
+        self.id
+    }
+
+    fn uuid(&self) -> anyhow::Result<uuid::Uuid> {
+        Ok(self.uuid)
+    }
+
+    fn bounds(&self) -> Bounds<Pixels> {
+        self.bounds
+    }
 }

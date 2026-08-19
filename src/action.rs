@@ -19,7 +19,7 @@ pub use wgpui_derive::Action;
 ///
 /// This will create actions with names like `editor::MoveUp`, `editor::MoveDown`, etc.
 ///
-/// The namespace argument `editor` can also be omitted, though it is required for Zed actions.
+/// The namespace argument `editor` can also be omitted.
 #[macro_export]
 macro_rules! actions {
     ($namespace:path, [ $( $(#[$attr:meta])* $name:ident),* $(,)? ]) => {
@@ -67,11 +67,11 @@ macro_rules! actions {
 ///
 /// The derive macro for `Action` requires that the type implement `Clone` and `PartialEq`. It also
 /// requires `serde::Deserialize` and `schemars::JsonSchema` unless `#[action(no_json)]` is
-/// specified. In Zed these trait impls are used to load keymaps from JSON.
+/// specified. Those impls are used when loading keymaps from JSON.
 ///
 /// Multiple arguments separated by commas may be specified in `#[action(...)]`:
 ///
-/// - `namespace = some_namespace` sets the namespace. In Zed this is required.
+/// - `namespace = some_namespace` sets the namespace.
 ///
 /// - `name = "ActionName"` overrides the action's name. This must not contain `::`.
 ///
@@ -83,11 +83,11 @@ macro_rules! actions {
 ///
 /// - `deprecated_aliases = ["editor::SomeAction"]` specifies deprecated old names for the action.
 ///   These action names should *not* correspond to any actions that are registered. These old names
-///   can then still be used to refer to invoke this action. In Zed, the keymap JSON schema will
+///   can then still be used to refer to invoke this action. Keymap JSON schemas can
 ///   accept these old names and provide warnings.
 ///
 /// - `deprecated = "Message about why this action is deprecation"` specifies a deprecation message.
-///   In Zed, the keymap JSON schema will cause this to be displayed as a warning.
+///   Keymap JSON schemas can display this as a warning.
 ///
 /// # Manual Implementation
 ///
@@ -144,7 +144,7 @@ pub trait Action: Any + Send {
     }
 
     /// A list of alternate, deprecated names for this action. These names can still be used to
-    /// invoke the action. In Zed, the keymap JSON schema will accept these old names and provide
+    /// invoke the action. Keymap JSON schemas can accept these old names and provide
     /// warnings.
     fn deprecated_aliases() -> &'static [&'static str]
     where
@@ -153,8 +153,8 @@ pub trait Action: Any + Send {
         &[]
     }
 
-    /// Returns the deprecation message for this action, if any. In Zed, the keymap JSON schema will
-    /// cause this to be displayed as a warning.
+    /// Returns the deprecation message for this action, if any. Keymap JSON schemas can
+    /// display this as a warning.
     fn deprecation_message() -> Option<&'static str>
     where
         Self: Sized,
@@ -187,8 +187,8 @@ impl dyn Action {
     }
 }
 
-/// Error type for `Keystroke::parse`. This is used instead of `anyhow::Error` so that Zed can use
-/// markdown to display it.
+/// Error type for `Keystroke::parse`. This is used instead of `anyhow::Error` so that
+/// markdown can be used to display it.
 #[derive(Debug)]
 pub enum ActionBuildError {
     /// Indicates that an action with this name has not been registered.
