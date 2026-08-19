@@ -8,7 +8,7 @@ WGPUI is a **wgpu + winit** UI framework with a GPUI-shaped programming model. D
 
 ## Current state
 
-**0.3.4 is implemented in-tree.** Publish to crates.io is the remaining release step when requested.
+**0.3.4 is published** on crates.io (`wgpui` and `wgpui_derive`). Git: `root` at `5e94b544ff`.
 
 Pins: wgpu 30, winit 0.30.13, taffy 0.13, cosmic-text 0.19. Path GPU pass, clipboard/cursor/dialogs/open/IME/file-drop/displays are wired. `WgpuSurface` remains the 3D/CAD child. Public docs and rustdocs describe WGPUI as an independent wgpu+winit crate, not a CE/Zed drop-in.
 
