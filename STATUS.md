@@ -1,6 +1,6 @@
 # WGPUI status
 
-Updated: 2026-08-19
+Updated: 2026-08-21
 
 ## Goal
 
@@ -12,7 +12,12 @@ WGPUI is a **wgpu + winit** UI framework with a GPUI-shaped programming model. D
 
 Pins: wgpu 30, winit 0.30.13, taffy 0.13, cosmic-text 0.19. Path GPU pass, clipboard/cursor/dialogs/open/IME/file-drop/displays are wired. `WgpuSurface` remains the 3D/CAD child. Public docs and rustdocs describe WGPUI as an independent wgpu+winit crate, not a CE/Zed drop-in.
 
-Verify: `cargo test --lib` (85 passed). Clippy: `./scripts/clippy`. Manual: `hello_world`, `examples/learn/wgpu_surface.rs`, `examples/learn/paths.rs`, paste/copy, file dialog, IME in a text field.
+The glyph atlas now uploads masks with ordered `Queue::write_texture` calls. This fixes zeroed atlas
+textures observed in both the hello-world example and the Topology CAD shell on macOS.
+
+Verify: `cargo test --lib` (85 passed). Clippy: `./scripts/clippy`. Manual: `hello_world` text and
+Topology CAD shell, `examples/learn/wgpu_surface.rs`, `examples/learn/paths.rs`, paste/copy, file
+dialog, IME in a text field.
 
 ## Decisions
 

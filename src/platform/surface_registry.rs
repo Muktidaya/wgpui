@@ -11,6 +11,8 @@ struct DoubleBuffer {
     textures: [wgpu::Texture; 2],
     views: [wgpu::TextureView; 2],
     front: usize,
+    /// Changes whenever resize replaces the textures while preserving the surface id.
+    revision: u64,
     width: u32,
     height: u32,
     format: wgpu::TextureFormat,
@@ -63,7 +65,8 @@ impl SurfaceRegistry {
             if db.width == width && db.height == height {
                 return;
             }
-            let new_db = Self::create_double_buffer(device, width, height, db.format);
+            let mut new_db = Self::create_double_buffer(device, width, height, db.format);
+            new_db.revision = db.revision.wrapping_add(1);
             *db = new_db;
         }
     }
@@ -107,16 +110,20 @@ impl SurfaceRegistry {
         })
     }
 
-    /// Get the current front buffer index (0 or 1).
-    pub fn front_index(&self, id: SurfaceId) -> Option<usize> {
+    /// Atomically snapshot the texture views needed to bind a surface.
+    ///
+    /// A surface keeps the same id when it is resized, but both texture views are
+    /// replaced. The revision lets renderer-side caches distinguish those texture
+    /// generations and rebuild bind groups instead of sampling stale views.
+    pub fn binding_snapshot(&self, id: SurfaceId) -> Option<(usize, u64, [wgpu::TextureView; 2])> {
         let surfaces = self.surfaces.lock().unwrap();
-        surfaces.get(&id).map(|db| db.front)
-    }
-
-    /// Access the view at the given index (0 or 1).
-    pub fn view_at(&self, id: SurfaceId, idx: usize) -> Option<wgpu::TextureView> {
-        let surfaces = self.surfaces.lock().unwrap();
-        surfaces.get(&id).and_then(|db| db.views.get(idx).cloned())
+        surfaces.get(&id).map(|db| {
+            (
+                db.front,
+                db.revision,
+                [db.views[0].clone(), db.views[1].clone()],
+            )
+        })
     }
 
     /// Get the current size of a surface.
@@ -205,6 +212,7 @@ impl SurfaceRegistry {
             textures: [tex0, tex1],
             views: [view0, view1],
             front: 0,
+            revision: 0,
             width: w,
             height: h,
             format,

@@ -743,7 +743,10 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("quads_pipeline_layout"),
-                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&quads_bind_group_layout)],
+                    bind_group_layouts: &[
+                        Some(&globals_bind_group_layout),
+                        Some(&quads_bind_group_layout),
+                    ],
                     immediate_size: 0,
                 });
 
@@ -769,7 +772,10 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("shadows_pipeline_layout"),
-                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&shadows_bind_group_layout)],
+                    bind_group_layouts: &[
+                        Some(&globals_bind_group_layout),
+                        Some(&shadows_bind_group_layout),
+                    ],
                     immediate_size: 0,
                 });
 
@@ -910,7 +916,10 @@ impl WgpuPipelines {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("surfaces_pipeline_layout"),
-                    bind_group_layouts: &[Some(&globals_bind_group_layout), Some(&surfaces_bind_group_layout)],
+                    bind_group_layouts: &[
+                        Some(&globals_bind_group_layout),
+                        Some(&surfaces_bind_group_layout),
+                    ],
                     immediate_size: 0,
                 });
 
@@ -1299,9 +1308,10 @@ pub struct WgpuRenderer {
     path_intermediate_texture: Option<wgpu::Texture>,
     path_intermediate_view: Option<wgpu::TextureView>,
 
-    // cache bind groups for each double-buffered surface (index 0/1)
+    // Cache bind groups for each double-buffered surface texture generation.
+    // Resizing preserves SurfaceId but replaces both texture views.
     surface_bind_groups:
-        Mutex<HashMap<crate::platform::surface_registry::SurfaceId, [wgpu::BindGroup; 2]>>,
+        Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64), [wgpu::BindGroup; 2]>>,
 }
 
 impl WgpuRenderer {
@@ -1436,8 +1446,9 @@ impl WgpuRenderer {
 
         self.atlas.before_frame(&mut command_encoder);
 
-        // keep track of which surface ids we rendered this frame
-        let mut seen_surfaces: Vec<crate::platform::surface_registry::SurfaceId> = Vec::new();
+        // Keep track of the exact texture generations rendered this frame.
+        let mut seen_surface_generations: Vec<(crate::platform::surface_registry::SurfaceId, u64)> =
+            Vec::new();
 
         let color_adjustments = ColorAdjustments {
             gamma_ratios: self.rendering_parameters.gamma_ratios,
@@ -1620,187 +1631,168 @@ impl WgpuRenderer {
             multiview_mask: None,
         });
 
-            let mut quads_first_instance: u32 = 0;
-            let mut shadows_first_instance: u32 = 0;
-            let mut underlines_first_instance: u32 = 0;
-            let mut mono_sprites_first_instance: u32 = 0;
-            let mut poly_sprites_first_instance: u32 = 0;
+        let mut quads_first_instance: u32 = 0;
+        let mut shadows_first_instance: u32 = 0;
+        let mut underlines_first_instance: u32 = 0;
+        let mut mono_sprites_first_instance: u32 = 0;
+        let mut poly_sprites_first_instance: u32 = 0;
 
-            for batch in scene.batches() {
-                match batch {
-                    PrimitiveBatch::Quads(quads) => {
-                        let count = quads.len() as u32;
-                        pass.set_pipeline(&self.pipelines.quads_pipeline);
-                        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                        pass.set_bind_group(1, &quads_bind_group, &[]);
-                        pass.draw(0..4, quads_first_instance..quads_first_instance + count);
-                        quads_first_instance += count;
-                    }
+        for batch in scene.batches() {
+            match batch {
+                PrimitiveBatch::Quads(quads) => {
+                    let count = quads.len() as u32;
+                    pass.set_pipeline(&self.pipelines.quads_pipeline);
+                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                    pass.set_bind_group(1, &quads_bind_group, &[]);
+                    pass.draw(0..4, quads_first_instance..quads_first_instance + count);
+                    quads_first_instance += count;
+                }
 
-                    PrimitiveBatch::MonochromeSprites {
-                        texture_id,
-                        sprites,
-                    } => {
-                        let count = sprites.len() as u32;
-                        let tex_info = self.atlas.get_texture_info(texture_id);
+                PrimitiveBatch::MonochromeSprites {
+                    texture_id,
+                    sprites,
+                } => {
+                    let count = sprites.len() as u32;
+                    let tex_info = self.atlas.get_texture_info(texture_id);
 
-                        let sprites_texture_bind_group =
+                    let sprites_texture_bind_group =
+                        self.context
+                            .device
+                            .create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("sprites_bind_group"),
+                                layout: &self.pipelines.sprites_bind_group_layout,
+                                entries: &[
+                                    wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &tex_info.raw_view,
+                                        ),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: wgpu::BindingResource::Sampler(
+                                            &self.atlas_sampler,
+                                        ),
+                                    },
+                                ],
+                            });
+
+                    pass.set_pipeline(&self.pipelines.mono_sprites_pipeline);
+                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                    pass.set_bind_group(1, &self.pipelines.color_adjustments_bind_group, &[]);
+                    pass.set_bind_group(2, &sprites_texture_bind_group, &[]);
+                    pass.set_bind_group(3, &mono_sprites_bind_group, &[]);
+                    pass.draw(
+                        0..4,
+                        mono_sprites_first_instance..mono_sprites_first_instance + count,
+                    );
+                    mono_sprites_first_instance += count;
+                }
+                PrimitiveBatch::PolychromeSprites {
+                    texture_id,
+                    sprites,
+                } => {
+                    let count = sprites.len() as u32;
+                    let tex_info = self.atlas.get_texture_info(texture_id);
+
+                    let sprites_texture_bind_group =
+                        self.context
+                            .device
+                            .create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("poly_sprites_texture_bind_group"),
+                                layout: &self.pipelines.sprites_bind_group_layout,
+                                entries: &[
+                                    wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &tex_info.raw_view,
+                                        ),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: wgpu::BindingResource::Sampler(
+                                            &self.atlas_sampler,
+                                        ),
+                                    },
+                                ],
+                            });
+
+                    pass.set_pipeline(&self.pipelines.poly_sprites_pipeline);
+                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                    pass.set_bind_group(1, &sprites_texture_bind_group, &[]);
+                    pass.set_bind_group(2, &poly_sprites_bind_group, &[]);
+                    pass.draw(
+                        0..4,
+                        poly_sprites_first_instance..poly_sprites_first_instance + count,
+                    );
+                    poly_sprites_first_instance += count;
+                }
+                PrimitiveBatch::Shadows(shadows) => {
+                    let count = shadows.len() as u32;
+                    pass.set_pipeline(&self.pipelines.shadows_pipeline);
+                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                    pass.set_bind_group(1, &shadows_bind_group, &[]);
+                    pass.draw(0..4, shadows_first_instance..shadows_first_instance + count);
+                    shadows_first_instance += count;
+                }
+                PrimitiveBatch::Underlines(underlines) => {
+                    let count = underlines.len() as u32;
+                    pass.set_pipeline(&self.pipelines.underlines_pipeline);
+                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                    pass.set_bind_group(1, &underlines_bind_group, &[]);
+                    pass.draw(
+                        0..4,
+                        underlines_first_instance..underlines_first_instance + count,
+                    );
+                    underlines_first_instance += count;
+                }
+                PrimitiveBatch::Surfaces(surfaces) => {
+                    for surface in surfaces {
+                        let crate::SurfaceContent::Wgpu(surface_id) = &surface.content;
+                        if let Some((idx, revision, views)) =
+                            self.context.surface_registry.binding_snapshot(*surface_id)
+                        {
+                            // consuming the front view means the frame has been
+                            // queued for compositing, so clear the pending flag
                             self.context
-                                .device
-                                .create_bind_group(&wgpu::BindGroupDescriptor {
-                                    label: Some("sprites_bind_group"),
-                                    layout: &self.pipelines.sprites_bind_group_layout,
-                                    entries: &[
-                                        wgpu::BindGroupEntry {
-                                            binding: 0,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &tex_info.raw_view,
-                                            ),
-                                        },
-                                        wgpu::BindGroupEntry {
-                                            binding: 1,
-                                            resource: wgpu::BindingResource::Sampler(
-                                                &self.atlas_sampler,
-                                            ),
-                                        },
+                                .surface_registry
+                                .clear_present_pending(*surface_id);
+
+                            let params = SurfaceParams {
+                                bounds: Bounds {
+                                    origin: [surface.bounds.origin.x.0, surface.bounds.origin.y.0],
+                                    size: [
+                                        surface.bounds.size.width.0,
+                                        surface.bounds.size.height.0,
                                     ],
-                                });
-
-                        pass.set_pipeline(&self.pipelines.mono_sprites_pipeline);
-                        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                        pass.set_bind_group(1, &self.pipelines.color_adjustments_bind_group, &[]);
-                        pass.set_bind_group(2, &sprites_texture_bind_group, &[]);
-                        pass.set_bind_group(3, &mono_sprites_bind_group, &[]);
-                        pass.draw(
-                            0..4,
-                            mono_sprites_first_instance..mono_sprites_first_instance + count,
-                        );
-                        mono_sprites_first_instance += count;
-                    }
-                    PrimitiveBatch::PolychromeSprites {
-                        texture_id,
-                        sprites,
-                    } => {
-                        let count = sprites.len() as u32;
-                        let tex_info = self.atlas.get_texture_info(texture_id);
-
-                        let sprites_texture_bind_group =
-                            self.context
-                                .device
-                                .create_bind_group(&wgpu::BindGroupDescriptor {
-                                    label: Some("poly_sprites_texture_bind_group"),
-                                    layout: &self.pipelines.sprites_bind_group_layout,
-                                    entries: &[
-                                        wgpu::BindGroupEntry {
-                                            binding: 0,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &tex_info.raw_view,
-                                            ),
-                                        },
-                                        wgpu::BindGroupEntry {
-                                            binding: 1,
-                                            resource: wgpu::BindingResource::Sampler(
-                                                &self.atlas_sampler,
-                                            ),
-                                        },
+                                },
+                                content_mask: Bounds {
+                                    origin: [
+                                        surface.content_mask.bounds.origin.x.0,
+                                        surface.content_mask.bounds.origin.y.0,
                                     ],
-                                });
+                                    size: [
+                                        surface.content_mask.bounds.size.width.0,
+                                        surface.content_mask.bounds.size.height.0,
+                                    ],
+                                },
+                            };
 
-                        pass.set_pipeline(&self.pipelines.poly_sprites_pipeline);
-                        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                        pass.set_bind_group(1, &sprites_texture_bind_group, &[]);
-                        pass.set_bind_group(2, &poly_sprites_bind_group, &[]);
-                        pass.draw(
-                            0..4,
-                            poly_sprites_first_instance..poly_sprites_first_instance + count,
-                        );
-                        poly_sprites_first_instance += count;
-                    }
-                    PrimitiveBatch::Shadows(shadows) => {
-                        let count = shadows.len() as u32;
-                        pass.set_pipeline(&self.pipelines.shadows_pipeline);
-                        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                        pass.set_bind_group(1, &shadows_bind_group, &[]);
-                        pass.draw(0..4, shadows_first_instance..shadows_first_instance + count);
-                        shadows_first_instance += count;
-                    }
-                    PrimitiveBatch::Underlines(underlines) => {
-                        let count = underlines.len() as u32;
-                        pass.set_pipeline(&self.pipelines.underlines_pipeline);
-                        pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                        pass.set_bind_group(1, &underlines_bind_group, &[]);
-                        pass.draw(
-                            0..4,
-                            underlines_first_instance..underlines_first_instance + count,
-                        );
-                        underlines_first_instance += count;
-                    }
-                    PrimitiveBatch::Surfaces(surfaces) => {
-                        for surface in surfaces {
-                            let crate::SurfaceContent::Wgpu(surface_id) = &surface.content;
-                            if let Some(idx) =
-                                self.context.surface_registry.front_index(*surface_id)
-                            {
-                                if self
-                                    .context
-                                    .surface_registry
-                                    .view_at(*surface_id, idx)
-                                    .is_some()
-                                {
-                                    // consuming the front view means the frame has been
-                                    // queued for compositing, so clear the pending flag
-                                    self.context
-                                        .surface_registry
-                                        .clear_present_pending(*surface_id);
+                            self.context.queue.write_buffer(
+                                &self.surface_params_buffer,
+                                0,
+                                bytemuck::bytes_of(&params),
+                            );
 
-                                    let params = SurfaceParams {
-                                        bounds: Bounds {
-                                            origin: [
-                                                surface.bounds.origin.x.0,
-                                                surface.bounds.origin.y.0,
-                                            ],
-                                            size: [
-                                                surface.bounds.size.width.0,
-                                                surface.bounds.size.height.0,
-                                            ],
-                                        },
-                                        content_mask: Bounds {
-                                            origin: [
-                                                surface.content_mask.bounds.origin.x.0,
-                                                surface.content_mask.bounds.origin.y.0,
-                                            ],
-                                            size: [
-                                                surface.content_mask.bounds.size.width.0,
-                                                surface.content_mask.bounds.size.height.0,
-                                            ],
-                                        },
-                                    };
-
-                                    self.context.queue.write_buffer(
-                                        &self.surface_params_buffer,
-                                        0,
-                                        bytemuck::bytes_of(&params),
-                                    );
-
-                                    // fetch or create cached bind groups for this surface
-                                    let surface_bind_group = {
-                                        let mut cache = self.surface_bind_groups.lock().unwrap();
-                                        let entry = cache.entry(*surface_id).or_insert_with(|| {
-                                            // create both groups for front index 0 and 1
-                                            let v0 = self
-                                                .context
-                                                .surface_registry
-                                                .view_at(*surface_id, 0)
-                                                .unwrap();
-                                            let v1 = self
-                                                .context
-                                                .surface_registry
-                                                .view_at(*surface_id, 1)
-                                                .unwrap();
-                                            let create_bg = |view: &wgpu::TextureView| {
-                                                self.context
-                                                    .device
-                                                    .create_bind_group(&wgpu::BindGroupDescriptor {
+                            // fetch or create cached bind groups for this surface
+                            let surface_bind_group = {
+                                let mut cache = self.surface_bind_groups.lock().unwrap();
+                                let entry =
+                                    cache.entry((*surface_id, revision)).or_insert_with(|| {
+                                        // create both groups for front index 0 and 1
+                                        let create_bg = |view: &wgpu::TextureView| {
+                                            self.context.device.create_bind_group(
+                                                &wgpu::BindGroupDescriptor {
                                                     label: Some("surface_bind_group"),
                                                     layout: &self
                                                         .pipelines
@@ -1832,55 +1824,55 @@ impl WgpuRenderer {
                                                                 ),
                                                         },
                                                     ],
-                                                })
-                                            };
-                                            [create_bg(&v0), create_bg(&v1)]
-                                        });
-                                        entry[idx].clone()
-                                    };
+                                                },
+                                            )
+                                        };
+                                        [create_bg(&views[0]), create_bg(&views[1])]
+                                    });
+                                entry[idx].clone()
+                            };
 
-                                    pass.set_pipeline(&self.pipelines.surfaces_pipeline);
-                                    pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
-                                    pass.set_bind_group(1, &surface_bind_group, &[]);
-                                    pass.draw(0..4, 0..1);
+                            pass.set_pipeline(&self.pipelines.surfaces_pipeline);
+                            pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
+                            pass.set_bind_group(1, &surface_bind_group, &[]);
+                            pass.draw(0..4, 0..1);
 
-                                    seen_surfaces.push(*surface_id);
-                                }
-                            }
-                        }
-                    }
-                    PrimitiveBatch::Paths(paths) => {
-                        drop(pass);
-                        let rasterized = self.rasterize_paths(&mut command_encoder, paths);
-                        pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                            label: Some("main_continued"),
-                            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                                view: &frame_view,
-                                ops: wgpu::Operations {
-                                    load: wgpu::LoadOp::Load,
-                                    store: wgpu::StoreOp::Store,
-                                },
-                                resolve_target: None,
-                                depth_slice: None,
-                            })],
-                            depth_stencil_attachment: None,
-                            timestamp_writes: None,
-                            occlusion_query_set: None,
-                            multiview_mask: None,
-                        });
-                        if rasterized {
-                            self.composite_paths(&mut pass, paths);
+                            seen_surface_generations.push((*surface_id, revision));
                         }
                     }
                 }
+                PrimitiveBatch::Paths(paths) => {
+                    drop(pass);
+                    let rasterized = self.rasterize_paths(&mut command_encoder, paths);
+                    pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some("main_continued"),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &frame_view,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
+                            resolve_target: None,
+                            depth_slice: None,
+                        })],
+                        depth_stencil_attachment: None,
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                        multiview_mask: None,
+                    });
+                    if rasterized {
+                        self.composite_paths(&mut pass, paths);
+                    }
+                }
             }
+        }
 
         drop(pass);
 
         // remove cached bind groups for surfaces that disappeared this frame
         {
             let mut cache = self.surface_bind_groups.lock().unwrap();
-            cache.retain(|id, _| seen_surfaces.contains(id));
+            cache.retain(|key, _| seen_surface_generations.contains(key));
         }
         self.context.queue.submit(Some(command_encoder.finish()));
         self.context.queue.present(surface_texture);
@@ -1897,20 +1889,24 @@ impl WgpuRenderer {
     fn ensure_path_intermediate(&mut self) {
         let width = self.surface_configuration.width.max(1);
         let height = self.surface_configuration.height.max(1);
-        let texture = self.context.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("path_intermediate"),
-            size: wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
+        let texture = self
+            .context
+            .device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("path_intermediate"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
         self.path_intermediate_view =
             Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
         self.path_intermediate_texture = Some(texture);
@@ -2061,21 +2057,21 @@ impl WgpuRenderer {
                 as_bytes(&sprites)
             });
 
-        let sprites_bind_group = self
-            .context
-            .device
-            .create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("path_sprites_bind_group"),
-                layout: &self.pipelines.path_sprites_bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                        buffer: &self.context.path_sprites_buffer,
-                        offset: 0,
-                        size: None,
-                    }),
-                }],
-            });
+        let sprites_bind_group =
+            self.context
+                .device
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("path_sprites_bind_group"),
+                    layout: &self.pipelines.path_sprites_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &self.context.path_sprites_buffer,
+                            offset: 0,
+                            size: None,
+                        }),
+                    }],
+                });
 
         let texture_bind_group =
             self.context

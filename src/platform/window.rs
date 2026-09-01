@@ -92,12 +92,12 @@ impl CrossWindow {
     pub(crate) fn set_hovered(&self, hovered: bool) {
         let was_hovered = self.0.hovered.replace(hovered);
         if was_hovered != hovered {
-            self.0
-                .state
-                .callbacks
-                .invoke_mut(&self.0.state.callbacks.on_hover_status_change, |callback| {
+            self.0.state.callbacks.invoke_mut(
+                &self.0.state.callbacks.on_hover_status_change,
+                |callback| {
                     callback(hovered);
-                });
+                },
+            );
         }
     }
 
@@ -206,7 +206,9 @@ impl PlatformWindow for CrossWindow {
 
     fn display(&self) -> Option<std::rc::Rc<dyn crate::PlatformDisplay>> {
         let monitor = self.window().current_monitor()?;
-        Some(crate::platform::platform::display_for_winit_monitor(&monitor))
+        Some(crate::platform::platform::display_for_winit_monitor(
+            &monitor,
+        ))
     }
 
     fn mouse_position(&self) -> Point<Pixels> {
@@ -398,10 +400,7 @@ impl PlatformWindow for CrossWindow {
         let window = self.window();
         window.set_ime_cursor_area(
             winit::dpi::LogicalPosition::new(bounds.origin.x.0 as f64, bounds.origin.y.0 as f64),
-            winit::dpi::LogicalSize::new(
-                bounds.size.width.0 as f64,
-                bounds.size.height.0 as f64,
-            ),
+            winit::dpi::LogicalSize::new(bounds.size.width.0 as f64, bounds.size.height.0 as f64),
         );
     }
 }

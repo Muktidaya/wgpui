@@ -22,8 +22,8 @@ impl Render for PathsExample {
                         bounds.origin.y + bounds.size.height / 2.,
                     );
                     for i in 0..10 {
-                        let angle = std::f32::consts::PI / 2.0
-                            - (i as f32) * std::f32::consts::PI / 5.0;
+                        let angle =
+                            std::f32::consts::PI / 2.0 - (i as f32) * std::f32::consts::PI / 5.0;
                         let radius = if i % 2 == 0 { 120.0 } else { 50.0 };
                         let vertex = point(
                             center.x + px(angle.cos() * radius),

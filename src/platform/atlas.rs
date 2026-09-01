@@ -3,7 +3,6 @@ use std::sync::Arc;
 use collections::FxHashMap;
 use etagere::BucketedAtlasAllocator;
 use parking_lot::Mutex;
-use wgpu::util::DeviceExt;
 
 use crate::{
     AtlasKey, AtlasTextureId, AtlasTextureKind, AtlasTile, Bounds, DevicePixels, PlatformAtlas,
@@ -22,7 +21,6 @@ impl WgpuAtlas {
             storage: WgpuAtlasStorage::default(),
             tiles_by_key: FxHashMap::default(),
             initializations: Vec::new(),
-            uploads: Vec::new(),
         }))
     }
 
@@ -106,7 +104,6 @@ struct WgpuAtlasState {
     storage: WgpuAtlasStorage,
     tiles_by_key: FxHashMap<AtlasKey, AtlasTile>,
     initializations: Vec<AtlasTextureId>,
-    uploads: Vec<PendingUpload>,
 }
 
 impl WgpuAtlasState {
@@ -233,42 +230,31 @@ impl WgpuAtlasState {
     ) {
         let texture = &self.storage[texture_id];
         let bytes_per_pixel = texture.bytes_per_pixel();
-        let unpadded_bytes_per_row = bounds.size.width.to_bytes(bytes_per_pixel) as usize;
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize;
-        let padded_bytes_per_row = unpadded_bytes_per_row.div_ceil(align) * align;
-        let height = bounds.size.height.0 as usize;
-
-        let padded_data = if padded_bytes_per_row != unpadded_bytes_per_row {
-            let mut padded = vec![0u8; padded_bytes_per_row * height];
-            for row in 0..height {
-                let src_start = row * unpadded_bytes_per_row;
-                let dst_start = row * padded_bytes_per_row;
-                padded[dst_start..dst_start + unpadded_bytes_per_row]
-                    .copy_from_slice(&bytes[src_start..src_start + unpadded_bytes_per_row]);
-            }
-            Some(padded)
-        } else {
-            None
-        };
-
-        let contents = padded_data.as_deref().unwrap_or(bytes);
-
-        let buffer = self
-            .context
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                usage: wgpu::BufferUsages::COPY_SRC,
-                contents,
-            });
-
-        self.uploads.push(PendingUpload {
-            texture_id,
-            bounds,
-            buffer,
-            offset: 0,
-            padded_bytes_per_row: padded_bytes_per_row as u32,
-        })
+        // Queue writes are ordered before the renderer's next submission and keep glyph uploads
+        // independent of transient staging-buffer lifetimes.
+        self.context.queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture.raw,
+                mip_level: 0,
+                origin: wgpu::Origin3d {
+                    x: bounds.origin.x.into(),
+                    y: bounds.origin.y.into(),
+                    z: 0,
+                },
+                aspect: wgpu::TextureAspect::All,
+            },
+            bytes,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(bounds.size.width.to_bytes(bytes_per_pixel)),
+                rows_per_image: Some(bounds.size.height.0 as u32),
+            },
+            wgpu::Extent3d {
+                width: bounds.size.width.into(),
+                height: bounds.size.height.into(),
+                depth_or_array_layers: 1,
+            },
+        );
     }
 
     fn flush_initializations(&mut self, _encoder: &mut wgpu::CommandEncoder) {
@@ -277,36 +263,6 @@ impl WgpuAtlasState {
 
     fn flush(&mut self, encoder: &mut wgpu::CommandEncoder) {
         self.flush_initializations(encoder);
-
-        for upload in self.uploads.drain(..) {
-            let texture = &self.storage[upload.texture_id];
-
-            encoder.copy_buffer_to_texture(
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &upload.buffer,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: upload.offset,
-                        bytes_per_row: Some(upload.padded_bytes_per_row),
-                        rows_per_image: None,
-                    },
-                },
-                wgpu::TexelCopyTextureInfo {
-                    texture: &texture.raw,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d {
-                        x: upload.bounds.origin.x.into(),
-                        y: upload.bounds.origin.y.into(),
-                        z: 0,
-                    },
-                    aspect: wgpu::TextureAspect::All,
-                },
-                wgpu::Extent3d {
-                    width: upload.bounds.size.width.into(),
-                    height: upload.bounds.size.height.into(),
-                    depth_or_array_layers: 1,
-                },
-            );
-        }
     }
 }
 
@@ -401,14 +357,6 @@ struct WgpuAtlasStorage {
 
 pub(crate) struct WgpuTextureInfo {
     pub raw_view: wgpu::TextureView,
-}
-
-struct PendingUpload {
-    texture_id: AtlasTextureId,
-    bounds: Bounds<DevicePixels>,
-    buffer: wgpu::Buffer,
-    offset: u64,
-    padded_bytes_per_row: u32,
 }
 
 impl From<Size<DevicePixels>> for etagere::Size {

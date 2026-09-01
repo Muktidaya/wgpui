@@ -652,9 +652,7 @@ pub(crate) enum AtlasKey {
 
 impl AtlasKey {
     #[cfg_attr(
-        all(
-            any(target_os = "linux", target_os = "freebsd"),
-        ),
+        all(any(target_os = "linux", target_os = "freebsd"),),
         allow(dead_code)
     )]
     pub(crate) fn texture_kind(&self) -> AtlasTextureKind {
@@ -754,9 +752,7 @@ pub(crate) struct AtlasTextureId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(C)]
 #[cfg_attr(
-    all(
-        any(target_os = "linux", target_os = "freebsd"),
-    ),
+    all(any(target_os = "linux", target_os = "freebsd"),),
     allow(dead_code)
 )]
 pub(crate) enum AtlasTextureKind {
@@ -791,7 +787,10 @@ impl PlatformInputHandler {
         Self { cx, handler }
     }
 
-    pub(crate) fn selected_text_range(&mut self, ignore_disabled_input: bool) -> Option<UTF16Selection> {
+    pub(crate) fn selected_text_range(
+        &mut self,
+        ignore_disabled_input: bool,
+    ) -> Option<UTF16Selection> {
         self.cx
             .update(|window, cx| {
                 self.handler
@@ -822,7 +821,11 @@ impl PlatformInputHandler {
             .flatten()
     }
 
-    pub(crate) fn replace_text_in_range(&mut self, replacement_range: Option<Range<usize>>, text: &str) {
+    pub(crate) fn replace_text_in_range(
+        &mut self,
+        replacement_range: Option<Range<usize>>,
+        text: &str,
+    ) {
         self.cx
             .update(|window, cx| {
                 self.handler

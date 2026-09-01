@@ -2,9 +2,8 @@ use crate::{
     BackgroundExecutor, Bounds, Capslock, DevicePixels, DisplayId, DummyKeyboardMapper,
     ExternalPaths, FileDropEvent, ForegroundExecutor, KeyDownEvent, KeyUpEvent, Keystroke,
     Modifiers, ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseExitEvent, MouseMoveEvent,
-    MouseUpEvent, OwnedMenu, Pixels, Platform, PlatformDisplay, PlatformInput,
-    PlatformWindow as _, PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent, Size, point, px,
-    size,
+    MouseUpEvent, OwnedMenu, Pixels, Platform, PlatformDisplay, PlatformInput, PlatformWindow as _,
+    PriorityQueueReceiver, RunnableVariant, ScrollWheelEvent, Size,
     platform::{
         dispatcher::{CrossEvent, Dispatcher},
         keyboard::CrossKeyboardLayout,
@@ -12,6 +11,7 @@ use crate::{
         text_system::CosmicTextSystem,
         window::CrossWindow,
     },
+    point, px, size,
 };
 use anyhow::Result;
 use collections::FxHashMap;
@@ -1208,17 +1208,12 @@ impl WinitDisplay {
         let scale = monitor.scale_factor() as f32;
         let position = monitor.position();
         let physical = monitor.size();
-        let origin = point(
-            px(position.x as f32 / scale),
-            px(position.y as f32 / scale),
-        );
+        let origin = point(px(position.x as f32 / scale), px(position.y as f32 / scale));
         let bounds_size = size(
             px(physical.width as f32 / scale),
             px(physical.height as f32 / scale),
         );
-        let name = monitor
-            .name()
-            .unwrap_or_else(|| "unnamed-display".into());
+        let name = monitor.name().unwrap_or_else(|| "unnamed-display".into());
         let uuid = uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, name.as_bytes());
         Self {
             id: DisplayId(index),
@@ -1231,9 +1226,7 @@ impl WinitDisplay {
 pub(crate) fn display_for_winit_monitor(
     monitor: &winit::monitor::MonitorHandle,
 ) -> Rc<dyn PlatformDisplay> {
-    let name = monitor
-        .name()
-        .unwrap_or_else(|| "unnamed-display".into());
+    let name = monitor.name().unwrap_or_else(|| "unnamed-display".into());
     let uuid = uuid::Uuid::new_v5(&uuid::Uuid::NAMESPACE_DNS, name.as_bytes());
     with_active_platform(|platform| {
         platform
