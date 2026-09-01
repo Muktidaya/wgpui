@@ -5,8 +5,8 @@ edition = "2024"
 publish = true
 license = "Apache-2.0"
 description = "Macros used by wgpui"
-repository = "https://github.com/muktidaya/wgpui"
-homepage = "https://github.com/muktidaya/wgpui"
+repository = "https://github.com/Muktidaya/wgpui"
+homepage = "https://github.com/Muktidaya/wgpui"
 authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
 
 [features]
