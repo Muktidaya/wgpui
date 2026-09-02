@@ -343,8 +343,8 @@ impl FocusHandle {
     }
 
     /// Moves the focus to the element associated with this handle.
-    pub fn focus(&self, window: &mut Window) {
-        window.focus(self)
+    pub fn focus(&self, window: &mut Window, cx: &mut App) {
+        window.focus(self, cx)
     }
 
     /// Obtains whether the element associated with this handle is currently focused.
@@ -1003,6 +1003,7 @@ impl Window {
             window_min_size,
             window_decorations,
             tabbing_identifier,
+            app_owns_titlebar_drag: _,
         } = options;
 
         let window_bounds = window_bounds.unwrap_or_else(|| default_bounds(display_id, cx));
@@ -1320,9 +1321,12 @@ impl Window {
     }
 }
 
+/// Result of dispatching an input event through the window hierarchy.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub(crate) struct DispatchEventResult {
+pub struct DispatchEventResult {
+    /// Whether the event should continue propagating to parent elements.
     pub propagate: bool,
+    /// Whether the default platform behavior was prevented.
     pub default_prevented: bool,
 }
 
@@ -1432,7 +1436,7 @@ impl Window {
     }
 
     /// Move focus to the element associated with the given [`FocusHandle`].
-    pub fn focus(&mut self, handle: &FocusHandle) {
+    pub fn focus(&mut self, handle: &FocusHandle, _cx: &mut App) {
         if !self.focus_enabled || self.focus == Some(handle.id) {
             return;
         }
@@ -1459,25 +1463,30 @@ impl Window {
     }
 
     /// Move focus to next tab stop.
-    pub fn focus_next(&mut self) {
+    pub fn focus_next(&mut self, cx: &mut App) {
         if !self.focus_enabled {
             return;
         }
 
         if let Some(handle) = self.rendered_frame.tab_stops.next(self.focus.as_ref()) {
-            self.focus(&handle)
+            self.focus(&handle, cx)
         }
     }
 
     /// Move focus to previous tab stop.
-    pub fn focus_prev(&mut self) {
+    pub fn focus_prev(&mut self, cx: &mut App) {
         if !self.focus_enabled {
             return;
         }
 
         if let Some(handle) = self.rendered_frame.tab_stops.prev(self.focus.as_ref()) {
-            self.focus(&handle)
+            self.focus(&handle, cx)
         }
+    }
+
+    /// Returns whether accessibility features are currently active for this window.
+    pub fn is_a11y_active(&self) -> bool {
+        false
     }
 
     /// Accessor for the text system.

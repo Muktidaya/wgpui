@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    AnyElement, App, Axis, Bounds, Corner, Display, Edges, Element, GlobalElementId,
+    Anchor, AnyElement, App, Axis, Bounds, Display, Edges, Element, GlobalElementId,
     InspectorElementId, IntoElement, LayoutId, ParentElement, Pixels, Point, Position, Size, Style,
     Window, point, px,
 };
@@ -15,7 +15,7 @@ pub struct AnchoredState {
 /// will avoid overflowing the window bounds.
 pub struct Anchored {
     children: SmallVec<[AnyElement; 2]>,
-    anchor_corner: Corner,
+    anchor: Anchor,
     fit_mode: AnchoredFitMode,
     anchor_position: Option<Point<Pixels>>,
     position_mode: AnchoredPositionMode,
@@ -27,7 +27,7 @@ pub struct Anchored {
 pub fn anchored() -> Anchored {
     Anchored {
         children: SmallVec::new(),
-        anchor_corner: Corner::TopLeft,
+        anchor: Anchor::TopLeft,
         fit_mode: AnchoredFitMode::SwitchAnchor,
         anchor_position: None,
         position_mode: AnchoredPositionMode::Window,
@@ -37,8 +37,8 @@ pub fn anchored() -> Anchored {
 
 impl Anchored {
     /// Sets which corner of the anchored element should be anchored to the current position.
-    pub fn anchor(mut self, anchor: Corner) -> Self {
-        self.anchor_corner = anchor;
+    pub fn anchor(mut self, anchor: Anchor) -> Self {
+        self.anchor = anchor;
         self
     }
 
@@ -132,19 +132,17 @@ impl Element for Anchored {
             return;
         }
 
-        let mut child_min = point(Pixels::MAX, Pixels::MAX);
-        let mut child_max = Point::default();
-        for child_layout_id in &request_layout.child_layout_ids {
-            let child_bounds = window.layout_bounds(*child_layout_id);
-            child_min = child_min.min(&child_bounds.origin);
-            child_max = child_max.max(&child_bounds.bottom_right());
-        }
-        let size: Size<Pixels> = (child_max - child_min).into();
+        let children_bounds = request_layout
+            .child_layout_ids
+            .iter()
+            .map(|id| window.layout_bounds(*id))
+            .reduce(|acc, bounds| acc.union(&bounds))
+            .unwrap();
 
         let (origin, mut desired) = self.position_mode.get_position_and_bounds(
             self.anchor_position,
-            self.anchor_corner,
-            size,
+            self.anchor,
+            children_bounds.size,
             bounds,
             self.offset,
         );
@@ -155,25 +153,25 @@ impl Element for Anchored {
         };
 
         if self.fit_mode == AnchoredFitMode::SwitchAnchor {
-            let mut anchor_corner = self.anchor_corner;
+            let mut anchor = self.anchor;
 
             if desired.left() < limits.left() || desired.right() > limits.right() {
-                let switched = Bounds::from_corner_and_size(
-                    anchor_corner.other_side_corner_along(Axis::Horizontal),
+                let switched = Bounds::from_anchor_and_size(
+                    anchor.other_side_along(Axis::Horizontal),
                     origin,
-                    size,
+                    children_bounds.size,
                 );
                 if !(switched.left() < limits.left() || switched.right() > limits.right()) {
-                    anchor_corner = anchor_corner.other_side_corner_along(Axis::Horizontal);
+                    anchor = anchor.other_side_along(Axis::Horizontal);
                     desired = switched
                 }
             }
 
             if desired.top() < limits.top() || desired.bottom() > limits.bottom() {
-                let switched = Bounds::from_corner_and_size(
-                    anchor_corner.other_side_corner_along(Axis::Vertical),
+                let switched = Bounds::from_anchor_and_size(
+                    anchor.other_side_along(Axis::Vertical),
                     origin,
-                    size,
+                    children_bounds.size,
                 );
                 if !(switched.top() < limits.top() || switched.bottom() > limits.bottom()) {
                     desired = switched;
@@ -188,8 +186,6 @@ impl Element for Anchored {
         }
         .map(|edge| *edge + client_inset);
 
-        // Snap the horizontal edges of the anchored element to the horizontal edges of the window if
-        // its horizontal bounds overflow, aligning to the left if it is wider than the limits.
         if desired.right() > limits.right() {
             desired.origin.x -= desired.right() - limits.right() + edges.right;
         }
@@ -197,8 +193,6 @@ impl Element for Anchored {
             desired.origin.x = limits.origin.x + edges.left;
         }
 
-        // Snap the vertical edges of the anchored element to the vertical edges of the window if
-        // its vertical bounds overflow, aligning to the top if it is taller than the limits.
         if desired.bottom() > limits.bottom() {
             desired.origin.y -= desired.bottom() - limits.bottom() + edges.bottom;
         }
@@ -264,7 +258,7 @@ impl AnchoredPositionMode {
     fn get_position_and_bounds(
         &self,
         anchor_position: Option<Point<Pixels>>,
-        anchor_corner: Corner,
+        anchor: Anchor,
         size: Size<Pixels>,
         bounds: Bounds<Pixels>,
         offset: Option<Point<Pixels>>,
@@ -274,14 +268,13 @@ impl AnchoredPositionMode {
         match self {
             AnchoredPositionMode::Window => {
                 let anchor_position = anchor_position.unwrap_or(bounds.origin);
-                let bounds =
-                    Bounds::from_corner_and_size(anchor_corner, anchor_position + offset, size);
+                let bounds = Bounds::from_anchor_and_size(anchor, anchor_position + offset, size);
                 (anchor_position, bounds)
             }
             AnchoredPositionMode::Local => {
                 let anchor_position = anchor_position.unwrap_or_default();
-                let bounds = Bounds::from_corner_and_size(
-                    anchor_corner,
+                let bounds = Bounds::from_anchor_and_size(
+                    anchor,
                     bounds.origin + anchor_position + offset,
                     size,
                 );

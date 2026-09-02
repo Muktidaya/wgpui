@@ -83,6 +83,14 @@ impl IntoElement for String {
     }
 }
 
+impl IntoElement for Cow<'_, str> {
+    type Element = SharedString;
+
+    fn into_element(self) -> Self::Element {
+        SharedString::from(self.into_owned())
+    }
+}
+
 impl Element for SharedString {
     type RequestLayoutState = TextLayout;
     type PrepaintState = ();
@@ -582,6 +590,16 @@ impl TextLayout {
     /// The line height for this layout.
     pub fn line_height(&self) -> Pixels {
         self.0.borrow().as_ref().unwrap().line_height
+    }
+
+    /// The wrapped line layouts for this text.
+    pub fn line_layouts(&self) -> SmallVec<[WrappedLine; 1]> {
+        self.0
+            .borrow()
+            .as_ref()
+            .expect("measurement has not been performed")
+            .lines
+            .clone()
     }
 
     /// The UTF-8 length of the underlying text.

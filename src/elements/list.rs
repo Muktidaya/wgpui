@@ -71,6 +71,40 @@ struct StateInner {
     scroll_handler: Option<Box<dyn FnMut(&ListScrollEvent, &mut Window, &mut App)>>,
     scrollbar_drag_start_height: Option<Pixels>,
     measuring_behavior: ListMeasuringBehavior,
+    follow_state: FollowState,
+}
+
+/// Controls whether the list automatically follows new content at the end.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum FollowMode {
+    /// Normal scrolling — no automatic following.
+    #[default]
+    Normal,
+    /// Auto-scroll along with the tail when scrolled to the bottom.
+    Tail,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum FollowState {
+    #[default]
+    Normal,
+    Tail {
+        is_following: bool,
+    },
+}
+
+impl FollowState {
+    fn is_following(&self) -> bool {
+        matches!(self, FollowState::Tail { is_following: true })
+    }
+
+    fn stop_following(&mut self) {
+        if let FollowState::Tail { is_following: true } = self {
+            *self = FollowState::Tail {
+                is_following: false,
+            };
+        }
+    }
 }
 
 /// Whether the list is scrolling from top to bottom or bottom to top.
@@ -225,6 +259,7 @@ impl ListState {
             reset: false,
             scrollbar_drag_start_height: None,
             measuring_behavior: ListMeasuringBehavior::default(),
+            follow_state: FollowState::default(),
         })));
         this.splice(0..0, item_count);
         this
@@ -354,6 +389,80 @@ impl ListState {
         }
 
         state.logical_scroll_top = Some(scroll_top);
+    }
+
+    /// Remeasure all items while preserving scroll position.
+    pub fn remeasure(&self) {
+        let count = self.item_count();
+        self.remeasure_items(0..count);
+    }
+
+    /// Mark items in `range` as needing remeasurement.
+    pub fn remeasure_items(&self, range: std::ops::Range<usize>) {
+        let state = &mut *self.0.borrow_mut();
+        let new_items = {
+            let mut cursor = state.items.cursor::<Count>(());
+            let mut new_items = cursor.slice(&Count(range.start), Bias::Right);
+            let invalidated = cursor.slice(&Count(range.end), Bias::Right);
+            new_items.extend(
+                invalidated.iter().map(|item| ListItem::Unmeasured {
+                    focus_handle: item.focus_handle(),
+                }),
+                (),
+            );
+            new_items.append(cursor.suffix(), ());
+            new_items
+        };
+        state.items = new_items;
+        state.measuring_behavior.reset();
+    }
+
+    /// Scroll the list to the very end.
+    pub fn scroll_to_end(&self) {
+        let state = &mut *self.0.borrow_mut();
+        let item_count = state.items.summary().count;
+        state.logical_scroll_top = Some(ListOffset {
+            item_ix: item_count,
+            offset_in_item: px(0.),
+        });
+    }
+
+    /// Set the follow mode for the list.
+    pub fn set_follow_mode(&self, mode: FollowMode) {
+        let state = &mut *self.0.borrow_mut();
+        match mode {
+            FollowMode::Normal => state.follow_state = FollowState::Normal,
+            FollowMode::Tail => {
+                state.follow_state = FollowState::Tail {
+                    is_following: true,
+                };
+                let item_count = state.items.summary().count;
+                state.logical_scroll_top = Some(ListOffset {
+                    item_ix: item_count,
+                    offset_in_item: px(0.),
+                });
+            }
+        }
+    }
+
+    /// Returns whether the list is actively following the tail.
+    pub fn is_following_tail(&self) -> bool {
+        self.0.borrow().follow_state.is_following()
+    }
+
+    /// Whether the list is scrolled to the end, or `None` if not yet laid out.
+    pub fn is_scrolled_to_end(&self) -> Option<bool> {
+        let state = self.0.borrow();
+        let bounds = state.last_layout_bounds?;
+        let summary = state.items.summary();
+        let padding = state.last_padding.unwrap_or_default();
+        let content_height = summary.height + padding.top + padding.bottom;
+        let scroll_max = (content_height - bounds.size.height).max(px(0.));
+        if scroll_max <= px(0.) {
+            return None;
+        }
+        let scroll_top = state.scroll_top(&state.logical_scroll_top());
+        Some(scroll_top >= scroll_max)
     }
 
     /// Scroll the list to the given item, such that the item is fully visible.

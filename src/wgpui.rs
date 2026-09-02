@@ -9,6 +9,7 @@ extern crate wgpui_derive as wgpui_macros;
 
 #[macro_use]
 mod action;
+mod a11y;
 mod app;
 
 mod arena;
@@ -21,6 +22,7 @@ pub mod default_colors;
 mod element;
 mod elements;
 mod executor;
+mod gestures;
 mod platform_scheduler;
 pub(crate) use platform_scheduler::PlatformScheduler;
 mod geometry;
@@ -41,6 +43,7 @@ mod scene;
 pub mod scheduler;
 mod shared_string;
 mod shared_uri;
+mod spring;
 mod style;
 mod styled;
 mod subscription;
@@ -74,6 +77,10 @@ mod seal {
 }
 
 pub use action::*;
+pub use accesskit;
+pub use accesskit::Action as AccessibleAction;
+pub use accesskit::{Orientation, Role, Toggled};
+pub use a11y::{A11yActionListener, A11ySubtreeBuilder, AriaProperties};
 pub use anyhow::Result;
 pub use app::*;
 pub(crate) use arena::*;
@@ -85,6 +92,7 @@ pub use default_colors::*;
 pub use element::*;
 pub use elements::*;
 pub use executor::*;
+pub use gestures::*;
 pub use geometry::*;
 pub use global::*;
 pub use http_client;
@@ -108,6 +116,7 @@ pub use scheduler::{Clock, Instant, RunnableMeta, Scheduler, SessionId, Timer};
 pub use scheduler::{SharedRng, TestScheduler, TestSchedulerConfig, Yield};
 pub use shared_string::*;
 pub use shared_uri::*;
+pub use spring::*;
 use std::{any::Any, future::Future};
 pub use style::*;
 pub use styled::*;

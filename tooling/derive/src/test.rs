@@ -10,6 +10,8 @@ use syn::{
     spanned::Spanned,
 };
 
+use crate::gpui_path::gpui_crate;
+
 struct Args {
     seeds: Vec<u64>,
     max_retries: usize,
@@ -128,6 +130,7 @@ fn generate_test_function(
     let num_iterations = args.max_iterations;
     let on_failure_fn_name = &args.on_failure_fn_name;
     let seeds = quote!( #(#seeds),* );
+    let gpui = gpui_crate();
 
     let mut outer_fn: ItemFn = if inner_fn.sig.asyncness.is_some() {
         // Pass to the test function the number of app contexts that it needs,
@@ -145,7 +148,7 @@ fn generate_test_function(
                             continue;
                         }
                         Some("BackgroundExecutor") => {
-                            inner_fn_args.extend(quote!(wgpui::BackgroundExecutor::new(
+                            inner_fn_args.extend(quote!(#gpui::BackgroundExecutor::new(
                                 std::sync::Arc::new(dispatcher.clone()),
                             ),));
                             continue;
@@ -161,7 +164,7 @@ fn generate_test_function(
                     {
                         let cx_varname = format_ident!("cx_{}", ix);
                         cx_vars.extend(quote!(
-                            let mut #cx_varname = wgpui::TestAppContext::build(
+                            let mut #cx_varname = #gpui::TestAppContext::build(
                                 dispatcher.clone(),
                                 Some(stringify!(#outer_fn_name)),
                             );
@@ -187,14 +190,14 @@ fn generate_test_function(
             fn #outer_fn_name() {
                 #inner_fn
 
-                wgpui::run_test(
+                #gpui::run_test(
                     #num_iterations,
                     &[#seeds],
                     #max_retries,
                     &mut |dispatcher, _seed| {
                         let exec = std::sync::Arc::new(dispatcher.clone());
                         #cx_vars
-                        wgpui::ForegroundExecutor::new(exec.clone()).block_test(#inner_fn_name(#inner_fn_args));
+                        #gpui::ForegroundExecutor::new(exec.clone()).block_test(#inner_fn_name(#inner_fn_args));
                         drop(exec);
                         #cx_teardowns
                         // Ideally we would only drop cancelled tasks, that way we could detect leaks due to task <-> entity
@@ -232,7 +235,7 @@ fn generate_test_function(
                             let cx_varname = format_ident!("cx_{}", ix);
                             let cx_varname_lock = format_ident!("cx_{}_lock", ix);
                             cx_vars.extend(quote!(
-                                let mut #cx_varname = wgpui::TestAppContext::build(
+                                let mut #cx_varname = #gpui::TestAppContext::build(
                                    dispatcher.clone(),
                                    Some(stringify!(#outer_fn_name))
                                 );
@@ -252,7 +255,7 @@ fn generate_test_function(
                         Some("TestAppContext") => {
                             let cx_varname = format_ident!("cx_{}", ix);
                             cx_vars.extend(quote!(
-                                let mut #cx_varname = wgpui::TestAppContext::build(
+                                let mut #cx_varname = #gpui::TestAppContext::build(
                                     dispatcher.clone(),
                                     Some(stringify!(#outer_fn_name))
                                 );
@@ -280,7 +283,7 @@ fn generate_test_function(
             fn #outer_fn_name() {
                 #inner_fn
 
-                wgpui::run_test(
+                #gpui::run_test(
                     #num_iterations,
                     &[#seeds],
                     #max_retries,

@@ -3,6 +3,7 @@ mod derive_app_context;
 mod derive_into_element;
 mod derive_render;
 mod derive_visual_context;
+mod gpui_path;
 mod property_test;
 mod register_action;
 mod styles;

@@ -103,6 +103,22 @@ pub trait Element: 'static + IntoElement {
         cx: &mut App,
     );
 
+    /// Returns the accessibility role for this element, if any.
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        None
+    }
+
+    /// Writes accessibility metadata for this element into `node`.
+    fn write_a11y_info(&self, _node: &mut accesskit::Node) {}
+
+    /// Allows elements to contribute synthetic accessibility children.
+    fn a11y_synthetic_children(
+        &mut self,
+        _prepaint: &mut Self::PrepaintState,
+        _builder: &mut crate::A11ySubtreeBuilder,
+    ) {
+    }
+
     /// Convert this element into a dynamically-typed [`AnyElement`].
     fn into_any(self) -> AnyElement {
         AnyElement::new(self)

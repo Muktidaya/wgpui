@@ -203,25 +203,52 @@ pub trait Styled: Sized {
         self
     }
 
-    /// Sets the element to allow a flex item to grow to fill any available space.
-    /// [Docs](https://tailwindcss.com/docs/flex-grow)
-    fn flex_grow(mut self) -> Self {
-        self.style().flex_grow = Some(1.);
+    /// Sets the preferred aspect ratio for this element.
+    fn aspect_ratio(mut self, ratio: f32) -> Self {
+        self.style().aspect_ratio = Some(ratio);
         self
     }
 
-    /// Sets the element to allow a flex item to shrink if needed.
-    /// [Docs](https://tailwindcss.com/docs/flex-shrink)
-    fn flex_shrink(mut self) -> Self {
-        self.style().flex_shrink = Some(1.);
+    /// Align this flex item to the start of the cross axis.
+    fn self_start(mut self) -> Self {
+        self.style().align_self = Some(AlignItems::Start);
         self
+    }
+
+    /// Align this flex item to the end of the cross axis.
+    fn self_end(mut self) -> Self {
+        self.style().align_self = Some(AlignItems::End);
+        self
+    }
+
+    /// Sets the relative rate at which this flex item grows.
+    /// [Docs](https://tailwindcss.com/docs/flex-grow)
+    fn flex_grow(mut self, grow: f32) -> Self {
+        self.style().flex_grow = Some(grow);
+        self
+    }
+
+    /// Alias for [`Self::flex_grow`] with a grow factor of 1.
+    fn flex_grow_1(mut self) -> Self {
+        self.flex_grow(1.)
+    }
+
+    /// Sets the relative rate at which this flex item shrinks.
+    /// [Docs](https://tailwindcss.com/docs/flex-shrink)
+    fn flex_shrink(mut self, shrink: f32) -> Self {
+        self.style().flex_shrink = Some(shrink);
+        self
+    }
+
+    /// Alias for [`Self::flex_shrink`] with a shrink factor of 1.
+    fn flex_shrink_1(mut self) -> Self {
+        self.flex_shrink(1.)
     }
 
     /// Sets the element to prevent a flex item from shrinking.
     /// [Docs](https://tailwindcss.com/docs/flex-shrink#dont-shrink)
     fn flex_shrink_0(mut self) -> Self {
-        self.style().flex_shrink = Some(0.);
-        self
+        self.flex_shrink(0.)
     }
 
     /// Sets the element to allow flex items to wrap.

@@ -2,12 +2,16 @@ use crate::{Action, App, Platform, SharedString};
 use util::ResultExt;
 
 /// A menu of the application, either a main menu or a submenu
+#[derive(Default)]
 pub struct Menu {
     /// The name of the menu
     pub name: SharedString,
 
     /// The items in the menu
     pub items: Vec<MenuItem>,
+
+    /// Whether this menu is disabled
+    pub disabled: bool,
 }
 
 impl Menu {
@@ -16,6 +20,7 @@ impl Menu {
         OwnedMenu {
             name: self.name.to_string().into(),
             items: self.items.into_iter().map(|item| item.owned()).collect(),
+            disabled: self.disabled,
         }
     }
 }
@@ -73,6 +78,9 @@ pub enum MenuItem {
 
         /// Whether this action is checked
         checked: bool,
+
+        /// Whether this action is disabled
+        disabled: bool,
     },
 }
 
@@ -102,6 +110,7 @@ impl MenuItem {
             action: Box::new(action),
             os_action: None,
             checked: false,
+            disabled: false,
         }
     }
 
@@ -116,6 +125,7 @@ impl MenuItem {
             action: Box::new(action),
             os_action: Some(os_action),
             checked: false,
+            disabled: false,
         }
     }
 
@@ -129,11 +139,13 @@ impl MenuItem {
                 action,
                 os_action,
                 checked,
+                disabled,
             } => OwnedMenuItem::Action {
                 name: name.into(),
                 action,
                 os_action,
                 checked,
+                disabled,
             },
             MenuItem::SystemMenu(os_menu) => OwnedMenuItem::SystemMenu(os_menu.owned()),
         }
@@ -148,12 +160,14 @@ impl MenuItem {
                 action,
                 os_action,
                 name,
+                disabled,
                 ..
             } => MenuItem::Action {
                 name,
                 action,
                 os_action,
                 checked,
+                disabled,
             },
             _ => self,
         }
@@ -180,6 +194,9 @@ pub struct OwnedMenu {
 
     /// The items in the menu
     pub items: Vec<OwnedMenuItem>,
+
+    /// Whether this menu is disabled
+    pub disabled: bool,
 }
 
 /// The different kinds of items that can be in a menu
@@ -207,6 +224,9 @@ pub enum OwnedMenuItem {
 
         /// Whether this action is checked
         checked: bool,
+
+        /// Whether this action is disabled
+        disabled: bool,
     },
 }
 
@@ -220,11 +240,13 @@ impl Clone for OwnedMenuItem {
                 action,
                 os_action,
                 checked,
+                disabled,
             } => OwnedMenuItem::Action {
                 name: name.clone(),
                 action: action.boxed_clone(),
                 os_action: *os_action,
                 checked: *checked,
+                disabled: *disabled,
             },
             OwnedMenuItem::SystemMenu(os_menu) => OwnedMenuItem::SystemMenu(os_menu.clone()),
         }

@@ -319,6 +319,30 @@ impl TestAppContext {
         self.test_platform.simulate_prompt_answer(button);
     }
 
+    /// Returns system notifications shown during the test.
+    pub fn shown_system_notifications(&self) -> Vec<crate::SystemNotification> {
+        self.test_platform.shown_system_notifications()
+    }
+
+    /// Returns system notifications currently delivered during the test.
+    pub fn delivered_system_notifications(&self) -> Vec<crate::SystemNotification> {
+        self.test_platform.delivered_system_notifications()
+    }
+
+    /// Returns tags of system notifications dismissed during the test.
+    pub fn dismissed_system_notifications(&self) -> Vec<crate::SharedString> {
+        self.test_platform.dismissed_system_notifications()
+    }
+
+    /// Simulates the user activating a system notification.
+    pub fn simulate_system_notification_response(
+        &self,
+        response: crate::SystemNotificationResponse,
+    ) {
+        self.test_platform
+            .simulate_system_notification_response(response);
+    }
+
     /// Returns true if there's an alert dialog open.
     pub fn has_pending_prompt(&self) -> bool {
         self.test_platform.has_pending_prompt()
@@ -1037,7 +1061,7 @@ impl VisualContext for VisualTestContext {
     fn focus<V: crate::Focusable>(&mut self, view: &Entity<V>) -> Self::Result<()> {
         self.window
             .update(&mut self.cx, |_, window, cx| {
-                view.read(cx).focus_handle(cx).focus(window)
+                view.read(cx).focus_handle(cx).focus(window, cx)
             })
             .unwrap()
     }

@@ -14,6 +14,7 @@ use std::{
     cmp::{self, PartialOrd},
     fmt::{self, Display},
     hash::Hash,
+    iter::Sum,
     ops::{Add, Div, Mul, MulAssign, Neg, Sub},
 };
 use taffy::prelude::{TaffyGridLine, TaffyGridSpan};
@@ -2172,6 +2173,167 @@ impl Corner {
     }
 }
 
+/// Identifies a reference point on a 2D box, used to anchor positioned elements.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum Anchor {
+    /// The top left corner
+    TopLeft,
+    /// The top right corner
+    TopRight,
+    /// The bottom left corner
+    BottomLeft,
+    /// The bottom right corner
+    BottomRight,
+    /// The top center position
+    TopCenter,
+    /// The bottom center position
+    BottomCenter,
+    /// The left center position
+    LeftCenter,
+    /// The right center position
+    RightCenter,
+}
+
+impl Anchor {
+    /// Returns the directly opposite anchor point.
+    #[must_use]
+    pub fn opposite(self) -> Self {
+        match self {
+            Anchor::TopLeft => Anchor::BottomRight,
+            Anchor::TopRight => Anchor::BottomLeft,
+            Anchor::BottomLeft => Anchor::TopRight,
+            Anchor::BottomRight => Anchor::TopLeft,
+            Anchor::TopCenter => Anchor::BottomCenter,
+            Anchor::BottomCenter => Anchor::TopCenter,
+            Anchor::LeftCenter => Anchor::RightCenter,
+            Anchor::RightCenter => Anchor::LeftCenter,
+        }
+    }
+
+    /// Returns the anchor across from this one along the given axis.
+    #[must_use]
+    pub fn other_side_along(self, axis: Axis) -> Self {
+        match axis {
+            Axis::Vertical => match self {
+                Anchor::TopLeft => Anchor::BottomLeft,
+                Anchor::TopRight => Anchor::BottomRight,
+                Anchor::BottomLeft => Anchor::TopLeft,
+                Anchor::BottomRight => Anchor::TopRight,
+                Anchor::TopCenter => Anchor::BottomCenter,
+                Anchor::BottomCenter => Anchor::TopCenter,
+                Anchor::LeftCenter | Anchor::RightCenter => self,
+            },
+            Axis::Horizontal => match self {
+                Anchor::TopLeft => Anchor::TopRight,
+                Anchor::TopRight => Anchor::TopLeft,
+                Anchor::BottomLeft => Anchor::BottomRight,
+                Anchor::BottomRight => Anchor::BottomLeft,
+                Anchor::LeftCenter => Anchor::RightCenter,
+                Anchor::RightCenter => Anchor::LeftCenter,
+                Anchor::TopCenter | Anchor::BottomCenter => self,
+            },
+        }
+    }
+}
+
+impl<T> Bounds<T>
+where
+    T: std::ops::Sub<Output = T> + Half + Clone + Debug + Default + PartialEq,
+{
+    /// Constructs bounds from an anchor corner and size.
+    pub fn from_anchor_and_size(corner: Anchor, origin: Point<T>, size: Size<T>) -> Bounds<T> {
+        let origin = match corner {
+            Anchor::TopLeft => origin,
+            Anchor::TopRight => Point {
+                x: origin.x - size.width.clone(),
+                y: origin.y,
+            },
+            Anchor::BottomLeft => Point {
+                x: origin.x,
+                y: origin.y - size.height.clone(),
+            },
+            Anchor::BottomRight => Point {
+                x: origin.x - size.width.clone(),
+                y: origin.y - size.height.clone(),
+            },
+            Anchor::TopCenter => Point {
+                x: origin.x - size.width.half(),
+                y: origin.y,
+            },
+            Anchor::BottomCenter => Point {
+                x: origin.x - size.width.half(),
+                y: origin.y - size.height.clone(),
+            },
+            Anchor::LeftCenter => Point {
+                x: origin.x,
+                y: origin.y - size.height.half(),
+            },
+            Anchor::RightCenter => Point {
+                x: origin.x - size.width.clone(),
+                y: origin.y - size.height.half(),
+            },
+        };
+
+        Bounds { origin, size }
+    }
+}
+
+impl<T> Bounds<T>
+where
+    T: std::ops::Add<Output = T> + Half + Clone + Debug + Default + PartialEq,
+{
+    /// Returns the top center point of the bounds.
+    pub fn top_center(&self) -> Point<T> {
+        Point {
+            x: self.origin.x.clone() + self.size.width.half(),
+            y: self.origin.y.clone(),
+        }
+    }
+
+    /// Returns the bottom center point of the bounds.
+    pub fn bottom_center(&self) -> Point<T> {
+        Point {
+            x: self.origin.x.clone() + self.size.width.half(),
+            y: self.origin.y.clone() + self.size.height.clone(),
+        }
+    }
+
+    /// Returns the left center point of the bounds.
+    pub fn left_center(&self) -> Point<T> {
+        Point {
+            x: self.origin.x.clone(),
+            y: self.origin.y.clone() + self.size.height.half(),
+        }
+    }
+
+    /// Returns the right center point of the bounds.
+    pub fn right_center(&self) -> Point<T> {
+        Point {
+            x: self.origin.x.clone() + self.size.width.clone(),
+            y: self.origin.y.clone() + self.size.height.half(),
+        }
+    }
+}
+
+impl Bounds<Pixels> {
+    /// Returns the point at the given anchor on these bounds.
+    pub fn at_anchor(&self, anchor: Anchor) -> Point<Pixels> {
+        match anchor {
+            Anchor::TopLeft => Point {
+                x: self.origin.x,
+                y: self.origin.y,
+            },
+            Anchor::TopRight => self.top_right(),
+            Anchor::BottomLeft => self.bottom_left(),
+            Anchor::BottomRight => self.bottom_right(),
+            Anchor::TopCenter => self.top_center(),
+            Anchor::BottomCenter => self.bottom_center(),
+            Anchor::LeftCenter => self.left_center(),
+            Anchor::RightCenter => self.right_center(),
+        }
+    }
+}
+
 /// Represents the corners of a box in a 2D space, such as border radius.
 ///
 /// Each field represents the size of the corner on one side of the box: `top_left`, `top_right`, `bottom_right`, and `bottom_left`.
@@ -2636,6 +2798,12 @@ impl MulAssign<f32> for Pixels {
     }
 }
 
+impl Sum for Pixels {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::default(), |a, b| a + b)
+    }
+}
+
 impl Display for Pixels {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}px", self.0)
@@ -2693,6 +2861,11 @@ impl Pixels {
     /// Returns a new `Pixels` instance with the ceiling value.
     pub fn ceil(&self) -> Self {
         Self(self.0.ceil())
+    }
+
+    /// Returns the underlying pixel value.
+    pub fn as_f32(self) -> f32 {
+        self.0
     }
 
     /// Scales the `Pixels` value by a given factor, producing `ScaledPixels`.

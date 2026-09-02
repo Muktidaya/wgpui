@@ -11,6 +11,8 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
+use crate::gpui_path::gpui_crate;
+
 pub fn derive_inspector_reflection(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
 
@@ -41,13 +43,8 @@ fn generate_reflected_trait(trait_item: ItemTrait) -> TokenStream {
     let trait_name = &trait_item.ident;
     let vis = &trait_item.vis;
 
-    // Determine if we're being called from within the wgpui crate
-    let call_site = Span::call_site();
-    let inspector_reflection_path = if is_called_from_wgpui_crate(call_site) {
-        quote! { crate::inspector_reflection }
-    } else {
-        quote! { ::wgpui::inspector_reflection }
-    };
+    let gpui = gpui_crate();
+    let inspector_reflection_path = quote! { #gpui::inspector_reflection };
 
     // Collect method information for methods of form fn name(self) -> Self or fn name(mut self) -> Self
     let mut method_infos = Vec::new();

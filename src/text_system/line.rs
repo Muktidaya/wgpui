@@ -59,11 +59,18 @@ impl ShapedLine {
         self
     }
 
+    /// The width of the shaped line.
+    pub fn width(&self) -> Pixels {
+        self.layout.width
+    }
+
     /// Paint the line of text to the window.
     pub fn paint(
         &self,
         origin: Point<Pixels>,
         line_height: Pixels,
+        align: TextAlign,
+        align_width: Option<Pixels>,
         window: &mut Window,
         cx: &mut App,
     ) -> Result<()> {
@@ -71,8 +78,8 @@ impl ShapedLine {
             origin,
             &self.layout,
             line_height,
-            TextAlign::default(),
-            None,
+            align,
+            align_width,
             &self.decoration_runs,
             &[],
             window,
@@ -87,6 +94,8 @@ impl ShapedLine {
         &self,
         origin: Point<Pixels>,
         line_height: Pixels,
+        align: TextAlign,
+        align_width: Option<Pixels>,
         window: &mut Window,
         cx: &mut App,
     ) -> Result<()> {
@@ -94,8 +103,8 @@ impl ShapedLine {
             origin,
             &self.layout,
             line_height,
-            TextAlign::default(),
-            None,
+            align,
+            align_width,
             &self.decoration_runs,
             &[],
             window,

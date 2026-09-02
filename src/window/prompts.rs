@@ -47,7 +47,7 @@ impl PromptHandle {
                     .update(cx, |_, window, _cx| {
                         window.prompt.take();
                         if let Some(previous_focus) = &previous_focus {
-                            window.focus(previous_focus);
+                            window.focus(previous_focus, _cx);
                         }
                     })
                     .ok();
@@ -55,7 +55,7 @@ impl PromptHandle {
         })
         .detach();
 
-        window.focus(&view.focus_handle(cx));
+        window.focus(&view.focus_handle(cx), cx);
 
         RenderablePromptHandle {
             view: Box::new(view),

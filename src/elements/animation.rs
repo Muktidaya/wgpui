@@ -39,6 +39,11 @@ impl Animation {
         self
     }
 
+    /// Alias for [`Self::repeat`], matching upstream GPUI naming.
+    pub fn repeat_synced(mut self) -> Self {
+        self.repeat()
+    }
+
     /// Set the easing function to use for this animation.
     /// The easing function will take a time delta between 0 and 1 and return a new delta
     /// between 0 and 1

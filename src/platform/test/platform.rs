@@ -1,8 +1,8 @@
 use crate::{
     AnyWindowHandle, BackgroundExecutor, ClipboardItem, CursorStyle, DummyKeyboardMapper,
     ForegroundExecutor, Keymap, NoopTextSystem, Platform, PlatformDisplay, PlatformKeyboardLayout,
-    PlatformKeyboardMapper, PlatformTextSystem, PromptButton, Task, TestDisplay, TestWindow,
-    WindowAppearance, WindowParams,
+    PlatformKeyboardMapper, PlatformTextSystem, PromptButton, SharedString, SystemNotification,
+    SystemNotificationResponse, Task, TestDisplay, TestWindow, WindowAppearance, WindowParams,
 };
 use anyhow::Result;
 use collections::VecDeque;
@@ -25,6 +25,7 @@ pub(crate) struct TestPlatform {
     active_cursor: Mutex<CursorStyle>,
     current_clipboard_item: Mutex<Option<ClipboardItem>>,
     pub(crate) prompts: RefCell<TestPrompts>,
+    pub(crate) system_notifications: RefCell<TestSystemNotifications>,
     pub opened_url: RefCell<Option<String>>,
     pub text_system: Arc<dyn PlatformTextSystem>,
     pub expect_restart: RefCell<Option<oneshot::Sender<Option<PathBuf>>>>,
@@ -44,6 +45,15 @@ pub(crate) struct TestPrompts {
     new_path: VecDeque<(PathBuf, oneshot::Sender<Result<Option<PathBuf>>>)>,
 }
 
+#[derive(Default)]
+pub(crate) struct TestSystemNotifications {
+    pub(crate) app_identity: Option<(SharedString, SharedString)>,
+    pub(crate) shown: Vec<SystemNotification>,
+    pub(crate) delivered: Vec<SystemNotification>,
+    pub(crate) dismissed: Vec<SharedString>,
+    response_callback: Option<Box<dyn FnMut(SystemNotificationResponse)>>,
+}
+
 impl TestPlatform {
     pub fn new(executor: BackgroundExecutor, foreground_executor: ForegroundExecutor) -> Rc<Self> {
         let text_system = Arc::new(NoopTextSystem);
@@ -52,6 +62,7 @@ impl TestPlatform {
             background_executor: executor,
             foreground_executor,
             prompts: Default::default(),
+            system_notifications: Default::default(),
             active_cursor: Default::default(),
             active_display: Rc::new(TestDisplay::new()),
             active_window: Default::default(),
@@ -154,6 +165,36 @@ impl TestPlatform {
 
     pub(crate) fn did_prompt_for_new_path(&self) -> bool {
         !self.prompts.borrow().new_path.is_empty()
+    }
+
+    pub(crate) fn shown_system_notifications(&self) -> Vec<SystemNotification> {
+        self.system_notifications.borrow().shown.clone()
+    }
+
+    pub(crate) fn delivered_system_notifications(&self) -> Vec<SystemNotification> {
+        self.system_notifications.borrow().delivered.clone()
+    }
+
+    pub(crate) fn dismissed_system_notifications(&self) -> Vec<SharedString> {
+        self.system_notifications.borrow().dismissed.clone()
+    }
+
+    pub(crate) fn simulate_system_notification_response(
+        &self,
+        response: SystemNotificationResponse,
+    ) {
+        let callback = self
+            .system_notifications
+            .borrow_mut()
+            .response_callback
+            .take();
+        if let Some(mut callback) = callback {
+            callback(response);
+            self.system_notifications
+                .borrow_mut()
+                .response_callback
+                .get_or_insert(callback);
+        }
     }
 }
 
@@ -283,6 +324,46 @@ impl Platform for TestPlatform {
 
     fn on_reopen(&self, _callback: Box<dyn FnMut()>) {
         unimplemented!()
+    }
+
+    fn set_app_identity(&self, identifier: &str, name: &str) {
+        self.system_notifications.borrow_mut().app_identity =
+            Some((identifier.to_string().into(), name.to_string().into()));
+    }
+
+    fn show_system_notification(&self, notification: SystemNotification) {
+        let mut system_notifications = self.system_notifications.borrow_mut();
+        if system_notifications.app_identity.is_none() {
+            return;
+        }
+
+        let delivered = system_notifications
+            .delivered
+            .iter_mut()
+            .find(|delivered| delivered.tag == notification.tag);
+        if let Some(delivered) = delivered {
+            *delivered = notification.clone();
+        } else {
+            system_notifications.delivered.push(notification.clone());
+        }
+        system_notifications.shown.push(notification);
+    }
+
+    fn dismiss_system_notification(&self, tag: &str) {
+        let mut system_notifications = self.system_notifications.borrow_mut();
+        system_notifications
+            .delivered
+            .retain(|notification| notification.tag != tag);
+        system_notifications
+            .dismissed
+            .push(SharedString::from(tag.to_string()));
+    }
+
+    fn on_system_notification_response(
+        &self,
+        callback: Box<dyn FnMut(SystemNotificationResponse)>,
+    ) {
+        self.system_notifications.borrow_mut().response_callback = Some(callback);
     }
 
     fn set_menus(&self, _menus: Vec<crate::Menu>, _keymap: &Keymap) {}

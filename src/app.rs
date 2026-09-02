@@ -41,7 +41,7 @@ use crate::{
     PlatformDisplay, PlatformKeyboardLayout, PlatformKeyboardMapper, Point, Priority,
     PromptBuilder, PromptButton, PromptHandle, PromptLevel, Render, RenderImage,
     RenderablePromptHandle, Reservation, SharedString, SubscriberSet, Subscription, SvgRenderer,
-    Task, TextSystem, Window, WindowAppearance, WindowHandle, WindowId, WindowInvalidator,
+    SystemNotification, SystemNotificationResponse, Task, TextSystem, Window, WindowAppearance, WindowHandle, WindowId, WindowInvalidator,
     current_platform,
     default_colors::{Colors, GlobalColors},
     hash, init_app_menus,
@@ -1119,6 +1119,41 @@ impl App {
         self.platform.register_url_scheme(scheme)
     }
 
+    /// Sets the application identity used by platform services such as system notifications.
+    pub fn set_app_identity(&self, identifier: &str, name: &str) {
+        self.platform.set_app_identity(identifier, name);
+    }
+
+    /// Posts a notification to the operating system's notification center.
+    pub fn show_system_notification(&self, notification: SystemNotification) {
+        self.platform.show_system_notification(notification);
+    }
+
+    /// Removes the delivered or pending notification with this tag.
+    pub fn dismiss_system_notification(&self, tag: &str) {
+        self.platform.dismiss_system_notification(tag);
+    }
+
+    /// Registers the handler invoked when the user activates a system notification.
+    pub fn on_system_notification_response<F>(&self, mut callback: F)
+    where
+        F: 'static + FnMut(SystemNotificationResponse, &mut App),
+    {
+        let this = self.this.clone();
+        self.platform
+            .on_system_notification_response(Box::new(move |response| {
+                if let Some(app) = this.upgrade() {
+                    callback(response, &mut app.borrow_mut());
+                }
+            }));
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    /// Simulates the user activating a system notification in tests.
+    pub fn simulate_system_notification_response(&self, response: SystemNotificationResponse) {
+        let _ = response;
+    }
+
     /// Returns the full pathname of the current app bundle.
     ///
     /// Returns an error if the app is not being run from a bundle.
@@ -1447,6 +1482,11 @@ impl App {
     /// Obtains a reference to the executor, which can be used to spawn futures.
     pub fn background_executor(&self) -> &BackgroundExecutor {
         &self.background_executor
+    }
+
+    /// Whether the user prefers reduced motion. Stub: always `false` until platform wiring lands.
+    pub fn reduce_motion(&self) -> bool {
+        false
     }
 
     /// Obtains a reference to the executor, which can be used to spawn futures.
