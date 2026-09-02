@@ -10,6 +10,8 @@
 
 Build fantastic, high-performance desktop apps with Rust and [GPUI](https://gpui.rs).
 
+> **wgpui fork (this tree):** This workspace vendors [gpui-component](https://github.com/longbridge/gpui-component) v0.5.2 and adapts it to the local **[wgpui](https://github.com/Muktidaya/wgpui)** 0.3.4 stack. Cargo packages are named `wgpui-*`; Rust imports remain `gpui` / `gpui_component` via workspace aliasing. See [STATUS.md](./STATUS.md) for phase gates and verification commands.
+
 GPUI Component is a comprehensive Rust desktop application framework. It
 combines a production-ready UI system with application-grade data, layout, and
 editing capabilities, all built on a reusable foundation of behavior, state,

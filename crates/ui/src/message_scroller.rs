@@ -56,7 +56,7 @@ impl MessageScrollerState {
 
     /// Return whether the user has scrolled away from the latest content.
     pub fn is_scrolled_up(&self) -> bool {
-        self.list_state.max_offset_for_scrollbar().y > px(0.)
+        self.list_state.max_offset_for_scrollbar().height > px(0.)
             && !self.list_state.is_following_tail()
             && !self.list_state.is_scrolled_to_end().unwrap_or(false)
     }

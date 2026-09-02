@@ -1,0 +1,13 @@
+[package]
+name = "wgpui-platform"
+description = "Platform entry shim for wgpui-component (replaces Zed gpui_platform on native)."
+version = "0.1.0"
+edition.workspace = true
+publish = false
+license = "Apache-2.0"
+
+[dependencies]
+wgpui = { workspace = true }
+
+[lints]
+workspace = true

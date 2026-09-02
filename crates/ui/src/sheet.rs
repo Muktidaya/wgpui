@@ -6,7 +6,10 @@ use gpui::{
     RenderOnce, StyleRefinement, Styled, Window, anchored, div, point, prelude::FluentBuilder as _,
     px,
 };
-use gpui_base::{ElementExt as _, Sheet as BaseSheet, TextSelectionScopeId, actions::Cancel};
+use gpui_base::{
+    Sheet as BaseSheet, TextSelectionScopeExt as _, TextSelectionScopeId,
+    actions::Cancel,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

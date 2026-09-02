@@ -2085,7 +2085,12 @@ impl BlockNode {
         // Nowrap cells (via the `table_cell` refinement, which cascades to
         // the cell text) must never shrink below their single-line content,
         // so their floor is the content width itself.
-        let nowrap = style.table_cell().text.white_space == Some(WhiteSpace::Nowrap);
+        let nowrap = style
+            .table_cell()
+            .text
+            .as_ref()
+            .and_then(|text| text.white_space)
+            == Some(WhiteSpace::Nowrap);
         let col_min_w: Vec<f32> = if nowrap {
             col_w.clone()
         } else {

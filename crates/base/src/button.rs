@@ -84,6 +84,12 @@ impl Button {
         self
     }
 
+    /// Sets the accessibility id exposed to accessibility clients.
+    pub fn accessibility_id(mut self, id: impl Into<SharedString>) -> Self {
+        self.base = self.base.accessibility_id(id);
+        self
+    }
+
     /// Overrides the accessibility role. The default is [`Role::Button`].
     pub fn role(mut self, role: impl Into<RoleOverride>) -> Self {
         self.role = role.into();

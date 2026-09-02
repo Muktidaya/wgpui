@@ -576,7 +576,9 @@ impl Element for TextView {
         // overflow also clips descendant hitboxes to the box during prepaint.
         let max_lines_cap = max_lines.map(|max_lines| {
             let mut text_style = window.text_style();
-            text_style.refine(&self.style.text);
+            if let Some(text) = &self.style.text {
+                text_style.refine(text);
+            }
             text_style.line_height_in_pixels(window.rem_size()) * max_lines as f32
         });
 

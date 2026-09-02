@@ -139,13 +139,13 @@ impl From<SharedString> for Notification {
 
 impl From<&str> for Notification {
     fn from(s: &str) -> Self {
-        Self::new().message(s)
+        Self::new().message(SharedString::from(s.to_string()))
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Notification {
     fn from(s: Cow<'a, str>) -> Self {
-        Self::new().message(s)
+        Self::new().message(SharedString::from(s.into_owned()))
     }
 }
 

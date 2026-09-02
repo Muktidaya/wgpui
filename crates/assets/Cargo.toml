@@ -1,5 +1,5 @@
 [package]
-name = "gpui-component-assets"
+name = "wgpui-component-assets"
 description = "Default bundled assets for GPUI Component."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
 license = "Apache-2.0"
@@ -33,8 +33,3 @@ log.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 rust-embed = { version = "8.7.2", features = ["interpolate-folder-path", "include-exclude"] }
-
-[target.'cfg(target_family = "wasm")'.dependencies]
-reqwest = { workspace = true }
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"

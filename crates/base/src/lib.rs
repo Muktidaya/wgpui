@@ -95,7 +95,7 @@ pub use dialog::{
     Dialog, DialogBackdrop, DialogChangeReason, DialogClose, DialogDescription, DialogHandle,
     DialogPopup, DialogTitle, DialogTrigger,
 };
-pub use element_ext::ElementExt;
+pub use element_ext::{ElementExt, TextSelectionScopeExt};
 pub use event::{InteractiveElementExt, OngoingScrollExt};
 pub use focus_trap::FocusTrapElement;
 #[doc(hidden)]

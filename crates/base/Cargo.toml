@@ -2,7 +2,7 @@
 description = "Behavior, interaction, and infrastructure foundations for GPUI applications."
 keywords = ["desktop", "gpui", "ui", "foundation"]
 license = "Apache-2.0"
-name = "gpui-base"
+name = "wgpui-base"
 default-run = "components"
 repository = "https://github.com/longbridge/gpui-component"
 homepage = "https://longbridge.github.io/gpui-component"
@@ -61,7 +61,6 @@ objc2-foundation = { version = "0.3", features = ["NSGeometry", "NSString"] }
 [dev-dependencies]
 gpui = { workspace = true, features = ["test-support"] }
 indoc = "2"
-reqwest_client.workspace = true
 
 [lints]
 workspace = true

@@ -1,33 +1,13 @@
 [workspace]
-default-members = ["crates/story"]
+default-members = ["examples/hello_world"]
 members = [
     "crates/base",
-    "crates/base/examples/wasm",
     "crates/macros",
-    "crates/story",
-    "crates/story-web",
     "crates/ui",
     "crates/assets",
-    "crates/fps",
-    "crates/webview",
-    "examples/app_assets",
-    "examples/fps_monitor",
+    "crates/platform",
+    "crates/harness",
     "examples/hello_world",
-    "examples/input",
-    "examples/window_title",
-    "examples/dialog_overlay",
-    "examples/webview",
-    "examples/system_monitor",
-    "examples/focus_trap",
-    "examples/tooltip_top_edge",
-    "examples/sidebar",
-    "examples/text_max_lines",
-    "examples/text_selection",
-    "examples/root_borderless",
-    "examples/table_in_scrollable",
-    "examples/markdown_table",
-    "crates/shell",
-    "crates/component-shell",
 ]
 resolver = "2"
 
@@ -36,31 +16,24 @@ publish = false
 edition = "2024"
 
 [workspace.dependencies]
-gpui-component = { path = "crates/ui", version = "0.5.2" }
-gpui-base = { path = "crates/base", version = "0.5.2" }
-gpui-component-macros = { path = "crates/macros", version = "0.5.1" }
-gpui-component-assets = { path = "crates/assets", version = "0.5.1" }
+wgpui = { path = "../wgpui", version = "0.3.4" }
+wgpui_derive = { path = "../wgpui/tooling/derive", version = "0.3.4" }
+wgpui-platform = { path = "crates/platform", version = "0.1.0" }
+
+# Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
+gpui = { package = "wgpui", path = "../wgpui", version = "0.3.4" }
+gpui_macros = { package = "wgpui_derive", path = "../wgpui/tooling/derive", version = "0.3.4" }
+gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.1.0" }
+sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
+
+gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.5.2" }
+gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.5.2" }
+gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.5.1" }
+gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.5.1" }
 gpui-fps = { path = "crates/fps", version = "0.1.0" }
 gpui-shell = { path = "crates/shell", version = "0.1.0" }
-gpui-component-shell = { path = "crates/component-shell", version = "0.1.0" }
+reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
 story = { path = "crates/story" }
-
-gpui = { version = "0.2.2", git = "https://github.com/zed-industries/zed" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
-gpui_web = { git = "https://github.com/zed-industries/zed" }
-gpui_macros = { version = "0.1.0", git = "https://github.com/zed-industries/zed" }
-reqwest_client = { git = "https://github.com/zed-industries/zed" }
-sum-tree = { version = "0.2.0", package = "zed-sum-tree" }
-# reqwest = { version = "0.12.15-zed", package = "zed-reqwest" }
-reqwest = { git = "https://github.com/zed-industries/reqwest.git", rev = "c15662463bda39148ba154100dd44d3fba5873a4", default-features = false, features = [
-    "charset",
-    "http2",
-    "macos-system-configuration",
-    "multipart",
-    "rustls-tls-native-roots",
-    "socks",
-    "stream",
-], package = "zed-reqwest", version = "0.12.15-zed" }
 
 anyhow = "1"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
@@ -128,6 +101,8 @@ smol = { opt-level = 3 }
 gpui = { opt-level = 3 }
 gpui_platform = { opt-level = 3 }
 gpui_macros = { opt-level = 3 }
+wgpui = { opt-level = 3 }
+wgpui-platform = { opt-level = 3 }
 tree-sitter = { opt-level = 3 }
 sum_tree = { opt-level = 3 }
 ropey = { opt-level = 3 }

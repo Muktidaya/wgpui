@@ -1033,19 +1033,19 @@ impl ThemeColor {
         };
 
         (self.list_active, tokens.list_active) = clamp_alpha(
-            colors.list_active.as_deref(),
+            colors.list_active.as_deref().map(|v| &**v),
             self.list_active,
             tokens.list_active.background,
             0.2,
         );
         (self.table_active, tokens.table_active) = clamp_alpha(
-            colors.table_active.as_deref(),
+            colors.table_active.as_deref().map(|v| &**v),
             self.table_active,
             tokens.table_active.background,
             0.2,
         );
         (self.selection, tokens.selection) = clamp_alpha(
-            colors.selection.as_deref(),
+            colors.selection.as_deref().map(|v| &**v),
             self.selection,
             tokens.selection.background,
             0.3,

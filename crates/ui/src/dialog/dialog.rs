@@ -6,7 +6,7 @@ use gpui::{
     StyleRefinement, Styled, Window, WindowControlArea, anchored, div, hsla, point,
     prelude::FluentBuilder, px,
 };
-use gpui_base::{ElementExt as _, TextSelectionScopeId};
+use gpui_base::{TextSelectionScopeExt as _, TextSelectionScopeId};
 use rust_i18n::t;
 
 use crate::{

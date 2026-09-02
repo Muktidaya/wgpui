@@ -336,7 +336,7 @@ impl ShimmerGlyphs {
                                 continue;
                             }
 
-                            window.with_content_mask(Some(*mask), |window| {
+                            window.with_content_mask(Some(mask.clone()), |window| {
                                 let _ = window.paint_glyph(
                                     paint_origin,
                                     run.font_id,

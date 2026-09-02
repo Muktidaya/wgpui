@@ -27,11 +27,7 @@ impl TextSelectionScopeId {
     /// do not allocate a new identifier on every frame.
     pub fn new() -> Self {
         static NEXT_SCOPE_ID: AtomicU64 = AtomicU64::new(1);
-        let value = NEXT_SCOPE_ID
-            .try_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-                value.checked_add(1)
-            })
-            .expect("text selection scope identifiers exhausted");
+        let value = NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed);
         Self(value)
     }
 

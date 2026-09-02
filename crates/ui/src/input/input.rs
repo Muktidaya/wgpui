@@ -367,7 +367,12 @@ impl Styled for Input {
 impl RenderOnce for Input {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         const LINE_HEIGHT: Rems = Rems(1.25);
-        let text_align = self.style.text.text_align.unwrap_or(TextAlign::Left);
+        let text_align = self
+            .style
+            .text
+            .as_ref()
+            .and_then(|text| text.text_align)
+            .unwrap_or(TextAlign::Left);
         let state = self.state.clone();
         // Which kind of input this registers as follows from the state itself.
         sync_focused_input_registry(&state, window, cx);
@@ -531,7 +536,8 @@ impl RenderOnce for Input {
         let placeholder = Some(presentation.placeholder().clone()).filter(|p| !p.is_empty());
 
         // Don't use a mask-derived placeholder ("(___)___-___") as an aria_label fallback.
-        let placeholder_is_mask = presentation.mask_placeholder() == placeholder.as_deref();
+        let placeholder_is_mask = presentation.mask_placeholder()
+            == placeholder.as_deref().map(|p| p.as_ref());
 
         let aria_label = match self.aria_label {
             Some(label) => Some(label),

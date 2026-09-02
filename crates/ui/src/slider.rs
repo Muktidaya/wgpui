@@ -165,7 +165,8 @@ impl RenderOnce for Slider {
         let thumb_bg: Background = self
             .style
             .text
-            .color
+            .as_ref()
+            .and_then(|text| text.color)
             .map(Into::into)
             .unwrap_or_else(|| cx.theme().tokens.slider_thumb.into());
         let corner_radii = self.style.corner_radii.clone();

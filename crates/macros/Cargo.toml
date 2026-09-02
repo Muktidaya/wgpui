@@ -1,5 +1,5 @@
 [package]
-name = "gpui-component-macros"
+name = "wgpui-component-macros"
 description = "Macros for GPUI Component."
 version = "0.5.1"
 license = "Apache-2.0"
