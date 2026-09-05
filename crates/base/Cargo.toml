@@ -4,8 +4,11 @@ keywords = ["desktop", "gpui", "ui", "foundation"]
 license = "Apache-2.0"
 name = "wgpui-base"
 # The showcase binary and examples are development tools that read fixtures
-# from `crates/story`; they stay out of the published package.
+# from `crates/story`; they stay out of the published package and must not
+# be auto-discovered (they still `use gpui_base`).
 exclude = ["src/bin/", "examples/"]
+autobins = false
+autoexamples = false
 repository = "https://github.com/Muktidaya/wgpui-component"
 homepage = "https://github.com/Muktidaya/wgpui-component"
 documentation = "https://docs.rs/wgpui-base"

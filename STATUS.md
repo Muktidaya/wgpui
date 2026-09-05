@@ -8,7 +8,7 @@
 
 **Merge:** complete on `root` as `7272570f` (parents `2177ce92` + `94a313a7`), pushed to origin. crates.io: **nothing uploaded**.
 
-**CI:** run [33993771674](https://github.com/Muktidaya/wgpui-component/actions/runs/33993771674) on `7272570f` was **red** on ubuntu/macos/windows at `cargo check --locked --workspace --all-targets`. Root cause: `--all-targets` compiled (1) `crates/ui/tests/*_compat.rs` (`use gpui_component` but the package is `wgpui-component`) and (2) excluded-from-publish `crates/base/examples` (`use gpui_base`). Fix: `extern crate wgpui_component as gpui_component` in those tests; CI now checks `--lib --tests` plus `hello_world` (not examples/benches/bins).
+**CI:** [33993771674](https://github.com/Muktidaya/wgpui-component/actions/runs/33993771674) on `7272570f` **red** (`--all-targets`: `gpui_component` / `gpui_base` leftovers). [33994263316](https://github.com/Muktidaya/wgpui-component/actions/runs/33994263316) on `ebf839fb` still **red**: `--lib --tests` compiled the unpublished `wgpui-base` showcase **bin**. Fix: `autobins = false` / `autoexamples = false` on `wgpui-base`; alias `crates/base/tests/element_ext.rs`. Local `cargo +1.94.0 check --locked --workspace --lib --tests` is green.
 
 ## 0.6.0 port (2026-09-05) — compiling sync + lib tests green
 
