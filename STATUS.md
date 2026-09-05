@@ -10,7 +10,7 @@ Sibling track: `wgpui-component` 0.6.0 in `/Users/muk/Developer/Muktidaya/wgpui-
 
 ## Current state
 
-On-disk identity is **0.3.5** for both `wgpui` and `wgpui_derive`. crates.io still has **0.3.4** only (2026-08-19, `5e94b544`). No git tag `v0.3.5`. This `root` checkpoint includes the unpublished API/test work and `.github/workflows/ci.yml`. **Not pushed. Not published.**
+On-disk identity is **0.3.5** for both `wgpui` and `wgpui_derive`. crates.io still has **0.3.4** only (2026-08-19, `5e94b544`). No git tag `v0.3.5`. This `root` checkpoint includes the unpublished API/test work and `.github/workflows/ci.yml`. Pushed as `53da4d8d36`. **Not published.** First Actions run `33987452612` failed on Windows: `flume` was macOS/Linux-only while `BackgroundExecutor::spawn_realtime` uses it on every OS. Fix: move `flume` to shared `[dependencies]`.
 
 This bump is necessary and sufficient for the wgpui half.
 
@@ -38,3 +38,4 @@ Still out of crate scope: credentials / keychain, `register_url_scheme`, auxilia
 - `src/platform/atlas.rs`, `tooling/derive/src/gpui_path.rs`, `src/style.rs` (`BoxShadow`)
 - Included: `src/app.rs`, `src/app/test_context.rs`, `src/elements/div.rs`, `src/key_dispatch.rs`, `src/platform/platform.rs`, `src/platform/test/dispatcher.rs`, `src/scheduler/test_scheduler.rs`, `src/window.rs`, `.github/workflows/ci.yml`, `tooling/derive/README.md`
 - Verify: `cargo +1.94.0 test --lib`; `cargo +1.94.0 publish --dry-run -p wgpui_derive`; `cargo +1.94.0 publish --dry-run -p wgpui` (wgpui dry-run fails until derive 0.3.5 is on crates.io)
+- CI: https://github.com/Muktidaya/wgpui/actions/runs/33987452612 — ubuntu/macos green; Windows `cargo check --locked --lib` E0433 `flume` in `src/scheduler/executor.rs:173`

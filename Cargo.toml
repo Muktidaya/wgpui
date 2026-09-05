@@ -72,6 +72,7 @@ cosmic-text = "0.19"
 ctor = "0.6.3"
 derive_more = { version = "2.1.1", features = ["full"] }
 etagere = "0.2"
+flume = "0.12"
 futures = "0.3"
 futures-concurrency = "7"
 wgpui_derive = { path = "./tooling/derive", version = "0.3.5", features = ["inspector"] }
@@ -130,7 +131,6 @@ core-foundation = "0.10"
 core-foundation-sys = "0.8.6"
 core-graphics = "0.24"
 dispatch2 = "0.3.1"
-flume = "0.12"
 foreign-types = "0.5"
 mach2 = "0.5"
 objc = "0.2"
@@ -149,7 +149,6 @@ objc2-foundation = { version = "0.3.2", features = [
 ] }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
-flume = "0.12"
 oo7 = { version = "0.6", default-features = false, features = [
     "async-std",
     "native_crypto",
