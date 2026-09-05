@@ -14,7 +14,7 @@ Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatc
 
 ```toml
 [dependencies]
-wgpui = { version = "0.3.4" }
+wgpui = { version = "0.3.5" }
 ```
 
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.

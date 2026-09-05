@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.3.5 — 2026-09-05
+
+Work after crates.io 0.3.4 (`5e94b544`). Same wgpu 30 / winit 0.30.13 / taffy 0.13 / cosmic-text 0.19 pins. **Publish `wgpui_derive` 0.3.5 before `wgpui` 0.3.5**: crates.io derive 0.3.4 does not emit `BoxShadow.inset`, so a packaged `wgpui` that depends on `"0.3.5"` cannot dry-run against the registry until derive 0.3.5 exists.
+
+### Breaking (relative to crates.io 0.3.4)
+
+- Derive macros always expand to `wgpui::` (no `gpui::` fallback from `CARGO_PKG_NAME`).
+- `BoxShadow` gained `inset: bool`. Prefer `BoxShadow::new(offset_x, offset_y, color)` plus `.blur_radius()` / `.spread_radius()`. Style macros initialize `inset: false`.
+- `FocusHandle::focus`, `Window::focus`, `focus_next`, and `focus_prev` take `&mut App`.
+
+### Added
+
+- Glyph atlas mask uploads use ordered `Queue::write_texture` (fixes zeroed atlas textures on macOS).
+- Accessibility surface: `AriaProperties`, `A11ySubtreeBuilder`, extra AccessKit fields forwarded from `Div`, `Stateful` a11y passthrough. `Window::is_a11y_active` is still a stub (`false`).
+- `container_query` element (size from style; children rendered after layout).
+- Scroll `OngoingScroll` gesture helper; spring / interpolation (`SpringConfig`, `SpringAnimation`, `Interpolate`, sampled easing).
+- `ListState` tail follow (`FollowMode`), `remeasure` / `remeasure_items`, `scroll_to_end`.
+- Geometry: `Anchor`, bound edge/center helpers.
+- Style helpers: `aspect_ratio`, `self_start` / `self_end`, `flex_grow` / `flex_shrink`.
+- App identity and system-notification stubs; `App::reduce_motion` (platform wiring still stubbed).
+- Primary vs auxiliary click: `on_click` ignores non-left mouse; `on_aux_click` handles middle/right without firing primary handlers.
+- Unhandled key text: ordinary Unicode from `KeyboardInput` reaches the platform input handler when the event propagates; Control/Platform shortcuts do not.
+
+### Test-support shims
+
+- `TestAppContext::open_window`, `App::set_reduce_motion`
+- `HitboxId::placeholder`, `Window::simulate_next_frame`
+- Test dispatcher / scheduler `next_deadline` / `next_timer_deadline`
+
+### Packaging
+
+- `rust-version = "1.94"`; `documentation` + `[package.metadata.docs.rs]` on both crates.
+- Repository URL `https://github.com/Muktidaya/wgpui`.
+- Crate package excludes `STATUS.md`, `AGENTS.md`, Nix flake, `.cargo/` Zed leftovers, `scripts/`, and `.github/`. Untracked `.github/workflows/ci.yml` stays in the git tree as the intended CI.
+
+### Not in 0.3.5
+
+AccessKit platform backend, crate split, WASM, credentials / URL schemes / dock menu / hide-restart, path MSAA.
+
 ## 0.3.4 — 2026-08-19
 
 First independent-line WGPUI release. This is a wgpu + winit UI crate, not a GPUI-CE or Zed drop-in.

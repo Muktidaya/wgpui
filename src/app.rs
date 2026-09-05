@@ -1486,7 +1486,16 @@ impl App {
 
     /// Whether the user prefers reduced motion. Stub: always `false` until platform wiring lands.
     pub fn reduce_motion(&self) -> bool {
+        #[cfg(any(test, feature = "test-support"))]
+        if let Some(value) = self.try_global::<TestReduceMotion>() { return value.0; }
         false
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    /// Overrides the motion preference for deterministic component tests.
+    pub fn set_reduce_motion(&mut self, value: bool) {
+        self.set_global(TestReduceMotion(value));
+        self.refresh_windows();
     }
 
     /// Obtains a reference to the executor, which can be used to spawn futures.
@@ -2562,3 +2571,9 @@ mod test {
         assert_eq!(*observation_count.borrow(), 2);
     }
 }
+
+
+#[cfg(any(test, feature = "test-support"))]
+struct TestReduceMotion(bool);
+#[cfg(any(test, feature = "test-support"))]
+impl crate::Global for TestReduceMotion {}

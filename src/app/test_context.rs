@@ -220,6 +220,16 @@ impl TestAppContext {
 
     /// Adds a new window. The Window will always be backed by a `TestWindow` which
     /// can be retrieved with `self.test_window(handle)`
+    pub fn open_window<F, V>(&mut self, size: Size<Pixels>, build_window: F) -> WindowHandle<V>
+    where F: FnOnce(&mut Window, &mut Context<V>) -> V, V: 'static + Render {
+        let mut cx = self.app.borrow_mut();
+        cx.open_window(WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(Bounds { origin: Point::default(), size })),
+            ..Default::default()
+        }, |window, cx| cx.new(|cx| build_window(window, cx))).expect("test window")
+    }
+
+    /// Adds a test-backed window using the test display bounds.
     pub fn add_window<F, V>(&mut self, build_window: F) -> WindowHandle<V>
     where
         F: FnOnce(&mut Window, &mut Context<V>) -> V,

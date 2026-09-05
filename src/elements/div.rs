@@ -486,7 +486,9 @@ impl Interactivity {
         Self: Sized,
     {
         self.click_listeners.push(Rc::new(move |event, window, cx| {
-            listener(event, window, cx)
+            if !matches!(event, ClickEvent::Mouse(mouse) if mouse.up.button != MouseButton::Left) {
+                listener(event, window, cx);
+            }
         }));
     }
 
@@ -1278,7 +1280,7 @@ pub trait StatefulInteractiveElement: InteractiveElement {
         self
     }
 
-    /// Middle/auxiliary click handler (currently aliased to [`Self::on_click`]).
+    /// Handle middle and right button clicks without invoking primary-click handlers.
     fn on_aux_click(
         mut self,
         listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
@@ -1286,7 +1288,11 @@ pub trait StatefulInteractiveElement: InteractiveElement {
     where
         Self: Sized,
     {
-        self.interactivity().on_click(listener);
+        self.interactivity().click_listeners.push(Rc::new(move |event, window, cx| {
+            if matches!(event, ClickEvent::Mouse(mouse) if matches!(mouse.up.button, MouseButton::Middle | MouseButton::Right)) {
+                listener(event, window, cx);
+            }
+        }));
         self
     }
 
@@ -1669,6 +1675,42 @@ impl Element for Div {
         }
         if let Some(level) = aria.level {
             node.set_level(level);
+        }
+        if let Some(value) = aria.min_numeric_value {
+            node.set_min_numeric_value(value);
+        }
+        if let Some(value) = aria.max_numeric_value {
+            node.set_max_numeric_value(value);
+        }
+        if let Some(value) = aria.position_in_set {
+            node.set_position_in_set(value);
+        }
+        if let Some(value) = aria.size_of_set {
+            node.set_size_of_set(value);
+        }
+        if let Some(value) = aria.row_index {
+            node.set_row_index(value);
+        }
+        if let Some(value) = aria.column_index {
+            node.set_column_index(value);
+        }
+        if let Some(value) = aria.row_count {
+            node.set_row_count(value);
+        }
+        if let Some(value) = aria.column_count {
+            node.set_column_count(value);
+        }
+        if let Some(value) = &aria.placeholder {
+            node.set_placeholder(value.to_string());
+        }
+        if let Some(value) = &aria.author_id {
+            node.set_author_id(value.to_string());
+        }
+        if let Some(value) = &aria.keyshortcuts {
+            node.set_keyboard_shortcut(value.to_string());
+        }
+        if !self.interactivity.click_listeners.is_empty() {
+            node.add_action(accesskit::Action::Click);
         }
         for (action, _) in &self.interactivity.a11y_action_listeners {
             node.add_action(*action);
@@ -2357,7 +2399,6 @@ impl Interactivity {
                     let hitbox = hitbox.clone();
                     move |event: &MouseDownEvent, phase, window, _cx| {
                         if phase == DispatchPhase::Bubble
-                            && event.button == MouseButton::Left
                             && hitbox.is_hovered(window)
                         {
                             *pending_mouse_down.borrow_mut() = Some(event.clone());
@@ -2376,6 +2417,7 @@ impl Interactivity {
 
                         let mut pending_mouse_down = pending_mouse_down.borrow_mut();
                         if let Some(mouse_down) = pending_mouse_down.clone()
+                            && mouse_down.button == MouseButton::Left
                             && !cx.has_active_drag()
                             && (event.position - mouse_down.position).magnitude() > DRAG_THRESHOLD
                             && let Some((drag_value, drag_listener)) = drag_listener.take()
@@ -2454,7 +2496,9 @@ impl Interactivity {
                         }
                         // Fire click handlers during the bubble phase.
                         DispatchPhase::Bubble => {
-                            if let Some(mouse_down) = captured_mouse_down.take() {
+                            if let Some(mouse_down) = captured_mouse_down.take()
+                                && mouse_down.button == event.button
+                            {
                                 let mouse_click = ClickEvent::Mouse(MouseClickEvent {
                                     down: mouse_down,
                                     up: event.clone(),
@@ -3166,6 +3210,14 @@ where
 
     fn id(&self) -> Option<ElementId> {
         self.element.id()
+    }
+
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        self.element.a11y_role()
+    }
+
+    fn write_a11y_info(&self, node: &mut accesskit::Node) {
+        self.element.write_a11y_info(node);
     }
 
     fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {

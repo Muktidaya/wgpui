@@ -498,6 +498,10 @@ pub enum WindowControlArea {
 pub struct HitboxId(u64);
 
 impl HitboxId {
+    #[cfg(any(test, feature = "test-support"))]
+    /// Returns an inert hitbox identity for synthetic test geometry.
+    pub fn placeholder() -> Self { Self(u64::MAX) }
+
     /// Checks if the hitbox with this ID is currently hovered. Except when handling
     /// `ScrollWheelEvent`, this is typically what you want when determining whether to handle mouse
     /// events or paint hover styles.
@@ -757,6 +761,8 @@ impl Frame {
         self.deferred_draws.clear();
         self.tab_stops.clear();
         self.focus = None;
+        #[cfg(any(test, feature = "test-support"))]
+        self.debug_bounds.clear();
 
         #[cfg(any(feature = "inspector", debug_assertions))]
         {
@@ -1699,7 +1705,16 @@ impl Window {
         AsyncWindowContext::new_context(cx.to_async(), self.handle)
     }
 
-    /// Schedule the given closure to be run directly after the current frame is rendered.
+    /// Dispatch queued animation callbacks without reentering the current view update.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn simulate_next_frame(&mut self, cx: &mut App) -> usize {
+        let callbacks = self.next_frame_callbacks.take();
+        let count = callbacks.len();
+        for callback in callbacks { callback(self, cx); }
+        count
+    }
+
+    /// Schedules a callback for the next requested frame.
     pub fn on_next_frame(&self, callback: impl FnOnce(&mut Window, &mut App) + 'static) {
         RefCell::borrow_mut(&self.next_frame_callbacks).push(Box::new(callback));
     }

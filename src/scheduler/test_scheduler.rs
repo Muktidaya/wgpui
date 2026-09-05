@@ -353,6 +353,11 @@ impl TestScheduler {
         }
     }
 
+    /// Earliest scheduler timer, used to share virtual time with legacy dispatch.
+    pub(crate) fn next_timer_deadline(&self) -> Option<Instant> {
+        self.state.lock().timers.first().map(|timer| timer.expiration)
+    }
+
     pub fn advance_clock_to_next_timer(&self) -> bool {
         if let Some(timer) = self.state.lock().timers.first() {
             self.clock.advance(timer.expiration - self.clock.now());

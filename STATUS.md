@@ -1,47 +1,40 @@
 # WGPUI status
 
-Updated: 2026-08-21
+Updated: 2026-09-05
 
 ## Goal
 
-WGPUI is a **wgpu + winit** UI framework with a GPUI-shaped programming model. Discriminating API: `WgpuSurface` inside the element tree. Not a drop-in for GPUI-CE git main or Zed GPUI.
+Prepare **wgpui 0.3.5** for a later crates.io publish (do not publish in this pass). Independent wgpu + winit UI crate. Discriminating API: `WgpuSurface`. Not a drop-in for GPUI-CE git main or Zed GPUI.
+
+Sibling track: `wgpui-component` 0.6.0 in `/Users/muk/Developer/Muktidaya/wgpui-component` (do not edit from this tree). Component path-depends on this checkout.
 
 ## Current state
 
-**0.3.4 is published** on crates.io (`wgpui` and `wgpui_derive`). Git: `root` at `5e94b544ff`.
+On-disk identity is **0.3.5** for both `wgpui` and `wgpui_derive`. crates.io still has **0.3.4** only (2026-08-19, `5e94b544`). No git tag `v0.3.5`. This `root` checkpoint includes the unpublished API/test work and `.github/workflows/ci.yml`. **Not pushed. Not published.**
 
-Pins: wgpu 30, winit 0.30.13, taffy 0.13, cosmic-text 0.19. Path GPU pass, clipboard/cursor/dialogs/open/IME/file-drop/displays are wired. `WgpuSurface` remains the 3D/CAD child. Public docs and rustdocs describe WGPUI as an independent wgpu+winit crate, not a CE/Zed drop-in.
+This bump is necessary and sufficient for the wgpui half.
 
-The glyph atlas now uploads masks with ordered `Queue::write_texture` calls. This fixes zeroed atlas
-textures observed in both the hello-world example and the Topology CAD shell on macOS.
-
-Verify: `cargo test --lib` (85 passed). Clippy: `./scripts/clippy`. Manual: `hello_world` text and
-Topology CAD shell, `examples/learn/wgpu_surface.rs`, `examples/learn/paths.rs`, paste/copy, file
-dialog, IME in a text field.
+Pins: wgpu 30, winit 0.30.13, taffy 0.13, cosmic-text 0.19. Path GPU pass, clipboard/cursor/dialogs/open/IME/file-drop/displays are wired. Local surface after 0.3.4: derive emits `wgpui::`, glyph-atlas `write_texture` order, a11y stubs, `container_query`, gestures, spring, `ListState` follow, `BoxShadow::new` + `inset`, focus helpers taking `&mut App`, plus dirty-tree shims (test clock, `open_window`, aux-vs-primary click, a11y forwarding, unhandled key text).
 
 ## Decisions
 
 - Completeness ≠ CE/Zed API identity. Do not copy `gpui_platform`.
-- CE/Zed are steal-from references (`gpui_wgpu` path raster).
-- Discriminating test: CAD/3D shell with `WgpuSurface` + winit.
+- Publish order: `wgpui_derive` 0.3.5 → `wgpui` 0.3.5 → component 0.6.0 graph. Dry-run of `wgpui` against the registry will fail until derive 0.3.5 is on crates.io; that is expected, not a packaging defect.
+- Packaging defaults taken: `rust-version = "1.94"`, docs.rs metadata, repository `https://github.com/Muktidaya/wgpui`, derive README/keywords, exclude STATUS/AGENTS/flake/`.cargo`/`.github`/`scripts` from the crates.io tarball (CI file stays on disk).
+- Do not yank 0.3.4. Do not AccessKit / crate-split / WASM in this bump.
+- Uncommitted human work is not disposable; 0.3.5 includes that tree in this commit.
 
-## Remaining (after 0.3.4)
+## Remaining (after 0.3.5 commit, before publish)
 
-- Credentials / keychain, `register_url_scheme`, auxiliary executable, dock menu
-- AccessKit
-- Crate split
-- Gestures / lerp / spring
-- App hide / restart
-- WASM
-- HDR `color_space` unless a 3D example needs it
-- Path MSAA (`WGPUI_PATH_SAMPLE_COUNT` is parsed, unused)
+1. `cargo +1.94.0 publish -p wgpui_derive` then `-p wgpui` (held until asked).
+2. Tag `v0.3.5` after a successful publish if desired.
 
-A later 0.4.0 is reserved for product-shaped work (AccessKit, crate split), not leftover crate versions.
+Still out of crate scope: credentials / keychain, `register_url_scheme`, auxiliary executable, dock menu, AccessKit backend, crate split, app hide/restart, WASM, HDR `color_space`, path MSAA.
 
 ## Evidence
 
-- `Cargo.toml` version 0.3.4, `CHANGELOG.md`
-- `src/platform/renderer.rs` (`PrimitiveBatch::Paths`)
-- `src/platform/platform.rs` (OS services)
-- `src/elements/wgpu_surface.rs`
-- `examples/learn/paths.rs`, `examples/learn/wgpu_surface.rs`
+- `Cargo.toml` / `tooling/derive/Cargo.toml` version 0.3.5
+- `CHANGELOG.md`, `README.md`
+- `src/platform/atlas.rs`, `tooling/derive/src/gpui_path.rs`, `src/style.rs` (`BoxShadow`)
+- Included: `src/app.rs`, `src/app/test_context.rs`, `src/elements/div.rs`, `src/key_dispatch.rs`, `src/platform/platform.rs`, `src/platform/test/dispatcher.rs`, `src/scheduler/test_scheduler.rs`, `src/window.rs`, `.github/workflows/ci.yml`, `tooling/derive/README.md`
+- Verify: `cargo +1.94.0 test --lib`; `cargo +1.94.0 publish --dry-run -p wgpui_derive`; `cargo +1.94.0 publish --dry-run -p wgpui` (wgpui dry-run fails until derive 0.3.5 is on crates.io)
