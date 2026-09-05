@@ -7744,7 +7744,6 @@ dependencies = [
  "unicode-segmentation",
  "web-time",
  "wgpui",
- "wgpui-platform",
  "wgpui_derive",
 ]
 

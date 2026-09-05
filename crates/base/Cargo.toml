@@ -53,7 +53,9 @@ syntect.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 smol.workspace = true
-gpui_platform.workspace = true
+# `wgpui-platform` stays `publish = false` (local shim for excluded examples).
+# Do not list it here: a versioned path dep would make crates.io require an
+# unpublished registry crate.
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 async-channel = "2.3.1"
