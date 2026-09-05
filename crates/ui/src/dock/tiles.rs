@@ -470,7 +470,7 @@ mod tests {
             area.update(cx, |area, cx| area.set_center(layout, window, cx));
         });
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let panel_height = height.get();
         assert!(

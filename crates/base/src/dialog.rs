@@ -611,7 +611,7 @@ mod tests {
             let handle = handle.clone();
             move |_, _| TriggerHarness { handle }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(20.), px(20.)), Default::default());
 
         assert!(handle.is_open());
@@ -662,7 +662,7 @@ mod tests {
         });
         let viewport = cx.update(|window, cx| {
             let viewport = window.viewport_size();
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
             viewport
         });
 

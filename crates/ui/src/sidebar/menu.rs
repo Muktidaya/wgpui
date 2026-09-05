@@ -409,7 +409,7 @@ mod tests {
             .icon(Icon::default())
             .collapsed(true);
 
-        assert_eq!(item.collapsed_tooltip().as_deref(), Some("Projects"));
+        assert_eq!(item.collapsed_tooltip().as_deref().map(|s| s.as_ref()), Some("Projects"));
     }
 
     #[test]

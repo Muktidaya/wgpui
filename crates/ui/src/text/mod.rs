@@ -307,7 +307,10 @@ mod tests {
     fn legacy_partial_styles_refine_component_theme_defaults() {
         let theme = Theme::default();
         let mut table_head = gpui::StyleRefinement::default();
-        table_head.text.font_weight = Some(gpui::FontWeight::BOLD);
+        table_head
+            .text
+            .get_or_insert_with(Default::default)
+            .font_weight = Some(gpui::FontWeight::BOLD);
         let inline_code = gpui::HighlightStyle {
             font_style: Some(gpui::FontStyle::Italic),
             ..Default::default()
@@ -322,11 +325,15 @@ mod tests {
 
         assert_eq!(style.table_head().background, Some(theme.table_head.into()));
         assert_eq!(
-            style.table_head().text.color,
+            style.table_head().text.as_ref().and_then(|text| text.color),
             Some(theme.table_head_foreground)
         );
         assert_eq!(
-            style.table_head().text.font_weight,
+            style
+                .table_head()
+                .text
+                .as_ref()
+                .and_then(|text| text.font_weight),
             Some(gpui::FontWeight::BOLD)
         );
         assert_eq!(style.inline_code().background_color, Some(theme.accent));

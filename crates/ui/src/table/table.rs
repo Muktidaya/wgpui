@@ -132,7 +132,7 @@ mod tests {
 
         let named = Table::new().accessibility_label("Recent invoices");
         assert_eq!(
-            named.accessibility_label.as_deref(),
+            named.accessibility_label.as_deref().map(|s| s.as_ref()),
             Some("Recent invoices")
         );
     }

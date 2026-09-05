@@ -317,7 +317,7 @@ mod tests {
         assert!(heading != base.clone().with_heading_font_size(|_, size| size * 2.));
 
         let mut table = StyleRefinement::default();
-        table.text.white_space = Some(gpui::WhiteSpace::Nowrap);
+        table.text.get_or_insert_with(Default::default).white_space = Some(gpui::WhiteSpace::Nowrap);
         assert!(base != base.clone().with_table_cell(table));
 
         assert!(base != base.clone().with_dark(true));

@@ -22,7 +22,7 @@ fn prepaint_callback_observes_the_parent_bounds(cx: &mut TestAppContext) {
     let result = captured.clone();
     let (_, cx) = cx.add_window_view(move |_, _| PrepaintHarness { captured });
 
-    cx.update(|window, cx| window.draw(cx).clear(cx));
+    cx.update(|window, cx| window.draw(cx).clear());
 
     let bounds = result.borrow().expect("prepaint callback should run");
     assert_eq!(bounds.size.width, px(80.));

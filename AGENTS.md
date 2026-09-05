@@ -27,15 +27,22 @@ natural Chinese rather than word-for-word translation.
 
 GPUI Component is a UI component library for building desktop applications using [GPUI](https://gpui.rs). It provides 60+ cross-platform desktop UI components, inspired by macOS/Windows controls and combined with shadcn/ui design.
 
-This is a Rust workspace project with the following main crates:
+This is a **wgpui adaptor** of Longbridge gpui-component v0.6.0. Workspace
+crates we compile:
 
-- `crates/ui` - Core UI component library (published as `gpui-component`)
-- `crates/story` - Gallery application for showcasing and testing components
-- `crates/story-web` - Web version of the story gallery (using WebAssembly)
-- `crates/macros` - Procedural macros (`IntoPlot` derive)
-- `crates/assets` - Static assets
-- `crates/webview` - WebView component support
-- `examples/` - Various example applications
+- `crates/ui` — styled UI library (published as `wgpui-component`; maps upstream `crates/component`)
+- `crates/base` — unstyled behavior (`wgpui-base`)
+- `crates/macros` — procedural macros (`wgpui-component-macros`)
+- `crates/assets` — default icons (`wgpui-component-assets`)
+- `crates/platform` — `wgpui-platform` shim (`publish = false`)
+- `crates/harness` — integration tests
+- `examples/hello_world`
+
+Upstream `crates/kit` / `gpui-kit`, story gallery, WASM, and `gpui-wry` stay on
+disk but are not workspace members. Do not publish as `gpui-kit` / `gpui-wry`.
+
+Vendored sources keep `use gpui::` / `gpui_component::`. Cargo.toml aliases
+those keys to `wgpui` 0.3.5 (`path = "../wgpui"`) and `wgpui-*`.
 
 ## Common Commands
 

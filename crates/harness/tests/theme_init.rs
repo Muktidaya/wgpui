@@ -1,3 +1,5 @@
+extern crate gpui as wgpui;
+
 use gpui::TestAppContext;
 use gpui_component::{ActiveTheme as _, ThemeRegistry};
 

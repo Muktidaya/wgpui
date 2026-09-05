@@ -1975,6 +1975,7 @@ pub(crate) fn clear_window_text_selection(window_id: gpui::WindowId, cx: &mut Ap
 mod tests {
     use super::*;
     use crate::ElementExt as _;
+    use crate::element_ext::TextSelectionScopeExt;
     use gpui::{
         Bounds, ContentMask, Context, Hitbox, HitboxBehavior, HitboxId, InteractiveElement as _,
         IntoElement, ParentElement as _, Render, SharedString, Styled as _, StyledText,
@@ -2169,7 +2170,7 @@ mod tests {
     fn laid_out_runs(texts: &[&str], cx: &mut TestAppContext) -> Vec<(SharedString, TextLayout)> {
         let texts = texts
             .iter()
-            .map(|text| SharedString::from(*text))
+            .map(|text| SharedString::from((*text).to_owned()))
             .collect::<Vec<_>>();
         let view = cx.add_window({
             let texts = texts.clone();

@@ -58,19 +58,22 @@ impl Sizable for Spinner {
 }
 
 impl RenderOnce for Spinner {
-    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
-        div()
-            .child(
-                self.icon
-                    .with_size(self.size)
-                    .when_some(self.color, |this, color| this.text_color(color))
-                    .with_animation(
-                        "circle",
-                        Animation::new(self.speed).repeat().with_easing(self.easing),
-                        |this, delta| this.transform(Transformation::rotate(percentage(delta))),
-                    ),
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let icon = self
+            .icon
+            .with_size(self.size)
+            .when_some(self.color, |this, color| this.text_color(color));
+        let icon = if cx.reduce_motion() {
+            icon.into_any_element()
+        } else {
+            icon.with_animation(
+                "circle",
+                Animation::new(self.speed).repeat().with_easing(self.easing),
+                |this, delta| this.transform(Transformation::rotate(percentage(delta))),
             )
-            .into_element()
+            .into_any_element()
+        };
+        div().child(icon).into_element()
     }
 }
 

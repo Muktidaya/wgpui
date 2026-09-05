@@ -343,7 +343,7 @@ mod tests {
                 keyboard_changes,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, changes, keyboard_changes)
     }
 
@@ -354,7 +354,7 @@ mod tests {
         assert_eq!(changes.get(), 1);
 
         changes.set(0);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         for key in ["enter", "space"] {
             let keystroke = Keystroke::parse(key).unwrap();
             cx.simulate_event(KeyDownEvent {
@@ -403,7 +403,7 @@ mod tests {
         let captured: Captured = Arc::new(Mutex::new(None));
         let result = captured.clone();
         let (_, cx) = cx.add_window_view(move |_, _| Probe(captured));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let node = result.lock().unwrap().take().unwrap();
         assert_eq!(node.role(), Role::RadioButton);
         assert_eq!(node.label(), Some("Choice"));

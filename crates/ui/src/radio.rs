@@ -415,7 +415,7 @@ mod tests {
             .label("Automatic")
             .accessibility_label("Choose automatic mode");
         assert_eq!(
-            named.accessibility_label.as_deref(),
+            named.accessibility_label.as_deref().map(|s| s.as_ref()),
             Some("Choose automatic mode"),
             "an explicit name must win over the visible label"
         );

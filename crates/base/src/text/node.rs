@@ -2634,7 +2634,7 @@ mod tests {
     fn selected_paragraph(text: &str) -> Paragraph {
         let len = text.len();
         let paragraph = paragraph_with_children(vec![
-            InlineNode::new(text).marks(vec![(0..len, TextMark::default())]),
+            InlineNode::new(text.to_owned()).marks(vec![(0..len, TextMark::default())]),
         ]);
         set_paragraph_selection(&paragraph, 0..len);
         paragraph
@@ -2919,8 +2919,8 @@ mod tests {
 
     fn image_paragraph(alt: &str, url: &str) -> Paragraph {
         let image = ImageNode {
-            url: url.into(),
-            alt: Some(alt.into()),
+            url: url.to_owned().into(),
+            alt: Some(alt.to_owned().into()),
             ..Default::default()
         };
         Paragraph {

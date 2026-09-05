@@ -277,6 +277,35 @@ fn style_to_json(style: &StyleRefinement) -> String {
     serde_json::to_string_pretty(style).unwrap_or_else(|e| format!("{{ \"error\": \"{}\" }}", e))
 }
 
+/// Tailwind spacing/layout helpers live in `wgpui_derive` macros. WGPUI's
+/// inspector reflection expander only inlines `wgpui_macros::…` / unprefixed
+/// names, so `wgpui_derive::p_1` never enters `styled_reflection`. Re-expand
+/// them here under those names so the inspector can parse `.p_1()` / `.mx_2()`.
+mod token_styled {
+    use gpui::*;
+
+    #[gpui_macros::derive_inspector_reflection]
+    pub trait TokenStyled: Sized {
+        fn style(&mut self) -> &mut StyleRefinement;
+
+        style_helpers!();
+        visibility_style_methods!();
+        margin_style_methods!();
+        padding_style_methods!();
+        position_style_methods!();
+        overflow_style_methods!();
+        cursor_style_methods!();
+        border_style_methods!();
+        box_shadow_style_methods!();
+    }
+
+    impl TokenStyled for StyleRefinement {
+        fn style(&mut self) -> &mut StyleRefinement {
+            self
+        }
+    }
+}
+
 struct StyleMethods {
     table: Vec<(Box<StyleRefinement>, FunctionReflection<StyleRefinement>)>,
     map: HashMap<&'static str, FunctionReflection<StyleRefinement>>,
@@ -289,6 +318,7 @@ impl StyleMethods {
             let table: Vec<_> = [
                 gpui_base::styled_ext_reflection_methods::<StyleRefinement>(),
                 gpui::styled_reflection::methods::<StyleRefinement>(),
+                token_styled::token_styled_reflection::methods::<StyleRefinement>(),
             ]
             .into_iter()
             .flatten()

@@ -453,7 +453,7 @@ mod tests {
                 parent_clicks,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, changes, parent_clicks)
     }
 
@@ -539,7 +539,7 @@ mod tests {
                 group_changes,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, child_clicks, group_changes)
     }
 

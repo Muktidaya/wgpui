@@ -340,7 +340,7 @@ mod tests {
         let state = cx.new(|_| SliderState::new());
         let result = state.clone();
         let (_, cx) = cx.add_window_view(move |_, _| Harness { state, disabled });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, result)
     }
 

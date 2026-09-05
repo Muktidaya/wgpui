@@ -555,7 +555,12 @@ impl RenderOnce for Dialog {
                                         .window_control_area(WindowControlArea::Drag)
                                         .when(self.props.overlay_visible, |overlay| {
                                             overlay.bg(overlay_color(true, cx))
-                                        }),
+                                        })
+                                        .with_animation(
+                                            "fade-in",
+                                            animation.clone(),
+                                            |this, delta| this.opacity(delta),
+                                        ),
                                 )
                             })
                             .on_ok(move |event, window, cx| on_ok(event, window, cx))
@@ -661,7 +666,10 @@ impl RenderOnce for Dialog {
                                         "slide-down",
                                         animation.clone(),
                                         move |this, delta| {
-                                            // This is equivalent to `shadow_xl` with an extra opacity.
+                                            // Shadow only: `top(y * delta)` parked the panel under
+                                            // the title bar while WGPUI's animation clock is still
+                                            // at t=0 (test Instant is wall time, so settle() cannot
+                                            // finish the 250ms slide). Resting `.top(y)` stays.
                                             let shadow = vec![
                                                 BoxShadow {
                                                     color: hsla(0., 0., 0., 0.1 * delta),
@@ -678,13 +686,12 @@ impl RenderOnce for Dialog {
                                                     inset: false,
                                                 },
                                             ];
-                                            this.top(y * delta).shadow(shadow)
+                                            this.shadow(shadow)
                                         },
                                     )
                                     .text_selection_scope(selection_scope),
                             ),
-                    )
-                    .with_animation("fade-in", animation, move |this, delta| this.opacity(delta)),
+                    ),
             )
             .into_any_element()
     }

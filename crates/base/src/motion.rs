@@ -314,7 +314,8 @@ where
         } else {
             1.0
         };
-        let duration = policy.duration.mul_f32(reversing_factor);
+        // f32 seconds can round a 100 ms transition beyond its exact end.
+        let duration = policy.duration.mul_f64(f64::from(reversing_factor));
         state.update(cx, |state, _| {
             state.from = sampled.clone();
             state.target = target.clone();

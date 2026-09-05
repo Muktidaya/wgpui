@@ -525,18 +525,18 @@ mod tests {
 
             let plain = ColorPicker::new(&state).label("Color");
             assert_eq!(plain.accessibility_label, None);
-            assert_eq!(plain.label.as_deref(), Some("Color"));
+            assert_eq!(plain.label.as_deref().map(|s| s.as_ref()), Some("Color"));
 
             let named = ColorPicker::new(&state)
                 .label("Color")
                 .accessibility_label("Text color");
             assert_eq!(
-                named.accessibility_label.as_deref(),
+                named.accessibility_label.as_deref().map(|s| s.as_ref()),
                 Some("Text color"),
                 "an explicit name must win over the visible label"
             );
             assert_eq!(
-                named.label.as_deref(),
+                named.label.as_deref().map(|s| s.as_ref()),
                 Some("Color"),
                 "and must not change what is drawn"
             );

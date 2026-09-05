@@ -610,7 +610,7 @@ mod tests {
                 group_clicks,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, child_clicks, group_clicks)
     }
 
@@ -658,7 +658,7 @@ mod tests {
     fn prefix_content_and_suffix_keep_their_order(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let (_, cx) = cx.add_window_view(|_, _| ContentHarness);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let prefix = cx.debug_bounds("tab-prefix").unwrap();
         let child = cx.debug_bounds("tab-child").unwrap();

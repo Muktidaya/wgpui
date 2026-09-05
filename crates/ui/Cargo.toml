@@ -1,13 +1,13 @@
 [package]
-description = "UI components for building fantastic desktop application by using GPUI."
+description = "UI components for building desktop applications with wgpui (Longbridge gpui-component v0.6.0 adaptor)."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
 license = "Apache-2.0"
 name = "wgpui-component"
-documentation = "https://docs.rs/gpui-component"
-homepage = "https://longbridge.github.io/gpui-component"
-repository = "https://github.com/longbridge/gpui-component"
+documentation = "https://docs.rs/wgpui-component"
+homepage = "https://github.com/Muktidaya/wgpui-component"
+repository = "https://github.com/Muktidaya/wgpui-component"
 readme = "../../README.md"
-version = "0.5.2"
+version = "0.6.0"
 publish = true
 edition.workspace = true
 
@@ -102,7 +102,7 @@ gpui-base.workspace = true
 gpui-component-macros = { workspace = true }
 # This regular dependency propagates the canonical icon directory from the
 # assets build script into this crate's build script through Cargo DEP metadata.
-gpui-component-assets = { workspace = true }
+gpui-kit-assets = { workspace = true }
 notify.workspace = true
 ropey.workspace = true
 rust-i18n.workspace = true

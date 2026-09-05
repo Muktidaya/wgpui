@@ -809,7 +809,7 @@ mod tests {
         let (view, cx) = cx.add_window_view(|_, _| Harness {
             state: ToastStackState::default(),
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| {
             assert_eq!(
                 view.state
@@ -841,28 +841,28 @@ mod tests {
             state: ToastStackState::default(),
             focus: cx.focus_handle().tab_stop(true),
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
 
         cx.simulate_mouse_move(point(px(400.), px(400.)), None, gpui::Modifiers::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(!view.state.is_expanded()));
 
         cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
 
         cx.simulate_mouse_move(point(px(400.), px(400.)), None, gpui::Modifiers::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(!view.state.is_expanded()));
 
         let focus = view.read_with(cx, |view, _| view.focus.clone());
         cx.update(|window, cx| {
             focus.focus(window, cx);
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
         });
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
     }
@@ -895,8 +895,8 @@ mod tests {
             show_second: false,
         });
         cx.update(|window, cx| {
-            window.draw(cx).clear(cx);
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
+            window.draw(cx).clear();
         });
         let initial_y = cx.debug_bounds("first-toast").unwrap().origin.y;
 
@@ -909,13 +909,13 @@ mod tests {
         assert_eq!(first_reflow_y, initial_y);
 
         cx.executor().advance_clock(Duration::from_millis(200));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let middle_y = cx.debug_bounds("first-toast").unwrap().origin.y;
         assert!(middle_y > initial_y);
         assert!(middle_y < initial_y + px(14.));
 
         cx.executor().advance_clock(Duration::from_millis(200));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(
             cx.debug_bounds("first-toast").unwrap().origin.y,
             initial_y + px(14.)
@@ -960,8 +960,8 @@ mod tests {
             show_second: false,
         });
         cx.update(|window, cx| {
-            window.draw(cx).clear(cx);
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
+            window.draw(cx).clear();
         });
         // A bottom-anchored item's position is composed from two springs — the
         // stack height and the item's own offset — and the stack height only
@@ -969,7 +969,7 @@ mod tests {
         // Both the baseline and the final reading are taken settled, so neither
         // carries the fraction of a pixel that separates them mid-flight.
         cx.executor().advance_clock(Duration::from_secs(1));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let initial_y = cx.debug_bounds("bottom-first-toast").unwrap().origin.y;
 
         view.update(cx, |view, cx| {
@@ -983,7 +983,7 @@ mod tests {
         );
 
         cx.executor().advance_clock(Duration::from_millis(200));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let middle_y = cx.debug_bounds("bottom-first-toast").unwrap().origin.y;
         assert!(middle_y < initial_y);
         assert!(
@@ -992,7 +992,7 @@ mod tests {
         );
 
         cx.executor().advance_clock(Duration::from_secs(1));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(
             cx.debug_bounds("bottom-first-toast").unwrap().origin.y,
             initial_y - px(14.)

@@ -155,7 +155,7 @@ mod tests {
             let clicks = clicks.clone();
             move |_, _| LinkHarness { disabled, clicks }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, clicks)
     }
 

@@ -807,7 +807,7 @@ mod tests {
             let plain = Select::new(&state).placeholder("Choose a language");
             assert_eq!(plain.options.accessibility_label, None);
             assert_eq!(
-                plain.options.placeholder.as_deref(),
+                plain.options.placeholder.as_deref().map(|s| s.as_ref()),
                 Some("Choose a language")
             );
 
@@ -815,11 +815,11 @@ mod tests {
                 .placeholder("Choose a language")
                 .accessibility_label("Programming language");
             assert_eq!(
-                named.options.accessibility_label.as_deref(),
+                named.options.accessibility_label.as_deref().map(|s| s.as_ref()),
                 Some("Programming language")
             );
             assert_eq!(
-                named.options.placeholder.as_deref(),
+                named.options.placeholder.as_deref().map(|s| s.as_ref()),
                 Some("Choose a language"),
                 "an accessible name must not change what is drawn"
             );

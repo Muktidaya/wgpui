@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, App, Bounds, ClickEvent, Element, ElementId, Entity, GlobalElementId,
-    HighlightStyle, InspectorElementId, IntoElement, LayoutId, Pixels, Refineable as _, RenderOnce,
+    HighlightStyle, InspectorElementId, IntoElement, LayoutId, Pixels, RenderOnce,
     SharedString, StyleRefinement, Styled, Window,
 };
 
@@ -250,7 +250,7 @@ pub(super) fn resolve_component_style(
     let themed = super::base_text_view_style(theme);
 
     let refined = |mut base: gpui::StyleRefinement, overlay: &StyleRefinement| {
-        base.refine(overlay);
+        gpui_base::refine_style_refinement(&mut base, overlay);
         base
     };
     let code_block = refined(themed.code_block().clone(), &legacy.code_block);

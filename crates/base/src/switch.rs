@@ -562,7 +562,7 @@ mod tests {
                 parent_clicks,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, toggles, keyboard_events, last_value, parent_clicks)
     }
 
@@ -594,7 +594,7 @@ mod tests {
         toggles.set(0);
         cx.update(|window, cx| {
             assert!(window.focused(cx).is_some());
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
         });
 
         activate_key(cx, "enter");
@@ -710,7 +710,7 @@ mod tests {
         let captured: Captured = Arc::new(Mutex::new(None));
         let result = captured.clone();
         let (_, cx) = cx.add_window_view(move |_, _| A11yProbe { captured });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let (enabled, disabled) = result.lock().unwrap().take().unwrap();
 
         assert_eq!(enabled.role(), Role::Switch);

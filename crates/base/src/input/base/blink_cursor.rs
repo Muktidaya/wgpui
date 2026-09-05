@@ -63,7 +63,9 @@ impl BlinkCursor {
         self._task = cx.spawn(async move |this, cx| {
             cx.background_executor().timer(INTERVAL).await;
             if let Some(this) = this.upgrade() {
-                this.update(cx, |this, cx| this.blink(epoch, cx));
+                if let Err(error) = this.update(cx, |this, cx| this.blink(epoch, cx)) {
+                    tracing::debug!("Cursor view closed before blink: {error}");
+                }
             }
         });
     }
@@ -85,10 +87,12 @@ impl BlinkCursor {
             cx.background_executor().timer(PAUSE_DELAY).await;
 
             if let Some(this) = this.upgrade() {
-                this.update(cx, |this, cx| {
+                if let Err(error) = this.update(cx, |this, cx| {
                     this.paused = false;
                     this.blink(epoch, cx);
-                });
+                }) {
+                    tracing::debug!("Cursor view closed before resume: {error}");
+                }
             }
         });
     }

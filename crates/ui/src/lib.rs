@@ -1,3 +1,6 @@
+// WGPUI derives emit its canonical crate name; upstream imports retain gpui.
+extern crate gpui as wgpui;
+
 use gpui::App;
 use std::ops::Deref;
 

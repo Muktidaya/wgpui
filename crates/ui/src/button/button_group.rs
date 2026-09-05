@@ -324,7 +324,7 @@ mod tests {
                 group_changes,
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, child_clicks, changes)
     }
 
@@ -415,7 +415,7 @@ mod tests {
             let clicks = clicks.clone();
             move |_, _| DisabledOrderHarness(clicks)
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(10.), px(60.)), Modifiers::default());
         assert_eq!(clicks.get(), 0);
         cx.simulate_click(point(px(10.), px(180.)), Modifiers::default());

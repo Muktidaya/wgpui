@@ -1164,7 +1164,7 @@ mod tests {
             Some(
                 MarkdownNode::new("ticker", symbol)
                     .text(node_text)
-                    .markdown(cx.node_source(node).unwrap_or_default()),
+                    .markdown(cx.node_source(node).unwrap_or_default().to_owned()),
             )
         });
 

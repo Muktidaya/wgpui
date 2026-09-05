@@ -448,8 +448,8 @@ mod tests {
             let resizes = resizes.clone();
             move |_, _| ResizableHarness { state, resizes }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx.update(|window, cx| window.draw(cx).clear());
         (cx, state, resizes)
     }
 
@@ -488,7 +488,7 @@ mod tests {
             state.update(cx, |state, cx| {
                 state.resize_panel(0, px(220.), window, cx);
             });
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
         });
 
         state.read_with(cx, |state, _| {
@@ -547,8 +547,8 @@ mod tests {
     #[gpui::test]
     fn a_group_size_binds_the_cross_axis(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SizedGroupHarness);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let panel = cx.debug_bounds("sized-panel").unwrap();
         assert_eq!(panel.size.width, px(400.));

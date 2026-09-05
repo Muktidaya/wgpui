@@ -628,13 +628,10 @@ mod tests {
 
         let animation = loading_animation(Duration::from_secs(3), false);
         assert_eq!(animation.duration, Duration::from_secs(3));
-        assert!(animation.synced);
         assert!(!animation.oneshot);
-        assert_eq!(animation.max_fps, None);
 
         let animation = loading_animation(Duration::from_secs(3), true);
         assert_eq!(animation.duration, Duration::from_secs(3));
         assert!(animation.oneshot);
-        assert!(!animation.synced);
     }
 }

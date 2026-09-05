@@ -141,6 +141,7 @@ impl MessageScrollerState {
             return false;
         }
 
+        self.list_state.set_follow_mode(FollowMode::Normal);
         self.list_state.scroll_to(ListOffset {
             item_ix: index,
             offset_in_item: px(0.),

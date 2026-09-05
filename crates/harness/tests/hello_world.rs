@@ -1,5 +1,7 @@
+extern crate gpui as wgpui;
+
 use gpui::{
-    AppContext, Context, IntoElement, ParentElement, Render, TestAppContext, Window, div,
+    Context, IntoElement, ParentElement, Render, Styled, TestAppContext, Window, div,
 };
 use gpui_component::{button::*, *};
 use gpui_component_assets::Assets;

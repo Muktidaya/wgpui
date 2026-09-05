@@ -4,7 +4,7 @@ use crate::{InteractiveElementExt as _, StyledExt};
 
 use super::{Scrollbar, ScrollbarAxis, ScrollbarHandle};
 use gpui::{
-    App, Div, Element, ElementId, InteractiveElement, IntoElement, Overflow, ParentElement,
+    App, Div, Element, ElementId, InteractiveElement, IntoElement, Length, Overflow, ParentElement,
     PointRefinement, RenderOnce, ScrollHandle, Stateful, StatefulInteractiveElement,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
 };
@@ -136,10 +136,15 @@ where
         let content_id = (self.id.clone(), "content");
         let scrollbar_id = (self.id.clone(), "scrollbar");
 
+        // `flex_1()` leaves `flex_basis = 0%` on the source element. Copying
+        // grow/shrink/basis onto the wrapper is what lets this region shrink
+        // as a flex item; the inner content must not keep that 0% basis or
+        // Taffy sizes it to the viewport and the area cannot scroll.
         let content = self
             .element
             .id(content_id)
             .flex_none()
+            .flex_basis(Length::Auto)
             .map(|this| match self.axis {
                 ScrollbarAxis::Vertical => this.h_auto().min_h_full(),
                 ScrollbarAxis::Horizontal => this.w_auto().min_w_full(),

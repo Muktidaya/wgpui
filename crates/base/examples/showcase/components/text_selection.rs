@@ -168,7 +168,7 @@ mod tests {
     fn text_selection_footer_stays_fixed_when_document_scrolls(cx: &mut TestAppContext) {
         let (view, window) =
             cx.add_window_view(|window, cx| BaseShowcase::new("text-selection", window, cx));
-        window.update(|window, cx| window.draw(cx).clear(cx));
+        window.update(|window, cx| window.draw(cx).clear());
 
         let (footer_bounds, scroll) = view.read_with(window, |view, _| {
             (
@@ -180,7 +180,7 @@ mod tests {
         });
         scroll.set_offset(point(px(0.), px(-80.)));
         view.update(window, |_, cx| cx.notify());
-        window.update(|window, cx| window.draw(cx).clear(cx));
+        window.update(|window, cx| window.draw(cx).clear());
 
         let scrolled_footer_bounds = view.read_with(window, |view, _| {
             view.text_selection_footer_bounds

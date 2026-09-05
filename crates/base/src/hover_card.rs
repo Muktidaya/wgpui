@@ -281,21 +281,21 @@ mod tests {
     fn public_hover_card_owns_delayed_open_and_close(cx: &mut TestAppContext) {
         let delay = Duration::from_millis(100);
         let (_, cx) = cx.add_window_view(|_, _| Harness::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
         cx.update(|window, cx| {
-            window.draw(cx).clear(cx);
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
+            window.draw(cx).clear();
         });
         assert!(cx.debug_bounds("hover-card-content").is_some());
 
         cx.simulate_mouse_move(point(px(100.), px(100.)), None, gpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("hover-card-content").is_none());
     }
 
@@ -307,7 +307,7 @@ mod tests {
             let open_changes = open_changes.clone();
             move |_, _| Harness { open_changes }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
         assert_eq!(*open_changes.borrow(), Vec::<bool>::new());
@@ -315,15 +315,15 @@ mod tests {
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
         cx.update(|window, cx| {
-            window.draw(cx).clear(cx);
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
+            window.draw(cx).clear();
         });
         assert_eq!(*open_changes.borrow(), vec![true]);
 
         cx.simulate_mouse_move(point(px(100.), px(100.)), None, gpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(*open_changes.borrow(), vec![true, false]);
     }
 }

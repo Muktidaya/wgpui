@@ -1136,11 +1136,11 @@ mod tests {
         let reparsed: super::SemanticThemeConfigFile = serde_json::from_str(&serialized).unwrap();
         let semantic = reparsed.tokens;
 
-        assert_eq!(semantic.colors.surface.as_deref(), Some("#111827"));
-        assert_eq!(semantic.colors.destructive.as_deref(), Some("#dc2626"));
+        assert_eq!(semantic.colors.surface.as_deref().map(|s| s.as_ref()), Some("#111827"));
+        assert_eq!(semantic.colors.destructive.as_deref().map(|s| s.as_ref()), Some("#dc2626"));
         assert_eq!(semantic.radius.lg, Some(10.0));
         assert_eq!(semantic.spacing.xl, Some(24.0));
-        assert_eq!(semantic.typography.sans.as_deref(), Some("Inter"));
+        assert_eq!(semantic.typography.sans.as_deref().map(|s| s.as_ref()), Some("Inter"));
         assert_eq!(semantic.typography.md.line_height, Some(22.0));
 
         let mut theme = Theme::default();

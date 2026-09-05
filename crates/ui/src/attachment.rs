@@ -1000,7 +1000,7 @@ mod tests {
                     action_clicks,
                 }
             });
-            cx.update(|window, cx| window.draw(cx).clear(cx));
+            cx.update(|window, cx| window.draw(cx).clear());
 
             // A click on an action must not also fire the whole-card handler.
             cx.simulate_click(point(px(20.), px(30.)), Modifiers::default());

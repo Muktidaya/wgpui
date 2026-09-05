@@ -15,7 +15,7 @@ mod tests {
     };
     use gpui_base::{
         TextSelection, TextSelectionHandle, TextSelectionRegistration, TextSelectionRun,
-        TextSelectionScopeId,
+        TextSelectionScopeExt, TextSelectionScopeId,
     };
     use std::cell::Cell;
     use std::rc::Rc;

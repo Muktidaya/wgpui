@@ -139,7 +139,7 @@ mod tests {
             delta: ScrollDelta::Pixels(point(px(0.), px(-120.))),
             ..Default::default()
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let after = cx
             .debug_bounds("text-view-markdown")
             .expect("Markdown viewport bounds after scrolling");

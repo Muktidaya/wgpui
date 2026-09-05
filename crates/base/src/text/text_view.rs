@@ -1784,7 +1784,7 @@ mod tests {
         });
 
         let total = |p: &ListState| {
-            f32::from(p.max_offset_for_scrollbar().y + p.viewport_bounds().size.height)
+            f32::from(p.max_offset_for_scrollbar().height + p.viewport_bounds().size.height)
         };
         let mut totals = vec![total(&probe)];
         for _ in 0..20 {

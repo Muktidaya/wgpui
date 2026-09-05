@@ -77,7 +77,7 @@ macro_rules! font_weight {
 )]
 pub trait StyledExt: Styled + Sized {
     fn refine_style(mut self, style: &StyleRefinement) -> Self {
-        self.style().refine(style);
+        refine_style_refinement(self.style(), style);
         self
     }
 
@@ -203,6 +203,25 @@ pub trait StyledExt: Styled + Sized {
 }
 
 impl<E: Styled> StyledExt for E {}
+
+/// Applies `overlay` onto `base`, merging nested `text` instead of replacing it.
+///
+/// WGPUI's `StyleRefinement::text` is `Option<TextStyleRefinement>` without
+/// `#[refineable]`, so [`Refineable::refine`] replaces the whole option. A
+/// font-weight-only overlay would otherwise drop a themed color or line-height
+/// already on the base.
+pub fn refine_style_refinement(base: &mut StyleRefinement, overlay: &StyleRefinement) {
+    let base_text = base.text.clone();
+    base.refine(overlay);
+    match (base_text, overlay.text.as_ref()) {
+        (Some(mut base_text), Some(overlay_text)) => {
+            base_text.refine(overlay_text);
+            base.text = Some(base_text);
+        }
+        (base_text, None) => base.text = base_text,
+        (None, Some(_)) => {}
+    }
+}
 
 #[cfg(any(feature = "inspector", debug_assertions))]
 pub fn styled_ext_reflection_methods<T: Styled + 'static>()

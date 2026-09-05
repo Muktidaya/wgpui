@@ -201,6 +201,8 @@ pub struct Button {
     border_corners: Corners<bool>,
     border_edges: Edges<bool>,
     dropdown_caret: bool,
+    hover_group: Option<SharedString>,
+    hover_group_held: bool,
     size: Size,
     compact: bool,
     tooltip: Option<(
@@ -259,6 +261,8 @@ impl Button {
             outline: false,
             loading_icon: None,
             dropdown_caret: false,
+            hover_group: None,
+            hover_group_held: false,
             tab_index: 0,
             tab_stop: true,
         }
@@ -302,6 +306,21 @@ impl Button {
     /// Set the border edges of the Button.
     pub(crate) fn border_edges(mut self, edges: impl Into<Edges<bool>>) -> Self {
         self.border_edges = edges.into();
+        self
+    }
+
+    /// Join a hover group: while any member is hovered, an idle member shows
+    /// its hover surface at half strength, so a composite such as a split
+    /// button reads as one control with the hovered part emphasized.
+    pub(crate) fn hover_group(mut self, group: impl Into<SharedString>) -> Self {
+        self.hover_group = Some(group.into());
+        self
+    }
+
+    /// Keep the hover group's idle surface up without a pointer, for as long as
+    /// the group is held engaged, such as while a sibling's menu is open.
+    pub(crate) fn hover_group_held(mut self, held: bool) -> Self {
+        self.hover_group_held = held;
         self
     }
 
@@ -511,6 +530,8 @@ impl RenderOnce for Button {
         let hoverable = self.hoverable();
         let disabled = self.disabled;
         let loading = self.loading;
+        let hover_group = self.hover_group;
+        let hover_group_held = self.hover_group_held;
         let mut base = self.base;
         let children = self.children;
         let instance_style = base.style().clone();
@@ -619,6 +640,11 @@ impl RenderOnce for Button {
                                 .border_color(active_style.border)
                                 .text_color(active_style.fg)
                         })
+                        .when_some(hover_group, |this, group| {
+                            let idle_bg = style.hovered(self.outline, cx).bg.opacity(0.5);
+                            this.when(hover_group_held, |this| this.bg(idle_bg))
+                                .group_hover(group, |this| this.bg(idle_bg))
+                        })
                     })
             })
             .refine_style(&instance_style);
@@ -654,9 +680,8 @@ impl RenderOnce for Button {
                 this.child(
                     div()
                         .min_w_0()
-                        .overflow_hidden()
                         .whitespace_nowrap()
-                        .truncate()
+                        .text_ellipsis()
                         .line_height(relative(1.))
                         .child(label),
                 )
@@ -1174,7 +1199,9 @@ impl ButtonVariant {
             Self::Default => cx.theme().tokens.button_active.into(),
             Self::Primary => cx.theme().tokens.button_primary_active.into(),
             Self::Secondary => cx.theme().tokens.button_secondary_active.into(),
-            Self::Ghost => cx.theme().tokens.secondary_active.into(),
+            // Every other variant selects with its active surface; the ghost
+            // token sits too close to its hover to read as pressed.
+            Self::Ghost => self.active(outline, cx).bg,
             Self::Danger => cx.theme().tokens.button_danger_active.into(),
             Self::Warning => cx.theme().tokens.button_warning_active.into(),
             Self::Success => cx.theme().tokens.button_success_active.into(),
@@ -1264,18 +1291,18 @@ mod tests {
     fn an_explicit_accessibility_label_replaces_the_visible_one() {
         let plain = Button::new("save").label("Save");
         assert_eq!(plain.accessibility_label, None);
-        assert_eq!(plain.label.as_deref(), Some("Save"));
+        assert_eq!(plain.label.as_deref().map(|s| s.as_ref()), Some("Save"));
 
         let named = Button::new("row")
             .label("Save")
             .accessibility_label("Save the current document");
         assert_eq!(
-            named.accessibility_label.as_deref(),
+            named.accessibility_label.as_deref().map(|s| s.as_ref()),
             Some("Save the current document"),
             "an explicit name must win over the visible label"
         );
         assert_eq!(
-            named.label.as_deref(),
+            named.label.as_deref().map(|s| s.as_ref()),
             Some("Save"),
             "and must not change what is drawn"
         );
@@ -1315,7 +1342,7 @@ mod tests {
             let parent_clicks = parent_clicks.clone();
             move |_, _| Harness(button_clicks, parent_clicks)
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         cx.update(|window, cx| window.focus_next(cx));
         cx.simulate_keystrokes("enter space");
@@ -1360,12 +1387,12 @@ mod tests {
             let keyboard_clicks = keyboard_clicks.clone();
             move |_, _| Harness(clicks, keyboard_clicks)
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         cx.update(|window, cx| window.focus_next(cx));
         cx.update(|window, cx| {
             assert!(window.focused(cx).is_some());
-            window.draw(cx).clear(cx);
+            window.draw(cx).clear();
         });
         for key in ["enter", "space"] {
             let keystroke = Keystroke::parse(key).unwrap();
@@ -1415,7 +1442,7 @@ mod tests {
             let parent_clicks = parent_clicks.clone();
             move |_, _| Harness(button_clicks, parent_clicks)
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         cx.update(|window, cx| window.focus_next(cx));
         cx.simulate_keystrokes("enter space");
@@ -1457,7 +1484,7 @@ mod tests {
             let parent_clicks = parent_clicks.clone();
             move |_, _| Harness(parent_clicks)
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         cx.update(|window, cx| window.focus_next(cx));
         cx.simulate_keystrokes("enter space");
@@ -1564,7 +1591,7 @@ mod tests {
 
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| LinkButtonHarness);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let bounds = cx
             .debug_bounds("link-button-child")
@@ -1606,7 +1633,7 @@ mod tests {
 
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| CompleteButtonHarness);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let bounds = cx
             .debug_bounds("button-custom-content")

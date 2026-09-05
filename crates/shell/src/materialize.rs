@@ -426,6 +426,10 @@ struct Behavior {
     /// deliberate limit rather than a convenience: see
     /// [`components::virtual_list`].
     on_item_click: Option<CallbackId>,
+    /// Reports a secondary press on a virtual list row, with the row's key and
+    /// the press itself. Registered on the list for the same reason
+    /// `on_item_click` is.
+    on_item_secondary_click: Option<CallbackId>,
     /// Which item a `VirtualList` measures to infer its cross-axis size.
     /// `None` keeps base's own default, which is the first.
     item_to_measure_index: Option<usize>,
@@ -501,6 +505,8 @@ struct Behavior {
     /// component's own default, and the two differ: a popover anchors top-left,
     /// a hover card top-center.
     anchor: Option<gpui::Anchor>,
+    continuous: Option<bool>,
+    frame_budget: Option<Duration>,
     /// The pointer button that opens a `Popover`.
     mouse_button: Option<MouseButton>,
     /// The label a hover shows over this element. A string rather than an
@@ -649,9 +655,9 @@ pub fn materialize(
     cx: &mut App,
 ) -> AnyElement {
     let ambient = window.text_style().color;
-    // Counted and timed because this is the half that follows frames: the story
-    // and the benchmark both read the two counters side by side, and the gap
-    // between them is the architecture.
+    // Counted and timed because this is the native half of rebuilding a dirty
+    // script view. Clean window frames reuse ShellRoot's cached subtree and do
+    // not enter here at all.
     let metrics = runtime.metrics();
     metrics.time_materialize(|| {
         materialize_node(
@@ -2454,6 +2460,7 @@ pub(in crate::materialize) fn resolve_ops(
                 "on_confirm" => behavior.on_confirm = Some(*id),
                 "on_dismiss" => behavior.on_dismiss = Some(*id),
                 "on_item_click" => behavior.on_item_click = Some(*id),
+                "on_item_secondary_click" => behavior.on_item_secondary_click = Some(*id),
                 "tab_bar" => behavior.dock_chrome.tab_bar = Some(*id),
                 "empty_group" => behavior.dock_chrome.empty_group = Some(*id),
                 "drop_indicator" => behavior.dock_chrome.drop_indicator = Some(*id),
@@ -2703,7 +2710,7 @@ fn checked_milliseconds(ms: f64) -> Option<Duration> {
 /// Written out rather than derived: GPUI has no name table for `Anchor`, and
 /// the script API is the snake_case spelling of the variant. One list serves
 /// the parser below, the check the prelude makes at the call site, and the
-/// union `gpui.d.ts` declares — so the three cannot drift.
+/// union `gpui-kit.d.ts` declares — so the three cannot drift.
 pub(crate) const ANCHOR_NAMES: [&str; 8] = [
     "top_left",
     "top_right",
@@ -2716,7 +2723,7 @@ pub(crate) const ANCHOR_NAMES: [&str; 8] = [
 ];
 
 /// The anchor a script named, or `None` if no variant spells it.
-fn anchor_from_name(name: &str) -> Option<gpui::Anchor> {
+pub(crate) fn anchor_from_name(name: &str) -> Option<gpui::Anchor> {
     match name {
         "top_left" => Some(gpui::Anchor::TopLeft),
         "top_right" => Some(gpui::Anchor::TopRight),
@@ -3109,6 +3116,8 @@ fn apply_behavior(behavior: &mut Behavior, name: &str, args: &[Bridged]) {
                 .and_then(|value| value.as_str().ok())
                 .and_then(|value| anchor_from_name(value));
         }
+        "continuous" => behavior.continuous = Some(flag.unwrap_or(true)),
+        "frame_budget" => behavior.frame_budget = milliseconds(args),
         "mouse_button" => {
             behavior.mouse_button =
                 args.first()
@@ -3276,7 +3285,7 @@ mod motion_identity_tests {
     }
 
     /// One written list of anchors serves the parser, the check the prelude
-    /// makes at the call site and the union in `gpui.d.ts`. A declared name
+    /// makes at the call site and the union in `gpui-kit.d.ts`. A declared name
     /// that does not parse is a name a script could type and the runtime would
     /// silently drop.
     #[test]

@@ -908,7 +908,7 @@ mod tests {
         });
         cx.run_until_parked();
         log.borrow_mut().draggable.clear();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             log.borrow().draggable,
@@ -936,7 +936,7 @@ mod tests {
         });
         cx.run_until_parked();
         log.borrow_mut().draggable.clear();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             log.borrow().draggable,
@@ -1084,7 +1084,7 @@ mod tests {
             area.update(cx, |area, cx| area.set_center(layout, window, cx));
         });
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         cx.debug_bounds(ZOOM_CONTROL_SELECTOR).is_some()
     }
 
@@ -1168,7 +1168,7 @@ mod tests {
             });
         });
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let window_height = cx.update(|window, _| window.viewport_size().height);
         assert!(
@@ -1242,8 +1242,8 @@ mod tests {
         cx.run_until_parked();
         let draw = |cx: &mut VisualTestContext| {
             cx.update(|window, _| window.refresh());
-            cx.update(|window, cx| window.draw(cx).clear(cx));
-            cx.update(|window, cx| window.draw(cx).clear(cx));
+            cx.update(|window, cx| window.draw(cx).clear());
+            cx.update(|window, cx| window.draw(cx).clear());
         };
         draw(cx);
 
@@ -1404,7 +1404,7 @@ mod tests {
             area.update(cx, |area, cx| area.set_center(layout, window, cx));
         });
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         let window_height = cx.update(|window, _| window.viewport_size().height);
         let content = height.get();

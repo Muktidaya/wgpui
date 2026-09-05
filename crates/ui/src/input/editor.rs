@@ -177,7 +177,7 @@ mod tests {
             }
         });
         let state = state.unwrap();
-        VisualTestContext::update(cx, |window, cx| window.draw(cx).clear(cx));
+        VisualTestContext::update(cx, |window, cx| window.draw(cx).clear());
 
         cx.read(|cx| {
             state

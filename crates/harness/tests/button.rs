@@ -1,3 +1,5 @@
+extern crate gpui as wgpui;
+
 use gpui::{
     AppContext, Context, IntoElement, ParentElement, Render, Styled, TestAppContext, Window,
     WindowOptions, div,

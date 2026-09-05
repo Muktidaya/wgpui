@@ -418,14 +418,14 @@ mod tests {
             let changes = changes.clone();
             move |_, _| PopoverHarness { changes }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_click(point(px(20.), px(20.)), Default::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("runtime-popover-content").is_some());
 
         cx.simulate_click(point(px(300.), px(300.)), Default::default());
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("runtime-popover-content").is_none());
         // A change callback reports state transitions, not redundant dismissal
         // requests. The base host may see both paths, but only the first closes.
@@ -455,8 +455,8 @@ mod tests {
             init(cx);
         });
         let (_, cx) = cx.add_window_view(|_, _| DefaultOpenHarness);
-        cx.update(|window, cx| window.draw(cx).clear(cx));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("default-open-content").is_some());
     }
 
@@ -486,14 +486,14 @@ mod tests {
         cx.update(crate::init);
         let (view, window) = cx.add_window_view(|_, _| Harness { open: true });
 
-        window.update(|window, cx| window.draw(cx).clear(cx));
+        window.update(|window, cx| window.draw(cx).clear());
         let opening = window.debug_bounds("surface").unwrap().origin;
 
         // The animation runs off the wall clock, so settling is waited out
         // rather than stepped. Several times the duration leaves room for a
         // loaded machine.
         std::thread::sleep(DROPDOWN_ENTER_DURATION * 4);
-        window.update(|window, cx| window.draw(cx).clear(cx));
+        window.update(|window, cx| window.draw(cx).clear());
         let settled = window.debug_bounds("surface").unwrap().origin;
 
         assert!(
@@ -507,7 +507,7 @@ mod tests {
                     this.open = open;
                     cx.notify();
                 });
-                window.draw(cx).clear(cx);
+                window.draw(cx).clear();
             });
         }
 

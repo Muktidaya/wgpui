@@ -8,7 +8,7 @@ use gpui::{
     Stateful, Styled as _, WeakEntity, Window, div, prelude::FluentBuilder as _, px,
 };
 
-use crate::history::History;
+use crate::UndoHistory;
 
 use super::{
     drag::AnyDrag,
@@ -92,7 +92,7 @@ pub struct TilesState {
     zoomed: Option<PanelId>,
     moving: Option<TileMove>,
     resizing: Option<TileResize>,
-    history: History<TileChange>,
+    history: UndoHistory<TileChange>,
     renderer: Rc<dyn TilesRenderer>,
 }
 
@@ -108,7 +108,7 @@ impl TilesState {
             zoomed: None,
             moving: None,
             resizing: None,
-            history: History::new().group_interval(std::time::Duration::from_millis(100)),
+            history: UndoHistory::new().group_interval(std::time::Duration::from_millis(100)),
             renderer: Rc::new(BareTiles),
         }
     }
@@ -993,7 +993,7 @@ mod tests {
         });
         cx.run_until_parked();
         order.borrow_mut().painted.clear();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             order.borrow().painted,
@@ -1031,7 +1031,7 @@ mod tests {
             area.update(cx, |area, cx| area.set_center(layout, window, cx));
         });
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let tile = order.borrow().tiles.last().cloned().expect("the tile drew");
 
         // The pointer's window position is nowhere near the tile's canvas
@@ -1040,7 +1040,7 @@ mod tests {
         cx.update(|window, cx| tile.begin_resize(ResizeSide::Right, start, window, cx));
         cx.update(|window, cx| tile.resize_to(start, window, cx));
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(
             order.borrow().tiles.last().unwrap().bounds().size.width,
             px(100.),
@@ -1052,7 +1052,7 @@ mod tests {
         cx.update(|window, cx| tile.resize_to(start + point(px(32.), px(0.)), window, cx));
         cx.update(|window, cx| tile.end_resize(window, cx));
         cx.run_until_parked();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(
             order.borrow().tiles.last().unwrap().bounds().size.width,
             px(130.),
@@ -1080,7 +1080,7 @@ mod tests {
         cx.run_until_parked();
 
         // Zoomed through the seam a skin uses, not a back door.
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let tile = order.borrow().tiles.last().cloned().expect("the tile drew");
         cx.update(|window, cx| tile.toggle_zoom(window, cx));
         cx.run_until_parked();
@@ -1090,7 +1090,7 @@ mod tests {
             "the tile is the one filling the dock"
         );
         order.borrow_mut().painted.clear();
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             order.borrow().painted,

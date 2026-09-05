@@ -16,22 +16,25 @@ publish = false
 edition = "2024"
 
 [workspace.dependencies]
-wgpui = { path = "../wgpui", version = "0.3.4" }
-wgpui_derive = { path = "../wgpui/tooling/derive", version = "0.3.4" }
-wgpui-platform = { path = "crates/platform", version = "0.1.0" }
+wgpui = { version = "0.3.5", path = "../wgpui" }
+wgpui_derive = { version = "0.3.5", path = "../wgpui/tooling/derive" }
+wgpui-platform = { path = "crates/platform", version = "0.6.0" }
 
 # Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
-gpui = { package = "wgpui", path = "../wgpui", version = "0.3.4" }
-gpui_macros = { package = "wgpui_derive", path = "../wgpui/tooling/derive", version = "0.3.4" }
-gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.1.0" }
+gpui = { package = "wgpui", version = "0.3.5", path = "../wgpui" }
+gpui_macros = { package = "wgpui_derive", version = "0.3.5", path = "../wgpui/tooling/derive" }
+gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.6.0" }
 sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
 
-gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.5.2" }
-gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.5.2" }
-gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.5.1" }
-gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.5.1" }
-gpui-fps = { path = "crates/fps", version = "0.1.0" }
-gpui-shell = { path = "crates/shell", version = "0.1.0" }
+gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.6.0" }
+gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.6.0" }
+gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.6.0" }
+gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.0" }
+# Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
+gpui-kit-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.0" }
+gpui-fps = { path = "crates/fps", version = "0.6.0" }
+gpui-shell = { path = "crates/shell", version = "0.6.0" }
+gpui-wry = { path = "crates/webview", version = "0.6.0" }
 reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
 story = { path = "crates/story" }
 
@@ -98,27 +101,15 @@ rustybuzz = { opt-level = 3 }
 taffy = { opt-level = 3 }
 ttf-parser = { opt-level = 3 }
 smol = { opt-level = 3 }
-gpui = { opt-level = 3 }
-gpui_platform = { opt-level = 3 }
-gpui_macros = { opt-level = 3 }
 wgpui = { opt-level = 3 }
 wgpui-platform = { opt-level = 3 }
+wgpui_derive = { opt-level = 3 }
+gpui_sum_tree = { opt-level = 3 }
 tree-sitter = { opt-level = 3 }
-sum_tree = { opt-level = 3 }
 ropey = { opt-level = 3 }
 lsp-types = { opt-level = 3 }
-reqwest_client = { opt-level = 3 }
 markdown = { opt-level = 3 }
 xml5ever = { opt-level = 3 }
-# `rquickjs` is a facade that re-exports `rquickjs-core`, so naming it alone
-# optimises neither the interpreter nor the bindings. `rquickjs-sys` builds
-# QuickJS itself through `cc`, which reads this package's opt-level; without
-# these two a debug build spends roughly three times as long in every script
-# render. See `website/shell/hosting.md`.
-rquickjs = { opt-level = 3 }
-rquickjs-sys = { opt-level = 3 }
-rquickjs-core = { opt-level = 3 }
-cap-std = { opt-level = 3 }
 
 [workspace.metadata.typos]
 files.extend-exclude = ["**/fixtures/*"]
