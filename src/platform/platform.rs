@@ -755,13 +755,24 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                         }
                     };
 
-                    window
-                        .0
-                        .state
-                        .callbacks
-                        .invoke_mut(&window.0.state.callbacks.on_input, |cb| {
-                            cb(platform_event.clone());
-                        });
+                    let text_input = match &platform_event {
+                        PlatformInput::KeyDown(event) => unhandled_key_text(&event.keystroke),
+                        _ => None,
+                    };
+                    let mut propagate = false;
+                    window.0.state.callbacks.invoke_mut(
+                        &window.0.state.callbacks.on_input,
+                        |callback| {
+                            propagate = callback(platform_event.clone()).propagate;
+                        },
+                    );
+                    // winit delivers ordinary text in KeyboardInput, separately
+                    // from IME commits. Only unconsumed text reaches the editor.
+                    if propagate && let Some(text) = text_input {
+                        if let Some(handler) = window.0.state.input_handler.borrow_mut().as_mut() {
+                            handler.replace_text_in_range(None, &text);
+                        }
+                    }
                 }
             }
 
@@ -1079,7 +1090,7 @@ fn winit_key_to_keystroke(
                 | NamedKey::Meta => return None,
                 _ => return None,
             };
-            (key_name.to_string(), None)
+            (key_name.to_string(), (*named == NamedKey::Space).then(|| " ".to_owned()))
         }
         WKey::Character(ch) => {
             let key = ch.to_lowercase();
@@ -1251,5 +1262,41 @@ impl PlatformDisplay for WinitDisplay {
 
     fn bounds(&self) -> Bounds<Pixels> {
         self.bounds
+    }
+}
+
+fn unhandled_key_text(keystroke: &Keystroke) -> Option<String> {
+    if keystroke.modifiers.control || keystroke.modifiers.platform {
+        return None;
+    }
+    keystroke
+        .key_char
+        .as_ref()
+        .filter(|text| !text.is_empty() && !text.chars().any(char::is_control))
+        .cloned()
+}
+
+#[cfg(test)]
+mod keyboard_text_tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_and_unicode_text_are_forwarded_but_shortcuts_are_not() {
+        let mut key = Keystroke {
+            modifiers: Modifiers::default(),
+            key: "e".into(),
+            key_char: Some("é".into()),
+        };
+        assert_eq!(unhandled_key_text(&key).as_deref(), Some("é"));
+        key.modifiers.platform = true;
+        assert_eq!(unhandled_key_text(&key), None);
+        key.modifiers.platform = false;
+        key.modifiers.control = true;
+        assert_eq!(unhandled_key_text(&key), None);
+        key.modifiers.control = false;
+        key.key_char = Some("\r".into());
+        assert_eq!(unhandled_key_text(&key), None);
+        key.key_char = None;
+        assert_eq!(unhandled_key_text(&key), None);
     }
 }

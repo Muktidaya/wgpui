@@ -1,4 +1,4 @@
-use crate::scheduler::{Instant, SessionId, TestScheduler, TestSchedulerConfig};
+use crate::scheduler::{Clock, Instant, SessionId, TestScheduler, TestSchedulerConfig};
 use crate::{PlatformDispatcher, Priority, RunnableVariant};
 use backtrace::Backtrace;
 use collections::{HashMap, VecDeque};
@@ -31,9 +31,7 @@ struct TestDispatcherState {
     random: StdRng,
     foreground: HashMap<TestDispatcherId, VecDeque<RunnableVariant>>,
     background: Vec<RunnableVariant>,
-    delayed: Vec<(Duration, RunnableVariant)>,
-    start_time: Instant,
-    time: Duration,
+    delayed: Vec<(Instant, RunnableVariant)>,
     is_main_thread: bool,
     next_id: TestDispatcherId,
     allow_parking: bool,
@@ -54,8 +52,6 @@ impl TestDispatcher {
             foreground: HashMap::default(),
             background: Vec::new(),
             delayed: Vec::new(),
-            time: Duration::ZERO,
-            start_time: Instant::now(),
             is_main_thread: true,
             next_id: TestDispatcherId(1),
             allow_parking: false,
@@ -94,28 +90,29 @@ impl TestDispatcher {
         *self.num_cpus.lock() = Some(count);
     }
 
+    fn next_deadline(&self) -> Option<Instant> {
+        let legacy = self.state.lock().delayed.first().map(|(time, _)| *time);
+        legacy.into_iter().chain(self.test_scheduler.next_timer_deadline()).min()
+    }
+
     pub fn advance_clock(&self, by: Duration) {
-        let new_now = self.state.lock().time + by;
+        let new_now = self.now() + by;
         loop {
             self.run_until_parked();
-            let state = self.state.lock();
-            let next_due_time = state.delayed.first().map(|(time, _)| *time);
-            drop(state);
-            if let Some(due_time) = next_due_time
+            if let Some(due_time) = self.next_deadline()
                 && due_time <= new_now
             {
-                self.state.lock().time = due_time;
+                self.test_scheduler.clock().advance(due_time.saturating_duration_since(self.now()));
                 continue;
             }
             break;
         }
-        self.state.lock().time = new_now;
+        self.test_scheduler.clock().advance(new_now.saturating_duration_since(self.now()));
     }
 
     pub fn advance_clock_to_next_delayed(&self) -> bool {
-        let next_due_time = self.state.lock().delayed.first().map(|(time, _)| *time);
-        if let Some(next_due_time) = next_due_time {
-            self.state.lock().time = next_due_time;
+        if let Some(next_due_time) = self.next_deadline() {
+            self.test_scheduler.clock().advance(next_due_time.saturating_duration_since(self.now()));
             return true;
         }
         false
@@ -149,7 +146,7 @@ impl TestDispatcher {
         let mut state = self.state.lock();
 
         while let Some((deadline, _)) = state.delayed.first() {
-            if *deadline > state.time {
+            if *deadline > self.now() {
                 break;
             }
             let (_, runnable) = state.delayed.remove(0);
@@ -209,7 +206,7 @@ impl TestDispatcher {
     }
 
     pub fn run_until_parked(&self) {
-        while self.tick(false) {}
+        while self.tick(false) || self.test_scheduler.tick() {}
     }
 
     pub fn parking_allowed(&self) -> bool {
@@ -298,8 +295,7 @@ impl PlatformDispatcher for TestDispatcher {
     }
 
     fn now(&self) -> Instant {
-        let state = self.state.lock();
-        state.start_time + state.time
+        self.test_scheduler.clock().now()
     }
 
     fn dispatch(&self, runnable: RunnableVariant, _priority: Priority) {
@@ -319,7 +315,7 @@ impl PlatformDispatcher for TestDispatcher {
 
     fn dispatch_after(&self, duration: std::time::Duration, runnable: RunnableVariant) {
         let mut state = self.state.lock();
-        let next_time = state.time + duration;
+        let next_time = self.now() + duration;
         let ix = match state.delayed.binary_search_by_key(&next_time, |e| e.0) {
             Ok(ix) | Err(ix) => ix,
         };

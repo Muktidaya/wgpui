@@ -10,11 +10,13 @@ resolver = "3"
 
 [package]
 name = "wgpui"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2024"
+rust-version = "1.94"
 authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
 description = "Independent wgpu + winit UI framework (community fork of GPUI / GPUI-CE 0.3.3)"
 repository = "https://github.com/Muktidaya/wgpui"
+documentation = "https://docs.rs/wgpui"
 publish = true
 license = "Apache-2.0"
 homepage = "https://github.com/Muktidaya/wgpui"
@@ -22,6 +24,20 @@ readme = "README.md"
 keywords = ["desktop", "gui", "immediate"]
 categories = ["gui"]
 autoexamples = false
+exclude = [
+    ".cargo/",
+    ".github/",
+    "AGENTS.md",
+    "STATUS.md",
+    "flake.lock",
+    "flake.nix",
+    "scripts/",
+]
+
+[package.metadata.docs.rs]
+features = ["inspector"]
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [features]
 default = ["font-kit", "windows-manifest"]
@@ -58,7 +74,7 @@ derive_more = { version = "2.1.1", features = ["full"] }
 etagere = "0.2"
 futures = "0.3"
 futures-concurrency = "7"
-wgpui_derive = { path = "./tooling/derive", version = "0.3.4", features = ["inspector"] }
+wgpui_derive = { path = "./tooling/derive", version = "0.3.5", features = ["inspector"] }
 http_client = { package = "gpui_http_client", version = "0.2.2" }
 image = "0.25"
 inventory = "0.3.19"

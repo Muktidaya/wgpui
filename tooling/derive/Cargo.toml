@@ -1,13 +1,22 @@
 [package]
 name = "wgpui_derive"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2024"
+rust-version = "1.94"
 publish = true
 license = "Apache-2.0"
-description = "Macros used by wgpui"
+description = "Proc macros for the wgpui UI framework"
 repository = "https://github.com/Muktidaya/wgpui"
+documentation = "https://docs.rs/wgpui_derive"
 homepage = "https://github.com/Muktidaya/wgpui"
+readme = "README.md"
+keywords = ["gui", "macros", "proc-macro"]
+categories = ["gui", "development-tools::procedural-macro-helpers"]
 authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 inspector = []

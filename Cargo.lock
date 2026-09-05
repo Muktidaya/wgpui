@@ -6671,7 +6671,7 @@ dependencies = [
 
 [[package]]
 name = "wgpui"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -6759,7 +6759,7 @@ dependencies = [
 
 [[package]]
 name = "wgpui_derive"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "heck",
  "proc-macro2",
