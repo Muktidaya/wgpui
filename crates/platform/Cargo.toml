@@ -5,6 +5,8 @@ version = "0.6.0"
 edition.workspace = true
 publish = false
 license = "Apache-2.0"
+homepage = "https://github.com/Muktidaya/wgpui-component"
+repository = "https://github.com/Muktidaya/wgpui-component"
 
 [dependencies]
 wgpui = { workspace = true }

@@ -1,5 +1,13 @@
 # Contributing Guide
 
+This repository is the **Muktidaya adaptor** of Longbridge gpui-component 0.6.0 onto [wgpui](https://github.com/Muktidaya/wgpui) 0.3.5. Default branch is **`root`**. Remote: `https://github.com/Muktidaya/wgpui-component.git`. Do not treat `main` as the default, and do not publish Zed `gpui-pre` snapshots from this tree.
+
+Workspace members: `wgpui-base`, `wgpui-component`, macros, assets, `wgpui-platform` (unpublished), harness, `hello_world`. Story / kit / shell / webview are on disk but not members.
+
+```bash
+cargo +1.94.0 run -p hello_world
+```
+
 Contributions are welcome, if you find some bugs or have some ideas, please open an issue or submit a pull request.
 
 Please ensure that you are using clean code, following the coding style and code organization in existing code, and make sure all the tests pass.
@@ -46,22 +54,19 @@ for focus, keyboard, selection, menu, and input behavior. See
 required Story app launch method, accessibility-tree workflow, and completion
 evidence.
 
-### Run story
+### Run the workspace example
 
-There are a lot of UI test cases in the `crates/story` folder, if you change the existing features you can run the tests to make sure they are working.
-
-Use `cargo run` to run the complete story examples to display them all in a gallery of GPUI components.
+The upstream Story gallery is not a workspace member in this adaptor. Use hello_world:
 
 ```bash
-cargo run
+cargo +1.94.0 run -p hello_world
 ```
 
-### Run single example
-
-There is also available some split examples, run `cargo run --example` to see the available examples.
+Lib tests:
 
 ```bash
-cargo run --example table
+cargo +1.94.0 test -p wgpui-base --lib
+cargo +1.94.0 test -p wgpui-component --lib
 ```
 
 ## UI Guides
@@ -86,7 +91,7 @@ When you change the rendering code, please profile the performance to make sure 
 You can use `MTL_HUD_ENABLED=1` environment variable to enable the Metal HUD to see the FPS and other performance metrics.
 
 ```bash
-MTL_HUD_ENABLED=1 cargo run
+MTL_HUD_ENABLED=1 cargo +1.94.0 run -p hello_world
 ```
 
 > NOTE: Only available on macOS with Metal backend, and the FPS is up **limited your monitor refresh rate**, usually 60 or 120.
@@ -96,40 +101,22 @@ MTL_HUD_ENABLED=1 cargo run
 You can use [Samply](https://github.com/mstange/samply) to profile the performance of the application to get more detailed information.
 
 ```bash
-samply record cargo run
+samply record cargo +1.94.0 run -p hello_world
 ```
 
 Use `samply record` command to start rust development, and do some operations in the app that you want to profile, then stop the terminal with `ctrl-c`, then samply will open the browser to show the profile results.
 
 ## Release crates version
 
-When we are ready to release a new version, please follow the steps below:
+Do **not** `cargo publish` until asked. Default branch is `root`, not `main`. Order after `wgpui_derive` 0.3.5 and `wgpui` 0.3.5 exist on crates.io: `wgpui-component-macros` → `wgpui-component-assets` → `wgpui-base` → `wgpui-component`. Leave `wgpui-platform` and `gpui-wry` unpublished.
 
-### Use the script to bump the version(Recommended)
-
-```bash
-./script/bump-version.sh x.y.z
-```
-
-### Manually bump the version
-
-1. Run `cargo set-version` to set the new version for all crates.
-
-   ```bash
-   cargo set-version x.y.z
-   ```
-
-2. Git Commit the changes with message `Bump vx.y.z`.
-3. Create a new git tag with the version `vx.y.z` and push `main` branch and the tag to remote.
-
-   ```bash
-   git tag vx.y.z
-   git push origin vx.y.z
-   ```
-
-4. Then GitHub Actions will automatically publish the crates to crates.io and create a new release in GitHub.
+Upstream Longbridge still documents `./script/bump-version.sh` and a `gpui-pre` publisher. Those scripts target Zed/`gpui-kit` and must not be run against this adaptor's crates.io identity.
 
 ## Publish GPUI pre-release crates from Zed
+
+**Skipped in this adaptor.** `.github/workflows/release-gpui.yml` is a no-op. Depend on [wgpui](https://github.com/Muktidaya/wgpui) 0.3.5, not `gpui-pre`.
+
+The remainder of this section is upstream Longbridge documentation for the original kit, retained so the merge is inspectable:
 
 GPUI lives in the [Zed](https://github.com/zed-industries/zed) repository,
 and Zed only publishes `gpui` to crates.io now and then. To depend on a newer

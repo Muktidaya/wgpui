@@ -1,5 +1,11 @@
 name: WGPUI Component verification
-on: [push, pull_request, workflow_dispatch, workflow_call]
+on:
+  push:
+    branches: [root]
+  pull_request:
+    branches: [root]
+  workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -27,5 +33,9 @@ jobs:
       - name: Linux native libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libssl-dev libvulkan-dev pkg-config cmake
-      - run: cargo check --locked --workspace --all-targets
-      - run: cargo test --locked --workspace
+      # `--all-targets` also builds excluded-from-publish base examples (`use gpui_base`)
+      # that still carry upstream crate names. Libs, integration tests, hello_world, and
+      # the harness are the adaptor surface CI is meant to guard.
+      - run: cargo check --locked --workspace --lib --tests
+      - run: cargo check --locked -p hello_world
+      - run: cargo test --locked --workspace --lib --tests

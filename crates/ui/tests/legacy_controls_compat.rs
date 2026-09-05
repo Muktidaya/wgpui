@@ -1,3 +1,5 @@
+extern crate wgpui_component as gpui_component;
+
 use gpui::{
     InteractiveElement as _, ParentElement as _, StatefulInteractiveElement as _, Styled as _,
     blue, green, px, red,

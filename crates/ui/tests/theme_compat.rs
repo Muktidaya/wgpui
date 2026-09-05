@@ -1,3 +1,5 @@
+extern crate wgpui_component as gpui_component;
+
 use gpui_component::theme::{ThemeConfig, ThemeConfigColors, ThemeMode};
 
 #[test]

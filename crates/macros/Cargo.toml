@@ -6,6 +6,7 @@ license = "Apache-2.0"
 documentation = "https://docs.rs/wgpui-component-macros"
 homepage = "https://github.com/Muktidaya/wgpui-component"
 repository = "https://github.com/Muktidaya/wgpui-component"
+readme = "README.md"
 publish = true
 edition.workspace = true
 

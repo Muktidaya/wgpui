@@ -27,6 +27,8 @@ gpui_platform = { package = "wgpui-platform", path = "crates/platform", version 
 sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
 
 gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.6.0" }
+# Same package under the published name so examples can `use wgpui_component`.
+wgpui-component = { path = "crates/ui", version = "0.6.0" }
 gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.6.0" }
 gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.6.0" }
 gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.0" }

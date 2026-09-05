@@ -1,6 +1,7 @@
 name: Test Docs
 on:
   pull_request:
+    branches: [root]
     paths:
       - "website/**"
       - "crates/base/**"

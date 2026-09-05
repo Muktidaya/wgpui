@@ -25,10 +25,12 @@ natural Chinese rather than word-for-word translation.
 
 ## Project Overview
 
-GPUI Component is a UI component library for building desktop applications using [GPUI](https://gpui.rs). It provides 60+ cross-platform desktop UI components, inspired by macOS/Windows controls and combined with shadcn/ui design.
+This is a **Muktidaya adaptor** of Longbridge gpui-component **v0.6.0** onto
+independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
+Those version numbers are supposed to differ. Default git branch is `root`.
+crates.io is **not** published for this 0.6.0 line yet.
 
-This is a **wgpui adaptor** of Longbridge gpui-component v0.6.0. Workspace
-crates we compile:
+Workspace crates we compile:
 
 - `crates/ui` — styled UI library (published as `wgpui-component`; maps upstream `crates/component`)
 - `crates/base` — unstyled behavior (`wgpui-base`)
@@ -49,15 +51,11 @@ those keys to `wgpui` 0.3.5 (`path = "../wgpui"`) and `wgpui-*`.
 ### Development and Testing
 
 ```bash
-# Run Story Gallery (component showcase application)
-cargo run
+# Workspace default example (story gallery is not a member)
+cargo +1.94.0 run -p hello_world
 
-# Run individual examples
-cargo run --example hello_world
-cargo run --example table
-
-# Build the project
-cargo build
+# Build the workspace
+cargo +1.94.0 build
 
 # Lint check
 cargo clippy -- --deny warnings
@@ -81,24 +79,16 @@ assert presentation dimensions. Add tests when the change affects behavior,
 interaction, data flow, or prevents a meaningful regression.
 
 ```bash
-# Run all tests
-cargo test --all
-
-# Run tests for a specific crate
-cargo test -p gpui-component
-
-# Run doc tests
-cargo test -p gpui-component --doc
+cargo +1.94.0 test -p wgpui-base --lib
+cargo +1.94.0 test -p wgpui-component --lib
+cargo +1.94.0 test -p wgpui-component-harness
 ```
 
 ### Performance Profiling
 
 ```bash
-# View FPS on macOS (using Metal HUD)
-MTL_HUD_ENABLED=1 cargo run
-
-# Profile performance using samply
-samply record cargo run
+MTL_HUD_ENABLED=1 cargo +1.94.0 run -p hello_world
+samply record cargo +1.94.0 run -p hello_world
 ```
 
 ## Core Architecture

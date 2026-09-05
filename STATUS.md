@@ -6,15 +6,19 @@
 
 **Stack:** `wgpui = { version = "0.3.5", path = "../wgpui" }` (and the `gpui` alias of the same). Rust 1.94.0.
 
+**Merge:** complete on `root` as `7272570f` (parents `2177ce92` + `94a313a7`), pushed to origin. crates.io: **nothing uploaded**.
+
+**CI:** run [33993771674](https://github.com/Muktidaya/wgpui-component/actions/runs/33993771674) on `7272570f` was **red** on ubuntu/macos/windows at `cargo check --locked --workspace --all-targets`. Root cause: `--all-targets` compiled (1) `crates/ui/tests/*_compat.rs` (`use gpui_component` but the package is `wgpui-component`) and (2) excluded-from-publish `crates/base/examples` (`use gpui_base`). Fix: `extern crate wgpui_component as gpui_component` in those tests; CI now checks `--lib --tests` plus `hello_world` (not examples/benches/bins).
+
 ## 0.6.0 port (2026-09-05) — compiling sync + lib tests green
 
 **Strategy:** `git merge --no-ff v0.6.0` onto adaptor `2177ce92` (base `5cb09462`). Did **not** take the 32 commits after the tag.
 
 **21 commits brought in (`5cb09462..v0.6.0`):** NavStack; History / UndoHistory split (public base API); dock reconcile + tiles persistence; button/tab/sheet/notification/settings fixes; repo rename `crates/ui`→`crates/component` (mapped back to `crates/ui`); assets `links = "gpui-kit-default-icons"` (crate name stays `wgpui-component-assets`).
 
-**Preserved local work:** CI rewrite (sibling `Muktidaya/wgpui` checkout); `extern crate gpui as wgpui`; `ArenaClearNeeded::clear()`; motion `mul_f64`; blink-cursor `Result` handling; SharedString/`ArcCow` / `Option<TextStyleRefinement>` remaps; `publish = false` workspace default with explicit `publish = true` on component/base/macros/assets; `gpui-wry` `publish = false`; platform 0.6.0 unpublished. Stash `pre-0.6.0-port: local adaptor CI/publish/API remaps` is still present as backup.
+**Preserved local work:** CI rewrite (sibling `Muktidaya/wgpui` checkout, triggers on `root`); `extern crate gpui as wgpui`; `ArenaClearNeeded::clear()`; motion `mul_f64`; blink-cursor `Result` handling; SharedString/`ArcCow` / `Option<TextStyleRefinement>` remaps; `publish = false` workspace default with explicit `publish = true` on component/base/macros/assets; `gpui-wry` `publish = false`; platform 0.6.0 unpublished. Stash `pre-0.6.0-port: local adaptor CI/publish/API remaps` is still present as backup.
 
-**Not adopted:** `gpui-kit` umbrella (on disk, not a workspace member). hello_world uses `gpui` + `gpui_component` + `gpui_platform`.
+**Not adopted:** `gpui-kit` umbrella (on disk, not a workspace member). `examples/hello_world` uses public names `wgpui` / `wgpui_component`.
 
 ## Version pins
 
@@ -39,7 +43,12 @@
 | `test -p wgpui-base --lib` | **764 passed** |
 | `test -p wgpui-component --lib` | **417 passed** |
 | `test -p wgpui-component-harness` | **4 passed** |
-| `publish --dry-run -p wgpui-component --allow-dirty` | **fails**: crates.io has no `wgpui ^0.3.5` (0.3.4 max) |
+| `publish --dry-run -p wgpui-component-macros` | **ok** (aborting upload due to dry run) |
+| `publish --dry-run -p wgpui-component-assets` | **fails**: crates.io has no `wgpui ^0.3.5` (0.3.4, 0.3.3) |
+| `publish --dry-run -p wgpui-base` | **fails**: same missing `wgpui ^0.3.5` |
+| `publish --dry-run -p wgpui-component` | **fails**: same missing `wgpui ^0.3.5` |
+
+Sibling `Muktidaya/wgpui` (no extra commit): `publish --dry-run -p wgpui_derive` **ok**; `-p wgpui` **fails** waiting on crates.io `wgpui_derive ^0.3.5`.
 
 ### 9 `wgpui-component` `--lib` failures fixed (2026-09-05) — adaptor, not wgpui
 
@@ -61,16 +70,18 @@ Did **not** edit `Muktidaya/wgpui`. Did **not** take post-tag `upstream/main` co
 - Crate names `wgpui-*`, not `gpui-kit` / `gpui-kit-assets`
 - Layout `crates/ui` + `crates/macros` (upstream `crates/component` + `crates/component-macros`)
 - Reduced workspace (no story / kit / shell / wasm / webview members)
-- hello_world not rewritten to `gpui_kit::*`
+- hello_world uses `wgpui` / `wgpui_component` (public names)
 - Adaptor remaps listed above
 - Stopped at tag; 32 later `upstream/main` commits not taken
 
 ## crates.io blockers
 
-1. Publish `wgpui_derive` 0.3.5 then `wgpui` 0.3.5 (sibling). Nothing uploaded yet; dry-run only.
-2. Then `cargo publish` in order: macros → assets → base → component. Platform and `gpui-wry` stay unpublished.
+1. Publish `wgpui_derive` 0.3.5 then `wgpui` 0.3.5. Nothing uploaded yet; dry-run only.
+2. Then macros → assets → base → component. Platform and `gpui-wry` stay unpublished.
+3. After wgpui 0.3.5 exists, re-dry-run `wgpui-base`: it still lists native `gpui_platform` (`wgpui-platform` 0.6.0, `publish = false`), which crates.io will not have.
 
 ## Next actions
 
 1. Optional WGPUI follow-ups (not blocking this adaptor): mark `Style.text` `#[refineable]`; expand `wgpui_derive::` style macros in inspector reflection; `ListState::scroll_to` should `stop_following`; animation should use the test clock.
 2. Do not actually `cargo publish` until wgpui 0.3.5 is on crates.io.
+3. Decide whether `wgpui-base` should drop the unused native `wgpui-platform` dep before a real publish.

@@ -1,3 +1,6 @@
+extern crate gpui as wgpui;
+extern crate wgpui_component as gpui_component;
+
 use std::{cell::Cell, rc::Rc};
 
 use gpui::{App, Context, IntoElement, TestAppContext, Window, div};

@@ -1,5 +1,5 @@
-use gpui::*;
-use gpui_component::{button::*, *};
+use wgpui::*;
+use wgpui_component::{button::*, *};
 
 pub struct Example;
 impl Render for Example {
@@ -21,18 +21,13 @@ impl Render for Example {
 }
 
 fn main() {
-    gpui_platform::application().run(move |cx| {
-        // This must be called before using any GPUI Component features.
-        gpui_component::init(cx);
+    wgpui::Application::new().run(move |cx| {
+        wgpui_component::init(cx);
 
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
                 let view = cx.new(|_| Example);
-                // This first level on the window, should be a Root.
-                cx.new(|cx| {
-                    // You can refine the root view style by yourself.
-                    Root::new(view, window, cx).bg(cx.theme().background)
-                })
+                cx.new(|cx| Root::new(view, window, cx).bg(cx.theme().background))
             })
             .expect("Failed to open window");
         })

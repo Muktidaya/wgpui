@@ -1,14 +1,14 @@
 /// Embed application assets for GPUI Component.
 ///
-/// This assets provides icons svg files for [IconName](https://docs.rs/gpui-component/latest/gpui_component/enum.IconName.html).
+/// This crate embeds Lucide SVGs for `wgpui-component`'s `IconName`.
 ///
 /// ## Usage
 ///
 /// ```rust,no_run
-/// use gpui::*;
-/// use gpui_kit_assets::Assets;
+/// use wgpui::*;
+/// use wgpui_component_assets::Assets;
 ///
-/// let app = gpui_platform::application().with_assets(Assets);
+/// let app = Application::new().with_assets(Assets);
 /// ```
 ///
 /// ## Platform Differences

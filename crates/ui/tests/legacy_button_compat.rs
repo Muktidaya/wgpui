@@ -1,3 +1,5 @@
+extern crate wgpui_component as gpui_component;
+
 use gpui::{Axis, InteractiveElement as _, ParentElement as _, Styled as _, blue, green, px, red};
 use gpui_component::{
     Disableable as _, Icon, IconName, Selectable as _, Sizable as _, Size,
