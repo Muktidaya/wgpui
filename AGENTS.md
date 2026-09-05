@@ -25,7 +25,7 @@ natural Chinese rather than word-for-word translation.
 
 ## Project Overview
 
-This is a **Muktidaya adaptor** of Longbridge gpui-component **v0.6.0** onto
+This is an **adaptor** of Longbridge gpui-component **v0.6.0** onto
 independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
 Those version numbers are supposed to differ. Default git branch is `root`.
 crates.io is **not** published for this 0.6.0 line yet.

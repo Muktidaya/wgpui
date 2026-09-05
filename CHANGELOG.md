@@ -2,7 +2,7 @@
 
 ## 0.6.0 — 2026-09-05
 
-Muktidaya adaptor of Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **v0.6.0** (`94a313a7`) onto independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**. The version numbers are supposed to differ: this crate follows upstream component 0.6.0; the runtime is wgpui 0.3.5, not Zed `gpui` and not `gpui-pre` 0.3.1.
+Adaptor of Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **v0.6.0** (`94a313a7`) onto independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**. The version numbers are supposed to differ: this crate follows upstream component 0.6.0; the runtime is wgpui 0.3.5, not Zed `gpui` and not `gpui-pre` 0.3.1.
 
 Merge: `2177ce92` (v0.5.2 adaptor) + tag `v0.6.0` → `root`. Did not take the 32 commits after the tag.
 
@@ -22,7 +22,7 @@ Merge: `2177ce92` (v0.5.2 adaptor) + tag `v0.6.0` → `root`. Did not take the 3
 - `extern crate gpui as wgpui`; SharedString / `ArcCow` / `Option<TextStyleRefinement>` remaps; motion `mul_f64`; blink-cursor `Result` handling; `ArenaClearNeeded::clear()`.
 - Nested text refine merge (`refine_style_refinement`); inspector `p_1`/`mx_2` reflection; `scroll_to_item` stops list follow; scroll inner `flex_basis(Auto)`; reduced-motion spinner; dialog open animation no longer sets `top(y * delta)`.
 - Lib tests: `wgpui-component` 417, `wgpui-base` 764, harness 4.
-- CI on default branch `root`; sibling checkout of `Muktidaya/wgpui`.
+- CI on default branch `root`; sibling checkout of `wgpui`.
 
 ### Not in this adaptor
 

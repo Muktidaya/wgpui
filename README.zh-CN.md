@@ -6,7 +6,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-这是 Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **0.6.0** 到独立版本 **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5** 的 **Muktidaya 适配层**。
+这是 Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **0.6.0** 到独立版本 **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5** 的 **适配层**。
 
 两个版本号是刻意分开的：本 crate 跟踪上游组件 **0.6.0**；运行时是 **wgpui 0.3.5**，不是 Zed 的 `gpui`，也不是 crates.io 上的 `gpui-pre`。发布名是 `wgpui-*`。本仓库**不会**以 `gpui-kit` 的名字发布。详见 [STATUS.md](./STATUS.md)。
 

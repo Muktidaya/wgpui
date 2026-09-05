@@ -6,7 +6,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-**Muktidaya adaptor** of Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **0.6.0** (`94a313a7`) onto independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
+**Adaptor** of Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **0.6.0** (`94a313a7`) onto independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
 
 The two version numbers are intentional: this crate tracks upstream component **0.6.0**; the UI runtime is **wgpui 0.3.5**, not Zed `gpui` and not crates.io `gpui-pre`. Published names are `wgpui-*`. This tree does **not** publish as `gpui-kit`. See [STATUS.md](./STATUS.md).
 

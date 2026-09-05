@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/crates/l/wgpui-base.svg)](../../LICENSE-APACHE)
 
-Unstyled behavior and infrastructure for [wgpui](https://github.com/Muktidaya/wgpui) applications. This is the Muktidaya adaptor of Longbridge `gpui-base` at gpui-component **0.6.0**. Published crate name: **`wgpui-base` 0.6.0**. It depends on independently versioned **wgpui 0.3.5** — those numbers are supposed to differ.
+Unstyled behavior and infrastructure for [wgpui](https://github.com/Muktidaya/wgpui) applications. This is the adaptor of Longbridge `gpui-base` at gpui-component **0.6.0**. Published crate name: **`wgpui-base` 0.6.0**. It depends on independently versioned **wgpui 0.3.5** — those numbers are supposed to differ.
 
 Use [`wgpui-component`](https://github.com/Muktidaya/wgpui-component) if you want ready-to-use styled controls. Use `wgpui-base` if your application should own its visual styles while reusing interaction, focus, accessibility, animation, virtual lists, and theme tokens.
 

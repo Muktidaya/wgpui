@@ -1,6 +1,6 @@
 # wgpui-component adapter status
 
-**GitHub:** private [Muktidaya/wgpui-component](https://github.com/Muktidaya/wgpui-component) (`root`). Longbridge remains `upstream`.
+**GitHub:** private [wgpui-component](https://github.com/Muktidaya/wgpui-component) (`root`). Longbridge remains `upstream`.
 
 **Upstream pin:** `94a313a7` (gpui-component **v0.6.0**, 2026-09-03) — `vendor/UPSTREAM_SHA`
 
@@ -16,7 +16,7 @@
 
 **21 commits brought in (`5cb09462..v0.6.0`):** NavStack; History / UndoHistory split (public base API); dock reconcile + tiles persistence; button/tab/sheet/notification/settings fixes; repo rename `crates/ui`→`crates/component` (mapped back to `crates/ui`); assets `links = "gpui-kit-default-icons"` (crate name stays `wgpui-component-assets`).
 
-**Preserved local work:** CI rewrite (sibling `Muktidaya/wgpui` checkout, triggers on `root`); `extern crate gpui as wgpui`; `ArenaClearNeeded::clear()`; motion `mul_f64`; blink-cursor `Result` handling; SharedString/`ArcCow` / `Option<TextStyleRefinement>` remaps; `publish = false` workspace default with explicit `publish = true` on component/base/macros/assets; `gpui-wry` `publish = false`; platform 0.6.0 unpublished. Stash `pre-0.6.0-port: local adaptor CI/publish/API remaps` is still present as backup.
+**Preserved local work:** CI rewrite (sibling `wgpui` checkout, triggers on `root`); `extern crate gpui as wgpui`; `ArenaClearNeeded::clear()`; motion `mul_f64`; blink-cursor `Result` handling; SharedString/`ArcCow` / `Option<TextStyleRefinement>` remaps; `publish = false` workspace default with explicit `publish = true` on component/base/macros/assets; `gpui-wry` `publish = false`; platform 0.6.0 unpublished. Stash `pre-0.6.0-port: local adaptor CI/publish/API remaps` is still present as backup.
 
 **Not adopted:** `gpui-kit` umbrella (on disk, not a workspace member). `examples/hello_world` uses public names `wgpui` / `wgpui_component`.
 
@@ -24,7 +24,7 @@
 
 | Crate | Version | publish |
 |-------|---------|---------|
-| `wgpui-component` (`crates/ui`) | 0.6.0 | true (Muktidaya metadata) |
+| `wgpui-component` (`crates/ui`) | 0.6.0 | true |
 | `wgpui-base` | 0.6.0 | true |
 | `wgpui-component-macros` | 0.6.0 | true |
 | `wgpui-component-assets` | 0.6.0 | true |
@@ -48,11 +48,11 @@
 | `publish --dry-run -p wgpui-base` | **fails**: same missing `wgpui ^0.3.5` |
 | `publish --dry-run -p wgpui-component` | **fails**: same missing `wgpui ^0.3.5` |
 
-Sibling `Muktidaya/wgpui` (no extra commit): `publish --dry-run -p wgpui_derive` **ok**; `-p wgpui` **fails** waiting on crates.io `wgpui_derive ^0.3.5`.
+Sibling `wgpui` (no extra commit): `publish --dry-run -p wgpui_derive` **ok**; `-p wgpui` **fails** waiting on crates.io `wgpui_derive ^0.3.5`.
 
 ### 9 `wgpui-component` `--lib` failures fixed (2026-09-05) — adaptor, not wgpui
 
-Did **not** edit `Muktidaya/wgpui`. Did **not** take post-tag `upstream/main` commits.
+Did **not** edit sibling `wgpui`. Did **not** take post-tag `upstream/main` commits.
 
 | Test | Cause | Fix |
 |------|--------|-----|

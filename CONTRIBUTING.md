@@ -1,6 +1,6 @@
 # Contributing Guide
 
-This repository is the **Muktidaya adaptor** of Longbridge gpui-component 0.6.0 onto [wgpui](https://github.com/Muktidaya/wgpui) 0.3.5. Default branch is **`root`**. Remote: `https://github.com/Muktidaya/wgpui-component.git`. Do not treat `main` as the default, and do not publish Zed `gpui-pre` snapshots from this tree.
+This repository is the **adaptor** of Longbridge gpui-component 0.6.0 onto [wgpui](https://github.com/Muktidaya/wgpui) 0.3.5. Default branch is **`root`**. Remote: `https://github.com/Muktidaya/wgpui-component.git`. Do not treat `main` as the default, and do not publish Zed `gpui-pre` snapshots from this tree.
 
 Workspace members: `wgpui-base`, `wgpui-component`, macros, assets, `wgpui-platform` (unpublished), harness, `hello_world`. Story / kit / shell / webview are on disk but not members.
 
