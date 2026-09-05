@@ -6,7 +6,9 @@
 
 **Stack:** `wgpui = { version = "0.3.5", path = "../wgpui" }` (and the `gpui` alias of the same). Rust 1.94.0.
 
-**Merge:** complete on `root` as `7272570f` (parents `2177ce92` + `94a313a7`), pushed to origin. crates.io: **nothing uploaded**.
+**Merge:** complete on `root` as `7272570f` (parents `2177ce92` + `94a313a7`). Packaging follow-up `28707b21` dropped unpublished `wgpui-platform` from the published `wgpui-base` graph.
+
+**crates.io (2026-09-05):** **0.6.0 published** — macros → assets → base → component from `28707b21`. `wgpui-platform` and `gpui-wry` held. `wgpui` **not** republished (still 0.3.5).
 
 **CI:** [33993771674](https://github.com/Muktidaya/wgpui-component/actions/runs/33993771674) on `7272570f` **red** (`--all-targets`: `gpui_component` / `gpui_base` leftovers). [33994263316](https://github.com/Muktidaya/wgpui-component/actions/runs/33994263316) on `ebf839fb` still **red**: `--lib --tests` compiled the unpublished `wgpui-base` showcase **bin**. Fix: `autobins = false` / `autoexamples = false` on `wgpui-base`; alias `crates/base/tests/element_ext.rs`. Local `cargo +1.94.0 check --locked --workspace --lib --tests` is green.
 
@@ -43,12 +45,12 @@
 | `test -p wgpui-base --lib` | **764 passed** |
 | `test -p wgpui-component --lib` | **417 passed** |
 | `test -p wgpui-component-harness` | **4 passed** |
-| `publish --dry-run -p wgpui-component-macros` | **ok** (aborting upload due to dry run) |
-| `publish --dry-run -p wgpui-component-assets` | **fails**: crates.io has no `wgpui ^0.3.5` (0.3.4, 0.3.3) |
-| `publish --dry-run -p wgpui-base` | **fails**: same missing `wgpui ^0.3.5` |
-| `publish --dry-run -p wgpui-component` | **fails**: same missing `wgpui ^0.3.5` |
+| `publish --dry-run` then `publish -p wgpui-component-macros` | **published 0.6.0** |
+| `publish --dry-run` then `publish -p wgpui-component-assets` | **published 0.6.0** (wgpui 0.3.5 was the previous blocker) |
+| `publish --dry-run` then `publish -p wgpui-base` | **published 0.6.0** after dropping unused native `gpui_platform` |
+| `publish --dry-run` then `publish -p wgpui-component` | **published 0.6.0** |
 
-Sibling `wgpui` (no extra commit): `publish --dry-run -p wgpui_derive` **ok**; `-p wgpui` **fails** waiting on crates.io `wgpui_derive ^0.3.5`.
+Sibling `wgpui` was **not** republished. crates.io `wgpui` / `wgpui_derive` remain **0.3.5**.
 
 ### 9 `wgpui-component` `--lib` failures fixed (2026-09-05) — adaptor, not wgpui
 
@@ -74,14 +76,25 @@ Did **not** edit sibling `wgpui`. Did **not** take post-tag `upstream/main` comm
 - Adaptor remaps listed above
 - Stopped at tag; 32 later `upstream/main` commits not taken
 
-## crates.io blockers
+## crates.io (published 2026-09-05)
 
-1. Publish `wgpui_derive` 0.3.5 then `wgpui` 0.3.5. Nothing uploaded yet; dry-run only.
-2. Then macros → assets → base → component. Platform and `gpui-wry` stay unpublished.
-3. After wgpui 0.3.5 exists, re-dry-run `wgpui-base`: it still lists native `gpui_platform` (`wgpui-platform` 0.6.0, `publish = false`), which crates.io will not have.
+From clean `root` `28707b21` with `cargo +1.94.0 publish` (dry-run then real, no `--allow-dirty`, no yank):
+
+| Crate | URL |
+|-------|-----|
+| `wgpui-component-macros` 0.6.0 | https://crates.io/crates/wgpui-component-macros/0.6.0 |
+| `wgpui-component-assets` 0.6.0 | https://crates.io/crates/wgpui-component-assets/0.6.0 |
+| `wgpui-base` 0.6.0 | https://crates.io/crates/wgpui-base/0.6.0 |
+| `wgpui-component` 0.6.0 | https://crates.io/crates/wgpui-component/0.6.0 |
+
+**Held:** `wgpui-platform` (`publish = false`; crates.io 404). Workspace `gpui-wry` (`publish = false`; Longbridge owns the crates.io name). **Not republished:** `wgpui` / `wgpui_derive` (still 0.3.5).
+
+**Tag:** origin has no `v0.6.0`. Local `v0.6.0` is the Longbridge upstream tag at `94a313a7`, not the adaptor publish commit. Not pushed; not force-moved.
+
+**Packaging fix first:** `28707b21` removed the unused native `gpui_platform` (`wgpui-platform`) dep from `wgpui-base` so crates.io would not require an unpublished crate.
 
 ## Next actions
 
 1. Optional WGPUI follow-ups (not blocking this adaptor): mark `Style.text` `#[refineable]`; expand `wgpui_derive::` style macros in inspector reflection; `ListState::scroll_to` should `stop_following`; animation should use the test clock.
-2. Do not actually `cargo publish` until wgpui 0.3.5 is on crates.io.
-3. Decide whether `wgpui-base` should drop the unused native `wgpui-platform` dep before a real publish.
+2. Do not take the 32 post-tag `upstream/main` commits unless asked.
+3. If an adaptor tag is wanted later, pick a name that does not collide with upstream `v0.6.0` (or accept that moving `v0.6.0` would be a force-move).
