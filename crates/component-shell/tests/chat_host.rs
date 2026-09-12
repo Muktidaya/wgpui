@@ -89,7 +89,7 @@ export default class ChatHost extends View {
         ScriptRoot(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = context.update(|_, cx| {
         let view = mounted.borrow().clone().expect("mounted view");
         assert_eq!(view.read(cx).build_error(), None);

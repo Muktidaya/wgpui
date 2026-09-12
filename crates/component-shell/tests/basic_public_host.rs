@@ -96,7 +96,7 @@ export default class BasicRemaining extends View {
 }
 "#,
     );
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = context.update(|_, cx| {
         let view = view.read(cx);
         assert_eq!(view.build_error(), None);
@@ -117,7 +117,7 @@ export default class BasicRemaining extends View {
 
     context.simulate_click(point(px(20.), px(72.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let after_action = context.update(|_, cx| view.read(cx).snapshot().unwrap().debug_tree());
     assert!(after_action.contains("Counts: 1|0"), "{after_action}");
 
@@ -137,10 +137,10 @@ export default class BasicRemaining extends View {
     };
     context.simulate_click(point(px(90.), px(72.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_keystrokes("down enter");
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let (action_hits, menu_hits, after_menu) = counts(&mut context);
     assert!(action_hits >= 1, "{after_menu}");
     assert!(menu_hits >= 1, "{after_menu}");

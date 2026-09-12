@@ -17,8 +17,16 @@
  * 4. Drop optional dependencies that come from git without a crates.io
  *    version (crates.io rejects those), together with the features that
  *    enable them. Non-optional ones abort the run.
- * 5. Write a standalone workspace to `target/gpui-pre/workspace`, verify it
- *    with `cargo publish --workspace --dry-run`, then publish it.
+ * 5. Write a standalone workspace to `target/gpui-pre/workspace`. Every
+ *    crate keeps Zed's `license`, copyright notices and `LICENSE-APACHE`,
+ *    gets any `NOTICE` Zed ships, and the few files this script rewrites
+ *    carry a notice saying so (Apache-2.0 §4).
+ * 6. Audit the licenses: a republished crate must be Apache-2.0, and the
+ *    dependency graph of the staged workspace must not pull in a copyleft
+ *    crate. Zed's own application crates are GPL-3.0-or-later, and one of
+ *    them reaching the closure would change the terms for every consumer.
+ * 7. Verify with `cargo publish --workspace --dry-run`, build and test
+ *    gpui-kit against the staged crates, then publish.
  *
  * crates.io only accepts a handful of brand-new crates per ten minutes. The
  * publish step re-checks crates.io before every attempt, skips versions that
@@ -27,11 +35,17 @@
  * Usage:
  *     script/bump-gpui.ts [VERSION] [--rev REV] [--zed PATH]
  *                         [--dry-run] [--stage-only] [--no-verify] [--no-wait]
+ *                         [--force]
  *
  * Every crate is published at `<VERSION>.<N>`, e.g. `0.3.12`: the
  * `VERSION` constant below (major.minor) plus a patch number that continues
  * from whatever crates.io already has. A positional VERSION overrides that
  * for one run.
+ *
+ * A version is only spent on a snapshot that differs from the newest
+ * published one: the run compares the requested Zed revision against the one
+ * that snapshot was cut from and stops when nothing under the published
+ * crates changed. `--force` publishes regardless.
  */
 
 import {
@@ -74,6 +88,10 @@ const DEPENDENCY_OVERRIDES: Record<
 };
 
 const ZED_GIT_URL = "https://github.com/zed-industries/zed";
+const ZED_GITHUB_API = ZED_GIT_URL.replace(
+  "https://github.com/",
+  "https://api.github.com/repos/",
+);
 const ZED_DEFAULT_REV = "main";
 const PUBLISH_PREFIX = "gpui-pre";
 const ROOT_CRATES = ["gpui", "gpui_platform", "gpui_macros", "reqwest_client"];
@@ -142,12 +160,25 @@ async function run(cmd: string[], options: RunOptions = {}): Promise<string> {
     ? `(cd ${options.cwd} && ${cmd.join(" ")})`
     : cmd.join(" ");
   console.log(dim(`$ ${shown}`));
-  const { code, output } = await spawn(cmd, options.cwd, !options.capture);
+  const { code, stdout, output } = await spawn(
+    cmd,
+    options.cwd,
+    !options.capture,
+  );
   if (code !== 0) {
     const detail = output.trim() ? `\n${output.trim()}` : "";
     throw new BumpError(`command failed (${code}): ${cmd[0]}${detail}`);
   }
-  return output;
+  return stdout;
+}
+
+/** Run a command, returning its standard output, or `undefined` if it failed. */
+async function runQuiet(
+  cmd: string[],
+  cwd: string,
+): Promise<string | undefined> {
+  const { code, stdout } = await spawn(cmd, cwd, false);
+  return code === 0 ? stdout : undefined;
 }
 
 /** Run a command, streaming its output while also capturing it. */
@@ -159,6 +190,13 @@ async function runStreaming(
   return spawn(cmd, cwd, true);
 }
 
+/**
+ * Run a command, keeping its standard output apart from the merged stream.
+ *
+ * Cargo reports its progress (`Updating crates.io index`, `Compiling ...`) on
+ * stderr, so a caller that parses `cargo metadata` has to read `stdout` on its
+ * own; the merged `output` is there to show what a failing command said.
+ */
 async function spawn(cmd: string[], cwd: string | undefined, echo: boolean) {
   const process_ = Bun.spawn(cmd, {
     cwd,
@@ -166,18 +204,20 @@ async function spawn(cmd: string[], cwd: string | undefined, echo: boolean) {
     stdout: "pipe",
     stderr: "pipe",
   });
-  const chunks: string[] = [];
-  const decoder = new TextDecoder();
-  const pump = async (stream: ReadableStream<Uint8Array>) => {
+  const out: string[] = [];
+  const merged: string[] = [];
+  const pump = async (stream: ReadableStream<Uint8Array>, sink?: string[]) => {
+    const decoder = new TextDecoder();
     for await (const chunk of stream) {
       const text = decoder.decode(chunk, { stream: true });
-      chunks.push(text);
+      sink?.push(text);
+      merged.push(text);
       if (echo) process.stdout.write(text);
     }
   };
-  await Promise.all([pump(process_.stdout), pump(process_.stderr)]);
+  await Promise.all([pump(process_.stdout, out), pump(process_.stderr)]);
   const code = await process_.exited;
-  return { code, output: chunks.join("") };
+  return { code, stdout: out.join(""), output: merged.join("") };
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +269,122 @@ async function zedRevision(zed: string): Promise<string> {
   }
 }
 
+/** The Zed revision a published description names, if it names one. */
+function snapshotRev(description: string): string | undefined {
+  return /\bzed@([0-9a-f]{7,40})\b/.exec(description)?.[1];
+}
+
+/**
+ * Resolve a Zed revision to a commit the checkout holds.
+ *
+ * The checkout is fetched one commit deep, so the previously published
+ * revision is normally absent and has to be fetched on its own. A server only
+ * answers for a full revision and crates.io records an abbreviated one, so
+ * GitHub expands it first. Returns `undefined` when the revision cannot be
+ * reached, which leaves the caller with nothing to compare against.
+ */
+async function fetchZedRev(
+  zed: string,
+  rev: string,
+): Promise<string | undefined> {
+  const local = await runQuiet(
+    ["git", "rev-parse", "--verify", "--quiet", `${rev}^{commit}`],
+    zed,
+  );
+  if (local !== undefined) return local.trim();
+  let full: string;
+  try {
+    const response = await fetch(`${ZED_GITHUB_API}/commits/${rev}`, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/vnd.github+json",
+        ...(process.env.GITHUB_TOKEN === undefined
+          ? {}
+          : { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }),
+      },
+    });
+    if (!response.ok) return undefined;
+    full = String(((await response.json()) as Toml).sha);
+  } catch {
+    return undefined;
+  }
+  const fetched = await runQuiet(
+    ["git", "fetch", "--depth", "1", "--no-tags", "origin", full],
+    zed,
+  );
+  return fetched === undefined ? undefined : full;
+}
+
+/**
+ * The newest published snapshot, and the Zed revision it was cut from.
+ *
+ * Every crate records that revision in `[package.metadata.gpui-pre]`, which
+ * crates.io does not serve, and in its description, which it does:
+ * `... (gpui-pre snapshot of zed@5b055fa)`.
+ */
+async function publishedSnapshot(
+  base: string,
+  crate: string,
+): Promise<{ version: string; rev: string } | undefined> {
+  const pattern = new RegExp(`^${base.replaceAll(".", "\\.")}\\.(\\d+)$`);
+  const data = await cratesIoGet(`${crate}/versions`);
+  let newest: { version: string; patch: number } | undefined;
+  for (const version of data?.versions ?? []) {
+    const match = pattern.exec(String(version.num));
+    if (match === null || version.yanked) continue;
+    const patch = Number(match[1]);
+    if (newest === undefined || patch > newest.patch)
+      newest = { version: String(version.num), patch };
+  }
+  if (newest === undefined) return undefined;
+  const detail = await cratesIoGet(`${crate}/${newest.version}`);
+  const rev = snapshotRev(String(detail?.version?.description ?? ""));
+  return rev === undefined ? undefined : { version: newest.version, rev };
+}
+
+/**
+ * The newest published snapshot when Zed has not touched it since, so that a
+ * run publishes a version only when there is something in it.
+ *
+ * The comparison covers the directory of every crate that gets published,
+ * together with Zed's workspace manifest, whose `[workspace.dependencies]`
+ * versions are inlined into the staged crates. Whatever it cannot establish —
+ * nothing published yet, a revision GitHub will not expand, a checkout without
+ * the Zed remote — publishes.
+ */
+async function unchangedSnapshot(
+  zed: string,
+  crates: Crate[],
+  zedSha: string,
+): Promise<{ version: string; rev: string } | undefined> {
+  const gpui = crates.find((crate) => crate.name === "gpui");
+  if (gpui === undefined) return undefined;
+  const published = await publishedSnapshot(VERSION, gpui.publishedName);
+  if (published === undefined) return undefined;
+  const previous = await fetchZedRev(zed, published.rev);
+  if (previous === undefined) {
+    logWarn(
+      `Cannot reach zed@${published.rev}, the revision ${PUBLISH_PREFIX} ` +
+        `${published.version} was cut from; publishing without comparing`,
+    );
+    return undefined;
+  }
+  if (previous === zedSha) return published;
+  const paths = ["Cargo.toml", ...crates.map((crate) => crate.relDir)];
+  const changed = await runQuiet(
+    ["git", "diff", "--name-only", previous, zedSha, "--", ...paths],
+    zed,
+  );
+  if (changed === undefined) return undefined;
+  const files = changed.split("\n").filter((line) => line !== "");
+  if (files.length === 0) return published;
+  logInfo(
+    `${files.length} published files changed since ${PUBLISH_PREFIX} ` +
+      `${published.version}, among them ${files.slice(0, 3).join(", ")}`,
+  );
+  return undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Workspace model
 // ---------------------------------------------------------------------------
@@ -276,6 +432,7 @@ function loadWorkspace(zed: string): Workspace {
     }
   }
   const ws: Workspace = { root: zed, manifest, members, pruned: new Map() };
+  WORKSPACE_PACKAGE_LICENSE = manifest.workspace.package?.license;
   applyDependencyOverrides(ws);
   return ws;
 }
@@ -740,9 +897,12 @@ function crateManifest(
 ): Toml {
   const source = crate.manifest;
   const pkg: Toml = { ...source.package };
-  if (pkg.license === undefined && pkg["license-file"] === undefined) {
+  const license = packageLicense(crate);
+  if (license !== GPUI_LICENSE) {
     throw new BumpError(
-      `${crate.name}: no \`license\` in Cargo.toml; crates.io requires one`,
+      `${crate.name}: license is ${license === undefined ? "not declared" : `\`${license}\``}, ` +
+        `and only ${GPUI_LICENSE} crates are republished as ${PUBLISH_PREFIX}-*; ` +
+        "Zed's application crates are GPL-3.0-or-later and must not reach the closure",
     );
   }
 
@@ -908,9 +1068,10 @@ function stageWorkspace(
       tomlDump(manifest),
     );
   }
-  installFacadeAwareMacroPaths(staging, crates);
-  makeDeclarativeMacrosCrateRelative(staging, crates);
-  vendorGpuiSourcesForApple(staging, crates);
+  installFacadeAwareMacroPaths(staging, crates, zedSha);
+  makeDeclarativeMacrosCrateRelative(staging, crates, zedSha);
+  vendorGpuiSourcesForApple(staging, crates, zedSha);
+  carryLicenseFiles(ws.root, staging, crates);
 
   writeFileSync(
     join(staging, "Cargo.toml"),
@@ -956,7 +1117,11 @@ const PROC_MACRO_ATTRIBUTE = /^#\[proc_macro(?:_derive\([^\n]*\)|_attribute)?\]$
  * the known `actions!` derive crate-relative so it also works when re-exported
  * through gpui-kit (or when gpui-pre itself is renamed by a consumer).
  */
-function makeDeclarativeMacrosCrateRelative(staging: string, crates: Crate[]) {
+function makeDeclarativeMacrosCrateRelative(
+  staging: string,
+  crates: Crate[],
+  zedSha: string,
+) {
   const gpui = crates.find((crate) => crate.name === "gpui");
   if (gpui === undefined)
     throw new BumpError("gpui is missing from the staged crate set");
@@ -964,7 +1129,11 @@ function makeDeclarativeMacrosCrateRelative(staging: string, crates: Crate[]) {
   if (!existsSync(actionPath))
     throw new BumpError("gpui declarative macro source does not exist: src/action.rs");
   const source = readFileSync(actionPath, "utf8");
-  writeFileSync(actionPath, rewriteDeclarativeMacroPaths(source));
+  writeFileSync(
+    actionPath,
+    modificationNotice(zedSha, "the `actions!` derive paths are crate-relative") +
+      rewriteDeclarativeMacroPaths(source),
+  );
   logInfo("gpui: made actions! derive paths crate-relative");
 }
 
@@ -1171,7 +1340,11 @@ fn rewrite_literal(literal: &Literal, facade: Option<&FacadePath>) -> Literal {
 `;
 }
 
-function installFacadeAwareMacroPaths(staging: string, crates: Crate[]) {
+function installFacadeAwareMacroPaths(
+  staging: string,
+  crates: Crate[],
+  zedSha: string,
+) {
   const macros = crates.find((crate) => crate.name === "gpui_macros");
   if (macros === undefined)
     throw new BumpError("gpui_macros is missing from the staged crate set");
@@ -1184,8 +1357,16 @@ function installFacadeAwareMacroPaths(staging: string, crates: Crate[]) {
   if (source.includes(FACADE_PATH_MARKER))
     throw new BumpError(`gpui_macros already declares \`${FACADE_PATH_MARKER}\``);
   const wrapped = wrapProcMacroEntrypoints(source);
-  writeFileSync(libPath, `${FACADE_PATH_MARKER}\n${wrapped.source}`);
-  writeFileSync(join(dirname(libPath), `${FACADE_PATH_MODULE}.rs`), facadePathModuleSource());
+  writeFileSync(
+    libPath,
+    modificationNotice(zedSha, "the proc-macro entry points resolve gpui through a facade") +
+      `${FACADE_PATH_MARKER}\n${wrapped.source}`,
+  );
+  writeFileSync(
+    join(dirname(libPath), `${FACADE_PATH_MODULE}.rs`),
+    modificationNotice(zedSha, "this module is added by the script") +
+      facadePathModuleSource(),
+  );
   logInfo(`gpui_macros: made ${wrapped.count} proc-macro entry points facade-aware`);
 }
 
@@ -1259,6 +1440,13 @@ fn helper(input: TokenStream) -> TokenStream { input }
     if (!pathRewriter.includes(expected))
       throw new BumpError(`self-test path rewriter is missing \`${expected}\``);
   }
+  for (const [description, expected] of [
+    ["Zed's GPU-accelerated UI framework (gpui-pre snapshot of zed@5b055fa)", "5b055fa"],
+    ["no revision here", undefined],
+  ] as const) {
+    if (snapshotRev(description) !== expected)
+      throw new BumpError(`self-test read the wrong revision from \`${description}\``);
+  }
   logSuccess("Facade-aware gpui_macros transformation self-test passed");
 }
 
@@ -1273,7 +1461,11 @@ const GPUI_APPLE_VENDORED = '.join("vendor/gpui")';
  * crates.io has no such sibling, so copy exactly the files it names into the
  * crate and point the build script at the copy.
  */
-function vendorGpuiSourcesForApple(staging: string, crates: Crate[]) {
+function vendorGpuiSourcesForApple(
+  staging: string,
+  crates: Crate[],
+  zedSha: string,
+) {
   const apple = crates.find((c) => c.name === "gpui_apple");
   const gpui = crates.find((c) => c.name === "gpui");
   if (apple === undefined || gpui === undefined) return;
@@ -1306,10 +1498,134 @@ function vendorGpuiSourcesForApple(staging: string, crates: Crate[]) {
   }
   writeFileSync(
     buildRs,
-    text.replaceAll(GPUI_APPLE_SIBLING, GPUI_APPLE_VENDORED),
+    modificationNotice(zedSha, "the gpui sources it reads are vendored under `vendor/gpui`") +
+      text.replaceAll(GPUI_APPLE_SIBLING, GPUI_APPLE_VENDORED),
   );
   logInfo(
     `gpui_apple: vendored ${sources.length} gpui source files for its shader bindings`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// License and attribution
+// ---------------------------------------------------------------------------
+
+/** The license GPUI is released under, and the only one a snapshot may carry. */
+const GPUI_LICENSE = "Apache-2.0";
+
+/**
+ * Licenses a dependency of the staged workspace must not have. Zed's
+ * application crates are GPL-3.0-or-later and sit in the same workspace as
+ * gpui, so a new internal dependency can pull one in without anyone noticing;
+ * a third-party crate can change its terms between snapshots just as quietly.
+ */
+const COPYLEFT_LICENSE = /\b(?:A?GPL|LGPL|SSPL|EUPL|OSL|CPAL|BUSL|CC-BY-SA)\b/i;
+
+/** Every alternative of an SPDX `OR` expression is copyleft. */
+function isCopyleft(license: string): boolean {
+  return license
+    .split(/\s+OR\s+|\//i)
+    .every((alternative) => COPYLEFT_LICENSE.test(alternative));
+}
+
+/** The crate's `license`, following `license.workspace = true`. */
+function packageLicense(crate: Crate): string | undefined {
+  const license = crate.manifest.package?.license;
+  if (typeof license === "string") return license;
+  if (isPlainObject(license) && license.workspace === true) {
+    return WORKSPACE_PACKAGE_LICENSE;
+  }
+  return undefined;
+}
+
+let WORKSPACE_PACKAGE_LICENSE: string | undefined;
+
+/**
+ * Apache-2.0 §4: a redistribution keeps the license text and every copyright
+ * notice, includes the NOTICE file if the work has one, and marks the files it
+ * changed. Copyright notices live in Zed's source files, which are copied
+ * untouched; this puts the license and any NOTICE beside every crate, and the
+ * functions above stamp the files the script rewrites.
+ */
+function carryLicenseFiles(zed: string, staging: string, crates: Crate[]) {
+  const licenseFile = join(zed, "LICENSE-APACHE");
+  if (!existsSync(licenseFile)) {
+    throw new BumpError(
+      "Zed has no LICENSE-APACHE at its root; check the license before publishing",
+    );
+  }
+  const notices = readdirSync(zed).filter(
+    (entry) =>
+      entry.startsWith("NOTICE") && statSync(join(zed, entry)).isFile(),
+  );
+  let copied = 0;
+  for (const crate of crates) {
+    const dir = join(staging, crate.relDir);
+    const destination = join(dir, "LICENSE-APACHE");
+    if (!existsSync(destination)) {
+      cpSync(licenseFile, destination);
+      copied += 1;
+    }
+    for (const notice of notices) cpSync(join(zed, notice), join(dir, notice));
+  }
+  logInfo(
+    `LICENSE-APACHE travels with every crate (${copied} added)` +
+      (notices.length ? `, with ${notices.join(", ")}` : "; Zed ships no NOTICE"),
+  );
+}
+
+/** A one-line header for a file the script rewrites (Apache-2.0 §4(b)). */
+function modificationNotice(zedSha: string, change: string): string {
+  return `// Modified for ${PUBLISH_PREFIX} (snapshot of zed@${zedSha.slice(0, 7)}): ${change}.\n`;
+}
+
+/**
+ * Check the staged workspace's whole dependency graph, not only the crates
+ * being published: what reaches a consumer is the closure, and it moves with
+ * every snapshot.
+ */
+async function auditLicenses(staging: string, crates: Crate[]) {
+  for (const crate of crates) {
+    if (!existsSync(join(staging, crate.relDir, "LICENSE-APACHE")))
+      throw new BumpError(`${crate.name}: LICENSE-APACHE is missing from the staged crate`);
+  }
+  // Not `--locked`: the lock file is Zed's, and the staged workspace is a
+  // subset of it with pruned dependencies, so it has to be updated here the
+  // way `cargo publish --dry-run` updates it in the next step.
+  const cmd = ["cargo", "metadata", "--format-version", "1"];
+  console.log(dim(`$ (cd ${staging} && ${cmd.join(" ")})`));
+  const process_ = Bun.spawn(cmd, { cwd: staging, stdout: "pipe", stderr: "inherit" });
+  const output = await new Response(process_.stdout).text();
+  if ((await process_.exited) !== 0)
+    throw new BumpError("cargo metadata failed on the staged workspace");
+  const metadata = JSON.parse(output);
+  const members = new Set<string>(metadata.workspace_members);
+  const copyleft: string[] = [];
+  const undeclared: string[] = [];
+  for (const pkg of metadata.packages as Toml[]) {
+    if (members.has(pkg.id)) continue;
+    const license: string | null = pkg.license;
+    if (license === null || license === undefined || license === "") {
+      undeclared.push(`${pkg.name} ${pkg.version}`);
+    } else if (isCopyleft(license)) {
+      copyleft.push(`${pkg.name} ${pkg.version} (${license})`);
+    }
+  }
+  if (copyleft.length > 0) {
+    throw new BumpError(
+      "copyleft crates in the dependency graph; a snapshot must not change " +
+        `the terms consumers get:\n  ${copyleft.join("\n  ")}`,
+    );
+  }
+  if (undeclared.length > 0) {
+    logWarn(
+      `${undeclared.length} dependencies declare a license file instead of an ` +
+        `SPDX expression; check them by hand: ${undeclared.join(", ")}`,
+    );
+  }
+  logSuccess(
+    `${crates.length} crates are ${GPUI_LICENSE}; ` +
+      `${metadata.packages.length - members.size} dependencies carry no copyleft license`,
   );
 }
 
@@ -1340,7 +1656,10 @@ async function cratesIoGet(path: string): Promise<Toml | undefined> {
  * that number, and the run resumes at it instead of starting a new one.
  * Yanked versions still occupy their number.
  */
-async function nextVersion(base: string, crates: Crate[]): Promise<string> {
+async function nextVersion(
+  base: string,
+  crates: Crate[],
+): Promise<{ version: string; resuming: boolean }> {
   const pattern = new RegExp(`^${base.replaceAll(".", "\\.")}\\.(\\d+)$`);
   const numbers = new Map<Crate, Set<number>>();
   let highest = -1;
@@ -1355,7 +1674,7 @@ async function nextVersion(base: string, crates: Crate[]): Promise<string> {
     highest = Math.max(highest, ...published);
     await Bun.sleep(200); // be polite to the crates.io API
   }
-  if (highest < 0) return `${base}.0`;
+  if (highest < 0) return { version: `${base}.0`, resuming: false };
   const incomplete = crates.filter(
     (crate) => !numbers.get(crate)!.has(highest),
   );
@@ -1363,9 +1682,9 @@ async function nextVersion(base: string, crates: Crate[]): Promise<string> {
     logInfo(
       `Resuming ${base}.${highest}: ${incomplete.length} crates are still missing it`,
     );
-    return `${base}.${highest}`;
+    return { version: `${base}.${highest}`, resuming: true };
   }
-  return `${base}.${highest + 1}`;
+  return { version: `${base}.${highest + 1}`, resuming: false };
 }
 
 async function versionIsPublished(
@@ -1496,6 +1815,7 @@ Options:
   --no-verify       skip \`cargo publish --dry-run\` verification
   --no-wait         abort instead of waiting on the crates.io rate limit
   --skip-kit-check  do not build and test this repository against the staged crates
+  --force           publish even when Zed did not change the published crates
   -h, --help        show this help
 `;
 
@@ -1508,6 +1828,7 @@ interface Args {
   noVerify: boolean;
   noWait: boolean;
   skipKitCheck: boolean;
+  force: boolean;
   selfTest: boolean;
 }
 
@@ -1525,6 +1846,7 @@ function parseCommandLine(argv: string[]): Args {
         "no-verify": { type: "boolean", default: false },
         "no-wait": { type: "boolean", default: false },
         "skip-kit-check": { type: "boolean", default: false },
+        force: { type: "boolean", default: false },
         "self-test": { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
       },
@@ -1552,6 +1874,7 @@ function parseCommandLine(argv: string[]): Args {
     noVerify: parsed.values["no-verify"] as boolean,
     noWait: parsed.values["no-wait"] as boolean,
     skipKitCheck: parsed.values["skip-kit-check"] as boolean,
+    force: parsed.values.force as boolean,
     selfTest: parsed.values["self-test"] as boolean,
   };
 }
@@ -1640,9 +1963,10 @@ async function main(argv: string[]): Promise<number> {
   if (Bun.which("cargo") === null)
     throw new BumpError("cargo is not installed");
 
-  const totalSteps = args.stageOnly ? 3 : args.dryRun ? 5 : 6;
+  const totalSteps = args.stageOnly ? 4 : args.dryRun ? 6 : 7;
   logHeader(`Publishing GPUI from Zed as ${PUBLISH_PREFIX}`);
   mkdirSync(WORK_DIR, { recursive: true });
+  rmSync(join(WORK_DIR, "gpui-pre.json"), { force: true });
 
   logStep(`1/${totalSteps}`, "Preparing the Zed checkout");
   const zed = await prepareZed(args.rev, args.zed);
@@ -1653,13 +1977,39 @@ async function main(argv: string[]): Promise<number> {
   logStep(`2/${totalSteps}`, "Collecting the crates that gpui needs");
   const ws = loadWorkspace(zed);
   const crates = selectCrates(ws);
-  const version = args.version ?? (await nextVersion(VERSION, crates));
+  const next =
+    args.version === undefined
+      ? await nextVersion(VERSION, crates)
+      : { version: args.version, resuming: false };
+  const version = next.version;
   const width = Math.max(...crates.map((c) => c.name.length));
   for (const crate of crates)
     console.log(`    ${crate.name.padEnd(width)}  ->  ${crate.publishedName}`);
   logSuccess(
     `${crates.length} crates will be published as version ${bold(version)}`,
   );
+
+  // A run that uploads nothing, that was told which version to publish, or
+  // that resumes an unfinished one always does its work; the weekly cron is
+  // the one that must not spend a version on a snapshot nobody changed.
+  if (
+    !args.force &&
+    !args.dryRun &&
+    !args.stageOnly &&
+    args.version === undefined &&
+    !next.resuming
+  ) {
+    const unchanged = await unchangedSnapshot(zed, crates, zedSha);
+    if (unchanged !== undefined) {
+      console.log();
+      logSuccess(
+        "Nothing to publish: Zed has not touched the published crates since " +
+          `${PUBLISH_PREFIX} ${unchanged.version} (zed@${unchanged.rev}); ` +
+          "pass --force to publish anyway",
+      );
+      return 0;
+    }
+  }
   console.log();
 
   logStep(`3/${totalSteps}`, "Staging a standalone workspace");
@@ -1667,12 +2017,16 @@ async function main(argv: string[]): Promise<number> {
   logSuccess(`Workspace written to ${bold(staging)}`);
   logInfo(`Summary written to ${join(WORK_DIR, "gpui-pre.json")}`);
   console.log();
+
+  logStep(`4/${totalSteps}`, "Auditing licenses");
+  await auditLicenses(staging, crates);
+  console.log();
   if (args.stageOnly) return 0;
 
   if (args.noVerify) {
     logWarn("Skipping verification (--no-verify)");
   } else {
-    logStep(`4/${totalSteps}`, "Verifying with `cargo publish --dry-run`");
+    logStep(`5/${totalSteps}`, "Verifying with `cargo publish --dry-run`");
     const { code } = await runStreaming(
       ["cargo", "publish", "--workspace", "--dry-run", "--allow-dirty"],
       staging,
@@ -1688,7 +2042,7 @@ async function main(argv: string[]): Promise<number> {
   if (args.skipKitCheck) {
     logWarn("Skipping the gpui-kit compatibility check (--skip-kit-check)");
   } else {
-    logStep(`5/${totalSteps}`, "Building and testing gpui-kit against the staged crates");
+    logStep(`6/${totalSteps}`, "Building and testing gpui-kit against the staged crates");
     await verifyKitAgainstStaging(staging, crates, version);
     logSuccess(`gpui-kit builds and passes its tests against gpui-pre ${version}`);
   }
@@ -1698,7 +2052,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  logStep(`6/${totalSteps}`, "Publishing to crates.io");
+  logStep(`7/${totalSteps}`, "Publishing to crates.io");
   await publish(staging, crates, version, !args.noWait);
   console.log();
 

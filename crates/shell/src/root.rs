@@ -159,15 +159,11 @@ pub struct ShellRoot {
 /// Where the performance HUD sits over the window and how it behaves.
 ///
 /// What a script's `show_fps_monitor(options)` names, with the same defaults
-/// `gpui_fps` gives an overlay a Rust host places by hand -- except
-/// `continuous`, which is off: a HUD a script switches on is there to watch
-/// the application's own frames, not to drive a redraw loop of its own.
+/// `gpui_fps` gives an overlay a Rust host places by hand.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FpsHudRequest {
     /// Corner or edge of the window.
     pub anchor: Anchor,
-    /// Whether the HUD requests another animation frame after every render.
-    pub continuous: bool,
     /// The per-frame budget the HUD grades frame cost against. `None` keeps
     /// the HUD's own default.
     pub frame_budget: Option<Duration>,
@@ -177,7 +173,6 @@ impl Default for FpsHudRequest {
     fn default() -> Self {
         Self {
             anchor: Anchor::TopRight,
-            continuous: false,
             frame_budget: None,
         }
     }
@@ -358,9 +353,7 @@ impl ShellRoot {
         cx: &mut Context<Self>,
     ) -> Option<gpui_fps::FpsOverlay> {
         let request = self.fps_hud?;
-        let mut overlay = gpui_fps::fps_monitor(window, cx)
-            .anchor(request.anchor)
-            .continuous(request.continuous);
+        let mut overlay = gpui_fps::fps_monitor(window, cx).anchor(request.anchor);
         if let Some(budget) = request.frame_budget {
             overlay = overlay.frame_budget(budget);
         }
@@ -806,7 +799,7 @@ impl ShellRoot {
         if active_focus_trap(window, cx).is_some() {
             return;
         }
-        window.blur(cx);
+        window.blur();
     }
 }
 
@@ -1269,7 +1262,7 @@ mod tests {
                 ShellRoot::new(content, window, cx)
             }
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         let handle = handle.borrow().clone().expect("field focus handle");
         (handle, cx)
     }
@@ -1279,7 +1272,7 @@ mod tests {
         let (field, cx) = shell_root_with_field(cx);
 
         cx.update(|window, cx| window.focus(&field, cx));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.update(|window, _| field.is_focused(window)));
 
         // Well clear of the field, on nothing that tracks focus.
@@ -1342,7 +1335,7 @@ mod tests {
             root.open_dialog(first.clone(), window, cx)
         });
         root.update_in(cx, |root, window, cx| root.open_dialog(second, window, cx));
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_keystrokes("escape");
         assert_eq!(root.read_with(cx, |root, _| root.dialog_count()), 1);
@@ -1365,7 +1358,7 @@ mod tests {
                 cx,
             )
         });
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
 
         cx.simulate_keystrokes("escape");
         assert_eq!(root.read_with(cx, |root, _| root.dialog_count()), 1);
@@ -1468,7 +1461,7 @@ mod tests {
             root.push_toast(ToastRequest::new("Saved"), window, cx);
         });
 
-        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(root.read_with(cx, |root, _| root.dialog_count()), 2);
         assert!(root.read_with(cx, |root, _| root.sheet().is_some()));
         assert_eq!(root.read_with(cx, |root, _| root.toast_count()), 1);

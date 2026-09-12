@@ -6,9 +6,9 @@
 
 #![allow(unused_imports, dead_code)]
 
-/// `use gpui_kit::*;` alone is GPUI, so a file needs nothing else for it.
+/// `use wgpui_kit::*;` alone is GPUI, so a file needs nothing else for it.
 mod glob_is_gpui {
-    use gpui_kit::*;
+    use wgpui_kit::*;
 
     type Element = Div;
     type Window_ = Window;
@@ -37,46 +37,46 @@ mod glob_is_gpui {
     }
 
     fn startup(cx: &mut App) {
-        gpui_kit::init(cx);
-        let _ = gpui_kit::application;
+        wgpui_kit::init(cx);
+        let _ = wgpui_kit::application;
     }
 }
 
 /// Importing only the macro must not require a transitive crate named `gpui`.
 mod selective_actions_import {
-    use gpui_kit::actions;
+    use wgpui_kit::actions;
 
     actions!(exports, [SelectivelyImportedAction]);
 
-    fn assert_action<T: gpui_kit::Action>() {}
+    fn assert_action<T: wgpui_kit::Action>() {}
 
     fn action_is_from_the_facade() {
         assert_action::<SelectivelyImportedAction>();
     }
 }
 
-/// `gpui_kit::gpui` is hidden but kept, for code that keeps `gpui::…` paths.
+/// `wgpui_kit::gpui` is hidden but kept, for code that keeps `gpui::…` paths.
 mod gpui_by_name {
-    use gpui_kit::*;
+    use wgpui_kit::*;
 
     type Through = gpui::Window;
-    type Spelled = gpui_kit::gpui::Window;
+    type Spelled = wgpui_kit::gpui::Window;
 }
 
 /// The layers that are always present.
 mod always {
-    type Base = gpui_kit::base::Button;
-    const _APPLICATION: fn() -> gpui_kit::Application = gpui_kit::application;
-    const _PLATFORM_APPLICATION: fn() -> gpui_kit::Application = gpui_kit::platform::application;
-    const _INIT: fn(&mut gpui_kit::App) = gpui_kit::init;
+    type Base = wgpui_kit::base::Button;
+    const _APPLICATION: fn() -> wgpui_kit::Application = wgpui_kit::application;
+    const _PLATFORM_APPLICATION: fn() -> wgpui_kit::Application = wgpui_kit::platform::application;
+    const _INIT: fn(&mut wgpui_kit::App) = wgpui_kit::init;
 }
 
 #[cfg(feature = "component")]
 mod component {
-    use gpui_kit::component::button::*;
-    use gpui_kit::component::plot::{IntoPlot, Plot};
-    use gpui_kit::component::{ActiveTheme, Root, Size};
-    use gpui_kit::*;
+    use wgpui_kit::component::button::*;
+    use wgpui_kit::component::plot::{IntoPlot, Plot};
+    use wgpui_kit::component::{ActiveTheme, Root, Size};
+    use wgpui_kit::*;
 
     type Sizing = Size;
 
@@ -95,10 +95,14 @@ mod component {
         Button::new("ok").primary()
     }
 
-    const _INIT: fn(&mut App) = gpui_kit::component::init;
+    const _INIT: fn(&mut App) = wgpui_kit::component::init;
 }
 
 #[cfg(feature = "assets")]
 mod assets {
-    type Assets = gpui_kit::assets::Assets;
+    type Assets = wgpui_kit::assets::Assets;
 }
+
+/// The opt-in facade feature enables GPUI's feature-gated profiler API.
+#[cfg(feature = "profiler")]
+use wgpui_kit::profiler::WindowProfiler;

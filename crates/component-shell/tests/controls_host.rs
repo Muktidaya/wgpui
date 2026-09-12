@@ -64,7 +64,7 @@ fn mount(
 
 fn draw(context: &mut VisualTestContext) {
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 }
 
 /// A two-state control that cannot report its new state is set-only: the script

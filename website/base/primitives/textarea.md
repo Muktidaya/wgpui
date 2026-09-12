@@ -64,10 +64,10 @@ line break. `TextareaState` emits the same `InputEvent` variants as `InputState`
 
 The control is unstyled. Your design system supplies the frame, height, colors,
 padding, and `InputEditorStyle`. For a styled control, see the
-[`gpui-component` Textarea](../../docs/components/textarea.md).
+[`gpui-component` Textarea](../../component/textarea.md).
 
 ## Runnable example
 
 ```bash
-cargo run -p gpui-base --example components -- textarea
+cargo run -p gpui-base-examples -- textarea
 ```

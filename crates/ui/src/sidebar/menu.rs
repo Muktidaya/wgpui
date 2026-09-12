@@ -12,6 +12,7 @@ use gpui::{
     ParentElement as _, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
     Window, div, percentage, prelude::FluentBuilder,
 };
+use gpui_base::TestSupportExt as _;
 use std::rc::Rc;
 
 /// Menu for the [`super::Sidebar`]
@@ -93,6 +94,8 @@ impl Styled for SidebarMenu {
 pub struct SidebarMenuItem {
     icon: Option<Icon>,
     label: SharedString,
+    label_style: StyleRefinement,
+    style: StyleRefinement,
     handler: Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>,
     active: bool,
     default_open: bool,
@@ -111,6 +114,8 @@ impl SidebarMenuItem {
         Self {
             icon: None,
             label: label.into(),
+            label_style: StyleRefinement::default(),
+            style: StyleRefinement::default(),
             handler: Rc::new(|_, _, _| {}),
             active: false,
             collapsed: false,
@@ -127,6 +132,12 @@ impl SidebarMenuItem {
     /// Set the icon for the menu item
     pub fn icon(mut self, icon: impl Into<Icon>) -> Self {
         self.icon = Some(icon.into());
+        self
+    }
+
+    /// Set the style for the label
+    pub fn label_style(mut self, style: StyleRefinement) -> Self {
+        self.label_style = style;
         self
     }
 
@@ -262,6 +273,7 @@ impl SidebarItem for SidebarMenuItem {
 
         div()
             .id(id.clone())
+            .test_support()
             .w_full()
             .child(
                 h_flex()
@@ -273,6 +285,7 @@ impl SidebarItem for SidebarMenuItem {
                     .gap_x_2()
                     .rounded(cx.theme().radius)
                     .text_sm()
+                    .refine_style(&self.style)
                     .when(is_hoverable, |this| {
                         this.hover(|this| {
                             this.bg(cx.theme().sidebar_accent.opacity(0.8))
@@ -303,6 +316,7 @@ impl SidebarItem for SidebarMenuItem {
                                         h_flex()
                                             .flex_1()
                                             .overflow_x_hidden()
+                                            .refine_style(&self.label_style)
                                             .child(self.label.clone()),
                                     )
                                     .when_some(self.suffix.clone(), |this, suffix| {
@@ -396,6 +410,12 @@ impl SidebarItem for SidebarMenuItem {
                         })),
                 )
             })
+    }
+}
+
+impl Styled for SidebarMenuItem {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 

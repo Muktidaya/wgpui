@@ -103,6 +103,26 @@ TextView::markdown("highlighted", source).code_block_highlighter(|block| {
 
 范围相对于 `CodeBlock::code()`；无效范围会被丢弃。高亮器实现和语言注册完全由应用管理。
 
+## Markdown 扩展
+
+`MarkdownExtensions` 默认使用兼容 CommonMark/GFM 的解析方式。YAML
+frontmatter 不属于这两项标准，因此默认关闭。当 block parser 或插件处理
+`markdown_ast::Node::Yaml` 时，需要明确启用该 construct：
+
+```rust
+use gpui_base::{MarkdownExtensions, TextView};
+
+let extensions = MarkdownExtensions::default().frontmatter();
+
+TextView::markdown("metadata", source)
+    .markdown_extensions(extensions)
+```
+
+如果没有匹配的插件，已启用的 YAML frontmatter 会使用现有的 YAML
+code-block fallback。可以通过 `.plugin(...)` 挂载自定义插件；
+`gpui-component` 提供带主题样式的
+`FrontmatterPlugin`；Base 不依赖该 presentation。
+
 ## 保留状态与动态更新
 
 内容需要持续更新时使用 `TextViewState`：
@@ -117,7 +137,7 @@ TextView::new(&document)
 document.update(cx, |state, cx| state.set_text(updated_source, cx));
 ```
 
-通过 `SelectionFormat` 可以选择复制渲染文本或 Markdown 源码。链接路由、代码块操作、表格操作、图片和 Markdown 插件继续使用与兼容 API 相同的 builder，详见 [gpui-component TextView 文档](../docs/components/text-view.md)。
+通过 `SelectionFormat` 可以选择复制渲染文本或 Markdown 源码。链接路由、代码块操作、表格操作、图片和 Markdown 插件继续使用与兼容 API 相同的 builder，详见 [gpui-component TextView 文档](../component/text-view.md)。
 
 ## 可运行源码
 
@@ -126,5 +146,5 @@ document.update(cx, |state, cx| state.set_text(updated_source, cx));
 <<< ../../../crates/base/examples/showcase/components/text_view.rs{rust}
 
 ```bash
-cargo run -p gpui-base --example components -- text-view
+cargo run -p gpui-base-examples -- text-view
 ```

@@ -68,10 +68,10 @@ export default class App extends View {
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
     let view = mounted.borrow().clone().unwrap();
     delegate_select::test_probe::take_selected();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_click(point(px(20.), px(20.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_click(point(px(20.), px(55.)), Modifiers::default());
     context.run_until_parked();
     assert_eq!(delegate_select::test_probe::take_selected(), ["alpha"]);

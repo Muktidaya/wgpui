@@ -2006,7 +2006,7 @@ mod tests {
         // hitboxes; this path proves the actual GPUI event dispatch instead.
         let motion_root = motion.clone();
         let (_, context) = cx.add_window_view(move |_, _| ScriptRoot { view: motion_root });
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
 
         assert!(description(context, &motion).contains("Native motion"));
         assert!(description(context, &motion).contains("AAPL"));
@@ -2017,7 +2017,7 @@ mod tests {
         // This lands on the independent 32px Run action after the segmented
         // policy choice, through GPUI hit testing rather than callback access.
         context.simulate_click(point(px(270.), px(64.)), Modifiers::default());
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
         assert!(description(context, &motion).contains("Send back"));
         assert_eq!(
             runtime.read_metrics().script_renders(),
@@ -2055,13 +2055,13 @@ mod tests {
 
         let motion_root = motion.clone();
         let (_, context) = cx.add_window_view(move |_, _| ScriptRoot { view: motion_root });
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
         assert!(description(context, &motion).contains("Transition ✓"));
         assert!(description(context, &motion).contains("Run motion"));
 
         let baseline = runtime.read_metrics().script_renders();
         context.simulate_click(point(px(145.), px(64.)), Modifiers::default());
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
 
         assert!(description(context, &motion).contains("Spring ✓"));
         assert!(description(context, &motion).contains("Run motion"));

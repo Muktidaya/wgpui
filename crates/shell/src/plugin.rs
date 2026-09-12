@@ -544,13 +544,8 @@ fn validate_shell_version(version: &str) -> Result<(), ManifestProblem> {
     let required = Version::parse(version)
         .map_err(|_| ManifestProblem::InvalidShellVersion(version.to_owned()))?;
     let runtime = Version::parse(SHELL_VERSION).expect("the crate version is semantic");
-    let compatible_line = if required.major == 0 {
-        runtime.major == 0 && runtime.minor == required.minor
-    } else {
-        runtime.major == required.major
-    };
 
-    if compatible_line && runtime >= required {
+    if runtime >= required {
         Ok(())
     } else {
         Err(ManifestProblem::IncompatibleShellVersion {
@@ -1318,11 +1313,14 @@ impl ShellRuntime {
         Ok(cx.new(|cx| ShellRoot::with_application(view, root, entry, policy, window, cx)))
     }
 
-    /// Loads and renders an application once, returning its description.
+    /// Loads an application, builds its description, and materializes its
+    /// eager native elements once, returning the checked description.
     ///
-    /// This is the headless host path used by source checks. It keeps engine
+    /// Source checks use this with a hidden window. It keeps engine
     /// handles and the `ScriptView` construction protocol inside the shell
-    /// facade while preserving structured load and render errors.
+    /// facade while preserving structured load, render, and registered-component
+    /// materialization errors. It does not run layout, paint, deferred slots,
+    /// nested view renders, or later interaction and asynchronous states.
     pub fn check(
         self: &Rc<Self>,
         root: impl AsRef<Path>,
@@ -1337,7 +1335,12 @@ impl ShellRuntime {
             .view
             .clone();
         let object = view.read(cx).object().clone();
-        self.render_to_spec(&object, Some(view), window, cx)
+        let policy = view.read(cx).policy();
+        let snapshot = self.build_snapshot(&object, Some(view), policy, window, cx)?;
+        // Keep the application and its callback-owning snapshot alive until
+        // the native elements have been built and dropped.
+        crate::materialize::try_materialize(self, &snapshot, window, cx)?;
+        Ok(snapshot.debug_tree())
     }
 }
 
@@ -1797,8 +1800,11 @@ mod tests {
             application.path().join("main.js"),
             r#"
                 import { div, View } from "gpui-kit";
+                import { Button } from "gpui-base";
                 export default class App extends View {
-                  render(cx) { return "checked through the facade"; }
+                  render(cx) {
+                    return Button.new("checked").child("checked through the facade");
+                  }
                 }
             "#,
         )
@@ -1812,6 +1818,9 @@ mod tests {
             .expect("check application through the high-level facade");
 
         assert!(description.contains("checked through the facade"));
+        let metrics = runtime.metrics().read();
+        assert_eq!(metrics.script_renders(), 1);
+        assert_eq!(metrics.materializations(), 1);
     }
 
     #[gpui::test]
@@ -2902,6 +2911,13 @@ mod tests {
                 "{error}"
             );
         }
+    }
+
+    #[test]
+    fn older_shell_minor_versions_remain_compatible() {
+        let source = VALID.replacen("\"0.1.0\"", "\"0.0.0\"", 1);
+        PluginManifest::parse(&source)
+            .expect("a manifest's shell-version is its minimum runtime version");
     }
 
     #[test]

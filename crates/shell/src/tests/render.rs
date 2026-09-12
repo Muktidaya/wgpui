@@ -673,9 +673,12 @@ fn descriptor_drives_runtime_and_typescript(cx: &mut TestAppContext) {
     // descriptor declares none of them, and the runtime refuses them for a
     // registered component that does not.
     assert!(declarations.contains(
-        "export type TestBoxElement = Omit<Element, \"tone\" | \"disabled\" | \"selected\" | \"on_click\"> & {"
+        "export type TestBoxElement = Omit<NativeElement, \"tone\" | \"disabled\" | \"selected\" | \"on_click\" | \"role\" | \"transition\"> & {"
     ));
-    assert!(declarations.contains("import { ClickEvent, Context, Element } from \"gpui-kit\";"));
+    assert!(
+        declarations
+            .contains("import { ClickEvent, Context, Element, NativeElement } from \"gpui-kit\";")
+    );
     assert!(declarations.contains("export const TestBox: { new(id: string): TestBoxElement }"));
     assert!(declarations.contains("tone(value: string): TestBoxElement;"));
     assert!(declarations.contains("A test component."));
@@ -1815,7 +1818,7 @@ export default class UndeclaredCommon extends View {
     context.update(|_, cx| view.update(cx, |_, cx| cx.notify()));
     context.run_until_parked();
     context.update(|window, _| window.refresh());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let initial_tree = context.update(|_, cx| {
         view.read(cx)
@@ -2134,10 +2137,10 @@ export default class PointerRebuild extends View {
         })
     };
 
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_mouse_move(point(px(20.), px(20.)), None, Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert!(tree(&mut context).contains("Moves: 1"));
     assert!(tree(&mut context).contains("Move function: false"));
     assert!(tree(&mut context).contains("Hovered: true"));
@@ -2148,7 +2151,7 @@ export default class PointerRebuild extends View {
 
     context.simulate_mouse_move(point(px(20.), px(120.)), None, Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert!(tree(&mut context).contains("Hovered: false"));
     assert!(
         tree(&mut context).contains("Hover events: 2"),
@@ -2205,11 +2208,11 @@ export default class ClickableFlexes extends View {
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     for y in [20., 60., 100.] {
         context.simulate_click(point(px(10.), px(y)), Modifiers::default());
     }
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = window.root(&mut context).expect("view");
     let tree = context.update(|_, cx| {
@@ -2492,7 +2495,7 @@ fn link_typings_expose_a_real_external_target() {
     let types =
         crate::typings::declarations_with_components(&crate::FrozenComponentRegistry::default());
     assert!(types.contains("export const Link: ComponentType;"));
-    assert!(types.contains("href(url: string): Element;"));
+    assert!(types.contains("href<Self extends Element>(this: Self, url: string): Self;"));
 }
 
 #[gpui::test]
@@ -3786,14 +3789,14 @@ export default class Parent extends View {
         RootedScriptView(parent)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let parent = window
         .root(&mut context)
         .expect("parent view")
         .read_with(&context, |root, _| root.0.clone());
     context.simulate_click(point(px(20.), px(20.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         parent
@@ -4544,7 +4547,7 @@ export default class Code extends View {
         let view = cx.new(|_| ScriptView::new(runtime_for_view, object));
         crate::root::ShellRoot::new(view.into(), window, cx)
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let state = runtime
         .entities()
@@ -4553,11 +4556,11 @@ export default class Code extends View {
     context.update(|window, cx| {
         state.update(cx, |state, cx| state.focus(window, cx));
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let renders = runtime.metrics().read().script_renders();
     context.simulate_keystrokes("1 2");
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     assert_eq!(
         context.update(|_, cx| state.read(cx).value().to_string()),
@@ -4607,17 +4610,17 @@ export default class Code extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("view")
         .read_with(&context, |root, _| root.0.clone());
     let state = runtime.entities().first_otp().expect("OTP state");
     context.update(|window, cx| state.update(cx, |state, cx| state.focus(window, cx)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_keystrokes("1");
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert_eq!(
         context.update(|_, cx| state.read(cx).value().to_string()),
         "1",
@@ -4635,7 +4638,7 @@ export default class Code extends View {
     );
 
     context.simulate_keystrokes("2");
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let complete = context.update(|_, cx| {
         view.read(cx)
             .snapshot()
@@ -4691,17 +4694,17 @@ export default class Code extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("view")
         .read_with(&context, |root, _| root.0.clone());
     let state = runtime.entities().first_otp().expect("OTP state");
     context.update(|window, cx| state.update(cx, |state, cx| state.focus(window, cx)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_keystrokes("1");
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert_eq!(
         context.update(|_, cx| state.read(cx).value().to_string()),
         "1",
@@ -4719,7 +4722,7 @@ export default class Code extends View {
     );
 
     context.simulate_click(point(px(50.), px(20.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let after_set = context.update(|_, cx| {
         view.read(cx)
             .snapshot()
@@ -4822,7 +4825,6 @@ export default class Monitor extends View {
     return div().relative().size_full().child(
       fps_monitor()
         .anchor("bottom_left")
-        .continuous(false)
         .frame_budget(8.33)
     );
   }
@@ -4839,9 +4841,7 @@ export default class Monitor extends View {
         .update(|window, cx| runtime.render_to_spec(&object, None, window, cx))
         .expect("render spec");
     assert!(
-        spec.contains("FpsMonitor :anchor")
-            && spec.contains(":continuous[Bool(false)]")
-            && spec.contains(":frame_budget[Number(8.33)]"),
+        spec.contains("FpsMonitor :anchor") && spec.contains(":frame_budget[Number(8.33)]"),
         "the snapshot must retain the native monitor and its performance options: {spec}"
     );
 
@@ -5310,7 +5310,7 @@ export default class ThemeSwitch extends View {
         ScriptView::new(loaded, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.update(|_, cx| {
         assert_eq!(
@@ -5364,7 +5364,7 @@ export default class TypeScale extends View {
         ScriptView::new(loaded, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.update(|_, cx| {
         let typography = gpui_base::Theme::global(cx).tokens.typography.clone();
@@ -5431,7 +5431,7 @@ export default class ZeroScale extends View {
         ScriptView::new(loaded, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.update(|_, cx| {
         assert_eq!(
@@ -6482,11 +6482,11 @@ fn collapsible_tree(cx: &mut TestAppContext, open: bool) -> String {
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     // The header occupies the first 40 pixels, so this lands on the content
     // when there is one and on nothing at all when there is not.
     context.simulate_click(point(px(10.), px(60.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = window.root(&mut context).expect("view");
     context.update(|_, cx| {
@@ -6925,7 +6925,7 @@ export default class Keys extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -6934,7 +6934,7 @@ export default class Keys extends View {
     let handles = runtime.entities().focus_handles();
     assert_eq!(handles.len(), 1, "the script created one focus handle");
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_keystrokes("cmd-s escape");
     // `simulate_keystrokes` sends only the press half — GPUI's
@@ -6945,7 +6945,7 @@ export default class Keys extends View {
         keystroke: gpui::Keystroke::parse("escape").expect("keystroke"),
     });
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -7016,7 +7016,7 @@ export default class Modifiers extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7025,7 +7025,7 @@ export default class Modifiers extends View {
     let handles = runtime.entities().focus_handles();
     assert_eq!(handles.len(), 1, "the script created one focus handle");
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_event(gpui::ModifiersChangedEvent {
         modifiers: gpui::Modifiers {
@@ -7037,7 +7037,7 @@ export default class Modifiers extends View {
     });
     context.simulate_event(gpui::ModifiersChangedEvent::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -7116,7 +7116,7 @@ export default class Pane extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7124,13 +7124,13 @@ export default class Pane extends View {
 
     let handles = runtime.entities().focus_handles();
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     // `cmd-q` is bound to nothing, and must reach neither handler.
     // `cmd-q` is bound to nothing, and must reach neither handler.
     context.simulate_keystrokes("cmd-s cmd-q ctrl-shift-k");
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -7215,7 +7215,7 @@ export default class Faq extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7245,7 +7245,7 @@ export default class Faq extends View {
     // found by walking down rather than by assuming a fixed offset.
     context.simulate_click(point(px(20.), px(20.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -7513,7 +7513,7 @@ export default class Surface extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7822,7 +7822,7 @@ export default class Nested extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7830,13 +7830,13 @@ export default class Nested extends View {
 
     let handles = runtime.entities().focus_handles();
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     // The keyboard is on the inner element for both. The first is its own; the
     // second is not, and has to reach past it.
     context.simulate_keystrokes("ctrl-shift-i ctrl-shift-o");
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -7894,7 +7894,7 @@ export default class Metrics extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -7991,7 +7991,7 @@ export default class Surface extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -8006,7 +8006,7 @@ export default class Surface extends View {
     context.simulate_mouse_move(outside, gpui::MouseButton::Left, Modifiers::default());
     context.simulate_mouse_down(outside, gpui::MouseButton::Left, Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -8102,7 +8102,7 @@ export default class Toolbar extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -8112,11 +8112,11 @@ export default class Toolbar extends View {
     assert_eq!(handles.len(), 2, "the script created two focus handles");
 
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_keystrokes("cmd-s");
 
     context.update(|window, cx| handles[1].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_keystrokes("space");
 
     // The tab is the first 40-tall row.
@@ -8131,7 +8131,7 @@ export default class Toolbar extends View {
         Modifiers::default(),
     );
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -8216,7 +8216,7 @@ export default class Nested extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("root view")
@@ -8224,11 +8224,11 @@ export default class Nested extends View {
 
     let handles = runtime.entities().focus_handles();
     context.update(|window, cx| handles[0].focus(window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_keystrokes("a b");
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -8309,7 +8309,7 @@ export default class Form extends View {
         let view = cx.new(|_| ScriptView::new(runtime_for_view, object));
         crate::root::ShellRoot::new(view.into(), window, cx)
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let handles = runtime.entities().focus_handles();
     assert_eq!(handles.len(), 4, "the script created four focus handles");
@@ -8388,7 +8388,7 @@ export default class Panel extends View {
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = window.root(&mut context).expect("view");
     let described = |context: &mut VisualTestContext| {
@@ -8408,7 +8408,7 @@ export default class Panel extends View {
     // itself focusable — so the focus that arrives is the one the script moved,
     // not one GPUI handed out on a press.
     context.simulate_click(point(px(10.), px(30.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let handles = runtime.entities().focus_handles();
     assert_eq!(handles.len(), 1);
@@ -8584,10 +8584,10 @@ fn popover_tree(cx: &mut TestAppContext, open: bool) -> String {
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
     // Twice: a popup measures its trigger while painting and only places the
     // surface on the frame after it knows where the trigger is.
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_click(inside_the_surface(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = window.root(&mut context).expect("view");
     context.update(|_, cx| {
@@ -8665,7 +8665,7 @@ fn a_popover_reports_the_open_state_the_pointer_changed(cx: &mut TestAppContext)
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = |context: &mut VisualTestContext| {
         let view = window.root(context).expect("view");
@@ -8678,7 +8678,7 @@ fn a_popover_reports_the_open_state_the_pointer_changed(cx: &mut TestAppContext)
     };
 
     context.simulate_click(on_the_trigger(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let opened = tree(&mut context);
     assert!(
         opened.contains(":open[Bool(true)]"),
@@ -8686,7 +8686,7 @@ fn a_popover_reports_the_open_state_the_pointer_changed(cx: &mut TestAppContext)
     );
 
     context.simulate_click(inside_the_surface(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let clicked = tree(&mut context);
     assert!(
         clicked.contains("text \"Body: 1\""),
@@ -8696,7 +8696,7 @@ fn a_popover_reports_the_open_state_the_pointer_changed(cx: &mut TestAppContext)
     // Below the surface as well as beside it, so this is outside and nothing
     // else.
     context.simulate_click(point(px(300.), px(380.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let dismissed = tree(&mut context);
     assert!(
         dismissed.contains(":open[Bool(false)]"),
@@ -8704,7 +8704,7 @@ fn a_popover_reports_the_open_state_the_pointer_changed(cx: &mut TestAppContext)
     );
 
     context.simulate_click(inside_the_surface(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let after = tree(&mut context);
     assert!(
         after.contains("text \"Body: 1\""),
@@ -8796,7 +8796,7 @@ export default class Card extends View {
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = |context: &mut VisualTestContext| {
         let view = window.root(context).expect("view");
@@ -8812,15 +8812,15 @@ export default class Card extends View {
             .executor()
             .advance_clock(std::time::Duration::from_millis(60));
         context.run_until_parked();
-        context.update(|window, cx| window.draw(cx).clear(cx));
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
+        context.update(|window, cx| window.draw(cx).clear());
     };
 
     context.simulate_mouse_move(on_the_trigger(), None, Modifiers::default());
     settle(&mut context);
 
     context.simulate_click(inside_the_surface(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let opened = tree(&mut context);
     assert!(
         opened.contains("HoverCard \"card\""),
@@ -8836,7 +8836,7 @@ export default class Card extends View {
     settle(&mut context);
 
     context.simulate_click(inside_the_surface(), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let closed = tree(&mut context);
     assert!(
         closed.contains("text \"Body: 1\""),
@@ -8952,8 +8952,8 @@ fn select_harness(cx: &mut TestAppContext) -> (VisualTestContext, gpui::Entity<S
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
     // Twice: a popup measures itself while painting and only places the surface
     // on the frame after it knows where it is.
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window.root(&mut context).expect("view");
     (context, view)
 }
@@ -8970,8 +8970,8 @@ fn described(context: &mut VisualTestContext, view: &gpui::Entity<ScriptView>) -
 /// Two frames, because a popup that has just been given content places it on
 /// the frame after the one that measured the trigger.
 fn settle_popup(context: &mut VisualTestContext) {
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
 }
 
 /// The whole controlled loop, driven from the keyboard base actually binds.
@@ -9212,7 +9212,7 @@ export default class Due extends View {
         let view = cx.new(|_| ScriptView::new(runtime_for_view, object));
         crate::root::ShellRoot::new(view.into(), window, cx)
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let handles = runtime.entities().focus_handles();
     assert_eq!(handles.len(), 1, "the script created one focus handle");
@@ -9230,7 +9230,7 @@ export default class Due extends View {
     // controlled open state never moves.
     context.simulate_keystrokes("escape");
     context.simulate_keystrokes("enter");
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert_eq!(
         context.update(|window, cx| window.focused(cx)).as_ref(),
         Some(&handles[0]),
@@ -9281,7 +9281,7 @@ export default class Toolbar extends View {
         let view = cx.new(|_| ScriptView::new(runtime_for_view, object));
         crate::root::ShellRoot::new(view.into(), window, cx)
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         root.read(cx)
@@ -9311,7 +9311,7 @@ export default class Toolbar extends View {
     // On the button, and still nothing: the delay is what stops a tooltip
     // appearing under a pointer that was only passing over the toolbar.
     context.simulate_mouse_move(point(px(20.), px(20.)), None, Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert_eq!(
         shows.get(),
         0,
@@ -9330,10 +9330,10 @@ export default class Toolbar extends View {
 
     // And the layer actually renders what it was handed: the label view, the
     // positioner around it and the enter animation all run here.
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     context.simulate_mouse_move(point(px(20.), px(300.)), None, Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context
         .executor()
         .advance_clock(std::time::Duration::from_millis(400));
@@ -9463,8 +9463,8 @@ fn a_resizable_group_sizes_its_panels_and_reports_a_drag(cx: &mut TestAppContext
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = window.root(&mut context).expect("view");
     let tree = |context: &mut VisualTestContext| {
@@ -9502,25 +9502,25 @@ fn a_resizable_group_sizes_its_panels_and_reports_a_drag(cx: &mut TestAppContext
         gpui::MouseButton::Left,
         Modifiers::default(),
     );
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_mouse_move(
         point(px(240.), px(100.)),
         Some(gpui::MouseButton::Left),
         Modifiers::default(),
     );
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_mouse_move(
         point(px(300.), px(100.)),
         Some(gpui::MouseButton::Left),
         Modifiers::default(),
     );
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_mouse_up(
         point(px(300.), px(100.)),
         gpui::MouseButton::Left,
         Modifiers::default(),
     );
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let dragged = tree(&mut context);
     assert!(
@@ -9697,8 +9697,8 @@ export default class Rows extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("view")
@@ -9716,7 +9716,7 @@ export default class Rows extends View {
         Modifiers::default(),
     );
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -9745,7 +9745,7 @@ fn redraw_and_read(context: &mut VisualTestContext, view: &gpui::Entity<ScriptVi
             cx.notify();
         })
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.update(|_, cx| {
         view.read(cx)
             .snapshot()
@@ -9780,31 +9780,7 @@ fn mount_virtual_list(
     gpui::Entity<ScriptView>,
     VisualTestContext,
 ) {
-    cx.update(crate::init);
-    let runtime = ShellRuntime::new_isolated().expect("runtime");
-    cx.update(|cx| runtime.set_global(cx));
-    let view_type = runtime
-        .load_source("rows.js", &virtual_list_source(extra))
-        .expect("load");
-
-    // The view has to be the window's own root. A helper that draws it once
-    // into a throwaway element would leave every later frame going to the real
-    // root instead, and a virtual list only says anything once it has been laid
-    // out more than once.
-    let runtime_for_view = Rc::clone(&runtime);
-    let window = cx.add_window(move |window, cx| {
-        let view = runtime_for_view
-            .instantiate_view(&view_type, window, cx)
-            .expect("instantiate");
-        RootedScriptView(view)
-    });
-    let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    let view = window
-        .root(&mut context)
-        .expect("view")
-        .read_with(&context, |root, _| root.0.clone());
-    (runtime, window, view, context)
+    mount_list_source(cx, &virtual_list_source(extra))
 }
 
 fn scroll_by(context: &mut VisualTestContext, dy: f32) {
@@ -9813,37 +9789,14 @@ fn scroll_by(context: &mut VisualTestContext, dy: f32) {
         delta: gpui::ScrollDelta::Pixels(point(px(0.), px(dy))),
         ..Default::default()
     });
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 }
 
 #[gpui::test]
 fn a_virtual_list_describes_only_the_visible_window_and_follows_the_scroll(
     cx: &mut TestAppContext,
 ) {
-    let (_runtime, _window, view, mut context) = mount_virtual_list(cx, "");
-
-    let (start, end) = reported_range(&redraw_and_read(&mut context, &view));
-    assert_eq!(start, 0, "an unscrolled list starts at its first item");
-    assert!(
-        (10..=13).contains(&end),
-        "a 200px box of 20px rows shows about ten of five hundred, not {end}"
-    );
-
-    // Ten rows down. The script has to be asked again, with a different range:
-    // that it is asked at all is the whole of what separates this component
-    // from every other one, and that the range moves is what makes it a list
-    // rather than a window onto the first screenful.
-    scroll_by(&mut context, -200.);
-
-    let (scrolled_start, scrolled_end) = reported_range(&redraw_and_read(&mut context, &view));
-    assert_eq!(
-        scrolled_start, 10,
-        "200px of 20px rows is ten items; the window must start there"
-    );
-    assert!(
-        scrolled_end > end,
-        "the window must have moved down the collection: {scrolled_start}..{scrolled_end}"
-    );
+    assert_the_visible_window_follows_the_scroll(cx, &virtual_list_source(""));
 }
 
 #[gpui::test]
@@ -9983,7 +9936,7 @@ export default class Rows extends View {
         RootedScriptView(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window
         .root(&mut context)
         .expect("view")
@@ -10001,23 +9954,7 @@ export default class Rows extends View {
 
 #[gpui::test]
 fn a_virtual_list_reports_which_row_was_clicked(cx: &mut TestAppContext) {
-    let (_runtime, _window, view, mut context) = mount_virtual_list(cx, "");
-
-    // Rows are twenty pixels tall and the list starts at the top of the window,
-    // so the third one covers 40..60.
-    context.simulate_click(point(px(150.), px(50.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
-
-    let tree = context.update(|_, cx| {
-        view.read(cx)
-            .snapshot()
-            .map(crate::RenderSnapshot::debug_tree)
-            .unwrap_or_default()
-    });
-    assert!(
-        tree.contains("clicked 2"),
-        "the click must arrive with the item's stable key: {tree}"
-    );
+    assert_a_click_reports_the_row_key(cx, &virtual_list_source(""), 50.);
 }
 
 /// The hit box belongs to the item it was painted for, not to the position the
@@ -10073,7 +10010,7 @@ export default class Rows extends View {
         ScriptView::new(runtime_for_view, object)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let view = window.root(&mut context).expect("view");
 
     let old_callback = context.update(|_, cx| {
@@ -10099,11 +10036,11 @@ export default class Rows extends View {
     });
 
     context.simulate_click(point(px(150.), px(20.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     // Emulate a queued event from the hit box painted by the previous
     // snapshot. Its payload is the key captured before the reorder.
     context.update(|window, cx| runtime.dispatch_item_key(old_callback, "alpha", window, cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = context.update(|_, cx| {
         view.read(cx)
@@ -10210,7 +10147,9 @@ export default class LargeLists extends View {
 "#,
     );
     assert!(
-        message.contains("virtual list") && message.contains("render"),
+        // "lists", not "virtual lists": one budget covers every lazy list in a
+        // render, `list` and `uniform_list` included.
+        message.contains("lists in one render"),
         "the error must identify the aggregate host allocation boundary: {message}"
     );
 }
@@ -10261,7 +10200,7 @@ export default class Probe extends View {
         .executor()
         .advance_clock(std::time::Duration::from_millis(10));
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let dialog = context
         .update(|_, cx| root.read(cx).topmost_dialog().cloned())
@@ -10283,7 +10222,7 @@ export default class Probe extends View {
         .executor()
         .advance_clock(std::time::Duration::from_millis(20));
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let refreshed = context.update(|_, cx| {
         dialog
@@ -10422,4 +10361,213 @@ fn retiring_an_application_generation_runs_its_app_effect_cleanups(cx: &mut Test
         "retiring the generation must run the cleanup, not wait for the view"
     );
     let _ = std::fs::remove_dir_all(&directory);
+}
+
+// ---------------------------------------------------------------------------
+// `list` and `uniform_list`: GPUI's own lazy lists, driven from script.
+
+fn uniform_list_source() -> &'static str {
+    r#"
+import { div, View, uniform_list } from "gpui-kit";
+import { v_flex } from "gpui-base";
+
+export default class Rows extends View {
+  init() {
+    this.range = [0, 0];
+    this.clicked = -1;
+  }
+
+  render(cx) {
+    return v_flex()
+      .w(300)
+      .h(400)
+      .child(
+        v_flex()
+          .h(200)
+          .child(
+            uniform_list("rows", 500, (index) => String(index), (range) => {
+              this.range = [range.start, range.end];
+              const items = [];
+              for (let index = range.start; index < range.end; index++) {
+                items.push(div().h(20).child(`row ${index}`));
+              }
+              return items;
+            }).on_item_click((key, cx) => {
+              this.clicked = key;
+              cx.notify();
+            }),
+          ),
+      )
+      .child(`range ${this.range[0]}..${this.range[1]} clicked ${this.clicked}`);
+  }
+}
+"#
+}
+
+/// Rows of two heights, so the list has to measure each one: a uniform guess
+/// from the first row would place every later row wrong.
+fn measured_list_source() -> &'static str {
+    r#"
+import { div, View, list } from "gpui-kit";
+import { v_flex } from "gpui-base";
+
+export default class Rows extends View {
+  init() {
+    this.lo = -1;
+    this.hi = -1;
+    this.shown = [-1, -1];
+    this.clicked = -1;
+  }
+
+  render(cx) {
+    // What the previous frame's layout asked for; the item renderer runs after
+    // this render, from inside layout, so the report is always one frame old.
+    this.shown = [this.lo, this.hi];
+    this.lo = -1;
+    this.hi = -1;
+    return v_flex()
+      .w(300)
+      .h(400)
+      .child(
+        v_flex()
+          .h(200)
+          .child(
+            list("rows", 500, (index) => String(index), (index) => {
+              if (this.lo < 0 || index < this.lo) this.lo = index;
+              if (index > this.hi) this.hi = index;
+              return div().h(index % 2 === 0 ? 20 : 40).child(`row ${index}`);
+            }).on_item_click((key, cx) => {
+              this.clicked = key;
+              cx.notify();
+            }),
+          ),
+      )
+      .child(`range ${this.shown[0]}..${this.shown[1] + 1} clicked ${this.clicked}`);
+  }
+}
+"#
+}
+
+/// A 200px box of 20px rows shows about ten of them, and scrolling moves which
+/// ten the script is asked for. Shared by the two lists that take a range.
+fn assert_the_visible_window_follows_the_scroll(cx: &mut TestAppContext, source: &str) {
+    let (_runtime, _window, view, mut context) = mount_list_source(cx, source);
+
+    let (start, end) = reported_range(&redraw_and_read(&mut context, &view));
+    assert_eq!(start, 0, "an unscrolled list starts at its first item");
+    assert!(
+        (10..=13).contains(&end),
+        "a 200px box of 20px rows shows about ten of five hundred, not {end}"
+    );
+
+    // Ten rows down. The script has to be asked again, with a different range:
+    // that it is asked at all is the whole of what separates these components
+    // from every other one, and that the range moves is what makes them lists
+    // rather than a window onto the first screenful.
+    scroll_by(&mut context, -200.);
+
+    let (scrolled_start, scrolled_end) = reported_range(&redraw_and_read(&mut context, &view));
+    assert_eq!(
+        scrolled_start, 10,
+        "200px of 20px rows is ten items; the window must start there"
+    );
+    assert!(
+        scrolled_end > end,
+        "the window must have moved down the collection: {scrolled_start}..{scrolled_end}"
+    );
+}
+
+/// Rows are twenty pixels tall and the list starts at the top of the window, so
+/// the third one covers 40..60 and its stable key is `2`.
+fn assert_a_click_reports_the_row_key(cx: &mut TestAppContext, source: &str, y: f32) {
+    let (_runtime, _window, view, mut context) = mount_list_source(cx, source);
+
+    context.simulate_click(point(px(150.), px(y)), Modifiers::default());
+    context.update(|window, cx| window.draw(cx).clear());
+
+    let tree = redraw_and_read(&mut context, &view);
+    assert!(
+        tree.contains("clicked 2"),
+        "the click must arrive with the item's stable key: {tree}"
+    );
+}
+
+/// Loads one script source as the window's own root view and draws it once.
+///
+/// The view has to be the window's own root. A helper that drew it once into a
+/// throwaway element would leave every later frame going to the real root
+/// instead, and a lazy list only says anything once it has been laid out more
+/// than once.
+fn mount_list_source(
+    cx: &mut TestAppContext,
+    source: &str,
+) -> (
+    Rc<ShellRuntime>,
+    gpui::WindowHandle<RootedScriptView>,
+    gpui::Entity<ScriptView>,
+    VisualTestContext,
+) {
+    cx.update(crate::init);
+    let runtime = ShellRuntime::new_isolated().expect("runtime");
+    cx.update(|cx| runtime.set_global(cx));
+    let view_type = runtime.load_source("rows.js", source).expect("load");
+
+    let runtime_for_view = Rc::clone(&runtime);
+    let window = cx.add_window(move |window, cx| {
+        let view = runtime_for_view
+            .instantiate_view(&view_type, window, cx)
+            .expect("instantiate");
+        RootedScriptView(view)
+    });
+    let mut context = VisualTestContext::from_window(*window.deref(), cx);
+    context.update(|window, cx| window.draw(cx).clear());
+    let view = window
+        .root(&mut context)
+        .expect("view")
+        .read_with(&context, |root, _| root.0.clone());
+    (runtime, window, view, context)
+}
+
+#[gpui::test]
+fn a_uniform_list_describes_only_the_visible_window_and_follows_the_scroll(
+    cx: &mut TestAppContext,
+) {
+    assert_the_visible_window_follows_the_scroll(cx, uniform_list_source());
+}
+
+#[gpui::test]
+fn a_uniform_list_reports_which_row_was_clicked(cx: &mut TestAppContext) {
+    assert_a_click_reports_the_row_key(cx, uniform_list_source(), 50.);
+}
+
+#[gpui::test]
+fn a_list_measures_each_item_and_follows_the_scroll(cx: &mut TestAppContext) {
+    let (_runtime, _window, view, mut context) = mount_list_source(cx, measured_list_source());
+
+    let (start, end) = reported_range(&redraw_and_read(&mut context, &view));
+    assert_eq!(start, 0, "an unscrolled list starts at its first item");
+    // 20 + 40 + 20 + 40 + 20 + 40 + 20 fills the 200px box with seven rows, and
+    // the list draws a short band past the fold so it has measured ground to
+    // scroll into. A list that placed every row by the first one's 20px would
+    // put eighteen in the same space.
+    assert!(
+        (7..=13).contains(&end),
+        "a 200px box of alternating 20px and 40px rows shows about seven plus the \
+         overdraw band, not {end}"
+    );
+
+    scroll_by(&mut context, -200.);
+
+    let (_, scrolled_end) = reported_range(&redraw_and_read(&mut context, &view));
+    assert!(
+        scrolled_end > end,
+        "the window must have moved down the collection: ends at {scrolled_end}, was {end}"
+    );
+}
+
+#[gpui::test]
+fn a_list_reports_which_item_was_clicked(cx: &mut TestAppContext) {
+    // Alternating heights: row 0 covers 0..20, row 1 covers 20..60, row 2
+    // covers 60..80.
+    assert_a_click_reports_the_row_key(cx, measured_list_source(), 70.);
 }
