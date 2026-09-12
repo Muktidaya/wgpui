@@ -1,5 +1,5 @@
 {
-  description = "Standalone GPUI build";
+  description = "Standalone WGPUI build";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
