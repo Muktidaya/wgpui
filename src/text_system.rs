@@ -537,6 +537,24 @@ impl WindowTextSystem {
     /// Subsets of the line can be styled independently with the `runs` parameter.
     /// Generally, you should prefer to use [`Self::shape_line`] instead, which
     /// can be painted directly.
+    pub fn layout_width(&self, font_id: FontId, font_size: Pixels, ch: char) -> Pixels {
+        let mut buffer = [0; 4];
+        let buffer: &_ = ch.encode_utf8(&mut buffer);
+        self.line_layout_cache
+            .layout_line(
+                buffer.to_owned(),
+                font_size,
+                &[FontRun {
+                    len: buffer.len(),
+                    font_id,
+                }],
+                None,
+            )
+            .width
+    }
+
+
+    /// Shape text into a line layout using the supplied styled runs.
     pub fn layout_line(
         &self,
         text: &str,
@@ -751,10 +769,11 @@ pub struct TextRun {
 /// An identifier for a specific glyph, as returned by [`WindowTextSystem::layout_line`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
-pub struct GlyphId(pub(crate) u32);
+pub struct GlyphId(pub u32);
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct RenderGlyphParams {
+/// Parameters identifying a glyph rasterization request.
+pub struct RenderGlyphParams {
     pub(crate) font_id: FontId,
     pub(crate) glyph_id: GlyphId,
     pub(crate) font_size: Pixels,
@@ -834,32 +853,32 @@ impl Font {
 pub struct FontMetrics {
     /// The number of font units that make up the "em square",
     /// a scalable grid for determining the size of a typeface.
-    pub(crate) units_per_em: u32,
+    pub units_per_em: u32,
 
     /// The vertical distance from the baseline of the font to the top of the glyph covers.
-    pub(crate) ascent: f32,
+    pub ascent: f32,
 
     /// The vertical distance from the baseline of the font to the bottom of the glyph covers.
-    pub(crate) descent: f32,
+    pub descent: f32,
 
     /// The recommended additional space to add between lines of type.
-    pub(crate) line_gap: f32,
+    pub line_gap: f32,
 
     /// The suggested position of the underline.
-    pub(crate) underline_position: f32,
+    pub underline_position: f32,
 
     /// The suggested thickness of the underline.
-    pub(crate) underline_thickness: f32,
+    pub underline_thickness: f32,
 
     /// The height of a capital letter measured from the baseline of the font.
-    pub(crate) cap_height: f32,
+    pub cap_height: f32,
 
     /// The height of a lowercase x.
-    pub(crate) x_height: f32,
+    pub x_height: f32,
 
     /// The outer limits of the area that the font covers.
     /// Corresponds to the xMin / xMax / yMin / yMax values in the OpenType `head` table
-    pub(crate) bounding_box: Bounds<f32>,
+    pub bounding_box: Bounds<f32>,
 }
 
 impl FontMetrics {

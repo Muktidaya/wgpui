@@ -526,20 +526,31 @@ pub trait PlatformDispatcher: Send + Sync {
     }
 }
 
-pub(crate) trait PlatformTextSystem: Send + Sync {
+/// Font discovery, shaping, and glyph rasterization supplied by a platform or test.
+pub trait PlatformTextSystem: Send + Sync {
+    /// Register additional font data.
     fn add_fonts(&self, fonts: Vec<Cow<'static, [u8]>>) -> Result<()>;
+    /// List available font families.
     fn all_font_names(&self) -> Vec<String>;
+    /// Resolve a font descriptor.
     fn font_id(&self, descriptor: &Font) -> Result<FontId>;
+    /// Return metrics in font units.
     fn font_metrics(&self, font_id: FontId) -> FontMetrics;
+    /// Return glyph bounds in font units.
     fn typographic_bounds(&self, font_id: FontId, glyph_id: GlyphId) -> Result<Bounds<f32>>;
+    /// Return glyph advance in font units.
     fn advance(&self, font_id: FontId, glyph_id: GlyphId) -> Result<Size<f32>>;
+    /// Find a glyph for a character.
     fn glyph_for_char(&self, font_id: FontId, ch: char) -> Option<GlyphId>;
+    /// Calculate device-pixel bounds for rasterization.
     fn glyph_raster_bounds(&self, params: &RenderGlyphParams) -> Result<Bounds<DevicePixels>>;
+    /// Rasterize a glyph inside the supplied bounds.
     fn rasterize_glyph(
         &self,
         params: &RenderGlyphParams,
         raster_bounds: Bounds<DevicePixels>,
     ) -> Result<(Size<DevicePixels>, Vec<u8>)>;
+    /// Shape a line using byte-indexed font runs.
     fn layout_line(&self, text: &str, font_size: Pixels, runs: &[FontRun]) -> LineLayout;
 }
 
