@@ -211,14 +211,14 @@ export default class App extends View {
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
     let view = mounted.borrow().clone().unwrap();
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     assert!(builds().is_empty());
 
     context.simulate_click(point(px(80.), px(16.)), Modifiers::default());
     context.update(|window, cx| assert!(window.has_active_dialog(cx)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     assert!(builds().iter().any(|item| item == "dialog-lazy"));
     context
         .update(|window, cx| window.dispatch_action(Box::new(gpui_component::dialog::Cancel), cx));
@@ -226,12 +226,12 @@ export default class App extends View {
     assert!(!builds().iter().any(|item| item == "sheet-lazy"));
     context.simulate_click(point(px(80.), px(50.)), Modifiers::default());
     context.update(|window, cx| assert!(window.has_active_sheet(cx)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     assert!(builds().iter().any(|item| item == "sheet-lazy"));
     context.simulate_click(point(px(320.), px(48.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.update(|window, cx| assert!(!window.has_active_sheet(cx)));
 
     context.simulate_click(point(px(80.), px(84.)), Modifiers::default());
@@ -243,16 +243,16 @@ export default class App extends View {
     context.update(|window, cx| assert_eq!(window.notifications(cx).len(), 1));
 
     context.simulate_click(point(px(80.), px(152.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = context.update(|_, cx| view.read(cx).snapshot().unwrap().debug_tree());
     assert!(tree.contains("Errors:1"), "{tree}");
     assert!(tree.contains("Closed:4"), "{tree}");
 
     context.update(|window, cx| window.close_dialog(cx));
     context.simulate_click(point(px(80.), px(152.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
+    context.update(|window, cx| window.draw(cx).clear());
     let reopened = context.update(|_, cx| view.read(cx).snapshot().unwrap().debug_tree());
     assert!(reopened.contains("Errors:2"), "{reopened}");
 }
@@ -277,8 +277,8 @@ export default class App extends View {{ render() {{ return {}; }} }}"#,
         );
         let (mut context, view, _app) = mount_isolated(cx, &source);
         window_effects::test_probe::take_slot_rejections();
-        context.update(|window, cx| window.draw(cx).clear(cx));
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
+        context.update(|window, cx| window.draw(cx).clear());
         context.update(|_, cx| assert_eq!(view.read(cx).build_error(), None));
         let errors = window_effects::test_probe::take_slot_rejections();
         assert!(
@@ -330,12 +330,12 @@ export default class App extends View {{ render() {{ return {}; }} }}"#,
             Root::new(host, window, cx)
         });
         let mut context = VisualTestContext::from_window(*window.deref(), cx);
-        context.update(|window, cx| window.draw(cx).clear(cx));
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
+        context.update(|window, cx| window.draw(cx).clear());
         assert!(builds().is_empty(), "{expression}");
         context.simulate_click(point(px(40.), px(16.)), Modifiers::default());
-        context.update(|window, cx| window.draw(cx).clear(cx));
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
+        context.update(|window, cx| window.draw(cx).clear());
         let builds = builds();
         assert!(builds.iter().all(|built| built == second), "{builds:?}");
         assert!(!builds.is_empty(), "{expression}");
@@ -367,10 +367,10 @@ export default class App extends View { render() { return new Dialog("fail", "Fa
         Root::new(host, window, cx)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     window_effects::test_probe::take_reporter_failures();
     context.simulate_click(point(px(40.), px(16.)), Modifiers::default());
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let errors = window_effects::test_probe::take_reporter_failures();
     assert_eq!(errors.len(), 1, "{errors:?}");
     assert!(

@@ -4,6 +4,7 @@ use gpui::{
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     deferred, div, prelude::FluentBuilder, px, rems,
 };
+use gpui_base::TestSupportExt as _;
 use rust_i18n::t;
 
 use crate::ThemeStyled as _;
@@ -440,6 +441,22 @@ where
             })
             .child(title)
     }
+
+    fn accessibility_value(&self) -> SharedString {
+        let Some((_, item)) = self.state.selection.first() else {
+            return self
+                .state
+                .placeholder
+                .clone()
+                .unwrap_or_else(|| t!("Select.placeholder").into());
+        };
+
+        if let Some(prefix) = self.title_prefix.as_ref() {
+            format!("{}{}", prefix, item.title()).into()
+        } else {
+            item.title()
+        }
+    }
 }
 
 impl<D> Render for SelectState<D>
@@ -472,6 +489,7 @@ where
                 .child(
                     div()
                         .id("input")
+                        .test_support()
                         .relative()
                         .flex()
                         .items_center()
@@ -590,6 +608,12 @@ where
             options: SelectOptions::default(),
             empty: None,
         }
+    }
+
+    /// Sets an explicit identity for the select root.
+    pub fn id(mut self, id: impl Into<ElementId>) -> Self {
+        self.id = id.into();
+        self
     }
 
     /// Set the width of the dropdown menu, default: `Length::Auto`.
@@ -765,6 +789,7 @@ where
         });
 
         let is_open = self.state.read(cx).state.open;
+        let accessibility_value = self.state.read(cx).accessibility_value();
         let content_focus_handle = self.state.read(cx).state.list.focus_handle(cx);
         let open_state = self.state.clone();
 
@@ -776,6 +801,7 @@ where
             })
             .focus_handle(&focus_handle)
             .content_focus_handle(&content_focus_handle)
+            .accessibility_value(accessibility_value)
             .on_open_change(move |open, _, cx| {
                 open_state.update(cx, |state, cx| state.set_open(open, cx));
             })
@@ -788,7 +814,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, TestAppContext};
+    use gpui::{AppContext as _, RenderOnce as _, TestAppContext};
 
     use crate::{
         IndexPath,
@@ -903,6 +929,48 @@ mod tests {
             assert_eq!(
                 state.read(cx).selected_index(cx),
                 Some(IndexPath::new(0).section(1)),
+            );
+        });
+    }
+
+    #[gpui::test]
+    fn test_select_accessibility_value_tracks_placeholder_and_selection(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let items = SearchableVec::new(vec!["Rust", "Go"]);
+            let state = cx.new(|cx| SelectState::new(items, None, window, cx).searchable(true));
+
+            _ = Select::new(&state)
+                .placeholder("Choose a language")
+                .accessibility_label("Programming language")
+                .render(window, cx);
+            assert_eq!(state.read(cx).accessibility_value(), "Choose a language");
+
+            state.update(cx, |state, cx| {
+                state.set_selected_value(&"Rust", window, cx);
+            });
+            assert_eq!(state.read(cx).accessibility_value(), "Rust");
+
+            let list = state.read(cx).state.list.clone();
+            list.update(cx, |list, cx| list.set_query("Go", window, cx));
+            assert_eq!(list.read(cx).delegate().delegate.items_count(0), 1);
+            // Filtering changes the available rows, not the committed value.
+            assert_eq!(state.read(cx).accessibility_value(), "Rust");
+
+            _ = Select::new(&state)
+                .placeholder("Choose a language")
+                .title_prefix("Language: ")
+                .render(window, cx);
+            assert_eq!(state.read(cx).accessibility_value(), "Language: Rust");
+
+            state.update(cx, |state, cx| state.set_selected_index(None, window, cx));
+            assert_eq!(state.read(cx).accessibility_value(), "Choose a language");
+
+            _ = Select::new(&state).render(window, cx);
+            assert_eq!(
+                state.read(cx).accessibility_value(),
+                rust_i18n::t!("Select.placeholder").to_string(),
             );
         });
     }

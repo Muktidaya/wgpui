@@ -7,7 +7,7 @@ documentation = "https://docs.rs/wgpui-component"
 homepage = "https://github.com/Muktidaya/wgpui-component"
 repository = "https://github.com/Muktidaya/wgpui-component"
 readme = "../../README.md"
-version = "0.6.0"
+version = "0.6.1"
 publish = true
 edition.workspace = true
 
@@ -15,6 +15,7 @@ edition.workspace = true
 doctest = false
 
 [features]
+test-support = ["gpui/test-support", "gpui-base/test-support"]
 decimal = ["dep:rust_decimal"]
 inspector = ["gpui_macros/inspector", "gpui/inspector", "gpui-base/inspector"]
 tree-sitter = ["dep:tree-sitter", "dep:tree-sitter-json"]
@@ -95,13 +96,12 @@ tree-sitter-yaml = ["tree-sitter", "dep:tree-sitter-yaml"]
 tree-sitter-zig = ["tree-sitter", "dep:tree-sitter-zig"]
 
 [dependencies]
+regex = "1"
 anyhow.workspace = true
 gpui = { workspace = true }
 gpui_macros.workspace = true
 gpui-base.workspace = true
 gpui-component-macros = { workspace = true }
-# This regular dependency propagates the canonical icon directory from the
-# assets build script into this crate's build script through Cargo DEP metadata.
 gpui-kit-assets = { workspace = true }
 notify.workspace = true
 ropey.workspace = true
@@ -138,7 +138,7 @@ instant.workspace = true
 # Native-only dependencies (not available on WASM)
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 smol.workspace = true
-tree-sitter = { version = "0.26", optional = true }
+tree-sitter = { version = "0.26.13", optional = true }
 tree-sitter-astro-next = { version="0.1.1", optional = true }
 tree-sitter-bash = { version = "0.23.3", optional = true }
 tree-sitter-c = { version = "0.24.1", optional = true }

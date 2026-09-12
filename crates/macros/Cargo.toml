@@ -1,7 +1,7 @@
 [package]
 name = "wgpui-component-macros"
 description = "Macros for wgpui-component."
-version = "0.6.0"
+version = "0.6.1"
 license = "Apache-2.0"
 documentation = "https://docs.rs/wgpui-component-macros"
 homepage = "https://github.com/Muktidaya/wgpui-component"

@@ -36,7 +36,7 @@ fn interactive_examples_keep_their_state_across_redraws(cx: &mut TestAppContext)
     let view = mounted.borrow().clone().expect("mounted view");
 
     let draw = |context: &mut VisualTestContext| {
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
         context.update(|_, cx| {
             let view = view.read(cx);
             assert_eq!(view.build_error(), None);
@@ -80,7 +80,7 @@ fn input_story_accepts_text_and_keeps_it_across_redraws(cx: &mut TestAppContext)
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
     let view = mounted.borrow().clone().expect("mounted view");
     let draw = |context: &mut VisualTestContext| {
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
         context.update(|_, cx| {
             let view = view.read(cx);
             assert_eq!(view.build_error(), None);
@@ -115,9 +115,9 @@ fn dock_story_materializes_real_panels_dock_and_tabs(cx: &mut TestAppContext) {
         ScriptRoot(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = mounted.borrow().clone().expect("mounted view");
     context.update(|_, cx| {
@@ -149,9 +149,9 @@ fn every_registered_story_example_materializes(cx: &mut TestAppContext) {
         ScriptRoot(view)
     });
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let view = mounted.borrow().clone().expect("mounted view");
     context.update(|_, cx| {

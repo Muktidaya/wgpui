@@ -226,17 +226,17 @@ export default class App extends View {
     });
     let view = mounted.borrow().clone().expect("mounted view");
     let mut context = VisualTestContext::from_window(*window.deref(), cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.simulate_click(point(px(8.), px(8.)), Modifiers::default());
     context.run_until_parked();
     for x in [130., 170., 210.] {
         for y in [8., 20., 32., 44., 56., 68.] {
             context.simulate_click(point(px(x), px(y)), Modifiers::default());
             context.run_until_parked();
-            context.update(|window, cx| window.draw(cx).clear(cx));
+            context.update(|window, cx| window.draw(cx).clear());
         }
     }
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = context.update(|_, cx| view.read(cx).snapshot().unwrap().debug_tree());
     assert!(tree.contains("Hits: 101"), "{tree}");
 }

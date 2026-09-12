@@ -1,7 +1,7 @@
 [package]
-name = "gpui-kit"
-version = "0.6.0"
-description = "GPUI Kit: one dependency for building desktop applications with GPUI, GPUI Base, GPUI Component and GPUI Shell."
+name = "wgpui-kit"
+version = "0.6.1"
+description = "GPUI Kit: one dependency for building desktop applications with GPUI, GPUI Base, GPUI Component and default assets."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
 categories = ["gui"]
 license = "Apache-2.0"
@@ -21,8 +21,10 @@ default = ["component", "assets"]
 component = ["dep:gpui-component"]
 # The default icon set for `gpui-component`, `gpui_kit::assets`.
 assets = ["dep:gpui-kit-assets"]
-# GPUI's test harness: `#[gpui_kit::test]`, `TestAppContext`, `VisualTestContext`.
-test-support = ["gpui/test-support"]
+# GPUI's test harness, native-platform rendering, and Kit UI test helpers.
+test-support = ["gpui/test-support", "gpui_platform/test-support", "gpui-base/test-support", "gpui-component?/test-support"]
+# Frame-event instrumentation remains opt-in for performance builds.
+
 inspector = ["gpui/inspector", "gpui-base/inspector", "gpui-component?/inspector"]
 decimal = ["component", "gpui-component/decimal"]
 tree-sitter = ["component", "gpui-component/tree-sitter"]
@@ -71,12 +73,69 @@ gpui-base.workspace = true
 gpui-component = { workspace = true, optional = true }
 gpui-kit-assets = { workspace = true, optional = true }
 
-# `reqwest_client` pulls in tokio's default runtime, which does not build on wasm.
-[target.'cfg(not(target_family = "wasm"))'.dependencies]
-reqwest_client.workspace = true
-
-[target.'cfg(target_family = "wasm")'.dependencies]
-gpui_web.workspace = true
 
 [dev-dependencies]
 gpui = { workspace = true, features = ["test-support"] }
+
+[[test]]
+name = "window"
+required-features = ["test-support"]
+
+[[test]]
+name = "lifecycle"
+required-features = ["test-support"]
+
+[[test]]
+name = "components"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "input"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "ui"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "controls"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "interactions"
+required-features = ["test-support"]
+
+[[test]]
+name = "rendering"
+# Requires a real Metal device; select explicitly with --test rendering.
+test = false
+harness = false
+required-features = ["test-support", "component", "assets"]
+
+[[test]]
+name = "disclosure"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "overlays"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "menu"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "collections"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "date_picker"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "dock"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "search"
+required-features = ["assets", "test-support", "component"]

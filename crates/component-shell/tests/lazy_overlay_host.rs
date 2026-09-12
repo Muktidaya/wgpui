@@ -53,7 +53,7 @@ fn tree(context: &mut VisualTestContext, view: &Entity<gpui_shell::ScriptView>) 
 }
 
 fn draw(context: &mut VisualTestContext) {
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 }
 
 #[gpui::test]

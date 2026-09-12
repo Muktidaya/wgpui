@@ -194,7 +194,7 @@ mod tests {
         // so a dialog can be "open" and never reach the screen.
         let mut visual = gpui::VisualTestContext::from_window(handle, cx);
         visual.run_until_parked();
-        visual.update(|window, cx| window.draw(cx).clear(cx));
+        visual.update(|window, cx| window.draw(cx).clear());
         assert!(
             visual.debug_bounds("dialog-layer").is_some(),
             "the window root must render the dialog layer, or the dialog never appears"

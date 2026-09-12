@@ -1,6 +1,7 @@
 [workspace]
 default-members = ["examples/hello_world"]
 members = [
+    "crates/kit",
     "crates/base",
     "crates/macros",
     "crates/ui",
@@ -16,27 +17,28 @@ publish = false
 edition = "2024"
 
 [workspace.dependencies]
+gpui-kit = { package = "wgpui-kit", path = "crates/kit", version = "0.6.1" }
 wgpui = { version = "0.3.5", path = "../wgpui" }
 wgpui_derive = { version = "0.3.5", path = "../wgpui/tooling/derive" }
-wgpui-platform = { path = "crates/platform", version = "0.6.0" }
+wgpui-platform = { path = "crates/platform", version = "0.6.1" }
 
 # Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
 gpui = { package = "wgpui", version = "0.3.5", path = "../wgpui" }
 gpui_macros = { package = "wgpui_derive", version = "0.3.5", path = "../wgpui/tooling/derive" }
-gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.6.0" }
+gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.6.1" }
 sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
 
-gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.6.0" }
+gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.6.1" }
 # Same package under the published name so examples can `use wgpui_component`.
-wgpui-component = { path = "crates/ui", version = "0.6.0" }
-gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.6.0" }
-gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.6.0" }
-gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.0" }
+wgpui-component = { path = "crates/ui", version = "0.6.1" }
+gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.6.1" }
+gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.6.1" }
+gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.1" }
 # Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
-gpui-kit-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.0" }
-gpui-fps = { path = "crates/fps", version = "0.6.0" }
-gpui-shell = { path = "crates/shell", version = "0.6.0" }
-gpui-wry = { path = "crates/webview", version = "0.6.0" }
+gpui-kit-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.1" }
+gpui-fps = { path = "crates/fps", version = "0.6.1" }
+gpui-shell = { path = "crates/shell", version = "0.6.1" }
+gpui-wry = { path = "crates/webview", version = "0.6.1" }
 reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
 story = { path = "crates/story" }
 

@@ -135,7 +135,7 @@ fn a_script_dock_holds_the_panels_it_was_given(cx: &mut TestAppContext) {
     let (view, window) = run(cx, WORKSPACE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
 
     let tree = described(&mut context, &view);
@@ -161,9 +161,9 @@ fn clicking_a_tab_the_chrome_drew_selects_it(cx: &mut TestAppContext) {
     let (runtime, view, window) = run_with_runtime(cx, WORKSPACE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let before_change = runtime.read_metrics().frame_script_calls();
 
     // Adding a panel displays it, so the second tab starts active. The first
@@ -177,7 +177,7 @@ fn clicking_a_tab_the_chrome_drew_selects_it(cx: &mut TestAppContext) {
 
     context.simulate_click(point(px(40.), px(20.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = described(&mut context, &view);
     assert!(
@@ -196,7 +196,7 @@ fn unchanged_dock_chrome_does_not_reenter_quickjs(cx: &mut TestAppContext) {
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let after_first = runtime.read_metrics().frame_script_calls();
     assert!(
         after_first > 0,
@@ -204,7 +204,7 @@ fn unchanged_dock_chrome_does_not_reenter_quickjs(cx: &mut TestAppContext) {
     );
 
     for _ in 0..5 {
-        context.update(|window, cx| window.draw(cx).clear(cx));
+        context.update(|window, cx| window.draw(cx).clear());
     }
     assert_eq!(
         runtime.read_metrics().frame_script_calls(),
@@ -240,14 +240,14 @@ export default class Workspace extends View {
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let after_first = runtime.read_metrics().frame_script_calls();
     assert!(
         after_first > 0,
         "the handler that answers null must be consulted once"
     );
 
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     assert_eq!(
         runtime.read_metrics().frame_script_calls(),
         after_first,
@@ -287,7 +287,7 @@ export default class Probe extends View {
 "#;
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = described(&mut context, &view);
     assert!(
@@ -367,9 +367,9 @@ export default class Workspace extends View {
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let tree = described(&mut context, &view);
     assert!(
@@ -425,7 +425,7 @@ export default class Workspace extends View {
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
 
     let tree = described(&mut context, &view);
@@ -474,7 +474,7 @@ export default class Workspace extends View {
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.simulate_resize(size(px(800.), px(600.)));
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
 
     let tree = described(&mut context, &view);
@@ -491,12 +491,12 @@ export default class Workspace extends View {
     // asking the handler again. The command the cached element carries still
     // has to resolve — against the contexts *this* frame recorded, not the ones
     // standing when the description was made.
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     // The collapse control the chrome drew sits at the top of the left dock.
     context.simulate_click(point(px(60.), px(20.)), Modifiers::default());
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
 
     let closed = described(&mut context, &view);
     assert!(
@@ -523,7 +523,7 @@ export default class Workspace extends View {
 "#;
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     context.run_until_parked();
 
     let failure = context.update(|_, cx| view.read(cx).build_error().map(str::to_owned));
@@ -572,7 +572,7 @@ export default class Probe extends View {
 
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = described(&mut context, &view);
     for expected in [
         "version:TypeError",
@@ -624,7 +624,7 @@ export default class Probe extends View {
     let (view, window) = run(cx, SOURCE);
     let mut context = VisualTestContext::from_window(window, cx);
     context.run_until_parked();
-    context.update(|window, cx| window.draw(cx).clear(cx));
+    context.update(|window, cx| window.draw(cx).clear());
     let tree = described(&mut context, &view);
     assert!(
         tree.contains("events:2 size:333"),
