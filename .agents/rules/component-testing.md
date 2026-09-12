@@ -1,5 +1,7 @@
 # GPUI Component Testing Rules
 
+Apply these rules alongside the current `AGENTS.md` testing policy. Do not add tests solely for visual dimensions or trivial setters. The examples illustrate grouping, not a required test inventory.
+
 ## Testing Principles
 
 ### 1. **Simplicity First**
@@ -9,7 +11,7 @@
 
 ### 2. **Builder Pattern Testing**
 
-- Every component should have a `test_*_builder` test for coverage of the builder pattern
+- Test builder composition when it encodes nontrivial behavior or invariants; do not add a boilerplate test for every component
 - Tests should cover all major configuration options
 - Use method chaining to demonstrate complete API usage
 

@@ -1,5 +1,7 @@
 # wgpui-component adapter status
 
+Context checked 2026-09-10: local HEAD `811f2745`, component 0.6.0 and WGPUI 0.3.5 manifests agree with this record. Publication, tests, CI runs, stash and remote-tag observations below are dated September 5 evidence; no latest remote CI, registry, or stash verification was performed by this documentation refresh.
+
 **GitHub:** private [wgpui-component](https://github.com/Muktidaya/wgpui-component) (`root`). Longbridge remains `upstream`.
 
 **Upstream pin:** `94a313a7` (gpui-component **v0.6.0**, 2026-09-03) — `vendor/UPSTREAM_SHA`
