@@ -141,3 +141,9 @@ WGPUI has had some changes to its APIs. Always write code using the new APIs:
 ## General guidelines
 
 - Use `./scripts/clippy` instead of `cargo clippy`
+
+## Public source boundary
+
+This repository and its packages are public. Keep documentation scoped to the public project: APIs, architecture, supported behavior, and reproducible validation. Do not add private repository identifiers, internal consumer inventories, operator histories, local workstation paths, private business context, or conversation-sharing links. Keep incident details, migration logistics, and private audit policies outside the source tree.
+
+Before pushing or publishing, review the complete proposed public surface, including commit messages, PR/release text, package contents, and retained history. Run `python3 scripts/check-public-boundary.py` and review semantic disclosures that pattern matching cannot recognize. A local-only private-repository policy may be supplied with `--private-repositories`; never copy that policy into this repository or CI logs. Package exclusion does not make a tracked file private.

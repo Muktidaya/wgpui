@@ -3,6 +3,25 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  public-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Public export regression checks
+        run: python3 scripts/test_public_boundary.py
+      - name: Check proposed public text
+        env:
+          PUBLIC_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$PUBLIC_BASE" ] && [ "$PUBLIC_BASE" != "0000000000000000000000000000000000000000" ]; then
+            python3 scripts/check-public-boundary.py --base "$PUBLIC_BASE" --check-github-links
+          else
+            python3 scripts/check-public-boundary.py
+          fi
   workspace:
     strategy:
       fail-fast: false
