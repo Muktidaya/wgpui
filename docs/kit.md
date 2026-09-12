@@ -7,7 +7,7 @@ WGPUI Kit is the application-facing façade over WGPUI, Base, styled components,
 wgpui-kit = "0.6.1"
 ```
 
-This is the candidate registry configuration; consult STATUS.md for publication state. For local development use `path = "../wgpui/crates/wgpui-kit"`.
+Kit 0.6.1 and framework 0.3.6 are published on crates.io; [STATUS.md](../STATUS.md) records release evidence. For local development use `path = "../wgpui/crates/wgpui-kit"`.
 
 ```rust
 use wgpui_kit::*;

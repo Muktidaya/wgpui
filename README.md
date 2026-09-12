@@ -1,6 +1,6 @@
 # wgpui
 
-The consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, the application façade and component library ported from upstream Kit 0.6.1. See [STATUS.md](STATUS.md) for candidate validation and release state.
+The consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, the application façade and component library ported from upstream Kit 0.6.1. See [STATUS.md](STATUS.md) for validation and release state.
 
 WGPUI is an independent GPU UI framework for Rust. It keeps a GPUI-shaped programming model (`App`, `Entity`, `Window`, flexbox `div`s, actions) and renders through a **unified wgpu + winit** backend.
 

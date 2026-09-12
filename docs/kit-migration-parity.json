@@ -1,7 +1,7 @@
 {
   "upstream_commit": "36b51819deb52c947a79f8de29e0e9175eda7464",
   "baseline_commit": "94a313a72a2513aee2780240cd322d552b2395f0",
-  "state": "implemented-local-validation-in-progress",
+  "state": "released-with-explicit-platform-boundaries",
   "rows": [
     {
       "kind": "feature",
@@ -878,5 +878,17 @@
       "status": "reference-only",
       "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
     }
-  ]
+  ],
+  "release": {
+    "source_commit": "f6bf89b6a831c54383faeca7c4fb3e6d3d38c211",
+    "framework": "0.3.6",
+    "kit": "0.6.1",
+    "ci": "https://github.com/Muktidaya/wgpui/actions/runs/34664306858",
+    "registry_consumers": [
+      "sole-kit-default",
+      "renamed-kit-default",
+      "renamed-kit-base-only"
+    ],
+    "native_smoke": "macOS rendering and click callbacks verified; full native accessibility unsupported"
+  }
 }
