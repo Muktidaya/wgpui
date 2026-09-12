@@ -86,6 +86,6 @@ fn saves_a_profile_through_the_ui(cx: &mut TestAppContext) {
 
     // Verify the application result as well as the native properties.
     cx.update(|cx| {
-        assert_eq!(profile.read(cx).submitted.as_deref(), Some("Ada 中"));
+        assert_eq!(profile.read(cx).submitted.as_ref().map(|value| value.as_ref()), Some("Ada 中"));
     });
 }

@@ -82,7 +82,7 @@ impl ElementSnapshot {
     }
     /// The native accessibility value, not rendered text or pixels.
     pub fn value(&self) -> Option<&str> {
-        self.value.as_deref()
+        self.value.as_ref().map(|value| value.as_ref())
     }
 
     pub fn bounds(&self) -> Bounds<Pixels> {
@@ -110,7 +110,7 @@ impl ElementSnapshot {
     }
     /// The accessibility label; it can intentionally differ from visible text.
     pub fn label(&self) -> Option<&str> {
-        self.label.as_deref()
+        self.label.as_ref().map(|label| label.as_ref())
     }
 }
 
