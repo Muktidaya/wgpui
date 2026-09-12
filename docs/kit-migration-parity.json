@@ -1,0 +1,453 @@
+{
+  "upstream_commit": "36b51819deb52c947a79f8de29e0e9175eda7464",
+  "baseline_commit": "94a313a72a2513aee2780240cd322d552b2395f0",
+  "state": "implementation-in-progress",
+  "rows": [
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/default",
+      "target": "wgpui-kit/default",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/component",
+      "target": "wgpui-kit/component",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/assets",
+      "target": "wgpui-kit/assets",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/test-support",
+      "target": "wgpui-kit/test-support",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/profiler",
+      "target": "wgpui-kit/profiler",
+      "status": "unsupported",
+      "evidence": [],
+      "rationale": "Upstream WindowProfiler frame/input tracing is absent in WGPUI; existing task profiler is not equivalent."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/inspector",
+      "target": "wgpui-kit/inspector",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/decimal",
+      "target": "wgpui-kit/decimal",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter",
+      "target": "wgpui-kit/tree-sitter",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-languages",
+      "target": "wgpui-kit/tree-sitter-languages",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-astro",
+      "target": "wgpui-kit/tree-sitter-astro",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-bash",
+      "target": "wgpui-kit/tree-sitter-bash",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-c",
+      "target": "wgpui-kit/tree-sitter-c",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-cmake",
+      "target": "wgpui-kit/tree-sitter-cmake",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-cpp",
+      "target": "wgpui-kit/tree-sitter-cpp",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-csharp",
+      "target": "wgpui-kit/tree-sitter-csharp",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-css",
+      "target": "wgpui-kit/tree-sitter-css",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-diff",
+      "target": "wgpui-kit/tree-sitter-diff",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-ejs",
+      "target": "wgpui-kit/tree-sitter-ejs",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-elixir",
+      "target": "wgpui-kit/tree-sitter-elixir",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-erb",
+      "target": "wgpui-kit/tree-sitter-erb",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-go",
+      "target": "wgpui-kit/tree-sitter-go",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-graphql",
+      "target": "wgpui-kit/tree-sitter-graphql",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-html",
+      "target": "wgpui-kit/tree-sitter-html",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-java",
+      "target": "wgpui-kit/tree-sitter-java",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-javascript",
+      "target": "wgpui-kit/tree-sitter-javascript",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-jsdoc",
+      "target": "wgpui-kit/tree-sitter-jsdoc",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-kotlin",
+      "target": "wgpui-kit/tree-sitter-kotlin",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-lua",
+      "target": "wgpui-kit/tree-sitter-lua",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-make",
+      "target": "wgpui-kit/tree-sitter-make",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-markdown",
+      "target": "wgpui-kit/tree-sitter-markdown",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-markdown-inline",
+      "target": "wgpui-kit/tree-sitter-markdown-inline",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-php",
+      "target": "wgpui-kit/tree-sitter-php",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-proto",
+      "target": "wgpui-kit/tree-sitter-proto",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-python",
+      "target": "wgpui-kit/tree-sitter-python",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-ruby",
+      "target": "wgpui-kit/tree-sitter-ruby",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-rust",
+      "target": "wgpui-kit/tree-sitter-rust",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-scala",
+      "target": "wgpui-kit/tree-sitter-scala",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-sql",
+      "target": "wgpui-kit/tree-sitter-sql",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-svelte",
+      "target": "wgpui-kit/tree-sitter-svelte",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-swift",
+      "target": "wgpui-kit/tree-sitter-swift",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-toml",
+      "target": "wgpui-kit/tree-sitter-toml",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-tsx",
+      "target": "wgpui-kit/tree-sitter-tsx",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-typescript",
+      "target": "wgpui-kit/tree-sitter-typescript",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-yaml",
+      "target": "wgpui-kit/tree-sitter-yaml",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "feature",
+      "upstream": "gpui-kit/tree-sitter-zig",
+      "target": "wgpui-kit/tree-sitter-zig",
+      "status": "port-under-validation",
+      "evidence": [],
+      "rationale": "Native WGPUI backend; feature forwarding retained."
+    },
+    {
+      "kind": "behavior",
+      "upstream": "multi-cursor editing",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "column selection and CRLF boundaries",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "bracket completion and indentation",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "search",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "markdown frontmatter and line breaks",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "text shaping and wrapping",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "drag autoscroll",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "resizing",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "accessibility",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "raw SVG and generated icons",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "monospace fallback",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "behavior",
+      "upstream": "headless Kit interactions",
+      "status": "port-under-validation",
+      "evidence": []
+    },
+    {
+      "kind": "platform",
+      "upstream": "WASM",
+      "status": "unsupported",
+      "rationale": "WGPUI is a native wgpu/winit backend; browser integration is not ported.",
+      "evidence": []
+    },
+    {
+      "kind": "platform",
+      "upstream": "Metal rendering tests",
+      "status": "unsupported",
+      "rationale": "The upstream tests instantiate its native Metal renderer; WGPUI uses wgpu and needs its own native smoke validation.",
+      "evidence": []
+    }
+  ]
+}

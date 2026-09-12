@@ -1712,6 +1712,9 @@ impl Element for Div {
         if !self.interactivity.click_listeners.is_empty() {
             node.add_action(accesskit::Action::Click);
         }
+        if self.interactivity.tracked_focus_handle.is_some() || self.interactivity.focusable {
+            node.add_action(accesskit::Action::Focus);
+        }
         for (action, _) in &self.interactivity.a11y_action_listeners {
             node.add_action(*action);
         }

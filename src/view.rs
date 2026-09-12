@@ -86,6 +86,13 @@ pub struct AnyView {
     cached_style: Option<Rc<StyleRefinement>>,
 }
 
+impl<V: Render> Entity<V> {
+    /// Cache this view until it is notified or its window is refreshed.
+    pub fn cached(self, style: StyleRefinement) -> AnyView {
+        AnyView::from(self).cached(style)
+    }
+}
+
 impl<V: Render> From<Entity<V>> for AnyView {
     fn from(value: Entity<V>) -> Self {
         AnyView {
