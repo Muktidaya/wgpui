@@ -500,7 +500,9 @@ pub struct HitboxId(u64);
 impl HitboxId {
     #[cfg(any(test, feature = "test-support"))]
     /// Returns an inert hitbox identity for synthetic test geometry.
-    pub fn placeholder() -> Self { Self(u64::MAX) }
+    pub fn placeholder() -> Self {
+        Self(u64::MAX)
+    }
 
     /// Checks if the hitbox with this ID is currently hovered. Except when handling
     /// `ScrollWheelEvent`, this is typically what you want when determining whether to handle mouse
@@ -1710,7 +1712,9 @@ impl Window {
     pub fn simulate_next_frame(&mut self, cx: &mut App) -> usize {
         let callbacks = self.next_frame_callbacks.take();
         let count = callbacks.len();
-        for callback in callbacks { callback(self, cx); }
+        for callback in callbacks {
+            callback(self, cx);
+        }
         count
     }
 
@@ -2174,8 +2178,8 @@ impl Window {
         #[cfg(any(feature = "inspector", debug_assertions))]
         self.paint_inspector(inspector_element, cx);
 
-        let mut sorted_deferred_draws = (0..self.next_frame.deferred_draws.len())
-            .collect::<SmallVec<[usize; 8]>>();
+        let mut sorted_deferred_draws =
+            (0..self.next_frame.deferred_draws.len()).collect::<SmallVec<[usize; 8]>>();
         sorted_deferred_draws.sort_by_key(|index| self.next_frame.deferred_draws[*index].priority);
         self.paint_deferred_draws(&sorted_deferred_draws, cx);
 
@@ -2280,8 +2284,13 @@ impl Window {
                     let draw = &mut self.next_frame.deferred_draws[index];
                     self.element_id_stack.clone_from(&draw.element_id_stack);
                     self.text_style_stack.clone_from(&draw.text_style_stack);
-                    (draw.element.take(), draw.parent_node, draw.current_view,
-                     draw.absolute_offset, draw.prepaint_range.clone())
+                    (
+                        draw.element.take(),
+                        draw.parent_node,
+                        draw.current_view,
+                        draw.absolute_offset,
+                        draw.prepaint_range.clone(),
+                    )
                 };
                 self.next_frame.dispatch_tree.set_active_node(parent_node);
                 let start = self.prepaint_index();

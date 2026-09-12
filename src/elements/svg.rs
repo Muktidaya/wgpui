@@ -1,4 +1,9 @@
-use std::{fs, hash::{Hash, Hasher}, path::Path, sync::Arc};
+use std::{
+    fs,
+    hash::{Hash, Hasher},
+    path::Path,
+    sync::Arc,
+};
 
 use crate::{
     App, Asset, Bounds, Element, GlobalElementId, Hitbox, InspectorElementId, InteractiveElement,

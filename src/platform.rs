@@ -1667,7 +1667,9 @@ impl ImageFormat {
             "image/svg+xml" => Some(Self::Svg),
             "image/bmp" => Some(Self::Bmp),
             "image/tiff" | "image/tif" => Some(Self::Tiff),
-            "image/x-portable-anymap" | "image/x-portable-pixmap" | "image/x-portable-graymap"
+            "image/x-portable-anymap"
+            | "image/x-portable-pixmap"
+            | "image/x-portable-graymap"
             | "image/x-portable-bitmap" => Some(Self::Pnm),
             "image/ico" => Some(Self::Ico),
             _ => None,

@@ -112,6 +112,7 @@ impl Render for HelloWorld {
                             .border_3()
                             .border_color(wgpui::black())
                             .shadow(vec![BoxShadow {
+                                inset: false,
                                 color: hsla(0.0, 0.0, 0.0, 0.5),
                                 blur_radius: px(1.0),
                                 spread_radius: px(5.0),

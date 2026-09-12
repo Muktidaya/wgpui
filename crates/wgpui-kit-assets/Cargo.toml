@@ -1,0 +1,27 @@
+[package]
+name = "wgpui-kit-assets"
+description = "Default bundled assets for wgpui-component (Longbridge gpui-component / GPUI Kit adaptor)."
+keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
+license = "Apache-2.0"
+documentation = "https://docs.rs/wgpui-kit-assets"
+homepage = "https://github.com/Muktidaya/wgpui"
+repository = "https://github.com/Muktidaya/wgpui"
+readme = "README.md"
+edition.workspace = true
+publish = true
+version = "0.6.1"
+
+# Distinct from the pre-migration assets package; exports the icon directory
+# to the component build script through Cargo metadata.
+links = "wgpui-kit-default-icons"
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow.workspace = true
+gpui.workspace = true
+log.workspace = true
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+rust-embed = { version = "8.7.2", features = ["interpolate-folder-path", "include-exclude"] }
