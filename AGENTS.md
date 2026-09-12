@@ -28,7 +28,7 @@ natural Chinese rather than word-for-word translation.
 This is an **adaptor** of Longbridge gpui-component **v0.6.0** onto
 independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
 Those version numbers are supposed to differ. Default git branch is `root`.
-crates.io is **not** published for this 0.6.0 line yet.
+The September 5 [status record](STATUS.md) documents publication of macros/assets/base/component 0.6.0; platform is held. Do not treat an older unpublished-state note as an instruction to publish again.
 
 Workspace crates we compile:
 
@@ -105,7 +105,7 @@ implementing this architecture:
   `crates/ui` or the application layer.
 
 - Keep `gpui-component` as the ecosystem and product brand.
-- Name the foundation crate `gpui-base`.
+- The adapter package is `wgpui-base`; vendored code may use the `gpui_base` alias. Preserve the base-layer architecture described by the upstream terminology without renaming published packages.
 - Follow the ownership boundary: the framework owns behavior and infrastructure;
   the application owns component source and visual style.
 - Keep the base layer visually unopinionated. It may provide interaction behavior,
@@ -241,7 +241,7 @@ Text input system based on Rope data structure:
   unless the existing PR title style uses them.
 - When a PR changes the public API of `crates/ui`, add a `## Breaking Changes`
   section with `diff` blocks showing the old and new usage. See PR #2691 and
-  `.claude/skills/gpui-component-dev/references/pr-description.md`.
+  the established repository PR examples. The former contributing-skill path was absent; do not assume it exists.
 - Avoid `Kind` as a type-name suffix. It says an enum classifies something
   without saying what it classifies, and carries no meaning a reader could not
   already infer from `enum`. Name the type after what its variants *are*
@@ -263,7 +263,7 @@ The `Icon` element does not include SVG files by default. You need to:
 
 ## Dependencies
 
-- GPUI: Git version from Zed repository
+- Runtime: WGPUI 0.3.5 from `../wgpui`; vendored `gpui` dependency keys are Cargo aliases, not a Zed Git dependency.
 - Tree-sitter: For syntax highlighting
 - Ropey: Rope data structure for text, and `RopeExt` trait with more features.
 - Markdown rendering: `markdown` crate
@@ -303,22 +303,22 @@ Uses `rust-i18n` crate.
 - Linux (x86_64)
 - Windows (x86_64)
 
-CI runs full test suite on each platform.
+The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--lib --tests` checks/tests and a `hello_world` check. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
 
 ## Skills Reference
 
 This project has custom skills to assist with common development tasks:
 
-- **gpui** (`skills/`) - GPUI framework knowledge: actions/keybindings, async, context, custom elements, entity state, events, focus, global state, layout/styling, testing
-- **gpui-component** (`skills/`) - How to use gpui-component: setup, stateless/stateful patterns, common component APIs, theming
-- **gpui-component-dev** (`.claude/skills/`) - Contributing to gpui-component: creating new components, writing stories, writing documentation, writing PR descriptions
+- [GPUI Kit reference](skills/gpui-kit/SKILL.md): framework, component, and coding-guide references. This is vendored upstream guidance; its package/setup examples do not supersede the adapter's WGPUI package and workspace boundaries above.
+- [Design guide reference](skills/gpui-kit-design-guides/SKILL.md): the existing desktop design guidance.
+- The old separate contributing-skill directory is absent. Use this file, the canonical guides, and established repository examples for contribution and PR conventions.
 
 Read the appropriate skill when working on tasks related to these areas.
 
 ## Testing Guidelines
 
-See `.claude/COMPONENT_TEST_RULES.md` for detailed testing principles:
+See [.agents/rules/component-testing.md](.agents/rules/component-testing.md) for detailed testing principles:
 
 - **Simplicity First**: Focus on complex logic and core functionality, avoid excessive simple tests
-- **Builder Pattern Testing**: Every component should have a `test_*_builder` test covering the builder pattern
+- **Builder Pattern Testing**: Test builder composition when it has nontrivial behavior or invariants; avoid boilerplate setter assertions
 - **Complex Logic Testing**: Test conditional branching, state transitions, and edge cases

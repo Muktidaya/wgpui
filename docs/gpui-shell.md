@@ -4064,7 +4064,7 @@ missing. Every one of these asserts on the _message_, because the message is the
 instruction for fixing it.
 
 These are security assertions and are not subject to the "avoid trivial tests"
-exemption in `.claude/COMPONENT_TEST_RULES.md`.
+exemption in `.agents/rules/component-testing.md`.
 
 Two of them are regression guards on the build rather than on this code:
 quickjs-libc's `std` and `os` are asserted absent because `rquickjs-sys` does not
@@ -4146,7 +4146,7 @@ tests that catch a duplicated element id or a missing hitbox.
 
 ### 22.6 Relation to the repository's testing rules
 
-Following `.claude/COMPONENT_TEST_RULES.md`: no tests assert presentation
+Following `.agents/rules/component-testing.md`: no tests assert presentation
 dimensions, and coverage concentrates on complex logic — call-scope validity,
 arena reuse errors, snapshot lifecycle and render frequency, callback lifetime,
 value conversion, style table non-emptiness, sandbox boundaries, overlay ordering
