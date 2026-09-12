@@ -217,7 +217,7 @@ impl TestWindowExt for Window {
     }
     fn render_frame(&mut self, cx: &mut App) {
         self.refresh();
-        self.draw(cx).clear(cx);
+        self.draw(cx).clear();
     }
     fn click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
         click_target(self, &[], id.into(), None, MouseButton::Left, 1, cx);
