@@ -1,0 +1,41 @@
+name: WGPUI Component verification
+on:
+  push:
+    branches: [root]
+  pull_request:
+    branches: [root]
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  port:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: wgpui-component
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: wgpui-component
+      - uses: actions/checkout@v6
+        with:
+          repository: Muktidaya/wgpui
+          ref: root
+          path: wgpui
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.94.0'
+      - name: Linux native libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libssl-dev libvulkan-dev pkg-config cmake
+      # `--all-targets` also builds excluded-from-publish base examples (`use gpui_base`)
+      # that still carry upstream crate names. Libs, integration tests, hello_world, and
+      # the harness are the adaptor surface CI is meant to guard.
+      - run: cargo check --locked --workspace --lib --tests
+      - run: cargo check --locked -p hello_world
+      - run: cargo test --locked --workspace --lib --tests

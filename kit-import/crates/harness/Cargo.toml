@@ -1,0 +1,27 @@
+[package]
+name = "wgpui-component-harness"
+description = "Native integration harness for wgpui-component (hello_world + core widgets)."
+version = "0.1.0"
+publish = false
+edition.workspace = true
+
+[[test]]
+name = "hello_world"
+path = "tests/hello_world.rs"
+
+[[test]]
+name = "button"
+path = "tests/button.rs"
+
+[[test]]
+name = "theme_init"
+path = "tests/theme_init.rs"
+
+[dev-dependencies]
+gpui = { workspace = true, features = ["test-support"] }
+gpui-component = { workspace = true }
+gpui-component-assets = { workspace = true }
+gpui_platform = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,14 @@
+[package]
+name = "app_assets"
+description = "Example to load icons or images from assets folder."
+version = "0.6.1"
+publish = false
+edition.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+anyhow.workspace = true
+rust-embed = { version = "8", features = ["interpolate-folder-path"] }
+
+[lints]
+workspace = true
