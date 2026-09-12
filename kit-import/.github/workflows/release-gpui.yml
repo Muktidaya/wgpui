@@ -1,0 +1,12 @@
+name: Release GPUI
+# Upstream publishes Zed GPUI snapshots as gpui-pre-*. This adaptor depends on
+# local wgpui 0.3.5 and must not upload Longbridge/Zed crates.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  skipped:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This private wgpui-component port does not publish gpui-pre."

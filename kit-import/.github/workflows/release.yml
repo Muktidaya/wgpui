@@ -1,0 +1,9 @@
+name: Release validation
+# Publish remains a dedicated pass. This workflow only re-runs verification.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
