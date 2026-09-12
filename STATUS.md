@@ -15,7 +15,7 @@ Verified locally on macOS with Rust 1.94:
 - The native hello-world window renders text and its styled button through wgpu; click callbacks were observed. The macOS accessibility tree exposes window controls only, not a full component tree.
 - The performance runner fixture verifies timing metadata and pass/fail classification.
 
-Final all-feature tests and package verification are being recorded in the local migration recovery directory. Cargo 1.94 workspace publication dry-run hit an internal temporary-registry checksum error; the already installed Cargo 1.95 proceeds beyond it. No package upload has occurred.
+Final acceptance: 1,624 all-feature workspace tests and two Kit doctests pass. All eight packages pass the Cargo 1.95 publication dry run without uploads. Cargo 1.94 hits an internal temporary-registry checksum error. A fresh GitHub checkout passes Developer bootstrap and resolves 11 members without a component sibling. Source checkpoint: `c583f837f88aeaeaf89304213c67b4aadf256d95`, [draft PR #1](https://github.com/Muktidaya/wgpui/pull/1). Linux CI passed; macOS passed all tests and external consumers, then revealed a missing Clippy toolchain component. The workflow now installs it explicitly. Windows validation remains in progress. Detailed logs are in the recovery directory.
 
 Release gates: exact-commit Linux/macOS/Windows CI, verified package dry-run, live consumer/submodule cutover, and registry-only verification after an authorized release. WASM, shell/webview integrations, upstream WindowProfiler, Metal-specific rendering tests, synthetic native accessibility children and active-descendant reporting are not implemented. Headless successes do not establish full upstream or cross-platform parity.
 
