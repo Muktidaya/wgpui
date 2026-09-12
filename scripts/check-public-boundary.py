@@ -42,9 +42,9 @@ def public_repository(name):
         return False
 
 
-def lines(root, base):
+def lines(root, base, revision=None):
     if base and set(base) != {"0"}:
-        diff = subprocess.check_output(["git", "diff", "--no-ext-diff", "--unified=0", base, "HEAD", "--"], cwd=root, text=True)
+        diff = subprocess.check_output(["git", "diff", "--no-ext-diff", "--unified=0", base, revision or "HEAD", "--"], cwd=root, text=True)
         path, number = "", 0
         for line in diff.splitlines():
             if line.startswith("+++ b/"):
@@ -54,6 +54,30 @@ def lines(root, base):
             elif line.startswith("+") and not line.startswith("+++"):
                 yield path, number, line[1:]
                 number += 1
+        return
+    if revision:
+        entries = subprocess.check_output(["git", "ls-tree", "-rz", revision], cwd=root).split(b"\0")
+        process = subprocess.Popen(["git", "cat-file", "--batch"], cwd=root, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        try:
+            for entry in filter(None, entries):
+                metadata, name = entry.split(b"\t", 1)
+                mode, kind, oid = metadata.split()
+                if kind != b"blob" or mode == b"120000":
+                    continue
+                process.stdin.write(oid + b"\n")
+                process.stdin.flush()
+                size = int(process.stdout.readline().split()[2])
+                data = process.stdout.read(size)
+                assert process.stdout.read(1) == b"\n"
+                if b"\0" in data[:8192]:
+                    continue
+                for number, text in enumerate(data.decode("utf-8", errors="replace").splitlines(), 1):
+                    yield name.decode("utf-8", errors="replace"), number, text
+        finally:
+            process.stdin.close()
+            process.stdout.close()
+            if process.wait():
+                raise RuntimeError("Git object inspection failed")
         return
     names = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
     for name in filter(None, names):
@@ -69,6 +93,7 @@ def lines(root, base):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--revision", help="Inspect committed content at this revision, including when the worktree differs.")
     parser.add_argument("--base", help="Scan additions since this commit; otherwise scan tracked text.")
     parser.add_argument("--private-repositories", type=Path, help="Local-only JSON list of private repository identifiers; never commit this file.")
     parser.add_argument("--check-github-links", action="store_true", help="Require added GitHub repository links to resolve as public.")
@@ -79,7 +104,7 @@ def main():
         parser.error("Private repository policy must be a JSON list of nonempty identifiers")
     failures = 0
     checked_links = {}
-    for path, number, text in lines(root, args.base):
+    for path, number, text in lines(root, args.base, args.revision):
         issues = violations(text, forbidden)
         if args.check_github_links:
             for name in GITHUB_LINK.findall(text):

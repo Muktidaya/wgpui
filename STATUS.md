@@ -1,6 +1,6 @@
 # Release status
 
-WGPUI and wgpui_derive 0.3.6, and WGPUI Kit/Base/Component/assets/macros/platform 0.6.1 are published on crates.io. Source release commit: `f6bf89b6a831c54383faeca7c4fb3e6d3d38c211`.
+WGPUI and wgpui_derive 0.3.6, and WGPUI Kit/Base/Component/assets/macros/platform 0.6.1 are published on crates.io. Source release tags are linked below. The repository history has been sanitized; release source code is unchanged.
 
 - [WGPUI 0.3.6](https://github.com/Muktidaya/wgpui/releases/tag/v0.3.6)
 - [WGPUI Kit 0.6.1](https://github.com/Muktidaya/wgpui/releases/tag/kit-v0.6.1)

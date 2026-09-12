@@ -17,7 +17,7 @@ jobs:
           PUBLIC_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if [ -n "$PUBLIC_BASE" ] && [ "$PUBLIC_BASE" != "0000000000000000000000000000000000000000" ]; then
+          if [ -n "$PUBLIC_BASE" ] && [ "$PUBLIC_BASE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$PUBLIC_BASE^{commit}" 2>/dev/null; then
             python3 scripts/check-public-boundary.py --base "$PUBLIC_BASE" --check-github-links
           else
             python3 scripts/check-public-boundary.py
