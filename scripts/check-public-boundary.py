@@ -14,7 +14,7 @@ import urllib.request
 
 PATTERNS = {
     "operator home path": re.compile(r"(?:/Users/|/home/)[^\s/]+/(?:Developer|Documents|Desktop|\.codex|\.agents|\.local/state)(?:/|\b)"),
-    "operator state path": re.compile(r"(?:~/|\$HOME/)(?:\.codex|\.agents|\.local/state)(?:/|\b)"),
+    "operator state path": re.compile(r"(?:~/|\$HOME/)(?:Developer|Documents|Desktop|\.codex|\.agents|\.local/state)(?:/|\b)"),
     "shared conversation": re.compile(r"https?://chatgpt\.com/share/[^\s)>]+"),
     "private key marker": re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"),
     "credential-shaped value": re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,255}|github_pat_[A-Za-z0-9_]{70,255})\b"),

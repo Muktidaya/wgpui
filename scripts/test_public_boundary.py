@@ -17,6 +17,9 @@ class PublicBoundaryTests(unittest.TestCase):
         chat = "https://" + "chatgpt.com" + "/share/synthetic-example"
         self.assertIn("operator home path", boundary.violations(path))
         self.assertIn("shared conversation", boundary.violations(chat))
+        for prefix in ("~/", "$HOME/"):
+            with self.subTest(prefix=prefix):
+                self.assertIn("operator state path", boundary.violations(prefix + "Developer/synthetic-project"))
 
     def test_private_identifier_matching_is_case_insensitive(self):
         self.assertIn("private repository reference", boundary.violations("EXAMPLE-OWNER/project", ["example-owner/project"]))
