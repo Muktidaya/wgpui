@@ -1,16 +1,14 @@
 # wgpui
 
-The consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, the application façade and component library ported from upstream Kit 0.6.1. See [STATUS.md](STATUS.md) for validation and release state.
-
-WGPUI is an independent GPU UI framework for Rust. It keeps a GPUI-shaped programming model (`App`, `Entity`, `Window`, flexbox `div`s, actions) and renders through a **unified wgpu + winit** backend.
-
-It started as a community fork of [GPUI](https://gpui.rs) / [GPUI-CE 0.3.3](https://crates.io/crates/gpui-ce/0.3.3). It is **not** a drop-in for GPUI-CE git main or Zed GPUI: those trees have split crates, AccessKit, and different platform APIs. WGPUI versions on its own line.
+`wgpui` is a hybrid-immediate/retained and GPU-accelerated UI framework for Rust. It started as a community fork of [GPUI](https://gpui.rs) / [GPUI-CE 0.3.3](https://crates.io/crates/gpui-ce/0.3.3) and keeps a GPUI-shaped programming model (`App`, `Entity`, `Window`, flexbox `div`s, actions) and renders through a **unified wgpu + winit** backend. However, it is **not** a drop-in for GPUI-CE git main or Zed GPUI: those trees have split crates, AccessKit, and different platform APIs. WGPUI versions on its own line.
 
 The discriminating API is [`WgpuSurface`](src/elements/wgpu_surface.rs): a double-buffered wgpu texture that lives in the UI tree. A CAD or 3D shell can render into `WgpuSurfaceHandle::back_buffer_view()`, call `present()`, and let WGPUI composite the result with quads, text, and paths. Surface resizes preserve the logical handle while versioning replacement texture views, so compositor bind groups remain valid through window and full-screen transitions.
 
 Text is shaped with [cosmic-text](https://github.com/pop-os/cosmic-text). Layout uses [taffy](https://github.com/DioxusLabs/taffy).
 
 Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatch.md](docs/key_dispatch.md).
+
+This consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, an application façade and component library adapted from [GPUI Kit 0.6.1](https://github.com/longbridge/gpui-kit). See [STATUS.md](STATUS.md) for validation and release state.
 
 ## Usage
 
