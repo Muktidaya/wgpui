@@ -1,8 +1,27 @@
 # WGPUI status
 
-## Kit migration planning — 2026-09-11
+## Kit migration implementation — 2026-09-11
 
-The [locally grounded migration plan](docs/kit-migration-plan.md) records the proposed crates layout, history preservation, exact upstream 0.6.1 target, consumer/remote cutover and release gates. Inspection and a derive compilation check are complete; implementation and full parity validation have not started. Existing uncommitted work is preserved. The release record below remains dated September 5 evidence.
+The consolidated candidate has 11 workspace members and preserves the complete component adapter ancestry and upstream Kit v0.6.1 (`36b51819deb52c947a79f8de29e0e9175eda7464`). Canonical paths and the application façade are documented in [Kit](docs/kit.md); package and feature boundaries are listed in [the acceptance inventory](docs/kit-migration-parity.json). Framework/derive candidates are 0.3.6 and the Kit family is 0.6.1. These versions are not yet published.
+
+Implemented: canonical crate paths; façade-aware derives; native Kit test support; shaping, raw SVG and pixel snapping; cached nested deferred draws; upstream editor/component changes; generated icons; performance runner repair; licenses, package manifests and consumer checks. Original unported upstream packages remain reference source under `upstream-kit/`.
+
+Verified locally on macOS with Rust 1.94:
+
+- Workspace/all-target compilation, 1,515 default workspace tests and 84 Kit interaction tests passed before the final lint cleanup. The formerly ignored derive compile-contract test is now enabled.
+- `scripts/clippy --workspace` passed release/all-target/all-feature checks with warnings denied.
+- All supported Kit feature flags compile together. External applications using only Kit, a renamed Kit dependency, or Base-only Kit pass derive/render tests outside this workspace's Cargo configuration.
+- SDK and CAD pass with their existing dependency baseline against consolidated framework paths. Lab's native feature passes using only Kit.
+- The native hello-world window renders text and its styled button through wgpu; click callbacks were observed. The macOS accessibility tree exposes window controls only, not a full component tree.
+- The performance runner fixture verifies timing metadata and pass/fail classification.
+
+Final all-feature tests and package verification are being recorded in the local migration recovery directory. Cargo 1.94 workspace publication dry-run hit an internal temporary-registry checksum error; the already installed Cargo 1.95 proceeds beyond it. No package upload has occurred.
+
+Release gates: exact-commit Linux/macOS/Windows CI, verified package dry-run, live consumer/submodule cutover, and registry-only verification after an authorized release. WASM, shell/webview integrations, upstream WindowProfiler, Metal-specific rendering tests, synthetic native accessibility children and active-descendant reporting are not implemented. Headless successes do not establish full upstream or cross-platform parity.
+
+Recovery and detailed command logs: `/Users/muk/.local/state/wgpui-migration/20260911/`. Original live repositories and uncommitted work remain preserved. The dated record below describes the preceding release, not this candidate.
+
+## Historical release record
 
 Updated: 2026-09-05
 

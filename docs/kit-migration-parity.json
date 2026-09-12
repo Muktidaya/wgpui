@@ -1,38 +1,46 @@
 {
   "upstream_commit": "36b51819deb52c947a79f8de29e0e9175eda7464",
   "baseline_commit": "94a313a72a2513aee2780240cd322d552b2395f0",
-  "state": "implementation-in-progress",
+  "state": "implemented-local-validation-in-progress",
   "rows": [
     {
       "kind": "feature",
       "upstream": "gpui-kit/default",
       "target": "wgpui-kit/default",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/component",
       "target": "wgpui-kit/component",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/assets",
       "target": "wgpui-kit/assets",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/test-support",
       "target": "wgpui-kit/test-support",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
@@ -47,393 +55,510 @@
       "kind": "feature",
       "upstream": "gpui-kit/inspector",
       "target": "wgpui-kit/inspector",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/decimal",
       "target": "wgpui-kit/decimal",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter",
       "target": "wgpui-kit/tree-sitter",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-languages",
       "target": "wgpui-kit/tree-sitter-languages",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-astro",
       "target": "wgpui-kit/tree-sitter-astro",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-bash",
       "target": "wgpui-kit/tree-sitter-bash",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-c",
       "target": "wgpui-kit/tree-sitter-c",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-cmake",
       "target": "wgpui-kit/tree-sitter-cmake",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-cpp",
       "target": "wgpui-kit/tree-sitter-cpp",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-csharp",
       "target": "wgpui-kit/tree-sitter-csharp",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-css",
       "target": "wgpui-kit/tree-sitter-css",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-diff",
       "target": "wgpui-kit/tree-sitter-diff",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-ejs",
       "target": "wgpui-kit/tree-sitter-ejs",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-elixir",
       "target": "wgpui-kit/tree-sitter-elixir",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-erb",
       "target": "wgpui-kit/tree-sitter-erb",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-go",
       "target": "wgpui-kit/tree-sitter-go",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-graphql",
       "target": "wgpui-kit/tree-sitter-graphql",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-html",
       "target": "wgpui-kit/tree-sitter-html",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-java",
       "target": "wgpui-kit/tree-sitter-java",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-javascript",
       "target": "wgpui-kit/tree-sitter-javascript",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-jsdoc",
       "target": "wgpui-kit/tree-sitter-jsdoc",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-kotlin",
       "target": "wgpui-kit/tree-sitter-kotlin",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-lua",
       "target": "wgpui-kit/tree-sitter-lua",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-make",
       "target": "wgpui-kit/tree-sitter-make",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-markdown",
       "target": "wgpui-kit/tree-sitter-markdown",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-markdown-inline",
       "target": "wgpui-kit/tree-sitter-markdown-inline",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-php",
       "target": "wgpui-kit/tree-sitter-php",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-proto",
       "target": "wgpui-kit/tree-sitter-proto",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-python",
       "target": "wgpui-kit/tree-sitter-python",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-ruby",
       "target": "wgpui-kit/tree-sitter-ruby",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-rust",
       "target": "wgpui-kit/tree-sitter-rust",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-scala",
       "target": "wgpui-kit/tree-sitter-scala",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-sql",
       "target": "wgpui-kit/tree-sitter-sql",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-svelte",
       "target": "wgpui-kit/tree-sitter-svelte",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-swift",
       "target": "wgpui-kit/tree-sitter-swift",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-toml",
       "target": "wgpui-kit/tree-sitter-toml",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-tsx",
       "target": "wgpui-kit/tree-sitter-tsx",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-typescript",
       "target": "wgpui-kit/tree-sitter-typescript",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-yaml",
       "target": "wgpui-kit/tree-sitter-yaml",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "feature",
       "upstream": "gpui-kit/tree-sitter-zig",
       "target": "wgpui-kit/tree-sitter-zig",
-      "status": "port-under-validation",
-      "evidence": [],
+      "status": "compile-verified",
+      "evidence": [
+        "cargo +1.94.0 check --locked -p wgpui-kit --all-features"
+      ],
       "rationale": "Native WGPUI backend; feature forwarding retained."
     },
     {
       "kind": "behavior",
       "upstream": "multi-cursor editing",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "column selection and CRLF boundaries",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "bracket completion and indentation",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "search",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "markdown frontmatter and line breaks",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "text shaping and wrapping",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "drag autoscroll",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "resizing",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "accessibility",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "partial",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ],
+      "rationale": "Focus metadata and deterministic snapshots pass; native synthetic accessibility children and active-descendant reporting remain unimplemented."
     },
     {
       "kind": "behavior",
       "upstream": "raw SVG and generated icons",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "monospace fallback",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "behavior",
       "upstream": "headless Kit interactions",
-      "status": "port-under-validation",
-      "evidence": []
+      "status": "headless-tests-passed",
+      "evidence": [
+        "cargo +1.94.0 test --workspace --lib --tests",
+        "cargo +1.94.0 test -p wgpui-kit --features test-support --lib --tests"
+      ]
     },
     {
       "kind": "platform",
@@ -448,6 +573,310 @@
       "status": "unsupported",
       "rationale": "The upstream tests instantiate its native Metal renderer; WGPUI uses wgpu and needs its own native smoke validation.",
       "evidence": []
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-kit-assets",
+      "upstream_manifest": "crates/assets/Cargo.toml",
+      "target": "crates/wgpui-kit-assets",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Native WGPUI adaptation."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-base",
+      "upstream_manifest": "crates/base/Cargo.toml",
+      "target": "crates/wgpui-base",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Native WGPUI adaptation."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-base-examples",
+      "upstream_manifest": "crates/base/examples/native/Cargo.toml",
+      "target": "crates/wgpui-base/examples/native/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-base-examples-wasm",
+      "upstream_manifest": "crates/base/examples/wasm/Cargo.toml",
+      "target": "crates/wgpui-base/examples/wasm/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-component-macros",
+      "upstream_manifest": "crates/component-macros/Cargo.toml",
+      "target": "crates/wgpui-kit-macros",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Renamed Kit macros; native framework and facade aliases resolved."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-component-shell",
+      "upstream_manifest": "crates/component-shell/Cargo.toml",
+      "target": "upstream-kit/crates/component-shell/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-component",
+      "upstream_manifest": "crates/component/Cargo.toml",
+      "target": "crates/wgpui-component",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Native WGPUI adaptation."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-fps",
+      "upstream_manifest": "crates/fps/Cargo.toml",
+      "target": "upstream-kit/crates/fps/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-kit",
+      "upstream_manifest": "crates/kit/Cargo.toml",
+      "target": "crates/wgpui-kit",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Native WGPUI adaptation."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-shell",
+      "upstream_manifest": "crates/shell/Cargo.toml",
+      "target": "upstream-kit/crates/shell/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-component-story-web",
+      "upstream_manifest": "crates/story-web/Cargo.toml",
+      "target": "upstream-kit/crates/story-web/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-component-story",
+      "upstream_manifest": "crates/story/Cargo.toml",
+      "target": "upstream-kit/crates/story/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-wry",
+      "upstream_manifest": "crates/webview/Cargo.toml",
+      "target": "upstream-kit/crates/webview/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "gpui-kit-recipes",
+      "upstream_manifest": "examples/ai_recipes/Cargo.toml",
+      "target": "upstream-kit/examples/ai_recipes/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "app_assets",
+      "upstream_manifest": "examples/app_assets/Cargo.toml",
+      "target": "upstream-kit/examples/app_assets/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-brush",
+      "upstream_manifest": "examples/brush/Cargo.toml",
+      "target": "upstream-kit/examples/brush/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "dialog_overlay",
+      "upstream_manifest": "examples/dialog_overlay/Cargo.toml",
+      "target": "upstream-kit/examples/dialog_overlay/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-dock",
+      "upstream_manifest": "examples/dock/Cargo.toml",
+      "target": "upstream-kit/examples/dock/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-editor",
+      "upstream_manifest": "examples/editor/Cargo.toml",
+      "target": "upstream-kit/examples/editor/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "focus_trap",
+      "upstream_manifest": "examples/focus_trap/Cargo.toml",
+      "target": "upstream-kit/examples/focus_trap/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "fps_monitor",
+      "upstream_manifest": "examples/fps_monitor/Cargo.toml",
+      "target": "upstream-kit/examples/fps_monitor/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "hello_world",
+      "upstream_manifest": "examples/hello_world/Cargo.toml",
+      "target": "examples/kit-hello-world",
+      "status": "adopted-local-tests-passed",
+      "rationale": "Native WGPUI adaptation."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-html",
+      "upstream_manifest": "examples/html/Cargo.toml",
+      "target": "upstream-kit/examples/html/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "input",
+      "upstream_manifest": "examples/input/Cargo.toml",
+      "target": "upstream-kit/examples/input/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-large-text",
+      "upstream_manifest": "examples/large-text/Cargo.toml",
+      "target": "upstream-kit/examples/large-text/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-markdown",
+      "upstream_manifest": "examples/markdown/Cargo.toml",
+      "target": "upstream-kit/examples/markdown/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "markdown_table",
+      "upstream_manifest": "examples/markdown_table/Cargo.toml",
+      "target": "upstream-kit/examples/markdown_table/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "root_borderless",
+      "upstream_manifest": "examples/root_borderless/Cargo.toml",
+      "target": "upstream-kit/examples/root_borderless/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "sidebar",
+      "upstream_manifest": "examples/sidebar/Cargo.toml",
+      "target": "upstream-kit/examples/sidebar/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-stream-markdown",
+      "upstream_manifest": "examples/stream-markdown/Cargo.toml",
+      "target": "upstream-kit/examples/stream-markdown/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "system_monitor",
+      "upstream_manifest": "examples/system_monitor/Cargo.toml",
+      "target": "upstream-kit/examples/system_monitor/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "table_in_scrollable",
+      "upstream_manifest": "examples/table_in_scrollable/Cargo.toml",
+      "target": "upstream-kit/examples/table_in_scrollable/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "text_max_lines",
+      "upstream_manifest": "examples/text_max_lines/Cargo.toml",
+      "target": "upstream-kit/examples/text_max_lines/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "text_selection",
+      "upstream_manifest": "examples/text_selection/Cargo.toml",
+      "target": "upstream-kit/examples/text_selection/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "example-tiles",
+      "upstream_manifest": "examples/tiles/Cargo.toml",
+      "target": "upstream-kit/examples/tiles/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "tooltip_top_edge",
+      "upstream_manifest": "examples/tooltip_top_edge/Cargo.toml",
+      "target": "upstream-kit/examples/tooltip_top_edge/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "webview",
+      "upstream_manifest": "examples/webview/Cargo.toml",
+      "target": "upstream-kit/examples/webview/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
+    },
+    {
+      "kind": "package",
+      "upstream": "window_title",
+      "upstream_manifest": "examples/window_title/Cargo.toml",
+      "target": "upstream-kit/examples/window_title/Cargo.toml",
+      "status": "reference-only",
+      "rationale": "Retained upstream source; excluded from active workspace and publication. No runtime parity claimed."
     }
   ]
 }

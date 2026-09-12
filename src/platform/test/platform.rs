@@ -64,7 +64,6 @@ impl TestPlatform {
         foreground_executor: ForegroundExecutor,
         text_system: Arc<dyn PlatformTextSystem>,
     ) -> Rc<Self> {
-
         Rc::new_cyclic(|weak| TestPlatform {
             background_executor: executor,
             foreground_executor,

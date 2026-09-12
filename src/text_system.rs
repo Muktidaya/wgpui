@@ -538,21 +538,12 @@ impl WindowTextSystem {
     /// Generally, you should prefer to use [`Self::shape_line`] instead, which
     /// can be painted directly.
     pub fn layout_width(&self, font_id: FontId, font_size: Pixels, ch: char) -> Pixels {
-        let mut buffer = [0; 4];
-        let buffer: &_ = ch.encode_utf8(&mut buffer);
+        let text = ch.to_string();
+        let len = text.len();
         self.line_layout_cache
-            .layout_line(
-                buffer.to_owned(),
-                font_size,
-                &[FontRun {
-                    len: buffer.len(),
-                    font_id,
-                }],
-                None,
-            )
+            .layout_line(text, font_size, &[FontRun { len, font_id }], None)
             .width
     }
-
 
     /// Shape text into a line layout using the supplied styled runs.
     pub fn layout_line(

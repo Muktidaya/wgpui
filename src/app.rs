@@ -41,8 +41,8 @@ use crate::{
     PlatformDisplay, PlatformKeyboardLayout, PlatformKeyboardMapper, Point, Priority,
     PromptBuilder, PromptButton, PromptHandle, PromptLevel, Render, RenderImage,
     RenderablePromptHandle, Reservation, SharedString, SubscriberSet, Subscription, SvgRenderer,
-    SystemNotification, SystemNotificationResponse, Task, TextSystem, Window, WindowAppearance, WindowHandle, WindowId, WindowInvalidator,
-    current_platform,
+    SystemNotification, SystemNotificationResponse, Task, TextSystem, Window, WindowAppearance,
+    WindowHandle, WindowId, WindowInvalidator, current_platform,
     default_colors::{Colors, GlobalColors},
     hash, init_app_menus,
 };
@@ -51,9 +51,9 @@ mod async_context;
 mod context;
 mod entity_map;
 #[cfg(any(test, feature = "test-support"))]
-mod test_context;
-#[cfg(any(test, feature = "test-support"))]
 mod test_app;
+#[cfg(any(test, feature = "test-support"))]
+mod test_context;
 #[cfg(any(test, feature = "test-support"))]
 pub use test_app::*;
 
@@ -1491,7 +1491,9 @@ impl App {
     /// Whether the user prefers reduced motion. Stub: always `false` until platform wiring lands.
     pub fn reduce_motion(&self) -> bool {
         #[cfg(any(test, feature = "test-support"))]
-        if let Some(value) = self.try_global::<TestReduceMotion>() { return value.0; }
+        if let Some(value) = self.try_global::<TestReduceMotion>() {
+            return value.0;
+        }
         false
     }
 
@@ -2575,7 +2577,6 @@ mod test {
         assert_eq!(*observation_count.borrow(), 2);
     }
 }
-
 
 #[cfg(any(test, feature = "test-support"))]
 struct TestReduceMotion(bool);

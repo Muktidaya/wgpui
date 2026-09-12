@@ -1,5 +1,7 @@
 # wgpui
 
+The consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, the application façade and component library ported from upstream Kit 0.6.1. See [STATUS.md](STATUS.md) for candidate validation and release state.
+
 WGPUI is an independent GPU UI framework for Rust. It keeps a GPUI-shaped programming model (`App`, `Entity`, `Window`, flexbox `div`s, actions) and renders through a **unified wgpu + winit** backend.
 
 It started as a community fork of [GPUI](https://gpui.rs) / [GPUI-CE 0.3.3](https://crates.io/crates/gpui-ce/0.3.3). It is **not** a drop-in for GPUI-CE git main or Zed GPUI: those trees have split crates, AccessKit, and different platform APIs. WGPUI versions on its own line.
@@ -14,7 +16,7 @@ Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatc
 
 ```toml
 [dependencies]
-wgpui = { version = "0.3.5" }
+wgpui = { version = "0.3.6" }
 ```
 
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.

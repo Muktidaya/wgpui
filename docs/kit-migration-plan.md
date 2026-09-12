@@ -1,6 +1,6 @@
 # WGPUI Kit and workspace migration
 
-Date: 2026-09-11. State: inspected plan; implementation has not started.
+Date: 2026-09-11. Original planning record. Implementation has since begun; [STATUS.md](../STATUS.md) and [the acceptance inventory](kit-migration-parity.json) supersede the initial state described below.
 
 Workspace update later on September 11: the separately requested Developer flattening has moved these checkouts to `Developer/wgpui` and `Developer/wgpui-component`. GitHub locations are unchanged. That local relocation does not implement the Kit consolidation or release described here. Current paths below reflect the flat layout; the original owner directories are retained in recovery records.
 
