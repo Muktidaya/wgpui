@@ -880,7 +880,7 @@
     }
   ],
   "release": {
-    "source_commit": "f8ceaa618f82ff0db36288150820368c2c4b8df8",
+    "source_commit": "6d4a165a9f27b3f5fde6f2590bd7ba6800a2f21b",
     "framework": "0.3.6",
     "kit": "0.6.1",
     "ci": "https://github.com/Muktidaya/wgpui/actions/runs/34664306858",
