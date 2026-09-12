@@ -500,7 +500,9 @@ pub struct HitboxId(u64);
 impl HitboxId {
     #[cfg(any(test, feature = "test-support"))]
     /// Returns an inert hitbox identity for synthetic test geometry.
-    pub fn placeholder() -> Self { Self(u64::MAX) }
+    pub fn placeholder() -> Self {
+        Self(u64::MAX)
+    }
 
     /// Checks if the hitbox with this ID is currently hovered. Except when handling
     /// `ScrollWheelEvent`, this is typically what you want when determining whether to handle mouse
@@ -1710,7 +1712,9 @@ impl Window {
     pub fn simulate_next_frame(&mut self, cx: &mut App) -> usize {
         let callbacks = self.next_frame_callbacks.take();
         let count = callbacks.len();
-        for callback in callbacks { callback(self, cx); }
+        for callback in callbacks {
+            callback(self, cx);
+        }
         count
     }
 
@@ -1899,6 +1903,13 @@ impl Window {
     /// The scale factor of the display associated with the window. For example, it could
     /// return 2.0 for a "retina" display, indicating that each logical pixel should actually
     /// be rendered as two pixels on screen.
+    /// Round a logical coordinate to the nearest device pixel, with ties toward zero.
+    pub fn pixel_snap(&self, value: Pixels) -> Pixels {
+        let scaled = value.0 * self.scale_factor();
+        px((scaled.abs() - 0.5).ceil().copysign(scaled) / self.scale_factor())
+    }
+
+    /// Number of device pixels per logical pixel.
     pub fn scale_factor(&self) -> f32 {
         self.scale_factor
     }
@@ -2138,10 +2149,7 @@ impl Window {
         #[cfg(any(feature = "inspector", debug_assertions))]
         let inspector_element = self.prepaint_inspector(_inspector_width, cx);
 
-        let mut sorted_deferred_draws =
-            (0..self.next_frame.deferred_draws.len()).collect::<SmallVec<[_; 8]>>();
-        sorted_deferred_draws.sort_by_key(|ix| self.next_frame.deferred_draws[*ix].priority);
-        self.prepaint_deferred_draws(&sorted_deferred_draws, cx);
+        self.prepaint_deferred_draws(cx);
 
         let mut prompt_element = None;
         let mut active_drag_element = None;
@@ -2170,6 +2178,9 @@ impl Window {
         #[cfg(any(feature = "inspector", debug_assertions))]
         self.paint_inspector(inspector_element, cx);
 
+        let mut sorted_deferred_draws =
+            (0..self.next_frame.deferred_draws.len()).collect::<SmallVec<[usize; 8]>>();
+        sorted_deferred_draws.sort_by_key(|index| self.next_frame.deferred_draws[*index].priority);
         self.paint_deferred_draws(&sorted_deferred_draws, cx);
 
         if let Some(mut prompt_element) = prompt_element {
@@ -2253,41 +2264,52 @@ impl Window {
         None
     }
 
-    fn prepaint_deferred_draws(&mut self, deferred_draw_indices: &[usize], cx: &mut App) {
+    fn prepaint_deferred_draws(&mut self, cx: &mut App) {
         assert_eq!(self.element_id_stack.len(), 0);
-
-        let mut deferred_draws = mem::take(&mut self.next_frame.deferred_draws);
-        for deferred_draw_ix in deferred_draw_indices {
-            let deferred_draw = &mut deferred_draws[*deferred_draw_ix];
-            self.element_id_stack
-                .clone_from(&deferred_draw.element_id_stack);
-            self.text_style_stack
-                .clone_from(&deferred_draw.text_style_stack);
-            self.next_frame
-                .dispatch_tree
-                .set_active_node(deferred_draw.parent_node);
-
-            let prepaint_start = self.prepaint_index();
-            if let Some(element) = deferred_draw.element.as_mut() {
-                self.with_rendered_view(deferred_draw.current_view, |window| {
-                    window.with_absolute_element_offset(deferred_draw.absolute_offset, |window| {
-                        element.prepaint(window, cx)
-                    });
-                })
-            } else {
-                self.reuse_prepaint(deferred_draw.prepaint_range.clone());
+        // Keep draws in place: cached prepaint ranges index this vector. Moving
+        // it out while nested draws are appended corrupts next-frame reuse.
+        let mut round_start = 0;
+        let mut depth = 0;
+        loop {
+            let round_end = self.next_frame.deferred_draws.len();
+            if round_start == round_end {
+                break;
             }
-            let prepaint_end = self.prepaint_index();
-            deferred_draw.prepaint_range = prepaint_start..prepaint_end;
+            assert!(depth < 10, "Exceeded maximum (10) deferred depth");
+            depth += 1;
+            let mut order = (round_start..round_end).collect::<SmallVec<[usize; 8]>>();
+            order.sort_by_key(|index| self.next_frame.deferred_draws[*index].priority);
+            for index in order {
+                let (element, parent_node, current_view, offset, range) = {
+                    let draw = &mut self.next_frame.deferred_draws[index];
+                    self.element_id_stack.clone_from(&draw.element_id_stack);
+                    self.text_style_stack.clone_from(&draw.text_style_stack);
+                    (
+                        draw.element.take(),
+                        draw.parent_node,
+                        draw.current_view,
+                        draw.absolute_offset,
+                        draw.prepaint_range.clone(),
+                    )
+                };
+                self.next_frame.dispatch_tree.set_active_node(parent_node);
+                let start = self.prepaint_index();
+                if let Some(mut element) = element {
+                    self.with_rendered_view(current_view, |window| {
+                        window.with_absolute_element_offset(offset, |window| {
+                            element.prepaint(window, cx);
+                        });
+                    });
+                    self.next_frame.deferred_draws[index].element = Some(element);
+                } else {
+                    self.reuse_prepaint(range);
+                }
+                self.next_frame.deferred_draws[index].prepaint_range = start..self.prepaint_index();
+            }
+            self.element_id_stack.clear();
+            self.text_style_stack.clear();
+            round_start = round_end;
         }
-        assert_eq!(
-            self.next_frame.deferred_draws.len(),
-            0,
-            "cannot call defer_draw during deferred drawing"
-        );
-        self.next_frame.deferred_draws = deferred_draws;
-        self.element_id_stack.clear();
-        self.text_style_stack.clear();
     }
 
     fn paint_deferred_draws(&mut self, deferred_draw_indices: &[usize], cx: &mut App) {

@@ -105,6 +105,7 @@ impl Render for WindowShadow {
                             .when(!tiling.right, |div| div.border_r(border_size))
                             .when(!tiling.is_tiled(), |div| {
                                 div.shadow(vec![wgpui::BoxShadow {
+                                    inset: false,
                                     color: Hsla {
                                         h: 0.,
                                         s: 0.,
@@ -145,6 +146,7 @@ impl Render for WindowShadow {
                                         .h(px(100.0))
                                         .bg(green())
                                         .shadow(vec![wgpui::BoxShadow {
+                                            inset: false,
                                             color: Hsla {
                                                 h: 0.,
                                                 s: 0.,

@@ -1,0 +1,23 @@
+[package]
+name = "gpui-wry"
+description = "WebView support for GPUI, based on Wry."
+keywords = ["webview", "gpui","wry"]
+license = "Apache-2.0"
+documentation = "https://docs.rs/gpui-wry"
+homepage = "https://gpui-kit.com"
+repository = "https://github.com/longbridge/gpui-kit/tree/main/crates/webview"
+readme = "README.md"
+edition.workspace = true
+publish = false
+version = "0.6.1"
+
+[features]
+inspector = ["wry/devtools"]
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow.workspace = true
+gpui.workspace = true
+wry = { version = "0.53.3", package = "lb-wry" }

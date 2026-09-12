@@ -1,0 +1,125 @@
+[workspace]
+default-members = ["examples/hello_world"]
+members = [
+    "crates/kit",
+    "crates/base",
+    "crates/macros",
+    "crates/ui",
+    "crates/assets",
+    "crates/platform",
+    "crates/harness",
+    "examples/hello_world",
+]
+resolver = "2"
+
+[workspace.package]
+publish = false
+edition = "2024"
+
+[workspace.dependencies]
+gpui-kit = { package = "wgpui-kit", path = "crates/kit", version = "0.6.1" }
+wgpui = { version = "0.3.5", path = "../wgpui" }
+wgpui_derive = { version = "0.3.5", path = "../wgpui/tooling/derive" }
+wgpui-platform = { path = "crates/platform", version = "0.6.1" }
+
+# Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
+gpui = { package = "wgpui", version = "0.3.5", path = "../wgpui" }
+gpui_macros = { package = "wgpui_derive", version = "0.3.5", path = "../wgpui/tooling/derive" }
+gpui_platform = { package = "wgpui-platform", path = "crates/platform", version = "0.6.1" }
+sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
+
+gpui-component = { package = "wgpui-component", path = "crates/ui", version = "0.6.1" }
+# Same package under the published name so examples can `use wgpui_component`.
+wgpui-component = { path = "crates/ui", version = "0.6.1" }
+gpui-base = { package = "wgpui-base", path = "crates/base", version = "0.6.1" }
+gpui-component-macros = { package = "wgpui-component-macros", path = "crates/macros", version = "0.6.1" }
+gpui-component-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.1" }
+# Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
+gpui-kit-assets = { package = "wgpui-component-assets", path = "crates/assets", version = "0.6.1" }
+gpui-fps = { path = "crates/fps", version = "0.6.1" }
+gpui-shell = { path = "crates/shell", version = "0.6.1" }
+gpui-wry = { path = "crates/webview", version = "0.6.1" }
+reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
+story = { path = "crates/story" }
+
+anyhow = "1"
+instant = { version = "0.1", features = ["wasm-bindgen"] }
+log = "0.4"
+lsp-types = { version = "0.97.0", features = ["proposed"] }
+notify = "7.0.0"
+raw-window-handle = "0.6.2"
+ropey = { version = "=2.0.0-beta.1", features = [
+    "metric_chars",
+    "metric_lines_lf",
+    "metric_utf16",
+] }
+rust-i18n = "4.2.0"
+schemars = "1"
+semver = "1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1"
+serde_repr = "0.1"
+smallvec = "1"
+smol = "2"
+syntect = { version = "5.3.0", default-features = false, features = [
+    "parsing",
+    "default-syntaxes",
+    "regex-fancy",
+] }
+tracing = "0.1.41"
+wasm-bindgen = "0.2.113"
+# Use errno stub for WASM
+errno = { version = "0.3.14", default-features = false }
+
+[workspace.dependencies.windows]
+features = ["Wdk", "Wdk_System", "Wdk_System_SystemServices"]
+version = "0.58.0"
+
+[workspace.lints.clippy]
+almost_complete_range = "allow"
+arc_with_non_send_sync = "allow"
+borrowed_box = "allow"
+dbg_macro = "deny"
+let_underscore_future = "allow"
+manual_is_multiple_of = "allow"
+map_entry = "allow"
+module_inception = "allow"
+non_canonical_partial_ord_impl = "allow"
+reversed_empty_ranges = "allow"
+single_range_in_vec_init = "allow"
+style = { level = "allow", priority = -1 }
+todo = "deny"
+type_complexity = "allow"
+# Temporarily allow this until we can migrate to the new APIs.
+# https://github.com/longbridge/gpui-component/pull/2149
+useless_conversion = "allow"
+
+[profile.dev]
+codegen-units = 16
+debug = "limited"
+split-debuginfo = "unpacked"
+
+[profile.dev.package]
+resvg = { opt-level = 3 }
+rustybuzz = { opt-level = 3 }
+taffy = { opt-level = 3 }
+ttf-parser = { opt-level = 3 }
+smol = { opt-level = 3 }
+wgpui = { opt-level = 3 }
+wgpui-platform = { opt-level = 3 }
+wgpui_derive = { opt-level = 3 }
+gpui_sum_tree = { opt-level = 3 }
+tree-sitter = { opt-level = 3 }
+ropey = { opt-level = 3 }
+lsp-types = { opt-level = 3 }
+markdown = { opt-level = 3 }
+xml5ever = { opt-level = 3 }
+
+[workspace.metadata.typos]
+files.extend-exclude = ["**/fixtures/*"]
+
+[workspace.metadata.typos.default.extend-identifiers]
+consts = "consts"
+
+[workspace.metadata.cargo-machete]
+ignored = ["log", "anyhow", "serde"]

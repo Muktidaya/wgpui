@@ -3,7 +3,7 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
-  framework:
+  workspace:
     strategy:
       fail-fast: false
       matrix:
@@ -16,8 +16,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: '1.94.0'
+          components: clippy
       - name: Linux native libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libssl-dev libvulkan-dev pkg-config cmake
-      - run: cargo check --locked --lib
-      - run: cargo test --locked --lib
+      - run: cargo check --locked --workspace --all-targets
+      - run: cargo test --locked --workspace --all-features --lib --tests
+      - run: cargo test --locked -p wgpui-kit --features test-support --lib --tests
+      - run: cargo check --locked -p wgpui-kit --all-features
+      - run: python scripts/check-kit-consumers.py
+      - name: Strict workspace lint
+        if: runner.os == 'macOS'
+        run: ./scripts/clippy --workspace
+      - name: Performance runner contract
+        if: runner.os == 'macOS'
+        run: python scripts/check-perf.py

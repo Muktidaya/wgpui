@@ -1,16 +1,12 @@
 [workspace]
-members = [
-    ".",           
-    "tooling/derive",
-]
-default-members = [
-    ".",       
-]
+members = [".", "crates/wgpui-derive", "crates/wgpui-perf", "crates/wgpui-base", "crates/wgpui-component", "crates/wgpui-kit-macros", "crates/wgpui-kit-assets", "crates/wgpui-platform", "crates/wgpui-kit", "crates/wgpui-kit-harness", "examples/kit-hello-world"]
+default-members = [".", "crates/wgpui-kit"]
+exclude = ["upstream-kit", "crates/wgpui-base/examples/native", "crates/wgpui-base/examples/wasm"]
 resolver = "3"
 
 [package]
 name = "wgpui"
-version = "0.3.5"
+version = "0.3.6"
 edition = "2024"
 rust-version = "1.94"
 authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
@@ -32,6 +28,10 @@ exclude = [
     "flake.lock",
     "flake.nix",
     "scripts/",
+    "upstream-kit/",
+    "crates/",
+    "docs/kit-migration-plan.md",
+    "docs/kit-migration-parity.json",
 ]
 
 [package.metadata.docs.rs]
@@ -48,7 +48,7 @@ test-support = [
     "http_client/test-support",
 ]
 font-kit = []
-inspector = ["wgpui_derive/inspector"]
+inspector = ["wgpui-derive/inspector"]
 leak-detection = ["backtrace"]
 windows-manifest = []
 
@@ -75,7 +75,7 @@ etagere = "0.2"
 flume = "0.12"
 futures = "0.3"
 futures-concurrency = "7"
-wgpui_derive = { path = "./tooling/derive", version = "0.3.5", features = ["inspector"] }
+wgpui-derive = { package = "wgpui_derive", path = "crates/wgpui-derive", version = "0.3.6", features = ["inspector"] }
 http_client = { package = "gpui_http_client", version = "0.2.2" }
 image = "0.25"
 inventory = "0.3.19"
@@ -345,3 +345,82 @@ single_range_in_vec_init = "allow"
 too_many_arguments = "allow"
 large_enum_variant = "allow"
 nonminimal_bool = "allow"
+
+[workspace.package]
+publish = false
+edition = "2024"
+
+[workspace.dependencies]
+collections = { package = "gpui_collections", version = "0.2.2" }
+gpui-kit = { package = "wgpui-kit", path = "crates/wgpui-kit", version = "0.6.1" }
+wgpui = { version = "0.3.6", path = "." }
+wgpui_derive = { version = "0.3.6", path = "crates/wgpui-derive" }
+wgpui-platform = { path = "crates/wgpui-platform", version = "0.6.1" }
+
+# Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
+gpui = { package = "wgpui", version = "0.3.6", path = "." }
+gpui_macros = { package = "wgpui_derive", version = "0.3.6", path = "crates/wgpui-derive" }
+gpui_platform = { package = "wgpui-platform", path = "crates/wgpui-platform", version = "0.6.1" }
+sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
+
+gpui-component = { package = "wgpui-component", path = "crates/wgpui-component", version = "0.6.1" }
+# Same package under the published name so examples can `use wgpui_component`.
+wgpui-component = { path = "crates/wgpui-component", version = "0.6.1" }
+gpui-base = { package = "wgpui-base", path = "crates/wgpui-base", version = "0.6.1" }
+gpui-component-macros = { package = "wgpui-kit-macros", path = "crates/wgpui-kit-macros", version = "0.6.1" }
+gpui-component-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.6.1" }
+# Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
+gpui-kit-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.6.1" }
+reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
+
+anyhow = "1"
+instant = { version = "0.1", features = ["wasm-bindgen"] }
+log = "0.4"
+lsp-types = { version = "0.97.0", features = ["proposed"] }
+notify = "7.0.0"
+raw-window-handle = "0.6.2"
+ropey = { version = "=2.0.0-beta.1", features = [
+    "metric_chars",
+    "metric_lines_lf",
+    "metric_utf16",
+] }
+rust-i18n = "4.2.0"
+schemars = "1"
+semver = "1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1"
+serde_repr = "0.1"
+smallvec = "1"
+smol = "2"
+syntect = { version = "5.3.0", default-features = false, features = [
+    "parsing",
+    "default-syntaxes",
+    "regex-fancy",
+] }
+tracing = "0.1.41"
+wasm-bindgen = "0.2.113"
+# Use errno stub for WASM
+errno = { version = "0.3.14", default-features = false }
+
+[workspace.dependencies.windows]
+features = ["Wdk", "Wdk_System", "Wdk_System_SystemServices"]
+version = "0.58.0"
+
+[workspace.lints.clippy]
+almost_complete_range = "allow"
+arc_with_non_send_sync = "allow"
+borrowed_box = "allow"
+dbg_macro = "deny"
+let_underscore_future = "allow"
+manual_is_multiple_of = "allow"
+map_entry = "allow"
+module_inception = "allow"
+non_canonical_partial_ord_impl = "allow"
+reversed_empty_ranges = "allow"
+single_range_in_vec_init = "allow"
+style = { level = "allow", priority = -1 }
+todo = "deny"
+type_complexity = "allow"
+# Temporarily allow this until we can migrate to the new APIs.
+# https://github.com/longbridge/gpui-component/pull/2149
+useless_conversion = "allow"

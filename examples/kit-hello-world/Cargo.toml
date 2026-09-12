@@ -1,0 +1,13 @@
+[package]
+name = "wgpui-kit-hello-world"
+description = "A minimal example of application development with wgpui-component."
+version = "0.6.1"
+publish = false
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+wgpui-kit = { path = "../../crates/wgpui-kit" }
+
+[lints]
+workspace = true

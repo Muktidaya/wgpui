@@ -97,14 +97,6 @@ impl FollowState {
     fn is_following(&self) -> bool {
         matches!(self, FollowState::Tail { is_following: true })
     }
-
-    fn stop_following(&mut self) {
-        if let FollowState::Tail { is_following: true } = self {
-            *self = FollowState::Tail {
-                is_following: false,
-            };
-        }
-    }
 }
 
 /// Whether the list is scrolling from top to bottom or bottom to top.
@@ -433,9 +425,7 @@ impl ListState {
         match mode {
             FollowMode::Normal => state.follow_state = FollowState::Normal,
             FollowMode::Tail => {
-                state.follow_state = FollowState::Tail {
-                    is_following: true,
-                };
+                state.follow_state = FollowState::Tail { is_following: true };
                 let item_count = state.items.summary().count;
                 state.logical_scroll_top = Some(ListOffset {
                     item_ix: item_count,

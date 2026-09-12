@@ -488,6 +488,7 @@ fn main() {
             KeyBinding::new("shift-tab", TabPrev, None),
         ]);
         cx.set_menus(vec![Menu {
+            disabled: false,
             name: "Styling".into(),
             items: vec![MenuItem::action("Quit", Quit)],
         }]);

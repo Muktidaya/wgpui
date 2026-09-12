@@ -16,8 +16,8 @@
 //! constructed by combining these two systems into an all-in-one element.
 
 use crate::{
-    AbsoluteLength, Action, AnyDrag, AnyElement, AnyTooltip, AnyView, App, AriaProperties,
-    Bounds, ClickEvent, DispatchPhase, Display, Element, ElementId, Entity, FocusHandle, Global,
+    AbsoluteLength, Action, AnyDrag, AnyElement, AnyTooltip, AnyView, App, AriaProperties, Bounds,
+    ClickEvent, DispatchPhase, Display, Element, ElementId, Entity, FocusHandle, Global,
     GlobalElementId, Hitbox, HitboxBehavior, HitboxId, InspectorElementId, IntoElement, IsZero,
     KeyContext, KeyDownEvent, KeyUpEvent, KeyboardButton, KeyboardClickEvent, LayoutId,
     ModifiersChangedEvent, MouseButton, MouseClickEvent, MouseDownEvent, MouseMoveEvent,
@@ -1712,6 +1712,9 @@ impl Element for Div {
         if !self.interactivity.click_listeners.is_empty() {
             node.add_action(accesskit::Action::Click);
         }
+        if self.interactivity.tracked_focus_handle.is_some() || self.interactivity.focusable {
+            node.add_action(accesskit::Action::Focus);
+        }
         for (action, _) in &self.interactivity.a11y_action_listeners {
             node.add_action(*action);
         }
@@ -1745,6 +1748,7 @@ pub struct Interactivity {
     pub(crate) tracked_scroll_handle: Option<ScrollHandle>,
     pub(crate) scroll_anchor: Option<ScrollAnchor>,
     pub(crate) scroll_offset: Option<Rc<RefCell<Point<Pixels>>>>,
+    #[expect(dead_code, reason = "Reserved for deferred native scroll integration")]
     pub(crate) ongoing_scroll: Option<Rc<RefCell<OngoingScroll>>>,
     pub(crate) group: Option<SharedString>,
     /// The base style of the element, before any modifications are applied
@@ -1782,9 +1786,16 @@ pub struct Interactivity {
     pub(crate) tab_group: bool,
     pub(crate) tab_stop: bool,
 
-    pub(crate) a11y_action_listeners:
-        Vec<(accesskit::Action, crate::A11yActionListener)>,
+    pub(crate) a11y_action_listeners: Vec<(accesskit::Action, crate::A11yActionListener)>,
+    #[expect(
+        dead_code,
+        reason = "Reserved for native accessibility subtree integration"
+    )]
     pub(crate) a11y_synthetic_children: Option<Box<dyn FnOnce(&mut crate::A11ySubtreeBuilder)>>,
+    #[expect(
+        dead_code,
+        reason = "Reserved for native accessibility subtree integration"
+    )]
     pub(crate) report_active_descendant_focus: bool,
     pub(crate) override_role: Option<accesskit::Role>,
     pub(crate) aria: AriaProperties,
@@ -2398,9 +2409,7 @@ impl Interactivity {
                     let pending_mouse_down = pending_mouse_down.clone();
                     let hitbox = hitbox.clone();
                     move |event: &MouseDownEvent, phase, window, _cx| {
-                        if phase == DispatchPhase::Bubble
-                            && hitbox.is_hovered(window)
-                        {
+                        if phase == DispatchPhase::Bubble && hitbox.is_hovered(window) {
                             *pending_mouse_down.borrow_mut() = Some(event.clone());
                             window.refresh();
                         }
