@@ -928,6 +928,37 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     });
             }
 
+            winit::event::WindowEvent::PinchGesture { delta, phase, .. } => {
+                let modifiers = window.0.state.modifiers.get();
+
+                // The platform reports no position for a pinch; see
+                // `PinchEvent::position` for why this one may be stale.
+                let position = window.0.state.mouse_position.get();
+
+                let touch_phase = match phase {
+                    winit::event::TouchPhase::Started => crate::TouchPhase::Started,
+                    winit::event::TouchPhase::Moved => crate::TouchPhase::Moved,
+                    winit::event::TouchPhase::Ended | winit::event::TouchPhase::Cancelled => {
+                        crate::TouchPhase::Ended
+                    }
+                };
+
+                let platform_event = PlatformInput::Pinch(crate::PinchEvent {
+                    position,
+                    delta: delta as f32,
+                    modifiers,
+                    touch_phase,
+                });
+
+                window
+                    .0
+                    .state
+                    .callbacks
+                    .invoke_mut(&window.0.state.callbacks.on_input, |cb| {
+                        cb(platform_event.clone());
+                    });
+            }
+
             winit::event::WindowEvent::Ime(ime) => {
                 handle_ime(&window, ime);
             }
