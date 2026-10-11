@@ -21,6 +21,12 @@ pub struct WgpuContext {
     pub(crate) surface_registry: Arc<SurfaceRegistry>,
 }
 
+/// Format-only features: each makes a texture format usable without altering
+/// anything that already works, so requesting them needs no decision from the
+/// application that cannot reach this constructor.
+const OPTIONAL_TEXTURE_FEATURES: wgpu::Features = wgpu::Features::TEXTURE_FORMAT_16BIT_NORM
+    .union(wgpu::Features::FLOAT32_FILTERABLE);
+
 impl WgpuContext {
     pub fn new() -> anyhow::Result<Self> {
         let mut instance_descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
@@ -34,10 +40,13 @@ impl WgpuContext {
             apply_limit_buckets: false,
         }))?;
 
+        // Intersected, so an adapter lacking them still yields a valid request.
+        let available = OPTIONAL_TEXTURE_FEATURES & adapter.features();
+
         let (device, queue) =
             pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::empty(),
+                required_features: available,
                 required_limits: wgpu::Limits::default(),
                 ..Default::default()
             }))?;
