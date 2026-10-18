@@ -20,6 +20,8 @@ struct DoubleBuffer {
     // the renderer.  We coalesce multiple calls to `present()` so the
     // application doesn't flood the event loop at thousands of FPS.
     present_pending: std::sync::atomic::AtomicBool,
+    /// The window this surface was created for.
+    owner: Option<winit::window::WindowId>,
 }
 
 /// Thread-safe registry of all active WGPU surfaces.
@@ -44,9 +46,11 @@ impl SurfaceRegistry {
         width: u32,
         height: u32,
         format: wgpu::TextureFormat,
+        owner: Option<winit::window::WindowId>,
     ) -> SurfaceId {
         let id = SurfaceId(self.next_id.fetch_add(1, Ordering::Relaxed));
-        let db = Self::create_double_buffer(device, width, height, format);
+        let mut db = Self::create_double_buffer(device, width, height, format);
+        db.owner = owner;
         self.surfaces.lock().unwrap().insert(id, db);
         id
     }
@@ -67,6 +71,7 @@ impl SurfaceRegistry {
             }
             let mut new_db = Self::create_double_buffer(device, width, height, db.format);
             new_db.revision = db.revision.wrapping_add(1);
+            new_db.owner = db.owner;
             *db = new_db;
         }
     }
@@ -167,6 +172,16 @@ impl SurfaceRegistry {
         }
     }
 
+    /// Query whether any of `owner`'s surfaces has a present pending.
+    pub fn has_present_pending_for(&self, owner: winit::window::WindowId) -> bool {
+        self.surfaces.lock().unwrap().values().any(|db| {
+            db.owner == Some(owner)
+                && db
+                    .present_pending
+                    .load(std::sync::atomic::Ordering::Relaxed)
+        })
+    }
+
     /// Clear the pending flag, normally invoked when the renderer consumes
     /// the next frame (in `paint_wgpu_surface`).
     pub fn clear_present_pending(&self, id: SurfaceId) {
@@ -217,6 +232,7 @@ impl SurfaceRegistry {
             height: h,
             format,
             present_pending: std::sync::atomic::AtomicBool::new(false),
+            owner: None,
         }
     }
 }
