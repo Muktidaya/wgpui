@@ -1300,7 +1300,6 @@ pub struct WgpuRenderer {
     surface_configuration: wgpu::SurfaceConfiguration,
     atlas_sampler: wgpu::Sampler,
     surface_sampler: wgpu::Sampler,
-    surface_params_buffer: wgpu::Buffer,
     atlas: Arc<WgpuAtlas>,
     pipelines: WgpuPipelines,
     rendering_parameters: RenderingParameters,
@@ -1311,7 +1310,13 @@ pub struct WgpuRenderer {
     // Cache bind groups for each double-buffered surface texture generation.
     // Resizing preserves SurfaceId but replaces both texture views.
     surface_bind_groups:
-        Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64), [wgpu::BindGroup; 2]>>,
+        Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64), SurfaceBinding>>,
+}
+
+/// A surface's own params buffer, and its bind groups for front index 0 and 1.
+struct SurfaceBinding {
+    params: wgpu::Buffer,
+    bind_groups: [wgpu::BindGroup; 2],
 }
 
 impl WgpuRenderer {
@@ -1405,13 +1410,6 @@ impl WgpuRenderer {
             ..Default::default()
         });
 
-        let surface_params_buffer = context.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Surface Params Buffer"),
-            size: std::mem::size_of::<SurfaceParams>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
         let pipelines =
             WgpuPipelines::new(context.as_ref(), &surface_configuration, path_sample_count);
 
@@ -1425,7 +1423,6 @@ impl WgpuRenderer {
             atlas,
             atlas_sampler,
             surface_sampler,
-            surface_params_buffer,
             pipelines,
             rendering_parameters: RenderingParameters::from_env(),
             path_intermediate_texture: None,
@@ -1778,17 +1775,21 @@ impl WgpuRenderer {
                                 },
                             };
 
-                            self.context.queue.write_buffer(
-                                &self.surface_params_buffer,
-                                0,
-                                bytemuck::bytes_of(&params),
-                            );
-
-                            // fetch or create cached bind groups for this surface
+                            // fetch or create this surface's cached params
+                            // buffer and bind groups
                             let surface_bind_group = {
                                 let mut cache = self.surface_bind_groups.lock().unwrap();
                                 let entry =
                                     cache.entry((*surface_id, revision)).or_insert_with(|| {
+                                        let params_buffer = self.context.device.create_buffer(
+                                            &wgpu::BufferDescriptor {
+                                                label: Some("Surface Params Buffer"),
+                                                size: std::mem::size_of::<SurfaceParams>() as u64,
+                                                usage: wgpu::BufferUsages::UNIFORM
+                                                    | wgpu::BufferUsages::COPY_DST,
+                                                mapped_at_creation: false,
+                                            },
+                                        );
                                         // create both groups for front index 0 and 1
                                         let create_bg = |view: &wgpu::TextureView| {
                                             self.context.device.create_bind_group(
@@ -1802,8 +1803,7 @@ impl WgpuRenderer {
                                                             binding: 0,
                                                             resource: wgpu::BindingResource::Buffer(
                                                                 wgpu::BufferBinding {
-                                                                    buffer: &self
-                                                                        .surface_params_buffer,
+                                                                    buffer: &params_buffer,
                                                                     offset: 0,
                                                                     size: None,
                                                                 },
@@ -1827,9 +1827,16 @@ impl WgpuRenderer {
                                                 },
                                             )
                                         };
-                                        [create_bg(&views[0]), create_bg(&views[1])]
+                                        let bind_groups =
+                                            [create_bg(&views[0]), create_bg(&views[1])];
+                                        SurfaceBinding { params: params_buffer, bind_groups }
                                     });
-                                entry[idx].clone()
+                                self.context.queue.write_buffer(
+                                    &entry.params,
+                                    0,
+                                    bytemuck::bytes_of(&params),
+                                );
+                                entry.bind_groups[idx].clone()
                             };
 
                             pass.set_pipeline(&self.pipelines.surfaces_pipeline);
