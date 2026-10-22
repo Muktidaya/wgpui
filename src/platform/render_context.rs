@@ -27,6 +27,10 @@ pub struct WgpuContext {
 const OPTIONAL_TEXTURE_FEATURES: wgpu::Features = wgpu::Features::TEXTURE_FORMAT_16BIT_NORM
     .union(wgpu::Features::FLOAT32_FILTERABLE);
 
+/// Timestamp queries, for an application that times its own GPU work: they
+/// cost nothing until it makes a query set.
+const OPTIONAL_TIMING_FEATURES: wgpu::Features = wgpu::Features::TIMESTAMP_QUERY;
+
 impl WgpuContext {
     pub fn new() -> anyhow::Result<Self> {
         let mut instance_descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
@@ -41,7 +45,7 @@ impl WgpuContext {
         }))?;
 
         // Intersected, so an adapter lacking them still yields a valid request.
-        let available = OPTIONAL_TEXTURE_FEATURES & adapter.features();
+        let available = (OPTIONAL_TEXTURE_FEATURES | OPTIONAL_TIMING_FEATURES) & adapter.features();
 
         let (device, queue) =
             pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
