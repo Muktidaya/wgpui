@@ -117,12 +117,12 @@ pub(crate) fn with_action<R>(
     action_identifier: usize,
     f: impl FnOnce(&dyn Action) -> R,
 ) -> Option<R> {
-    MENU_RUNTIME.with(|runtime| {
+    // Released before the action runs, which may rebuild the menus.
+    let action = MENU_RUNTIME.with(|runtime| {
         let runtime = runtime.borrow();
-        let runtime = runtime.as_ref()?;
-        let action = runtime.actions.get(action_identifier)?;
-        Some(f(action.as_ref()))
-    })
+        Some(runtime.as_ref()?.actions.get(action_identifier)?.boxed_clone())
+    })?;
+    Some(f(action.as_ref()))
 }
 
 fn build_application_menu(
