@@ -579,6 +579,11 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         self.drain_main_queue();
         refresh_displays(event_loop);
 
+        // A window removed by the app (`Window::remove_window`) dropped its
+        // `CrossWindow`, but the clone here kept the winit window, and so the
+        // native one, on screen, never drawn again. Release it too.
+        self.windows.retain(|_, window| Rc::strong_count(&window.0) > 1);
+
         // Do NOT unconditionally request_redraw() here. Rendering is driven
         // by three sources:
         //   1. CrossEvent::WakeUp — sent by BackgroundExecutor::wake() from
