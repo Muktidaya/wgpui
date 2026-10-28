@@ -944,9 +944,9 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     // winit delivers ordinary text in KeyboardInput, separately
                     // from IME commits. Only unconsumed text reaches the editor.
                     if propagate && let Some(text) = text_input {
-                        if let Some(handler) = window.0.state.input_handler.borrow_mut().as_mut() {
+                        window.with_input_handler(|handler| {
                             handler.replace_text_in_range(None, &text);
-                        }
+                        });
                     }
                 }
             }

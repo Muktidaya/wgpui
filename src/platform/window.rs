@@ -111,6 +111,23 @@ impl CrossWindow {
         }
     }
 
+    /// Runs `f` with the window's input handler taken out of its cell, then puts it back.
+    ///
+    /// The handler must never stay borrowed across `f`: applying text runs view code, and
+    /// that code can flush queued effects and re-enter the window — a queued
+    /// `Window::draw` takes the input handler back out — so a `borrow_mut()` still live
+    /// at the re-entry point panics with `RefCell already borrowed` and kills the process.
+    /// This mirrors the take/call/put-back discipline `Window` already uses around
+    /// `dispatch_input`, `accepts_text_input` and `selected_bounds`.
+    pub(crate) fn with_input_handler(&self, f: impl FnOnce(&mut PlatformInputHandler)) {
+        let taken = self.0.state.input_handler.borrow_mut().take();
+        let Some(mut handler) = taken else {
+            return;
+        };
+        f(&mut handler);
+        self.0.state.input_handler.borrow_mut().replace(handler);
+    }
+
     pub(crate) fn initialize(
         &self,
         winit_window: winit::window::Window,
