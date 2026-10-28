@@ -36,10 +36,11 @@ use crate::platform::platform::CrossPlatform;
 use crate::{
     Action, AnyWindowHandle, App, AsyncWindowContext, BackgroundExecutor, Bounds,
     DEFAULT_WINDOW_SIZE, DevicePixels, DispatchEventResult, Font, FontId, FontMetrics, FontRun,
-    ForegroundExecutor, GlyphId, GpuSpecs, ImageSource, Keymap, LineLayout, Pixels, PlatformInput,
-    Point, Priority, RenderGlyphParams, RenderImage, RenderImageParams, RenderSvgParams,
-    RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString, Size, SvgRenderer, SystemWindowTab,
-    Task, TaskTiming, ThreadTaskTimings, Window, WindowControlArea, hash, point, px, size,
+    ForegroundExecutor, FrameCapture, FrameCaptureError, GlyphId, GpuSpecs, ImageSource, Keymap,
+    LineLayout, Pixels, PlatformInput, Point, Priority, RenderGlyphParams, RenderImage,
+    RenderImageParams, RenderSvgParams, RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString,
+    Size, SvgRenderer, SystemWindowTab, Task, TaskTiming, ThreadTaskTimings, Window,
+    WindowControlArea, hash, point, px, size,
 };
 use anyhow::Result;
 use async_task::Runnable;
@@ -674,6 +675,17 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
         _height: u32,
         _format: wgpu::TextureFormat,
     ) -> Option<crate::WgpuSurfaceHandle> {
+        None
+    }
+
+    /// Request one capture of the next complete-scene frame this window composes.
+    ///
+    /// Returns `None` on platforms that don't use the WGPU compositor. Implementations ask
+    /// for the redraw that composes the frame and deliver the readback through the receiver
+    /// once that frame has been presented.
+    fn request_frame_capture(
+        &self,
+    ) -> Option<oneshot::Receiver<Result<FrameCapture, FrameCaptureError>>> {
         None
     }
 

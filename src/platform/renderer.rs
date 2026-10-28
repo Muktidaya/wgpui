@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
-    AtlasTextureId, AtlasTile, DevicePixels, GpuSpecs, Hsla, LinearColorStop, MonochromeSprite,
-    PlatformAtlas, PrimitiveBatch, Quad, ScaledPixels, Scene, TransformationMatrix, color,
-    geometry,
+    AtlasTextureId, AtlasTile, DevicePixels, FrameCapture, FrameCaptureError, GpuSpecs, Hsla,
+    LinearColorStop, MonochromeSprite, PlatformAtlas, PrimitiveBatch, Quad, ScaledPixels, Scene,
+    TransformationMatrix, color, geometry,
     platform::{atlas::WgpuAtlas, render_context::WgpuContext},
 };
+use futures::channel::oneshot;
 
 #[allow(dead_code)]
 const fn map_attributes<const N: usize>(
@@ -1291,8 +1292,8 @@ impl RenderingParameters {
     }
 }
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
-use std::sync::Mutex;
 
 pub struct WgpuRenderer {
     context: Arc<WgpuContext>,
@@ -1312,6 +1313,7 @@ pub struct WgpuRenderer {
     // Resizing preserves SurfaceId but replaces both texture views.
     surface_bind_groups:
         Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64), SurfaceBinding>>,
+    frame_capture_requests: FrameCaptureRequests,
     configure_pending: std::sync::atomic::AtomicBool,
 }
 
@@ -1319,6 +1321,220 @@ pub struct WgpuRenderer {
 struct SurfaceBinding {
     params: wgpu::Buffer,
     bind_groups: [wgpu::BindGroup; 2],
+}
+
+/// Upper bound on waiting for one capture's copy to complete before the request is reported
+/// as failed. The copy is a single blit of a single frame, so this is only ever reached when
+/// the device itself has stopped making progress.
+const CAPTURE_POLL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// One pending capture of the next complete-scene frame.
+struct FrameCaptureRequest {
+    completion: oneshot::Sender<Result<FrameCapture, FrameCaptureError>>,
+}
+
+/// The one-shot slot holding at most one pending frame capture.
+#[derive(Default)]
+struct FrameCaptureRequests {
+    pending: Mutex<Option<FrameCaptureRequest>>,
+}
+
+impl FrameCaptureRequests {
+    /// Store `request`, returning the request it superseded, if any.
+    fn install(&self, request: FrameCaptureRequest) -> Option<FrameCaptureRequest> {
+        self.pending.lock().replace(request)
+    }
+
+    /// Take the pending request, leaving the slot empty: the next call returns `None`.
+    fn take(&self) -> Option<FrameCaptureRequest> {
+        self.pending.lock().take()
+    }
+}
+
+/// A capture request bound to the frame it was taken for: the readback buffer that holds that
+/// frame's copy, or the reason no copy could be encoded.
+struct PendingFrameCapture {
+    request: FrameCaptureRequest,
+    readback: Result<FrameCaptureReadback, FrameCaptureError>,
+}
+
+impl PendingFrameCapture {
+    /// Encode one copy of `texture` for `request` into this frame's command encoder.
+    fn encode(
+        request: FrameCaptureRequest,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        texture: &wgpu::Texture,
+        width: u32,
+        height: u32,
+        format: wgpu::TextureFormat,
+    ) -> Self {
+        let readback = encode_capture_copy(device, encoder, texture, width, height, format).map(
+            |(buffer, padded_row_bytes)| FrameCaptureReadback {
+                buffer,
+                padded_row_bytes,
+                width,
+                height,
+                format,
+            },
+        );
+        Self { request, readback }
+    }
+
+    /// Start the readback once the frame carrying the copy has been submitted.
+    ///
+    /// The mapping callback only runs while the device is polled, and this compositor renders
+    /// on demand, so a bounded worker owns that wait instead of the UI thread. It is not a
+    /// render thread and does not exist per frame: it is started by a request, waits only for
+    /// the submission that carries the copy, delivers the frame, and exits.
+    fn finish(self, device: &wgpu::Device, submission_index: wgpu::SubmissionIndex) {
+        let Self { request, readback } = self;
+        let readback = match readback {
+            Ok(readback) => readback,
+            Err(error) => {
+                let _ = request.completion.send(Err(error));
+                return;
+            }
+        };
+
+        let device = device.clone();
+        let completion = request.completion;
+        let spawned = std::thread::Builder::new()
+            .name("frame-capture-readback".to_string())
+            .spawn(move || {
+                let _ = completion.send(readback.read(&device, submission_index));
+            });
+        if spawned.is_err() {
+            // The worker never ran, so its completion sender was dropped and the caller
+            // observes a cancelled channel rather than a capture that silently never lands.
+            eprintln!("wgpui: could not start the frame capture readback worker");
+        }
+    }
+}
+
+/// A submitted copy of the complete-scene texture, waiting to be mapped.
+struct FrameCaptureReadback {
+    buffer: wgpu::Buffer,
+    /// Row stride of the copy, padded to `wgpu`'s copy alignment.
+    padded_row_bytes: u32,
+    width: u32,
+    height: u32,
+    format: wgpu::TextureFormat,
+}
+
+impl FrameCaptureReadback {
+    /// Wait for the copy's submission, map it, and pack the frame.
+    fn read(
+        self,
+        device: &wgpu::Device,
+        submission_index: wgpu::SubmissionIndex,
+    ) -> Result<FrameCapture, FrameCaptureError> {
+        let slice = self.buffer.slice(..);
+        let (mapped_sender, mapped_receiver) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = mapped_sender.send(result);
+        });
+
+        device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission_index),
+                timeout: Some(CAPTURE_POLL_TIMEOUT),
+            })
+            .map_err(FrameCaptureError::DevicePoll)?;
+        mapped_receiver
+            .recv_timeout(CAPTURE_POLL_TIMEOUT)
+            .map_err(|_| FrameCaptureError::BufferMap)?
+            .map_err(|_| FrameCaptureError::BufferMap)?;
+
+        let mapped = slice
+            .get_mapped_range()
+            .map_err(|_| FrameCaptureError::BufferMap)?;
+        let bytes = pack_capture_rows(&mapped, self.padded_row_bytes, self.width, self.height);
+        drop(mapped);
+        self.buffer.unmap();
+        Ok(FrameCapture {
+            width: self.width,
+            height: self.height,
+            format: self.format,
+            bytes,
+        })
+    }
+}
+
+/// Pixel size of the surface formats this readback can copy.
+fn capture_bytes_per_pixel(format: wgpu::TextureFormat) -> Option<usize> {
+    match format {
+        wgpu::TextureFormat::Rgba8Unorm
+        | wgpu::TextureFormat::Rgba8UnormSrgb
+        | wgpu::TextureFormat::Bgra8Unorm
+        | wgpu::TextureFormat::Bgra8UnormSrgb => Some(4),
+        _ => None,
+    }
+}
+
+/// Copy all of `texture` into a mappable buffer, returning the buffer and its padded stride.
+///
+/// The copy is encoded into the frame's own encoder, so the bytes come from the very texture
+/// that frame is about to present: the capture is the presented frame, not a re-render.
+fn encode_capture_copy(
+    device: &wgpu::Device,
+    encoder: &mut wgpu::CommandEncoder,
+    texture: &wgpu::Texture,
+    width: u32,
+    height: u32,
+    format: wgpu::TextureFormat,
+) -> Result<(wgpu::Buffer, u32), FrameCaptureError> {
+    if width == 0 || height == 0 {
+        return Err(FrameCaptureError::InvalidDimensions);
+    }
+    let bytes_per_pixel =
+        capture_bytes_per_pixel(format).ok_or(FrameCaptureError::UnsupportedFormat(format))? as u32;
+    let row_bytes = width * bytes_per_pixel;
+    let padded_row_bytes =
+        row_bytes.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("frame_capture"),
+        size: u64::from(padded_row_bytes) * u64::from(height),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    encoder.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(padded_row_bytes),
+                rows_per_image: Some(height),
+            },
+        },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+    );
+    Ok((buffer, padded_row_bytes))
+}
+
+/// Pack mapped rows into a tightly packed buffer, dropping the copy alignment padding.
+///
+/// Every format this readback accepts is four bytes per pixel, so a tight row is
+/// `width * 4` bytes.
+fn pack_capture_rows(mapped: &[u8], padded_row_bytes: u32, width: u32, height: u32) -> Vec<u8> {
+    let row_bytes = width as usize * 4;
+    let mut bytes = Vec::with_capacity(row_bytes * height as usize);
+    for row in 0..height as usize {
+        let start = row * padded_row_bytes as usize;
+        bytes.extend_from_slice(&mapped[start..start + row_bytes]);
+    }
+    bytes
 }
 
 impl WgpuRenderer {
@@ -1386,7 +1602,12 @@ impl WgpuRenderer {
             });
 
         let surface_configuration = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            // COPY_SRC is what lets a requested capture read back the complete-scene frame this
+            // surface holds. It is part of the surface's permanent configuration rather than a
+            // per-capture toggle, and its one cost — `CAMetalLayer.framebufferOnly` becomes
+            // false on Metal — is paid whether or not a capture is ever requested. No copy is
+            // encoded unless a capture was requested.
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             format,
             color_space: wgpu::SurfaceColorSpace::Auto,
             width,
@@ -1445,6 +1666,7 @@ impl WgpuRenderer {
             path_intermediate_view: None,
             surface_bind_groups: Mutex::new(HashMap::new()),
             configure_pending: std::sync::atomic::AtomicBool::new(false),
+            frame_capture_requests: FrameCaptureRequests::default(),
         };
         renderer.ensure_offscreen_texture();
         // Configure the surface for presentation before the first draw call.
@@ -1929,7 +2151,7 @@ impl WgpuRenderer {
                             // fetch or create this surface's cached params
                             // buffer and bind groups
                             let surface_bind_group = {
-                                let mut cache = self.surface_bind_groups.lock().unwrap();
+                                let mut cache = self.surface_bind_groups.lock();
                                 let entry =
                                     cache.entry((*surface_id, revision)).or_insert_with(|| {
                                         let params_buffer = self.context.device.create_buffer(
@@ -2032,13 +2254,52 @@ impl WgpuRenderer {
 
         // remove cached bind groups for surfaces that disappeared this frame
         {
-            let mut cache = self.surface_bind_groups.lock().unwrap();
+            let mut cache = self.surface_bind_groups.lock();
             cache.retain(|key, _| seen_surface_generations.contains(key));
         }
-        self.context.queue.submit(Some(command_encoder.finish()));
+
+        // A requested capture reads the very texture this frame is about to present, through
+        // this frame's own encoder. Taking the request here is what makes it one-shot: it is
+        // served by the frame that takes it, and no frame copies anything without a request.
+        let capture = self.frame_capture_requests.take().map(|request| {
+            let configuration = &self.surface_configuration;
+            PendingFrameCapture::encode(
+                request,
+                &self.context.device,
+                &mut command_encoder,
+                surface_texture.as_ref().map(|frame| &frame.texture).or(self.offscreen_texture.as_ref()).expect("a drawable target exists"),
+                configuration.width,
+                configuration.height,
+                configuration.format,
+            )
+        });
+
+        let submission_index = self.context.queue.submit(Some(command_encoder.finish()));
         if let Some(surface_texture) = surface_texture {
             self.context.queue.present(surface_texture);
         }
+
+        if let Some(capture) = capture {
+            capture.finish(&self.context.device, submission_index);
+        }
+    }
+
+    /// Install one pending capture of the next complete-scene frame.
+    ///
+    /// The receiver resolves once that frame has been presented and its copy mapped. A request
+    /// that arrives before the previous one was served supersedes it: the older receiver is
+    /// cancelled rather than answered with a frame captured later than it asked for.
+    pub(crate) fn request_frame_capture(
+        &self,
+    ) -> oneshot::Receiver<Result<FrameCapture, FrameCaptureError>> {
+        let (completion, receiver) = oneshot::channel();
+        // The superseded request is dropped here, which cancels its receiver — the caller
+        // learns the capture will not arrive instead of waiting on an unserved request.
+        drop(
+            self.frame_capture_requests
+                .install(FrameCaptureRequest { completion }),
+        );
+        receiver
     }
 
     pub fn update_drawable_size(&mut self, size: geometry::Size<DevicePixels>) {
@@ -2422,5 +2683,67 @@ mod offscreen_tests {
             );
         }
         Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_capture_request_is_served_by_exactly_one_frame() {
+        let requests = FrameCaptureRequests::default();
+        let (completion, _receiver) = oneshot::channel();
+        assert!(
+            requests
+                .install(FrameCaptureRequest { completion })
+                .is_none()
+        );
+
+        let taken = requests.take().expect("the installed request is pending");
+        drop(taken);
+
+        assert!(
+            requests.take().is_none(),
+            "the frame that took the request is the only frame that serves it"
+        );
+    }
+
+    #[test]
+    fn a_second_request_supersedes_the_first() {
+        let requests = FrameCaptureRequests::default();
+        let (first_completion, mut first_receiver) = oneshot::channel();
+        requests.install(FrameCaptureRequest {
+            completion: first_completion,
+        });
+
+        let (second_completion, _second_receiver) = oneshot::channel();
+        let superseded = requests
+            .install(FrameCaptureRequest {
+                completion: second_completion,
+            })
+            .expect("the second request supersedes the first");
+        drop(superseded);
+
+        assert!(matches!(first_receiver.try_recv(), Err(oneshot::Canceled)));
+        assert!(
+            requests.take().is_some(),
+            "the newest request is the one still pending"
+        );
+    }
+
+    #[test]
+    fn captured_rows_drop_the_readback_padding() {
+        // Two rows of four pixels each, padded to wgpu's copy alignment.
+        let padded_row_bytes: u32 = 256;
+        let mut mapped = vec![0u8; padded_row_bytes as usize * 2];
+        mapped[..16].copy_from_slice(&[1u8; 16]);
+        mapped[padded_row_bytes as usize..padded_row_bytes as usize + 16]
+            .copy_from_slice(&[2u8; 16]);
+
+        let bytes = pack_capture_rows(&mapped, padded_row_bytes, 4, 2);
+
+        assert_eq!(bytes.len(), 32);
+        assert_eq!(&bytes[..16], &[1u8; 16]);
+        assert_eq!(&bytes[16..], &[2u8; 16]);
     }
 }

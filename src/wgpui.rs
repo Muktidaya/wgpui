@@ -361,3 +361,59 @@ macro_rules! bench_main {
         }
     };
 }
+
+/// One complete-scene compositor frame that was captured on request.
+///
+/// This is the frame the compositor presented — WGPUI chrome and any hosted GPU surface
+/// content together — not a separate rendering of one embedded surface. Rows are tightly
+/// packed (`width * 4` bytes each) and the channel order follows
+/// [`format`](Self::format); the readback padding `wgpu` requires has already been removed,
+/// so the bytes can be consumed row by row without a stride.
+#[derive(Clone, Debug)]
+pub struct FrameCapture {
+    /// Width of the captured frame, in physical pixels.
+    pub width: u32,
+    /// Height of the captured frame, in physical pixels.
+    pub height: u32,
+    /// The format the captured pixels are in.
+    pub format: wgpu::TextureFormat,
+    /// Tightly packed pixels, `width * height * 4` bytes long.
+    pub bytes: Vec<u8>,
+}
+
+/// Why a requested frame capture produced no frame.
+#[derive(Debug)]
+pub enum FrameCaptureError {
+    /// The frame to capture had a zero width or height.
+    InvalidDimensions,
+    /// The compositor's surface format is not one this readback can copy.
+    UnsupportedFormat(wgpu::TextureFormat),
+    /// The readback buffer could not be mapped after its copy completed.
+    BufferMap,
+    /// Waiting for the readback copy to complete failed.
+    DevicePoll(wgpu::PollError),
+}
+
+impl std::fmt::Display for FrameCaptureError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidDimensions => {
+                formatter.write_str("frame capture dimensions must be non-zero")
+            }
+            Self::UnsupportedFormat(format) => {
+                write!(formatter, "unsupported frame capture format: {format:?}")
+            }
+            Self::BufferMap => formatter.write_str("frame capture buffer mapping failed"),
+            Self::DevicePoll(error) => write!(formatter, "frame capture GPU poll failed: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for FrameCaptureError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::DevicePoll(error) => Some(error),
+            Self::InvalidDimensions | Self::UnsupportedFormat(_) | Self::BufferMap => None,
+        }
+    }
+}

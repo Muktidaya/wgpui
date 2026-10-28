@@ -1,11 +1,13 @@
 use crate::{
-    AnyWindowHandle, Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow,
-    Point, Size, WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
+    AnyWindowHandle, Bounds, Capslock, FrameCapture, FrameCaptureError, Modifiers, Pixels,
+    PlatformInputHandler, PlatformWindow, Point, Size, WgpuSurfaceHandle, WindowAppearance,
+    WindowBackgroundAppearance, WindowBounds,
     platform::{
         atlas::WgpuAtlas, dispatcher::CrossEvent, render_context::WgpuContext,
         renderer::WgpuRenderer,
     },
 };
+use futures::channel::oneshot;
 use std::{
     cell::{Cell, OnceCell, RefCell},
     rc::Rc,
@@ -490,6 +492,17 @@ impl PlatformWindow for CrossWindow {
 
     fn sprite_atlas(&self) -> std::sync::Arc<dyn crate::PlatformAtlas> {
         self.0.sprite_atlas.clone()
+    }
+
+    fn request_frame_capture(
+        &self,
+    ) -> Option<oneshot::Receiver<Result<FrameCapture, FrameCaptureError>>> {
+        let renderer = self.0.renderer.get()?;
+        let receiver = renderer.borrow().request_frame_capture();
+        // One redraw makes the frame this capture reads back. No loop is started, and this is
+        // the only redraw the request causes.
+        self.window().request_redraw();
+        Some(receiver)
     }
 
     fn gpu_specs(&self) -> Option<crate::GpuSpecs> {
