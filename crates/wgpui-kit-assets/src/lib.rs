@@ -17,7 +17,7 @@ pub use icon::{IconName, IconNamed};
 ///
 /// ```rust,no_run
 /// use wgpui::*;
-/// use wwgpui_kit_assets::Assets;
+/// use wgpui_kit_assets::Assets;
 ///
 /// let app = Application::new().with_assets(Assets);
 /// ```

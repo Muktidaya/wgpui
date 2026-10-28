@@ -28,7 +28,7 @@ use crate::{
 /// ## Imperative API (using WindowExt)
 ///
 /// ```ignore
-/// use gpui_kit::component::{AlertDialog, alert::AlertVariant};
+/// use wgpui_kit::component::{AlertDialog, alert::AlertVariant};
 ///
 /// // Using WindowExt trait
 /// window.open_alert_dialog(cx, |alert, _, _| {
@@ -42,7 +42,7 @@ use crate::{
 /// ## Declarative API (using trigger and content)
 ///
 /// ```ignore
-/// use gpui_kit::component::{AlertDialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter};
+/// use wgpui_kit::component::{AlertDialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter};
 ///
 /// AlertDialog::new(cx)
 ///     .trigger(Button::new("delete").label("Delete"))

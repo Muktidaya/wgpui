@@ -126,7 +126,7 @@ impl Icon {
     /// Parsing and rendering follow GPUI's SVG behavior.
     ///
     /// ```
-    /// use gpui_component::Icon;
+    /// use wgpui_component::Icon;
     ///
     /// let bytes = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     ///     <path d="M4 12h16" stroke="currentColor"/>
