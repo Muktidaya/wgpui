@@ -2383,6 +2383,11 @@ impl Window {
         self.platform_window.completed_frame();
     }
 
+    #[cfg(test)]
+    pub(crate) fn take_platform_input_handler_for_test(&mut self) -> Option<PlatformInputHandler> {
+        self.platform_window.take_input_handler()
+    }
+
     /// Produces a new frame and assigns it to `rendered_frame`. To actually show
     /// the contents of the new `Scene`, use `Self::present`.
     #[profiling::function]
@@ -2410,9 +2415,14 @@ impl Window {
         self.invalidator.set_dirty(false);
         self.requested_autoscroll = None;
 
-        // Restore the previously-used input handler.
+        // Restore the previously-used input handler into the slot it occupied.
+        // Cached paint ranges index this vector, so appending here would move
+        // their index base when a nested draw runs while the handler is in use.
         if let Some(input_handler) = self.platform_window.take_input_handler() {
-            self.rendered_frame.input_handlers.push(Some(input_handler));
+            match self.rendered_frame.input_handlers.last_mut() {
+                Some(slot) => *slot = Some(input_handler),
+                None => self.rendered_frame.input_handlers.push(Some(input_handler)),
+            }
         }
         if !cx.mode.skip_drawing() {
             self.draw_roots(cx);
@@ -2420,8 +2430,13 @@ impl Window {
         self.dirty_views.clear();
         self.next_frame.window_active = self.active.get();
 
-        // Register requested input handler with the platform window.
-        if let Some(Some(mut input_handler)) = self.next_frame.input_handlers.pop() {
+        // Leave the slot in place for cached paint ranges in the next frame.
+        if let Some(mut input_handler) = self
+            .next_frame
+            .input_handlers
+            .last_mut()
+            .and_then(Option::take)
+        {
             let configuration = input_handler.text_input_configuration(self, cx);
             self.platform_window
                 .set_text_input_configuration(&configuration);

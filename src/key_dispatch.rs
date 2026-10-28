@@ -615,8 +615,9 @@ impl DispatchTree {
 #[cfg(test)]
 mod tests {
     use crate::{
-        self as wgpui, DispatchResult, Element, ElementId, GlobalElementId, InspectorElementId,
-        Keystroke, LayoutId, Style,
+        self as wgpui, AppContext as _, DispatchResult, Element, ElementId, Empty, Entity,
+        GlobalElementId, InspectorElementId, Keystroke, LayoutId, ParentElement, Style,
+        StyleRefinement, div,
     };
     use core::panic;
     use smallvec::SmallVec;
@@ -730,16 +731,26 @@ mod tests {
 
     #[crate::test]
     fn test_input_handler_pending(cx: &mut TestAppContext) {
+        struct CachedSibling;
+
+        impl Render for CachedSibling {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                Empty
+            }
+        }
+
         #[derive(Clone)]
         struct CustomElement {
             focus_handle: FocusHandle,
             text: Rc<RefCell<String>>,
+            cached_sibling: Entity<CachedSibling>,
         }
         impl CustomElement {
             fn new(cx: &mut Context<Self>) -> Self {
                 Self {
                     focus_handle: cx.focus_handle(),
                     text: Rc::default(),
+                    cached_sibling: cx.new(|_| CachedSibling),
                 }
             }
         }
@@ -872,7 +883,11 @@ mod tests {
         }
         impl Render for CustomElement {
             fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-                self.clone()
+                div().child(self.clone()).child(
+                    self.cached_sibling
+                        .clone()
+                        .cached(StyleRefinement::default()),
+                )
             }
         }
 
@@ -887,6 +902,23 @@ mod tests {
             window.activate_window();
         });
         cx.simulate_keystrokes("ctrl-b [");
-        test.update(cx, |test, _| assert_eq!(test.text.borrow().as_str(), "["))
+        test.update(cx, |test, _| assert_eq!(test.text.borrow().as_str(), "["));
+        // macOS can request a draw from inside text application while the
+        // platform handler is temporarily out of its cell. The input element
+        // repaints, while the sibling view reuses a paint range recorded after
+        // that handler's slot.
+
+        cx.update(|window, cx| {
+            let _handler_in_use = window
+                .take_platform_input_handler_for_test()
+                .expect("focused element registered an input handler");
+            test.update(cx, |_, cx| cx.notify());
+
+            window.draw(cx).clear();
+
+            let _replacement = window
+                .take_platform_input_handler_for_test()
+                .expect("the nested draw kept an active input handler");
+        });
     }
 }
