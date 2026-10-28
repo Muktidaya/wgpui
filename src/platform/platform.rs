@@ -670,7 +670,19 @@ impl AppState {
 }
 
 impl winit::application::ApplicationHandler<CrossEvent> for AppState {
-    fn new_events(&mut self, _event_loop: &ActiveEventLoop, _cause: winit::event::StartCause) {}
+    fn new_events(&mut self, _event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
+        if matches!(cause, winit::event::StartCause::ResumeTimeReached { .. }) {
+            let now = std::time::Instant::now();
+            for window in self.windows.values() {
+                if window
+                    .configure_retry_deadline()
+                    .is_some_and(|deadline| deadline <= now)
+                {
+                    window.window().request_redraw();
+                }
+            }
+        }
+    }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CrossEvent) {
         self.set_active_context(event_loop);
@@ -756,7 +768,15 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         //
         // With no unconditional redraw, the event loop genuinely sleeps when
         // idle, dropping CPU usage to ~0%.
-        event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
+        let retry = self
+            .windows
+            .values()
+            .filter_map(CrossWindow::configure_retry_deadline)
+            .min();
+        event_loop.set_control_flow(match retry {
+            Some(deadline) => winit::event_loop::ControlFlow::WaitUntil(deadline),
+            None => winit::event_loop::ControlFlow::Wait,
+        });
 
         self.clear_active_context();
     }
@@ -913,7 +933,8 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                             force_render: false,
                             // Only present after an actual draw or a surface present;
                             // don't keep the GPU busy re-presenting the same frame every tick.
-                            require_presentation: surface_pending,
+                            require_presentation: surface_pending
+                                || window.configure_retry_deadline().is_some(),
                         });
                     },
                 );

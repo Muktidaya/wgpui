@@ -1315,6 +1315,8 @@ pub struct WgpuRenderer {
         Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64, usize), SurfaceBinding>>,
     frame_capture_requests: FrameCaptureRequests,
     configure_pending: std::sync::atomic::AtomicBool,
+    configure_failures: std::sync::atomic::AtomicU32,
+    configure_retry_at: Mutex<Option<std::time::Instant>>,
 }
 
 // Each placement needs its own uniform: queued writes precede every draw in the submission.
@@ -1564,6 +1566,10 @@ fn pack_capture_rows(mapped: &[u8], padded_row_bytes: u32, width: u32, height: u
     bytes
 }
 
+fn configure_retry_delay(failures: u32) -> std::time::Duration {
+    std::time::Duration::from_millis((16_u64 << failures.min(4)).min(250))
+}
+
 impl WgpuRenderer {
     pub fn new<WindowHandle>(
         context: Arc<WgpuContext>,
@@ -1694,6 +1700,8 @@ impl WgpuRenderer {
             path_intermediate_view: None,
             surface_bind_groups: Mutex::new(HashMap::new()),
             configure_pending: std::sync::atomic::AtomicBool::new(false),
+            configure_failures: std::sync::atomic::AtomicU32::new(0),
+            configure_retry_at: Mutex::new(None),
             frame_capture_requests: FrameCaptureRequests::default(),
         };
         renderer.ensure_offscreen_texture();
@@ -1808,18 +1816,36 @@ impl WgpuRenderer {
         surface.configure(&self.context.device, &self.surface_configuration);
         let error = pollster::block_on(scope.pop());
         if let Some(error) = &error {
-            log::warn!("surface configure failed, retrying next frame: {error}");
+            let failures = self
+                .configure_failures
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            if failures == 0 {
+                log::warn!("surface configure failed, scheduling retry: {error}");
+            }
+            *self.configure_retry_at.lock() =
+                Some(std::time::Instant::now() + configure_retry_delay(failures));
+        } else {
+            self.configure_failures
+                .store(0, std::sync::atomic::Ordering::Relaxed);
+            *self.configure_retry_at.lock() = None;
         }
         self.configure_pending
             .store(error.is_some(), std::sync::atomic::Ordering::Relaxed);
         error.is_none()
     }
 
+    pub(crate) fn configure_retry_deadline(&self) -> Option<std::time::Instant> {
+        *self.configure_retry_at.lock()
+    }
+
     pub fn draw(&self, scene: &Scene) {
         if self
             .configure_pending
             .load(std::sync::atomic::Ordering::Relaxed)
-            && !self.configure_surface()
+            && (self
+                .configure_retry_deadline()
+                .is_some_and(|deadline| deadline > std::time::Instant::now())
+                || !self.configure_surface())
         {
             return;
         }

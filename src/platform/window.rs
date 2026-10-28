@@ -97,6 +97,13 @@ impl CrossWindow {
         }))
     }
 
+    pub(crate) fn configure_retry_deadline(&self) -> Option<std::time::Instant> {
+        self.0
+            .renderer
+            .get()
+            .and_then(|renderer| renderer.borrow().configure_retry_deadline())
+    }
+
     pub(crate) fn handle(&self) -> crate::AnyWindowHandle {
         self.0.handle
     }
