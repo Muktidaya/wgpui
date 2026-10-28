@@ -4,7 +4,7 @@
 //! state machine and the container entities all live in
 //! [`gpui_base::dock`]. This module is the skin over them: it re-exports the
 //! types a consumer needs, adds the presentation half of the panel traits
-//! (see [`panel`]), and implements base's two renderer traits.
+//! (see [`Panel`]), and implements base's two renderer traits.
 //!
 //! ```ignore
 //! let area = cx.new(|cx| {

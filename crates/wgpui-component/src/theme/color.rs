@@ -205,7 +205,7 @@ impl Colorize for Hsla {
     }
 
     /// Reference:
-    /// https://github.com/bevyengine/bevy/blob/85eceb022da0326b47ac2b0d9202c9c9f01835bb/crates/bevy_color/src/hsla.rs#L112
+    /// <https://github.com/bevyengine/bevy/blob/85eceb022da0326b47ac2b0d9202c9c9f01835bb/crates/bevy_color/src/hsla.rs#L112>
     fn mix(&self, other: Self, factor: f32) -> Self {
         let factor = factor.clamp(0.0, 1.0);
         let inv = 1.0 - factor;

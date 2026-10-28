@@ -8,8 +8,7 @@
 //! Items carry a GPUI [`Action`], dispatched via [`Window::dispatch_action`]
 //! when selected — the same mechanism the application menu bar and key bindings
 //! use. A [`NativeMenu`] can therefore be built directly from GPUI
-//! [`gpui::MenuItem`]s (see [`NativeMenu::from_menu_items`] /
-//! [`From<gpui::Menu>`]).
+//! [`gpui::MenuItem`]s (see [`From<gpui::Menu>`]).
 //!
 //! ```ignore
 //! use gpui_kit::component::native_menu::NativeMenu;
@@ -111,7 +110,7 @@ impl NativeMenu {
     /// Icons created with [`Icon::data`] use their SVG bytes directly, without an asset lookup.
     /// [`crate::IconName`] resolves as an asset and works across all backends.
     /// - **macOS**: loaded into an `NSImage` as a template image, so it tints with the item
-    /// text and assigned to the item ([`NSMenuItem::image`]).
+    /// text and assigned to the item (`NSMenuItem::image`).
     /// - **Windows**: loaded into an `HBITMAP` and set as the item's
     /// content bitmap (`MENUITEMINFOW::hbmpItem`), shown beside the label. SVG files are
     /// rasterized, with `resvg`; other formats (PNG, JPEG, BMP, ...) are decoded by GDI+.

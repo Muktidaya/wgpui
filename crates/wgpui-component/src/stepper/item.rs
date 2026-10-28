@@ -10,7 +10,7 @@ use crate::{
     stepper::trigger::StepperTrigger,
 };
 
-/// A step item within a [`Stepper`].
+/// A step item within a [`Stepper`](crate::stepper::Stepper).
 #[derive(IntoElement)]
 pub struct StepperItem {
     step: usize,

@@ -100,8 +100,8 @@ impl Kbd {
 
     /// Return the Platform specific keybinding string by KeyStroke
     ///
-    /// macOS: https://support.apple.com/en-us/HT201236
-    /// Windows: https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec
+    /// macOS: <https://support.apple.com/en-us/HT201236>
+    /// Windows: <https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec>
     pub fn format(key: &Keystroke) -> String {
         #[cfg(target_os = "macos")]
         const SEPARATOR: &str = "";

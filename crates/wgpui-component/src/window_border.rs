@@ -51,7 +51,7 @@ impl WindowBorder {
 
     /// Set the shadow size for typical Linux client-side decorations.
     ///
-    /// Default: [`SHADOW_SIZE`]
+    /// Default: `SHADOW_SIZE`
     pub fn shadow_size(mut self, size: impl Into<Pixels>) -> Self {
         self.shadow_size = size.into();
         self
@@ -59,7 +59,7 @@ impl WindowBorder {
 
     /// Set the resize hit band half-width around the visible inner frame edge.
     ///
-    /// Default: [`RESIZE_HIT_SIZE`]
+    /// Default: `RESIZE_HIT_SIZE`
     pub fn resize_hit_size(mut self, size: impl Into<Pixels>) -> Self {
         self.resize_hit_size = size.into();
         self

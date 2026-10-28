@@ -15,7 +15,7 @@ const MIN_CELL_WIDTH: Pixels = px(100.);
 
 /// A basic table component for directly rendering tabular data.
 ///
-/// Unlike [`DataTable`], this is a simple, stateless, composable table
+/// Unlike [`DataTable`](crate::table::DataTable), this is a simple, stateless, composable table
 /// without virtual scrolling or column management.
 ///
 /// Size set via [`Sizable`] is automatically propagated to all children.

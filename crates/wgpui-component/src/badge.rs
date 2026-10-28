@@ -52,13 +52,13 @@ impl Badge {
         }
     }
 
-    /// Set to use [`BadgeVariant::Dot`] to show a dot.
+    /// Set to use `BadgeVariant::Dot` to show a dot.
     pub fn dot(mut self) -> Self {
         self.variant = BadgeVariant::Dot;
         self
     }
 
-    /// Set to use [`BadgeVariant::Number`] to show a count.
+    /// Set to use `BadgeVariant::Number` to show a count.
     ///
     /// If count is 0, the badge will be hidden.
     pub fn count(mut self, count: usize) -> Self {
@@ -66,13 +66,13 @@ impl Badge {
         self
     }
 
-    /// Set to use [`BadgeVariant::Icon`] to show an icon.
+    /// Set to use `BadgeVariant::Icon` to show an icon.
     pub fn icon(mut self, icon: impl Into<Icon>) -> Self {
         self.variant = BadgeVariant::Icon(Box::new(icon.into()));
         self
     }
 
-    /// Set the maximum count to show (Only if [`BadgeVariant::Number`] is used).
+    /// Set the maximum count to show (Only if `BadgeVariant::Number` is used).
     pub fn max(mut self, max: usize) -> Self {
         self.max = max;
         self

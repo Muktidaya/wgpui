@@ -209,7 +209,7 @@ impl Command {
     /// Set whether to draw the surrounding border and rounding, default: `true`.
     ///
     /// Turn it off when the palette already sits inside a frame of its own,
-    /// such as a [`crate::Dialog`].
+    /// such as a [`Dialog`](crate::dialog::Dialog).
     pub fn bordered(mut self, bordered: bool) -> Self {
         self.options.bordered = bordered;
         self

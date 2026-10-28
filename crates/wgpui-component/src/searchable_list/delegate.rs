@@ -61,7 +61,7 @@ pub trait SearchableListDelegate: Sized + 'static {
 
     /// Optional header element for the given section index.
     ///
-    /// Deprecated: override [`render_section_header`] instead (provides `Window` + `App` access).
+    /// Deprecated: override [`Self::render_section_header`] instead (provides `Window` + `App` access).
     #[deprecated]
     fn section(&self, _section: usize) -> Option<AnyElement> {
         None

@@ -81,7 +81,7 @@ pub(crate) fn popover_shadow(ring: Hsla, strength: f32) -> Vec<BoxShadow> {
 /// a real 1px border rather than the translucent ring it puts on a popup, so
 /// there is no ring layer here. Its corner radius is left to the caller.
 ///
-/// The radii are Tailwind's halved, for the reason [`popover_shadow`] explains.
+/// The radii are Tailwind's halved, for the reason `popover_shadow` explains.
 pub(crate) fn toast_shadow(strength: f32) -> Vec<BoxShadow> {
     let ink = hsla(0., 0., 0., SURFACE_SHADOW_INK * strength.clamp(0., 1.));
     vec![
@@ -104,7 +104,7 @@ pub(crate) fn toast_shadow(strength: f32) -> Vec<BoxShadow> {
 /// wide one, and a wide one would read as grime against the trough wall rather
 /// than as lift.
 ///
-/// The radii are Tailwind's halved, for the reason [`popover_shadow`] explains:
+/// The radii are Tailwind's halved, for the reason `popover_shadow` explains:
 /// CSS defines a box shadow's blur radius as twice the gaussian's standard
 /// deviation, while GPUI's shader takes the field as the deviation itself
 /// (`gaussian(y, sigma)`). Copying Tailwind's `3px` and `2px` across therefore
@@ -151,7 +151,7 @@ pub trait ThemeStyled: Styled + Sized {
     ///
     /// This is the one surface every popup shares — Popover, PopupMenu, Select,
     /// Combobox, DatePicker and the editor's hover popovers — so they cannot
-    /// drift apart. See [`popover_shadow`] for what the shadow is modelled on.
+    /// drift apart. See `popover_shadow` for what the shadow is modelled on.
     fn popover_style(self, cx: &App) -> Self;
 
     /// Round this element as far as its size allows — a circle if it is square,

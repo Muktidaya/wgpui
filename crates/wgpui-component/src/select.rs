@@ -25,13 +25,13 @@ use gpui_base::{GlobalState, Select as BaseSelect};
 
 // MARK: Public re-exports for back-compat
 
-/// Re-exported for backward compatibility. New code should prefer [`SearchableGroup`].
+/// Re-exported for backward compatibility. New code should prefer [`SearchableGroup`](crate::searchable_list::SearchableGroup).
 pub use crate::searchable_list::SearchableGroup as SelectGroup;
 /// Re-exported for backward compatibility. New code should prefer [`SearchableListDelegate`].
 pub use crate::searchable_list::SearchableListDelegate as SelectDelegate;
 /// Re-exported for backward compatibility. New code should prefer [`SearchableListItem`].
 pub use crate::searchable_list::SearchableListItem as SelectItem;
-/// Re-exported for backward compatibility. New code should prefer [`SearchableListItemElement`].
+/// Re-exported for backward compatibility. New code should prefer [`SearchableListItemElement`](crate::searchable_list::SearchableListItemElement).
 pub use crate::searchable_list::SearchableListItemElement as SelectListItem;
 /// Re-exported for backward compatibility.
 pub use crate::searchable_list::SearchableVec;

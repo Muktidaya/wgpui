@@ -288,7 +288,7 @@ impl AlertDialog {
 
     /// Sets the callback for when the alert dialog is closed.
     ///
-    /// Called after [`Self::on_action`] or [`Self::on_cancel`] callback.
+    /// Called after [`Self::on_ok`] or [`Self::on_cancel`] callback.
     pub fn on_close(
         mut self,
         on_close: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,

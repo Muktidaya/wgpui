@@ -38,7 +38,7 @@ macro_rules! component_icon_names {
 gpui_kit_assets::__component_icon_names!(component_icon_names);
 
 impl IconName {
-    /// Return the icon as an Entity<Icon>.
+    /// Return the icon as an `Entity<Icon>`.
     pub fn view(self, cx: &mut App) -> Entity<Icon> {
         Icon::build(self).view(cx)
     }
