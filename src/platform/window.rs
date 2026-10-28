@@ -125,7 +125,10 @@ impl CrossWindow {
             return;
         };
         f(&mut handler);
-        self.0.state.input_handler.borrow_mut().replace(handler);
+        let mut input_handler = self.0.state.input_handler.borrow_mut();
+        if input_handler.is_none() {
+            *input_handler = Some(handler);
+        }
     }
 
     pub(crate) fn initialize(
