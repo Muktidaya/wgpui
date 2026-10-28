@@ -4,10 +4,10 @@ WGPUI Kit is the application-facing façade over WGPUI, Base, styled components,
 
 ```toml
 [dependencies]
-wgpui-kit = "0.6.1"
+wgpui-kit = "0.8.1"
 ```
 
-Kit 0.6.1 and framework 0.3.6 are published on crates.io; [STATUS.md](../STATUS.md) records release evidence. For local development use `path = "../wgpui/crates/wgpui-kit"`.
+This declaration targets the source candidate. Until publication, use its workspace path. Historical Kit 0.6.1 and framework 0.3.6 releases are published on crates.io; [STATUS.md](../STATUS.md) records release evidence. For local development use `path = "../wgpui/crates/wgpui-kit"`.
 
 ```rust
 use wgpui_kit::*;
@@ -38,6 +38,8 @@ The derive package retains its existing crates.io name `wgpui_derive`: hyphens a
 ## Source candidate compatibility
 
 The source candidate uses WGPUI and derive 0.4.0, Kit-family 0.8.1 and wgpui-http-client 0.1.0, with Rust 1.95 as the common minimum. These candidate versions are separate from the published releases described above.
+
+The resolved source dependency cohort includes wgpu 30.0.1, winit 0.30.13, Taffy 0.15.1, AccessKit 0.25.2, Ropey 1.6.1, Tree-sitter 0.27.1, html5ever 0.40.1, Reqwest 0.13.5, async-tar 0.6.1, image 0.25.10 and Syntect 5.3.0. These are the versions recorded in this source lockfile; dependency compatibility ranges and platform library minimums are separate contracts.
 
 The dependency migration changes public type identities. Use the framework or Kit reexports consistently rather than mixing them with older direct dependencies:
 

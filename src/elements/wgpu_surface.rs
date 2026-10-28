@@ -27,7 +27,9 @@ impl Drop for WgpuSurfaceHandleInner {
 }
 
 /// The WGPU objects the windows render with (`App::wgpu_gpu`). All are
-/// cheap handles to the same objects, not copies.
+/// cheap handles to the same objects, not copies. The framework owns their
+/// lifetime; applications must not destroy the shared device. Native surfaces
+/// created by applications must use this instance and a supported surface format.
 #[derive(Clone, Debug)]
 pub struct WgpuGpu {
     /// The instance the device came from: a surface used with the device

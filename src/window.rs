@@ -5298,9 +5298,10 @@ impl Window {
     /// out still presents its current scene for that redraw, so an idle window is captured
     /// rather than left waiting for its next input.
     ///
-    /// At most one capture can be pending. A request made before the previous one has been
+    /// At most one capture can be pending and one can be reading back. A request made before the previous one has been
     /// served supersedes it, cancelling the earlier receiver rather than answering it with a
-    /// later frame.
+    /// later frame. Once a readback starts, a new request returns `FrameCaptureError::Busy`.
+    /// A native surface without copy support returns `FrameCaptureError::UnsupportedUsage`.
     ///
     /// Returns `None` on platforms that don't use the WGPU compositor. The frame, or the
     /// reason it could not be read back, arrives through the receiver. If the window stops

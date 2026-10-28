@@ -289,14 +289,14 @@ Uses `rust-i18n` crate.
 - Linux (x86_64)
 - Windows (x86_64)
 
-The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--lib --tests` checks/tests and a `hello_world` check. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
+The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--all-targets` checks, `--lib --tests` tests and an explicit real-renderer target. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
 
 ## Skills Reference
 
 This project has custom skills to assist with common development tasks:
 
 - [GPUI Kit reference](../../upstream-kit/skills/gpui-kit/SKILL.md): framework, component, and coding-guide references. This is vendored upstream guidance; its package/setup examples do not supersede the adapter's WGPUI package and workspace boundaries above.
-- [Design guide reference](skills/gpui-kit-design-guides/SKILL.md): the existing desktop design guidance.
+- [Design guide reference](../../upstream-kit/website/docs/design-guides.md): the retained desktop design guidance.
 - The old separate contributing-skill directory is absent. Use this file, the canonical guides, and established repository examples for contribution and PR conventions.
 
 Read the appropriate skill when working on tasks related to these areas.

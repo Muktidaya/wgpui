@@ -9,7 +9,7 @@ Enable `wgpui-kit/test-support` under development dependencies and import
 `wgpui_kit::test::{TestWindowExt, TestAppContextExt, TestSupportExt, ElementSnapshot}`.
 The helpers use WGPUI's public test support and the same component elements as applications.
 
-See [the Kit guide](../../docs/kit.md), the [test helper implementation](src/test.rs),
+See [the Kit guide](../../docs/kit.md), the [test helper implementation](src/test/),
 and [integration fixtures](tests/integration/) for setup, scoped IDs, state assertions,
 input operations and bounded asynchronous waits.
 

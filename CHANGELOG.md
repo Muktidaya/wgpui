@@ -70,6 +70,25 @@ published lines; their earlier release evidence does not validate this source.
   interfaces support application-provided capture/recognition and optional
   native integration; Linux applications supply a recognizer.
 
+### Contributor fixes and GPU APIs
+
+- Reentrant text application releases the platform handler borrow, preserves a
+  replacement handler, and keeps cached input-handler slots stable across draws.
+- Path batches and every embedded-surface placement use independent buffer
+  regions. Surface presentation wakes the owner window without blocking the
+  render thread or forcing UI layout and paint.
+- Native menu actions run after releasing menu storage; app-removed windows
+  release the platform's clone. Failed native surface configuration schedules
+  retries with a capped delay.
+- Trackpad pinch input preserves gesture phases, including cancellation, and
+  carries the last known pointer position rather than a measured gesture origin.
+- `App::wgpu_gpu` exposes the shared instance, adapter, device and queue.
+  Adapter-supported normalized texture, float filtering and timestamp-query
+  features are enabled. `Window::request_frame_capture` provides bounded
+  complete-scene readback when the native surface supports copying.
+- These changes incorporate contributions authored by ceeray and Joshua Sibelman
+  through jtwg's pull requests, retaining their original commit histories.
+
 ### Candidate acceptance
 
 Implementation presence is distinct from completed acceptance. Final source,
@@ -80,7 +99,7 @@ cached views remain available. Browser, webview/shell and mobile platform
 integration remain separate work. See [release status](STATUS.md),
 [the Kit guide](docs/kit.md) and [the acceptance inventory](docs/kit-migration-parity.json).
 
-The Microsoft SDK companions retain versions required by the latest `windows`
+The Microsoft SDK companions retain versions required by the resolved `windows` 0.62.2
 crate: `windows-core` 0.62.2 and `windows-numerics` 0.3.1. Their newer 0.100.0
 releases have incompatible Rust type identities.
 

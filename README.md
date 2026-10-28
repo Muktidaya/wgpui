@@ -6,6 +6,8 @@ The discriminating API is [`WgpuSurface`](src/elements/wgpu_surface.rs): a doubl
 
 Text services use a platform interface. Linux builds require Pango 1.50 or later, Cairo 1.18 or later, HarfBuzz and Fontconfig development libraries. The DirectWrite adapter requires Windows 10 build 15063 or later. Desktop text uses Core Text on macOS, DirectWrite on Windows, and Pango on Linux; [release status](STATUS.md) records acceptance. Layout uses [taffy](https://github.com/DioxusLabs/taffy). UI and monospace text default to the operating system's font families. Applications can override either family; framework assets contain no bundled text fonts.
 
+Processed images and color glyphs use straight-alpha RGBA; native byte orders and premultiplied alpha are normalized at their producer boundaries. See [GPU surfaces and capture](docs/rendering.md) for presentation, shared-device access and complete-frame readback.
+
 Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatch.md](docs/key_dispatch.md).
 
 This consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, an application façade and component library adapted from [GPUI Kit 0.8.1](https://github.com/longbridge/gpui-kit). See [STATUS.md](STATUS.md) for validation and release state.
@@ -16,12 +18,12 @@ Headless Linux rendering tests require a Vulkan implementation as well as the lo
 
 ```toml
 [dependencies]
-wgpui = { version = "0.3.6" }
+wgpui = { version = "0.4.0" }
 ```
 
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.
 
-The source candidate is WGPUI 0.4.0 with Kit 0.8.1 and requires Rust 1.95. See [source compatibility](docs/kit.md#source-candidate-compatibility) for the stable Ropey, HTTP, constructor and grammar API changes. Published release versions remain listed above and in [release status](STATUS.md).
+The source candidate is WGPUI 0.4.0 with Kit 0.8.1 and requires Rust 1.95. See [source compatibility](docs/kit.md#source-candidate-compatibility) for the stable Ropey, HTTP, constructor and grammar API changes. The declaration above targets this source candidate. Until publication, use a path dependency on this repository. Historical published versions are recorded in [release status](STATUS.md).
 
 ## License
 

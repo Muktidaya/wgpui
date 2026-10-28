@@ -968,7 +968,7 @@ fn completion_response_after_focus_loss_cannot_reopen_on_refocus(cx: &mut TestAp
 
 #[wgpui_kit::test]
 fn closing_window_disposes_editor_with_completion_in_flight(cx: &mut TestAppContext) {
-    // GPUI 0.3.6 TestPlatform retains its active TestWindow after remove_window.
+    // The test platform retains its active TestWindow after remove_window.
     // That window's PlatformInputHandler owns an ElementInputHandler<EditorState>
     // with a strong Entity. Keep this disposal fixture inactive; the blur tests
     // above explicitly activate their windows and observe InputEvent::Blur.

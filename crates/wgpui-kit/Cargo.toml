@@ -18,11 +18,11 @@ workspace = true
 
 [features]
 default = ["component", "assets"]
-# The styled component library, `gpui_kit::component`. Initializes `gpui-base` too.
+# The styled component library, `wgpui_kit::component`. Initializes `wgpui-base` too.
 component = ["dep:gpui-component"]
-# The default icon set for `gpui-component`, `gpui_kit::assets`.
+# The default icon set for `wgpui-component`, `wgpui_kit::assets`.
 assets = ["dep:gpui-kit-assets"]
-# GPUI's test harness, native-platform rendering, and Kit UI test helpers.
+# WGPUI's test harness, native-platform rendering, and Kit UI test helpers.
 test-support = ["gpui/test-support", "gpui_platform/test-support", "gpui-base/test-support", "gpui-component?/test-support"]
 profiler = ["gpui/profiler"]
 syntect = ["component", "gpui-component/syntect"]

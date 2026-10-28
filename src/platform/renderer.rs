@@ -1639,11 +1639,8 @@ impl WgpuRenderer {
             });
 
         let surface_configuration = wgpu::SurfaceConfiguration {
-            // COPY_SRC is what lets a requested capture read back the complete-scene frame this
-            // surface holds. It is part of the surface's permanent configuration rather than a
-            // per-capture toggle, and its one cost — `CAMetalLayer.framebufferOnly` becomes
-            // false on Metal — is paid whether or not a capture is ever requested. No copy is
-            // encoded unless a capture was requested.
+            // Request copying only where the native surface supports it. On Metal this
+            // disables framebufferOnly even before a capture is requested.
             usage: capture_surface_usage(surface_capabilities.usages),
             format,
             color_space: wgpu::SurfaceColorSpace::Auto,
