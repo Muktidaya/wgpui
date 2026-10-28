@@ -1,3 +1,22 @@
+WGPUI licensing and provenance
+==============================
+
+WGPUI is an independent community fork of GPUI / GPUI-CE. Its framework
+sources and GPUI-derived portions are distributed under Apache-2.0 below.
+The Zed Industries notice and gpui-pre license text are retained verbatim.
+The native text and clipboard adaptations identify gpui-pre 0.3.10 in their
+source headers. Original contributor authorship remains in Git history.
+
+Separately identified portions retain their own terms: Microsoft Terminal
+adaptations and smithay-clipboard adaptations carry scoped MIT texts in
+src/platform/; bundled Lucide/Feather icons carry ISC/MIT terms in
+crates/wgpui-kit-assets/LICENSE-LUCIDE. Base/Component/Kit retain their
+upstream Longbridge attribution and Apache notices in their directories.
+This file does not replace those notices or relicense third-party materials.
+
+Zed / gpui-pre original notice and Apache-2.0 terms
+=================================================
+
 Copyright 2022 - 2025 Zed Industries, Inc.
 
 
