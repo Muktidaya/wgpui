@@ -31,3 +31,6 @@ The Rust implementation is licensed under Apache-2.0; its Longbridge
 attribution and terms are in [LICENSE-APACHE](LICENSE-APACHE). Bundled icons
 retain the ISC license and the MIT notice for Feather-derived icons in
 [LICENSE-LUCIDE](LICENSE-LUCIDE).
+
+The aggregate package declaration is `Apache-2.0 AND ISC AND MIT`, describing
+separate implementation and icon portions without changing their grants.

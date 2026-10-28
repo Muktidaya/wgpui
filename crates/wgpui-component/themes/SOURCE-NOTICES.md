@@ -90,12 +90,14 @@ additional grants narrow those questions without treating the collection MIT
 notice as permission for individual themes. Adventure, Kibble, Alduin, Gruvbox,
 Hybrid and Molokai still have the previously described scope questions.
 
-## Cargo package scope
+## Release and Cargo package scope
 
-Adventure, Alduin, Asciinema, Gruvbox, Hybrid, Kibble, Molokai and Twilight are
-retained in Git/source but excluded from Cargo source archives pending the scope
-questions above. Their notices remain preserved. The other 13 catalogs and all
-retained notices are shipped; [catalog-index.json](catalog-index.json) names both
-rosters. Omission from a Cargo archive is not a licensing conclusion, and does
-not remove these files from GitHub source snapshots. The source test still
-requires all 21 files; the archive-safe test requires all 13 shipped catalogs.
+Adventure, Alduin, Asciinema, Gruvbox, Hybrid, Kibble, Molokai and Twilight have
+been removed from the release working tree pending the scope questions above.
+Their original files remain recoverable in Git history and their notices remain
+preserved here. The release tree and Cargo archives contain the same other 13
+catalogs and all retained notices; [catalog-index.json](catalog-index.json)
+distinguishes shipped catalogs from history-only names. Both source and packaged
+validation require all 13 retained files. Earlier commits and snapshots remain
+inclusive. Removal is a distribution-scope precaution, not a licensing conclusion
+or a grant of rights for historical contents.

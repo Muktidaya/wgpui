@@ -21,4 +21,7 @@ See the [Kit guide](https://github.com/Muktidaya/wgpui/blob/root/docs/kit.md)
 for package paths, features, migration details, and acceptance boundaries.
 Current architecture/design/testing guides live in `docs/kit/`; upstream provenance and retired source recovery are recorded there.
 
-Licensed under Apache-2.0. Upstream attribution and history are preserved.
+The Rust implementation uses Apache-2.0. Bundled theme portions retain scoped
+MIT and CC-BY-SA-4.0 terms; the aggregate package declaration is
+`Apache-2.0 AND MIT AND CC-BY-SA-4.0`. See [theme notices](themes/SOURCE-NOTICES.md).
+Upstream attribution and history are preserved.

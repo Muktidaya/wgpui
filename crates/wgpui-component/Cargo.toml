@@ -1,7 +1,7 @@
 [package]
 description = "UI components for building desktop applications with wgpui (Longbridge gpui-component v0.8.1 adaptor)."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
-license = "Apache-2.0"
+license = "Apache-2.0 AND MIT AND CC-BY-SA-4.0"
 name = "wgpui-component"
 documentation = "https://docs.rs/wgpui-component"
 homepage = "https://github.com/Muktidaya/wgpui"
@@ -11,16 +11,7 @@ version = "0.8.1"
 publish = true
 exclude = [
     "AGENTS.md",
-    # Retained in Git/source pending individual palette license-scope review.
-    "themes/adventure.json",
-    "themes/alduin.json",
-    "themes/asciinema.json",
-    "themes/gruvbox.json",
-    "themes/hybrid.json",
-    "themes/kibble.json",
-    "themes/molokai.json",
-    "themes/twilight.json",
-    # Requires the complete source-only catalog; packaged validation stays included.
+    # Source directory roster check; the packaged catalog validator stays included.
     "tests/source_theme_catalog.rs",
     "tests/source_dock_exports.rs",
 ]

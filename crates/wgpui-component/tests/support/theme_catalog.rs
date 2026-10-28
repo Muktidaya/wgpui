@@ -4,7 +4,7 @@ use wgpui_component::theme::{ThemeConfigColors, ThemeRegistry, ThemeSet, try_par
 #[derive(serde::Deserialize)]
 pub struct CatalogIndex {
     pub published: Vec<String>,
-    pub source_only: Vec<String>,
+    pub history_only: Vec<String>,
 }
 
 pub fn catalog_index() -> anyhow::Result<CatalogIndex> {

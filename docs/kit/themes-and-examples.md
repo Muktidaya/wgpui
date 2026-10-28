@@ -7,15 +7,17 @@ application-owned theme directory through `ThemeRegistry::watch_dir`. The curren
 `ThemeSet`/`ThemeConfig` Rust types define compatibility; old mutable upstream
 schema links were removed from the copied catalog.
 
-Source catalog validation parses all 21 sets, checks color keys and values, and
-loads them through the production registry. Cargo source archives contain 13
-catalogs with the same strict validation in a package-safe test. Eight catalogs
-remain in Git/source only while their license scope is reviewed; the
-[catalog index](../../crates/wgpui-component/themes/catalog-index.json) identifies
-both rosters. No missing-file skip or relaxed schema check is used. New theme roles may use current defaults
-when an older catalog does not supply them. Theme attribution, applicable source-specific terms and open findings are in the
-[catalog notices](../../crates/wgpui-component/themes/SOURCE-NOTICES.md); the
-retained Apache notice does not relicense the underlying palettes.
+The release working tree and Cargo source archives contain the same 13 catalogs.
+Both validation targets parse every set, check color keys and values, and load
+it through the production registry. Eight catalogs with unresolved scope were
+removed from the release working tree; the [catalog index](../../crates/wgpui-component/themes/catalog-index.json)
+records their names for recovery in Git history. Their scoped notices remain.
+No missing-file skip or relaxed schema check is used. New theme roles may use
+current defaults when an older catalog does not supply them. Theme attribution,
+applicable source-specific terms and historical findings are in the
+[catalog notices](../../crates/wgpui-component/themes/SOURCE-NOTICES.md).
+Removal is a distribution-scope precaution and does not clear historical rights
+questions or relicense the underlying palettes.
 
 Two native examples were selected from the retired snapshot and adapted to Kit's
 current window/root setup:

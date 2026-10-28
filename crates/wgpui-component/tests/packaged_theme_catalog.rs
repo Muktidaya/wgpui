@@ -6,12 +6,12 @@ mod catalog;
 fn published_catalogs_match_current_loader() -> anyhow::Result<()> {
     let index = catalog::catalog_index()?;
     assert_eq!(index.published.len(), 13);
-    assert_eq!(index.source_only.len(), 8);
+    assert_eq!(index.history_only.len(), 8);
     assert!(
         index
             .published
             .iter()
-            .all(|name| !index.source_only.contains(name))
+            .all(|name| !index.history_only.contains(name))
     );
     catalog::validate_catalogs(
         &[

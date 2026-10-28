@@ -14,7 +14,7 @@
     "spaceduck",
     "tokyonight"
   ],
-  "source_only": [
+  "history_only": [
     "adventure",
     "alduin",
     "asciinema",
@@ -24,5 +24,5 @@
     "molokai",
     "twilight"
   ],
-  "source_only_reason": "Retained for individual license-scope review; omitted from Cargo source archives, preserved in Git and source snapshots. No palette is automatically loaded."
+  "history_only_reason": "Removed from the release working tree pending individual license-scope review; recoverable in Git history. Scoped notices remain. No catalog is automatically loaded."
 }

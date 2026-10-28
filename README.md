@@ -27,7 +27,11 @@ The source candidate is WGPUI 0.4.0 with Kit 0.8.1 and requires Rust 1.95. See [
 
 ## License
 
-Apache-2.0. Original GPUI is copyright Nathan Sobo and Zed Industries contributors. This tree is maintained independently.
+The Rust framework uses Apache-2.0, with separately scoped MIT adaptations and
+a CC-BY-SA-3.0 example illustration. The aggregate package declaration is
+`Apache-2.0 AND MIT AND CC-BY-SA-3.0`; see [LICENSE](LICENSE) and
+[scope notices](docs/licensing.md).
+Original GPUI is copyright Nathan Sobo and Zed Industries contributors. This tree is maintained independently.
 
 See [licensing and source notices](docs/licensing.md) for the combined Apache
 terms, separately licensed material and open release-audit findings.

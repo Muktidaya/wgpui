@@ -55,10 +55,9 @@ MIT notice at the exact referenced Zed revision is resolved independently of
 Zed's repository-root AGPL terms. The iTerm collection's MIT notice expressly
 reserves the rights in individual themes.
 
-Package SPDX defaults describe the Rust source license; they must not be read
-as relicensing separately identified icons, illustrations or theme material.
-The package-level representation of mixed contents remains a release review
-item. Archive/source integrity verification is separate from permission and
+Package SPDX expressions aggregate the separately scoped portions described
+below; they do not relicense icons, illustrations or theme material. The approved
+metadata update leaves the existing full texts and scope notices applicable. Archive/source integrity verification is separate from permission and
 notice review. This inventory does not declare blanket licensing acceptance.
 
 ### Qualified SeaHash follow-up
@@ -85,9 +84,22 @@ or imply the dependency source is vendored in WGPUI.
 
 ### Optional catalog packaging
 
-The eight catalogs with qualified or unresolved scopes remain in Git/source
-and retain their notices, but their JSON files are omitted from Cargo source
-archives. The catalog index and tests distinguish 13 shipped catalogs from the
-full 21 source catalogs. GitHub source snapshots remain inclusive; default
-themes and explicit application loading APIs are unchanged. Other outstanding
-dependency-notice and mixed-content representation questions remain open.
+The eight catalogs with qualified or unresolved scopes have been removed from
+the release working tree as well as Cargo source archives. Their scoped notices
+remain, and their original bytes are recoverable in Git history. The catalog
+index records 13 shipped catalogs and eight history-only names. Source-tree and
+package-safe tests strictly validate the same 13 retained catalogs. Earlier
+commits and snapshots remain inclusive; removal is a distribution-scope
+precaution, not a legal clearance claim. Default themes and explicit loading APIs
+are unchanged. Nonvendored dependency-notice findings remain scoped separately
+from first-party source crates and future binaries or dependency bundles.
+
+### Aggregate package declarations
+
+The framework declares `Apache-2.0 AND MIT AND CC-BY-SA-3.0`, Component declares
+`Apache-2.0 AND MIT AND CC-BY-SA-4.0`, and Kit assets declares
+`Apache-2.0 AND ISC AND MIT`. These expressions summarize separately licensed
+portions in each package; they do not license every file under every listed term
+or offer blanket dual licensing. Existing full texts, attribution and scoped
+notices remain applicable. No individual work is relicensed by these metadata
+changes, and outstanding provenance qualifications are not resolved by them.
