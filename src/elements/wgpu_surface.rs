@@ -26,6 +26,21 @@ impl Drop for WgpuSurfaceHandleInner {
     }
 }
 
+/// The WGPU objects the windows render with (`App::wgpu_gpu`). All are
+/// cheap handles to the same objects, not copies.
+#[derive(Clone, Debug)]
+pub struct WgpuGpu {
+    /// The instance the device came from: a surface used with the device
+    /// must be made with it.
+    pub instance: wgpu::Instance,
+    /// The adapter, for a surface's capabilities.
+    pub adapter: wgpu::Adapter,
+    /// The device the window renders with.
+    pub device: wgpu::Device,
+    /// The device's queue.
+    pub queue: wgpu::Queue,
+}
+
 /// A handle to a double-buffered WGPU surface.
 ///
 /// External code uses this to render into the surface's back buffer using the

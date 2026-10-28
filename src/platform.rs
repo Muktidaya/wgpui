@@ -308,6 +308,11 @@ pub(crate) trait Platform: 'static {
     fn compositor_name(&self) -> &'static str {
         ""
     }
+    /// The WGPU objects every window renders with, for an application that
+    /// presents to a surface of its own. `None` without the WGPU renderer.
+    fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        None
+    }
     fn app_path(&self) -> Result<PathBuf>;
     fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf>;
 

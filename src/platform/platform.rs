@@ -190,6 +190,16 @@ impl Platform for CrossPlatform {
         self.background_executor.clone()
     }
 
+    fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        let ctx = &self.wgpu_context;
+        Some(crate::WgpuGpu {
+            instance: ctx.instance.clone(),
+            adapter: ctx.adapter.clone(),
+            device: ctx.device.clone(),
+            queue: ctx.queue.clone(),
+        })
+    }
+
     fn foreground_executor(&self) -> ForegroundExecutor {
         self.foreground_executor.clone()
     }

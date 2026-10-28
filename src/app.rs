@@ -834,6 +834,14 @@ impl App {
         subscription
     }
 
+    /// The WGPU instance, adapter, device and queue every window renders
+    /// with, for presenting to a surface of the application's own (a window
+    /// or layer it made, which must use the instance its device came from).
+    /// `None` without the WGPU renderer.
+    pub fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        self.platform.wgpu_gpu()
+    }
+
     /// Gracefully quit the application via the platform's standard routine.
     pub fn quit(&self) {
         self.platform.quit();
