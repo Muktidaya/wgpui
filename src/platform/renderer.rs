@@ -1759,6 +1759,13 @@ impl WgpuRenderer {
         let mut underlines_first_instance: u32 = 0;
         let mut mono_sprites_first_instance: u32 = 0;
         let mut poly_sprites_first_instance: u32 = 0;
+        // Paths are the one primitive that needs two shared buffers, so each batch
+        // gets its own region of both. Every write in a frame is enqueued before the
+        // frame's single submit, and a later write to the same range wins for every
+        // draw in that submit, so writing each batch at offset zero would leave every
+        // batch but the last rasterizing and compositing the last batch's geometry.
+        let mut paths_first_vertex: u32 = 0;
+        let mut paths_first_sprite: u32 = 0;
 
         for batch in scene.batches() {
             match batch {
@@ -1966,7 +1973,9 @@ impl WgpuRenderer {
                 }
                 PrimitiveBatch::Paths(paths) => {
                     drop(pass);
-                    let rasterized = self.rasterize_paths(&mut command_encoder, paths);
+                    let rasterized =
+                        self.rasterize_paths(&mut command_encoder, paths, paths_first_vertex);
+                    paths_first_vertex += rasterized;
                     pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some("main_continued"),
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -1983,8 +1992,9 @@ impl WgpuRenderer {
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
-                    if rasterized {
-                        self.composite_paths(&mut pass, paths);
+                    if rasterized > 0 {
+                        paths_first_sprite +=
+                            self.composite_paths(&mut pass, paths, paths_first_sprite);
                     }
                 }
             }
@@ -2061,11 +2071,16 @@ impl WgpuRenderer {
         self.path_intermediate_texture = Some(texture);
     }
 
+    /// Rasterize one `PrimitiveBatch::Paths` into the intermediate texture at
+    /// `first_vertex`, and return how many vertices were written — the caller advances
+    /// its region by that count, so a batch that draws nothing (or does not fit) does
+    /// not consume any of the shared buffer.
     fn rasterize_paths(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         paths: &[crate::Path<crate::ScaledPixels>],
-    ) -> bool {
+        first_vertex: u32,
+    ) -> u32 {
         let mut vertices = Vec::new();
         for path in paths {
             let clipped = path.clipped_bounds();
@@ -2083,11 +2098,11 @@ impl WgpuRenderer {
             }));
         }
         if vertices.is_empty() {
-            return false;
+            return 0;
         }
 
         let Some(path_view) = self.path_intermediate_view.as_ref() else {
-            return false;
+            return 0;
         };
 
         unsafe fn as_bytes<T>(slice: &[T]) -> &[u8] {
@@ -2099,11 +2114,17 @@ impl WgpuRenderer {
             }
         }
 
+        let vertex_bytes = std::mem::size_of::<PathRasterizationVertex>();
+        let offset = first_vertex as u64 * vertex_bytes as u64;
+        let bytes = unsafe { as_bytes(&vertices) };
+        if offset + bytes.len() as u64 > self.context.path_vertices_buffer.size() {
+            // The frame has more path geometry than the shared vertex buffer holds.
+            // Draw nothing rather than writing past the end of the buffer.
+            return 0;
+        }
         self.context
             .queue
-            .write_buffer(&self.context.path_vertices_buffer, 0, unsafe {
-                as_bytes(&vertices)
-            });
+            .write_buffer(&self.context.path_vertices_buffer, offset, bytes);
 
         let vertices_bind_group =
             self.context
@@ -2141,22 +2162,26 @@ impl WgpuRenderer {
             pass.set_pipeline(&self.pipelines.path_rasterization_pipeline);
             pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
             pass.set_bind_group(1, &vertices_bind_group, &[]);
-            pass.draw(0..vertices.len() as u32, 0..1);
+            pass.draw(first_vertex..first_vertex + vertices.len() as u32, 0..1);
         }
 
-        true
+        vertices.len() as u32
     }
 
+    /// Composite one `PrimitiveBatch::Paths` from the intermediate texture, at
+    /// `first_sprite`, and return how many sprites were drawn — the caller advances its
+    /// region by that count.
     fn composite_paths(
         &self,
         pass: &mut wgpu::RenderPass<'_>,
         paths: &[crate::Path<crate::ScaledPixels>],
-    ) {
+        first_sprite: u32,
+    ) -> u32 {
         let Some(path_view) = self.path_intermediate_view.as_ref() else {
-            return;
+            return 0;
         };
         if paths.is_empty() {
-            return;
+            return 0;
         }
 
         let first = &paths[0];
@@ -2200,11 +2225,17 @@ impl WgpuRenderer {
             }
         }
 
+        let sprite_bytes = std::mem::size_of::<PathSprite>();
+        let offset = first_sprite as u64 * sprite_bytes as u64;
+        let bytes = unsafe { as_bytes(&sprites) };
+        if offset + bytes.len() as u64 > self.context.path_sprites_buffer.size() {
+            // The frame has more path sprites than the shared sprite buffer holds.
+            // Composite nothing rather than writing past the end of the buffer.
+            return 0;
+        }
         self.context
             .queue
-            .write_buffer(&self.context.path_sprites_buffer, 0, unsafe {
-                as_bytes(&sprites)
-            });
+            .write_buffer(&self.context.path_sprites_buffer, offset, bytes);
 
         let sprites_bind_group =
             self.context
@@ -2244,7 +2275,9 @@ impl WgpuRenderer {
         pass.set_bind_group(0, &self.pipelines.globals_bind_group, &[]);
         pass.set_bind_group(1, &sprites_bind_group, &[]);
         pass.set_bind_group(2, &texture_bind_group, &[]);
-        pass.draw(0..4, 0..sprites.len() as u32);
+        pass.draw(0..4, first_sprite..first_sprite + sprites.len() as u32);
+
+        sprites.len() as u32
     }
 
     #[allow(dead_code)]
