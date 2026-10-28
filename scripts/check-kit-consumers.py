@@ -109,7 +109,7 @@ fn direct_framework_macros_run_without_caller_aliases(cx: &mut TestAppContext) {
     });
 }
 '''
-style_source = '''use FRAMEWORK::*;
+style_source = '''use FRAMEWORK::{CursorStyle, Overflow, Position, StyleRefinement, Visibility};
 
 pub trait ProbeStyle: Sized {
     fn style(&mut self) -> &mut StyleRefinement;
