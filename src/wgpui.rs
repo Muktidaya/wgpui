@@ -384,6 +384,10 @@ pub struct FrameCapture {
 /// Why a requested frame capture produced no frame.
 #[derive(Debug)]
 pub enum FrameCaptureError {
+    /// The native surface cannot be copied on this adapter.
+    UnsupportedUsage,
+    /// A previously submitted frame capture is still being read back.
+    Busy,
     /// The frame to capture had a zero width or height.
     InvalidDimensions,
     /// The compositor's surface format is not one this readback can copy.
@@ -397,6 +401,10 @@ pub enum FrameCaptureError {
 impl std::fmt::Display for FrameCaptureError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::UnsupportedUsage => {
+                formatter.write_str("surface does not support frame capture copies")
+            }
+            Self::Busy => formatter.write_str("a frame capture is already in flight"),
             Self::InvalidDimensions => {
                 formatter.write_str("frame capture dimensions must be non-zero")
             }
@@ -413,7 +421,11 @@ impl std::error::Error for FrameCaptureError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::DevicePoll(error) => Some(error),
-            Self::InvalidDimensions | Self::UnsupportedFormat(_) | Self::BufferMap => None,
+            Self::InvalidDimensions
+            | Self::UnsupportedFormat(_)
+            | Self::BufferMap
+            | Self::UnsupportedUsage
+            | Self::Busy => None,
         }
     }
 }

@@ -1337,6 +1337,7 @@ struct FrameCaptureRequest {
 #[derive(Default)]
 struct FrameCaptureRequests {
     pending: Mutex<Option<FrameCaptureRequest>>,
+    in_flight: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl FrameCaptureRequests {
@@ -1387,12 +1388,20 @@ impl PendingFrameCapture {
     /// on demand, so a bounded worker owns that wait instead of the UI thread. It is not a
     /// render thread and does not exist per frame: it is started by a request, waits only for
     /// the submission that carries the copy, delivers the frame, and exits.
-    fn finish(self, device: &wgpu::Device, submission_index: wgpu::SubmissionIndex) {
+    fn finish(
+        self,
+        device: &wgpu::Device,
+        submission_index: wgpu::SubmissionIndex,
+        in_flight: Arc<std::sync::atomic::AtomicBool>,
+    ) {
+        let permit = CapturePermit(in_flight);
         let Self { request, readback } = self;
         let readback = match readback {
             Ok(readback) => readback,
             Err(error) => {
-                let _ = request.completion.send(Err(error));
+                if request.completion.send(Err(error)).is_err() {
+                    log::debug!("frame capture requester was dropped");
+                }
                 return;
             }
         };
@@ -1402,13 +1411,27 @@ impl PendingFrameCapture {
         let spawned = std::thread::Builder::new()
             .name("frame-capture-readback".to_string())
             .spawn(move || {
-                let _ = completion.send(readback.read(&device, submission_index));
+                let _permit = permit;
+                if completion
+                    .send(readback.read(&device, submission_index))
+                    .is_err()
+                {
+                    log::debug!("frame capture requester was dropped");
+                }
             });
         if spawned.is_err() {
             // The worker never ran, so its completion sender was dropped and the caller
             // observes a cancelled channel rather than a capture that silently never lands.
             eprintln!("wgpui: could not start the frame capture readback worker");
         }
+    }
+}
+
+struct CapturePermit(Arc<std::sync::atomic::AtomicBool>);
+
+impl Drop for CapturePermit {
+    fn drop(&mut self) {
+        self.0.store(false, std::sync::atomic::Ordering::Release);
     }
 }
 
@@ -1432,7 +1455,9 @@ impl FrameCaptureReadback {
         let slice = self.buffer.slice(..);
         let (mapped_sender, mapped_receiver) = std::sync::mpsc::channel();
         slice.map_async(wgpu::MapMode::Read, move |result| {
-            let _ = mapped_sender.send(result);
+            if mapped_sender.send(result).is_err() {
+                log::debug!("frame capture mapping receiver was dropped");
+            }
         });
 
         device
@@ -1489,7 +1514,9 @@ fn encode_capture_copy(
     }
     let bytes_per_pixel =
         capture_bytes_per_pixel(format).ok_or(FrameCaptureError::UnsupportedFormat(format))? as u32;
-    let row_bytes = width * bytes_per_pixel;
+    let row_bytes = width
+        .checked_mul(bytes_per_pixel)
+        .ok_or(FrameCaptureError::InvalidDimensions)?;
     let padded_row_bytes =
         row_bytes.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
 
@@ -1607,7 +1634,8 @@ impl WgpuRenderer {
             // per-capture toggle, and its one cost — `CAMetalLayer.framebufferOnly` becomes
             // false on Metal — is paid whether or not a capture is ever requested. No copy is
             // encoded unless a capture was requested.
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | (surface_capabilities.usages & wgpu::TextureUsages::COPY_SRC),
             format,
             color_space: wgpu::SurfaceColorSpace::Auto,
             width,
@@ -1805,8 +1833,11 @@ impl WgpuRenderer {
         self.atlas.before_frame(&mut command_encoder);
 
         // Keep track of the exact texture generations rendered this frame.
-        let mut seen_surface_generations: Vec<(crate::platform::surface_registry::SurfaceId, u64, usize)> =
-            Vec::new();
+        let mut seen_surface_generations: Vec<(
+            crate::platform::surface_registry::SurfaceId,
+            u64,
+            usize,
+        )> = Vec::new();
 
         let color_adjustments = ColorAdjustments {
             gamma_ratios: self.rendering_parameters.gamma_ratios,
@@ -2157,8 +2188,9 @@ impl WgpuRenderer {
                             // buffer and bind groups
                             let surface_bind_group = {
                                 let mut cache = self.surface_bind_groups.lock();
-                                let entry =
-                                    cache.entry((*surface_id, revision, seen_surface_generations.len())).or_insert_with(|| {
+                                let entry = cache
+                                    .entry((*surface_id, revision, seen_surface_generations.len()))
+                                    .or_insert_with(|| {
                                         let params_buffer = self.context.device.create_buffer(
                                             &wgpu::BufferDescriptor {
                                                 label: Some("Surface Params Buffer"),
@@ -2225,7 +2257,11 @@ impl WgpuRenderer {
                             pass.set_bind_group(1, &surface_bind_group, &[]);
                             pass.draw(0..4, 0..1);
 
-                            seen_surface_generations.push((*surface_id, revision, seen_surface_generations.len()));
+                            seen_surface_generations.push((
+                                *surface_id,
+                                revision,
+                                seen_surface_generations.len(),
+                            ));
                         }
                     }
                 }
@@ -2269,21 +2305,26 @@ impl WgpuRenderer {
         // A requested capture reads the very texture this frame is about to present, through
         // this frame's own encoder. Taking the request here is what makes it one-shot: it is
         // served by the frame that takes it, and no frame copies anything without a request.
-        let capture = self.frame_capture_requests.take().map(|request| {
-            let configuration = &self.surface_configuration;
-            PendingFrameCapture::encode(
-                request,
-                &self.context.device,
-                &mut command_encoder,
-                surface_texture
-                    .as_ref()
-                    .map(|frame| &frame.texture)
-                    .or(self.offscreen_texture.as_ref())
-                    .expect("a drawable target exists"),
-                configuration.width,
-                configuration.height,
-                configuration.format,
-            )
+        let capture_texture = surface_texture
+            .as_ref()
+            .map(|frame| &frame.texture)
+            .or(self.offscreen_texture.as_ref());
+        let capture = capture_texture.and_then(|texture| {
+            self.frame_capture_requests.take().map(|request| {
+                self.frame_capture_requests
+                    .in_flight
+                    .store(true, std::sync::atomic::Ordering::Release);
+                let configuration = &self.surface_configuration;
+                PendingFrameCapture::encode(
+                    request,
+                    &self.context.device,
+                    &mut command_encoder,
+                    texture,
+                    configuration.width,
+                    configuration.height,
+                    configuration.format,
+                )
+            })
         });
 
         let submission_index = self.context.queue.submit(Some(command_encoder.finish()));
@@ -2292,7 +2333,11 @@ impl WgpuRenderer {
         }
 
         if let Some(capture) = capture {
-            capture.finish(&self.context.device, submission_index);
+            capture.finish(
+                &self.context.device,
+                submission_index,
+                self.frame_capture_requests.in_flight.clone(),
+            );
         }
     }
 
@@ -2305,6 +2350,28 @@ impl WgpuRenderer {
         &self,
     ) -> oneshot::Receiver<Result<FrameCapture, FrameCaptureError>> {
         let (completion, receiver) = oneshot::channel();
+        let error = if self.surface.is_some()
+            && !self
+                .surface_configuration
+                .usage
+                .contains(wgpu::TextureUsages::COPY_SRC)
+        {
+            Some(FrameCaptureError::UnsupportedUsage)
+        } else if self
+            .frame_capture_requests
+            .in_flight
+            .load(std::sync::atomic::Ordering::Acquire)
+        {
+            Some(FrameCaptureError::Busy)
+        } else {
+            None
+        };
+        if let Some(error) = error {
+            if completion.send(Err(error)).is_err() {
+                log::debug!("frame capture requester was dropped");
+            }
+            return receiver;
+        }
         // The superseded request is dropped here, which cancels its receiver — the caller
         // learns the capture will not arrive instead of waiting on an unserved request.
         drop(
