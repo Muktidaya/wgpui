@@ -145,10 +145,10 @@ pub(crate) fn handle_link_click(
 /// ## Not Goals
 ///
 /// - Customization of the complex style (some simple styles will be supported)
-/// - As a Markdown editor or viewer (If you want to like this, you must fork your version).
+/// - Editing Markdown source; this view renders formatted content.
 /// - As a HTML viewer, we not support CSS, we only support basic HTML tags for used to as a content reader.
 ///
-/// See also [`MarkdownElement`], [`HtmlElement`]
+/// See also [`Self::markdown`] and [`Self::html`].
 #[derive(Clone)]
 pub struct TextView {
     id: ElementId,

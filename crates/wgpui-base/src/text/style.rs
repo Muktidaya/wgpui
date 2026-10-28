@@ -321,7 +321,7 @@ impl TextViewStyle {
     }
 
     /// The highlight style for inline code, before the code-background
-    /// fallback in [`Self::inline_code_highlight`] applies.
+    /// fallback in `inline_code_highlight` applies.
     pub fn inline_code(&self) -> HighlightStyle {
         self.inline_code
     }

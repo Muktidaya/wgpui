@@ -140,7 +140,7 @@ impl ResizeHandleState {
 /// drawn before this container. A renderer learns which edge it is drawing for
 /// from [`ResizeHandleContext::edge`].
 ///
-/// [`dock_frame`]: crate::dock::dock_frame
+/// [`dock_frame`]: crate::dock::dock_area::dock_frame
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HandleEdge {
     /// Where the axis starts: the left edge of a horizontal handle's

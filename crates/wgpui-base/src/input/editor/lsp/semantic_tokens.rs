@@ -9,7 +9,7 @@ use ropey::Rope;
 use crate::input::{EditorMode, HighlightStyleResolver, InputBaseState, Lsp, RopeExt};
 
 /// A provider of semantic highlighting tokens, layered on top of the
-/// built-in tree-sitter [`SyntaxHighlighter`](crate::highlighter::SyntaxHighlighter).
+/// application-provided syntax highlighter.
 ///
 /// This is the editor counterpart of the LSP
 /// `textDocument/semanticTokens/range` request (and Monaco Editor's
@@ -25,7 +25,7 @@ use crate::input::{EditorMode, HighlightStyleResolver, InputBaseState, Lsp, Rope
 /// Returned tokens are delta-encoded with a numeric `token_type` that
 /// indexes [`legend`](Self::legend)`.token_types`. The editor resolves each
 /// type *name* against the active
-/// [`HighlightTheme`](crate::highlighter::HighlightTheme) at paint time —
+/// [`HighlightStyleResolver`](crate::input::HighlightStyleResolver) at paint time —
 /// the same vocabulary the tree-sitter path uses (`"keyword"`, `"comment"`,
 /// `"string"`, …; `"keyword.modifier"` falls back to `"keyword"`). Because
 /// the color is resolved from the name on every paint, theme switches
@@ -37,7 +37,7 @@ pub trait DocumentRangeSemanticTokensProvider {
     /// The legend naming the numeric `token_type` field of the tokens
     /// returned by [`semantic_tokens`](Self::semantic_tokens). Each entry in
     /// [`SemanticTokensLegend::token_types`] is resolved against the active
-    /// [`HighlightTheme`](crate::highlighter::HighlightTheme).
+    /// [`HighlightStyleResolver`](crate::input::HighlightStyleResolver).
     fn legend(&self) -> SemanticTokensLegend;
 
     /// Fetches semantic tokens for the specified byte range.

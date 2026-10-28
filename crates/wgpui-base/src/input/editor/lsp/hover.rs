@@ -7,11 +7,11 @@ use crate::input::{EditorMode, HoverPopoverState, InputBaseState, RopeExt};
 
 /// Hover provider
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover>
 pub trait HoverProvider {
     /// textDocument/hover
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover>
     fn hover(
         &self,
         _text: &Rope,

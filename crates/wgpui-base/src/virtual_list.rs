@@ -5,7 +5,7 @@
 //! Only visible range are rendered for performance reasons.
 //!
 //! Inspired by `gpui::uniform_list`.
-//! https://github.com/zed-industries/zed/blob/0ae1603610ab6b265bdfbee7b8dbc23c5ab06edc/crates/gpui/src/elements/uniform_list.rs
+//! <https://github.com/zed-industries/zed/blob/0ae1603610ab6b265bdfbee7b8dbc23c5ab06edc/crates/gpui/src/elements/uniform_list.rs>
 //!
 //! Unlike the `uniform_list`, the each item can have different size.
 //!

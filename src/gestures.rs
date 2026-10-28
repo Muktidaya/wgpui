@@ -401,7 +401,7 @@ impl MouseEvent for TouchDragEvent {}
 /// edge.
 ///
 /// Elements receive it through
-/// [`InteractiveElement::on_back_gesture`](crate::InteractiveElement::on_back_gesture).
+/// [`Window::on_mouse_event`](crate::Window::on_mouse_event).
 /// The innermost element under [`Self::start_position`] claims the whole
 /// gesture when it starts; the platform cancels the gesture if no element does.
 /// Every phase is delivered at the start position, so the claiming element

@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 ///
 /// Builder:
 ///
-/// https://cubic-bezier.com
+/// <https://cubic-bezier.com>
 pub fn cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32) -> impl Fn(f32) -> f32 {
     // Keep the [0, 1] output this function has always had for
     // `Animation::with_easing` callers; clamp away solver and rounding error.

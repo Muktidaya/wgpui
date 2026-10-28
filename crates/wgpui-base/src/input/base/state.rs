@@ -1,7 +1,7 @@
 //! A text input field that allows the user to enter text.
 //!
 //! Based on the `Input` example from the `gpui` crate.
-//! https://github.com/zed-industries/zed/blob/main/crates/gpui/examples/input.rs
+//! <https://github.com/zed-industries/zed/blob/main/crates/gpui/examples/input.rs>
 use gpui::TextAlign;
 use gpui::{
     Action, App, AppContext, Bounds, ClipboardItem, Context, Edges, Entity, EntityInputHandler,
@@ -496,12 +496,12 @@ pub struct InputBaseState<M: InputModeKind> {
     pub(crate) cursor_line_end_affinity: bool,
     pub(super) pattern: Option<regex::Regex>,
     pub(super) validate: Option<Box<dyn Fn(&str, &mut App) -> bool + 'static>>,
-    /// The step strategy for [`super::NumberInput`] to increment/decrement.
+    /// The step strategy for [`NumberInput`](crate::NumberInput) to increment/decrement.
     /// See [`Self::step`] and [`Self::step_by`].
     pub(crate) number_step: Option<NumberStep>,
-    /// The minimum value for [`super::NumberInput`]. See [`Self::min`].
+    /// The minimum value for [`NumberInput`](crate::NumberInput). See [`Self::min`].
     pub(crate) number_min: Option<f64>,
-    /// The maximum value for [`super::NumberInput`]. See [`Self::max`].
+    /// The maximum value for [`NumberInput`](crate::NumberInput). See [`Self::max`].
     pub(crate) number_max: Option<f64>,
     pub(crate) scroll_handle: ScrollHandle,
     /// Whether the text stretches past its ends, see [`Self::scroll_bounce`].
@@ -534,7 +534,7 @@ pub struct InputBaseState<M: InputModeKind> {
     /// The mask pattern for formatting the input text
     pub(crate) mask_pattern: MaskPattern,
     /// Whether the `mask_pattern` was explicitly set (via [`Self::mask_pattern`]
-    /// or [`Self::set_mask_pattern`]), to let [`super::NumberInput`] only apply
+    /// or [`Self::set_mask_pattern`]), to let [`NumberInput`](crate::NumberInput) only apply
     /// its default mask when the user has not made an explicit choice.
     pub(super) mask_pattern_set: bool,
     pub(super) placeholder: SharedString,
@@ -1054,7 +1054,7 @@ impl<M: InputModeKind> InputBaseState<M> {
         self
     }
 
-    /// Set highlighter language for for [`LayoutMode::CodeEditor`] mode.
+    /// Set the highlighter language for code editor mode.
     pub fn set_highlighter(
         &mut self,
         new_language: impl Into<SharedString>,
@@ -1215,7 +1215,7 @@ impl<M: InputModeKind> InputBaseState<M> {
         (0, 0, None)
     }
 
-    /// Set the value of the input field: plain text, or [`InputContent`] to
+    /// Set the value of the input field: plain text, or [`InputContent`](crate::input::InputContent) to
     /// restore text together with its inline tokens. Editing history is
     /// cleared and no [`InputEvent::Change`] is emitted.
     ///
@@ -1518,7 +1518,7 @@ impl<M: InputModeKind> InputBaseState<M> {
     /// `editor.scrollBeyondLastLine` / Zed's `scroll_beyond_last_line`.
     ///
     /// - `None` (default): half the viewport, floored at
-    ///   [`BOTTOM_MARGIN_ROWS`] line-heights.
+    ///   three line-heights.
     /// - `Some(0)`: no trailing space; the cursor sits flush with the
     ///   last row at scroll-max.
     /// - `Some(n)`: exactly `n` rows.
@@ -1548,7 +1548,7 @@ impl<M: InputModeKind> InputBaseState<M> {
     /// empty region; this controls the cursor's resting distance from the
     /// edge.
     ///
-    /// - `None` (default): [`BOTTOM_MARGIN_ROWS`] lines, falling back to
+    /// - `None` (default): three lines, falling back to
     ///   one line on small viewports.
     /// - `Some(n)`: requests `n` lines, clamped to half the viewport.
     ///
@@ -12170,7 +12170,7 @@ impl InputBaseState<crate::input::InputMode> {
         Self::new_in_mode(window, cx)
     }
 
-    /// Set a custom step function of the [`super::NumberInput`].
+    /// Set a custom step function of the [`NumberInput`](crate::NumberInput).
     ///
     /// The `f` receives the current value and the [`StepAction`], and returns
     /// the step to apply, so the step can vary with the value.
@@ -12231,9 +12231,9 @@ impl InputBaseState<crate::input::InputMode> {
         self.validate = Some(Box::new(validate));
     }
 
-    /// Set the step value of the [`super::NumberInput`] for increment/decrement.
+    /// Set the step value of the [`NumberInput`](crate::NumberInput) for increment/decrement.
     ///
-    /// If any of `step`, `min`, `max` is set, the [`super::NumberInput`] will
+    /// If any of `step`, `min`, `max` is set, the [`NumberInput`](crate::NumberInput) will
     /// update the value internally (step by `step`, default 1, clamp to the
     /// `min`/`max` range and emit [`InputEvent::Change`]) instead of emitting
     /// [`super::NumberInputEvent::Step`].
@@ -12245,7 +12245,7 @@ impl InputBaseState<crate::input::InputMode> {
         self
     }
 
-    /// Set the minimum value of the [`super::NumberInput`].
+    /// Set the minimum value of the [`NumberInput`](crate::NumberInput).
     ///
     /// The value will be clamped to the minimum value on stepping and on
     /// blur (only if the clamped value passes the `pattern`/`validate` check).
@@ -12255,7 +12255,7 @@ impl InputBaseState<crate::input::InputMode> {
         self
     }
 
-    /// Set the maximum value of the [`super::NumberInput`].
+    /// Set the maximum value of the [`NumberInput`](crate::NumberInput).
     ///
     /// The value will be clamped to the maximum value on stepping and on
     /// blur (only if the clamped value passes the `pattern`/`validate` check).

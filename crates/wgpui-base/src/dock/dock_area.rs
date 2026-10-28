@@ -205,7 +205,7 @@ impl DockArea {
     /// Whether a region currently holds no visible panel.
     ///
     /// This is the question the old `DockItem::is_empty` answered, and it is
-    /// the same one [`Self::is_node_visible`] answers per container: a region
+    /// the same one `is_node_visible` answers per container: a region
     /// is empty when nothing in it would be drawn. A region that does not
     /// exist — a dock that was never installed — is empty too.
     pub fn is_empty(&self, placement: DockPlacement, cx: &App) -> bool {
@@ -883,7 +883,7 @@ impl DockArea {
     ///
     /// The measurement wins because the tree does not track every change to
     /// it. `ResizableState` only emits `Resized` from a finished drag, so that
-    /// is all the subscription in [`Self::split_entity`] writes back;
+    /// is all the subscription in `split_entity` writes back;
     /// `adjust_to_container_size` rescales every slot silently on each window
     /// resize, insert and remove. Preferring the tree would persist load-time
     /// or last-drag pixels after a window resize, and worse, mix them: a slot
@@ -1882,7 +1882,7 @@ pub fn dock_extent(dock: &DockContext) -> Pixels {
 /// held at that size rather than stretched by the row it sits in.
 ///
 /// Structural, not decorative, which is why it is built here and not in a
-/// renderer. See [`DockArea::render_dock`].
+/// renderer. See `DockArea::render_dock`.
 pub fn dock_frame(dock: &DockContext, size: Pixels) -> Div {
     div()
         .flex()
@@ -1964,7 +1964,7 @@ pub trait DockAreaRenderer: 'static {
     ///
     /// Chrome only. The dock's own box -- its extent along its own axis, and
     /// the `flex_none` that holds it there -- is applied by
-    /// [`DockArea::render_dock`] around whatever this returns, so a renderer
+    /// `DockArea::render_dock` around whatever this returns, so a renderer
     /// cannot misplace a dock by not knowing to size it, and the default here
     /// can be what it is: the content, undecorated.
     fn render_dock(

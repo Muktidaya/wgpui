@@ -104,7 +104,7 @@ impl ResizablePanelGroup {
     ///
     /// ## Callback arguments
     ///
-    /// - Entity<ResizableState>: The state of the ResizablePanelGroup.
+    /// - `Entity<ResizableState>`: The state of the ResizablePanelGroup.
     pub fn on_resize(
         mut self,
         on_resize: impl Fn(&Entity<ResizableState>, &mut Window, &mut App) + 'static,

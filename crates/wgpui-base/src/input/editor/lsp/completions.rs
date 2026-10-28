@@ -150,7 +150,7 @@ pub trait CompletionProvider {
     ///
     /// textDocument/completion
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion>
     fn completions(
         &self,
         text: &Rope,
@@ -173,7 +173,7 @@ pub trait CompletionProvider {
     ///
     /// textDocument/inlineCompletion
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_inlineCompletion
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_inlineCompletion>
     fn inline_completion(
         &self,
         _rope: &Rope,

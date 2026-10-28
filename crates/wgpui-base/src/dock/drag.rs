@@ -202,7 +202,7 @@ impl DropIndicator {
     }
 
     /// Which drag session this indicator belongs to. Host-owned drag items
-    /// share [`ITEM_DRAG_SESSION_ID`].
+    /// share `ITEM_DRAG_SESSION_ID`.
     pub fn drag_session_id(&self) -> u64 {
         self.drag_session_id
     }

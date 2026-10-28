@@ -9,11 +9,11 @@ use crate::input::{EditorMode, GoToDefinition, InputBaseState, RopeExt};
 
 /// Definition provider
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition>
 pub trait DefinitionProvider {
     /// textDocument/definition
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition>
     fn definitions(
         &self,
         _text: &Rope,

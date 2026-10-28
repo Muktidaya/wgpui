@@ -207,7 +207,7 @@ impl<E: Styled> StyledExt for E {}
 /// Applies `overlay` onto `base`, merging nested `text` instead of replacing it.
 ///
 /// WGPUI's `StyleRefinement::text` is `Option<TextStyleRefinement>` without
-/// `#[refineable]`, so [`Refineable::refine`] replaces the whole option. A
+/// `#[refineable]`, so `Refineable::refine` replaces the whole option. A
 /// font-weight-only overlay would otherwise drop a themed color or line-height
 /// already on the base.
 pub fn refine_style_refinement(base: &mut StyleRefinement, overlay: &StyleRefinement) {

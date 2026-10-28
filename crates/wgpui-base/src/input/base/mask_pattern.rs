@@ -110,7 +110,7 @@ impl MaskPattern {
     /// - `(999)999-9999` - US phone number: (123)456-7890
     /// - `99999-9999` - ZIP code: 12345-6789
     /// - `AAAA-99-####` - Custom pattern: ABCD-12-3AB4
-    /// - `*999*` - Custom pattern: (123) or [123]
+    /// - `*999*` - Custom pattern: `(123)` or `[123]`
     pub fn new(pattern: &str) -> Self {
         let tokens = pattern
             .chars()

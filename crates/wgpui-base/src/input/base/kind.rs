@@ -16,7 +16,7 @@
 //! modes go on [`MultiLineMode`]. Reaching for the wrong one is a compile
 //! error rather than a debug assertion.
 //!
-//! [`super::LayoutMode`] carries the same distinction at runtime, since the
+//! the internal layout mode carries the same distinction at runtime, since the
 //! engine branches on it while editing. The marker only decides which API is
 //! reachable.
 
@@ -137,7 +137,7 @@ impl InputExtras for () {}
 pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Whether this kind of input spans more than one line.
     ///
-    /// The kind decides this, not the layout: [`super::LayoutMode`] carries
+    /// The kind decides this, not the layout: the internal layout mode carries
     /// how many rows to show and how to grow, which is a different question
     /// from whether the input is a text field or a document. Deriving it from
     /// the layout let the two disagree — an auto-growing textarea capped at

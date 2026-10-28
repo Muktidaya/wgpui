@@ -24,7 +24,7 @@ pub use semantic_tokens::*;
 /// Host hook to show a document when following an LSP location
 /// (Go to Definition), modeled after the `window/showDocument` request.
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument>
 ///
 /// Called before the built-in behavior. Return `true` if the host has shown
 /// the document (e.g. opened a docs window for a virtual/external URI);
@@ -35,7 +35,7 @@ pub type ShowDocumentHandler =
 
 /// LSP ServerCapabilities
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#serverCapabilities
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#serverCapabilities>
 pub struct Lsp {
     /// The completion provider.
     pub completion_provider: Option<Rc<dyn CompletionProvider>>,
@@ -52,7 +52,7 @@ pub struct Lsp {
     /// Optional host hook to show documents for Go to Definition locations,
     /// following the `window/showDocument` request (see [`ShowDocumentHandler`]).
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument>
     pub show_document: Option<ShowDocumentHandler>,
 
     /// Display options for the completion popover.

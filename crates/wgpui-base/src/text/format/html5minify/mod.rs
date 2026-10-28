@@ -1,7 +1,7 @@
 //! HTML5 markup minifier.
 //!
 //! This is a fork of the `html5minify` crate.
-//! https://github.com/martingallagher/html5minify
+//! <https://github.com/martingallagher/html5minify>
 
 use std::{cell::RefCell, io, rc::Rc, str};
 

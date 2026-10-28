@@ -13,7 +13,7 @@ pub trait CodeActionProvider {
     ///
     /// textDocument/codeAction
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeAction
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeAction>
     fn code_actions(
         &self,
         state: Entity<EditorState>,
