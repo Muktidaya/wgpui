@@ -1,8 +1,8 @@
 //! Native platform entry for wgpui-component.
 //!
-//! Upstream gpui-component examples call `wgpui_platform::application()`. This
-//! crate is aliased as `gpui_platform` in the workspace so vendored source
-//! keeps compiling while routing through wgpui.
+//! The canonical `wgpui_platform::application()` entry routes applications through
+//! WGPUI's native wgpu/winit backend. Upstream GPUI Component attribution is
+//! preserved separately; this workspace does not require its old import alias.
 
 pub use wgpui::Application;
 

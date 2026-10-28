@@ -1505,7 +1505,7 @@ mod tests {
 
     /// The tab group's own frame has to be a flex column.
     ///
-    /// gpui's default display is Block, and block layout ignores a child's
+    /// WGPUI's default display is Block, and block layout ignores a child's
     /// `flex_grow`. With a plain `div()` frame the content region's `flex_1`
     /// does nothing, `#tab-content` sizes to its content, and its only child
     /// is the panel view positioned absolutely by `cached` — which

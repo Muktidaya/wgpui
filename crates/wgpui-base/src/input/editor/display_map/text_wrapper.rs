@@ -1033,7 +1033,7 @@ impl LineLayout {
 
     /// Paint only the glyph background quads of this line.
     ///
-    /// gpui's [`ShapedLine::paint`] does not draw backgrounds, so every line painted with
+    /// WGPUI's [`ShapedLine::paint`] does not draw backgrounds, so every line painted with
     /// [`Self::paint`] needs this called first, with the same origin and align width.
     pub(crate) fn paint_background(
         &self,

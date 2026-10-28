@@ -4,6 +4,7 @@
 #![allow(clippy::collapsible_else_if)] // False positives in platform specific code
 #![allow(unused_mut)] // False positives in platform specific code
 
+// Same-package macro expansions use the library name in both library and example targets.
 extern crate self as wgpui;
 
 #[macro_use]

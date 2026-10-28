@@ -109,6 +109,37 @@ fn direct_framework_macros_run_without_caller_aliases(cx: &mut TestAppContext) {
     });
 }
 '''
+style_source = '''use FRAMEWORK::*;
+
+pub trait ProbeStyle: Sized {
+    fn style(&mut self) -> &mut StyleRefinement;
+    wgpui_derive::style_helpers!();
+    wgpui_derive::visibility_style_methods!();
+    wgpui_derive::margin_style_methods!();
+    wgpui_derive::padding_style_methods!();
+    wgpui_derive::position_style_methods!();
+    wgpui_derive::overflow_style_methods!();
+    wgpui_derive::cursor_style_methods!();
+    wgpui_derive::border_style_methods!();
+    wgpui_derive::box_shadow_style_methods!();
+}
+
+#[derive(Default)]
+struct Probe { style: StyleRefinement }
+impl ProbeStyle for Probe {
+    fn style(&mut self) -> &mut StyleRefinement { &mut self.style }
+}
+
+#[test]
+fn renamed_style_macro_paths_apply_real_refinements() {
+    let probe = Probe::default().invisible().absolute().overflow_hidden()
+        .cursor_pointer().border_1().m_2().p_4().rounded_md().shadow_sm();
+    assert_eq!(probe.style.visibility, Some(Visibility::Hidden));
+    assert_eq!(probe.style.position, Some(Position::Absolute));
+    assert_eq!(probe.style.overflow.x, Some(Overflow::Hidden));
+    assert_eq!(probe.style.mouse_cursor, Some(CursorStyle::PointingHand));
+}
+'''
 with tempfile.TemporaryDirectory(prefix="wgpui-kit-consumers-") as temporary:
     for alias, defaults in [("wgpui_kit", True), ("ui", True), ("ui", False)]:
         directory = Path(temporary) / (alias + ("-default" if defaults else "-base"))
@@ -164,3 +195,21 @@ fn plot_macro_resolves_the_facade() {
         subprocess.run(["cargo", "+" + toolchain, "test", "--offline", "--manifest-path",
                         str(directory / "Cargo.toml"), "--lib"], env=environment, check=True, cwd=directory)
         print(f"PASS sole framework dependency: alias={alias}", flush=True)
+
+    # Explicit macro dependency fixtures, separate from sole-facade consumer checks.
+    for alias, package, path in [("engine", "wgpui", root), ("ui", "wgpui-kit", root / "crates/wgpui-kit")]:
+        directory = Path(temporary) / ("styles-" + alias)
+        (directory / "src").mkdir(parents=True)
+        (directory / "src/lib.rs").write_text(style_source.replace("FRAMEWORK", alias))
+        (directory / "Cargo.toml").write_text(
+            '[package]\nname = "style-consumer-check"\nversion = "0.0.0"\nedition = "2024"\npublish = false\n'
+            '[dependencies]\n' + alias + ' = { package = ' + json.dumps(package)
+            + ', path = ' + json.dumps(str(path)) + ', default-features = false }\n'
+            + 'wgpui_derive = { path = ' + json.dumps(str(root / 'crates/wgpui-derive')) + ' }\n'
+        )
+        shutil.copy2(root / "Cargo.lock", directory / "Cargo.lock")
+        environment = dict(os.environ)
+        environment.setdefault("CARGO_TARGET_DIR", str(root / "target"))
+        subprocess.run(["cargo", "+" + toolchain, "test", "--offline", "--manifest-path",
+                        str(directory / "Cargo.toml"), "--lib"], env=environment, check=True, cwd=directory)
+        print(f"PASS renamed style macros: package={package}, alias={alias}", flush=True)

@@ -527,7 +527,7 @@ const UPLOAD_BAR_THICKNESS: f32 = 2.;
 /// The card's border width; the padding box's corners are this much tighter.
 const CARD_BORDER: f32 = 1.;
 
-/// The upload bar along a card's bottom edge. gpui clips rectangularly, so a
+/// The upload bar along a card's bottom edge. WGPUI clips rectangularly, so a
 /// plain rectangle could not follow the corner curve; the bar is a filled path
 /// whose ends trace the inner corner arcs, as CSS `overflow: hidden` would.
 fn upload_bar(percent: f32, radius: Pixels, color: Hsla) -> impl IntoElement {
@@ -849,7 +849,7 @@ impl RenderOnce for AttachmentMedia {
                 tokens.colors.foreground
             })
             .when_some(source, |this, source| {
-                // gpui clips rectangularly, so the slot's `overflow_hidden` cannot
+                // WGPUI clips rectangularly, so the slot's `overflow_hidden` cannot
                 // round the image: it carries the slot's radius itself, including
                 // a caller's `.rounded()` refinement.
                 let mut image = img(source)

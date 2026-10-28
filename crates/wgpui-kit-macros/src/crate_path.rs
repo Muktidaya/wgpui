@@ -2,10 +2,12 @@ use proc_macro_crate::{FoundCrate, crate_name};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
-/// Resolve the GPUI API exposed to the crate where a macro is expanded.
+/// Resolve the framework API exposed to the crate where a macro is expanded.
 ///
-/// Order: `wgpui` (this adaptor), then `wgpui-kit` and the import alias `gpui`, then
-/// upstream `gpui-kit` / `gpui-pre` so a later kit consumer still resolves.
+/// Canonical WGPUI packages come first. `proc_macro_crate` resolves their actual
+/// Cargo dependency keys, including downstream renames. The remaining names are
+/// legacy external-package compatibility probes, not workspace import aliases;
+/// they do not establish full upstream-platform compatibility.
 pub(crate) fn wgpui() -> syn::Result<TokenStream> {
     for name in ["wgpui", "wgpui-kit", "gpui", "gpui-kit", "gpui-pre"] {
         if let Ok(found) = crate_name(name) {

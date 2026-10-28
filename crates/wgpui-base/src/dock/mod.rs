@@ -163,7 +163,8 @@
 //! ```
 //!
 //! `crates/base/examples/showcase/components/dock.rs` is that program in full,
-//! renderers included — run it with `cargo run -p gpui-base dock`.
+//! renderers included. That historical showcase is excluded from the supported
+//! workspace targets; current styled dock rendering lives in `wgpui_component::dock`.
 //! `crates/component/src/dock` is the production skin over the same seam.
 
 mod active;

@@ -343,7 +343,7 @@ mod friction_spline {
 /// The set of gesture kinds that participate in recognition.
 ///
 /// Used by [`PlatformGestures::native_recognizers`] to declare which gestures
-/// the platform recognizes natively rather than leaving to gpui core's
+/// the platform recognizes natively rather than leaving to WGPUI core's
 /// portable recognizers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GestureKinds {
@@ -359,7 +359,7 @@ pub struct GestureKinds {
 }
 
 impl GestureKinds {
-    /// No gestures; gpui core's portable recognizers handle everything.
+    /// No gestures; WGPUI core's portable recognizers handle everything.
     pub const NONE: Self = Self {
         tap: false,
         long_press: false,

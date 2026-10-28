@@ -75,6 +75,7 @@ macro_rules! actions {
     };
 }
 
+// Same-package derives need a stable library name, including example targets.
 extern crate self as wgpui_kit;
 
 pub use ::wgpui::*;

@@ -3,7 +3,7 @@
 //! paragraphs, so this is where the per-paragraph text costs (shaping-cache
 //! lookups, line wrappers, measurement) show up.
 //!
-//! Run with `cargo bench -p gpui-base --bench text_view_scroll`.
+//! Run with `cargo bench -p wgpui-base --bench text_view_scroll`.
 
 use std::fmt::Write as _;
 

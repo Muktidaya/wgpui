@@ -1,5 +1,5 @@
 // The binary uses Kit; framework-only development dependencies also participate in macro lookup.
-use wgpui_kit as wgpui;
+extern crate wgpui_kit as wgpui;
 
 use wgpui_kit::{
     assets::Assets,

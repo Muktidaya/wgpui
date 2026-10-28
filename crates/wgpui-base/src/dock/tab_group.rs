@@ -693,7 +693,7 @@ impl Render for TabGroup {
             .test_support()
             // Structure, applied around whatever the renderer returns.
             //
-            // A column, and not a `div`: gpui's default display is Block, and
+            // A column, and not a `div`: WGPUI's default display is Block, and
             // in block layout a child's `flex_grow` is ignored -- the content
             // region below the tab bar resolves to zero height, because its
             // only descendant is the panel view, positioned absolutely and

@@ -123,7 +123,7 @@ pub(crate) fn horizontal_scroll_area(
 /// sit at the viewport corners; once the content scrolls, the clipped edge
 /// meets the notch square again. The cover fills each notch with the backdrop
 /// color, which reads as a rounded clip. The frame's own border needs no help:
-/// gpui paints an element's border after its children, so it already draws
+/// WGPUI paints an element's border after its children, so it already draws
 /// over both the scrolled content and these covers.
 ///
 /// Like [`ScrollableMask`], it must be a sibling of the scrolled element so it
@@ -153,7 +153,7 @@ impl RoundedFrameCover {
     /// The frame's border width, when the cover is a child of the bordered
     /// element itself: the cover's bounds are then the content box, so the
     /// painted notches are grown outward by this width to reach the border
-    /// box. The border itself needs no repaint — gpui paints an element's
+    /// box. The border itself needs no repaint — WGPUI paints an element's
     /// border after its children, so the frame's own border already draws
     /// over the covers.
     pub fn frame_border(mut self, width: Pixels) -> Self {
@@ -342,7 +342,7 @@ fn corner_notch_path(
 /// a vertical mask hands the event over to the ancestor scroller (CSS
 /// `overscroll-behavior: auto` chaining), while a horizontal mask keeps
 /// consuming it — a bubbled horizontal delta would get mapped onto a
-/// vertical-only ancestor by gpui's own wheel listener (see #2468).
+/// vertical-only ancestor by WGPUI's own wheel listener (see #2468).
 ///
 /// A mouse wheel has no horizontal axis, so a horizontal mask leaves it to the
 /// parent. Over a native horizontal scroller, [`Self::vertical_wheel`] scrolls
