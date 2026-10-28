@@ -1,0 +1,25 @@
+{
+  "license": "Apache-2.0",
+  "files": [
+    {
+      "file": "circle-arrow-demo.svg",
+      "bytes": 231,
+      "sha256": "613fd489c051a94fa6d156ac5180e0940fbce7d11aa5e5d938854492e7fd2e54"
+    },
+    {
+      "file": "colored-shapes-demo.svg",
+      "bytes": 334,
+      "sha256": "ba735b3853a06dad0b3f0e00256aa4b872f922a69bf548290666b21d24b94524"
+    },
+    {
+      "file": "geometric-animation.gif",
+      "bytes": 3529995,
+      "sha256": "affbb370bb5fd34cbf27e763932cf4e1297427767f098c76ffbd080b87bf49d7"
+    },
+    {
+      "file": "geometric-demo.png",
+      "bytes": 3134,
+      "sha256": "f11e063338d497ebf6d0a4ae85328f7022d95e19a3b2a753f4eda2865b346a23"
+    }
+  ]
+}

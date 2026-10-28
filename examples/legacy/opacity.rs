@@ -118,7 +118,7 @@ impl Render for HelloWorld {
                                 spread_radius: px(5.0),
                                 offset: point(px(10.0), px(10.0)),
                             }])
-                            .child(img("image/app-icon.png").size_8())
+                            .child(img("image/geometric-demo.png").size_8())
                             .child("Opacity Panel (Click to test)")
                             .child(
                                 div()
@@ -136,7 +136,7 @@ impl Render for HelloWorld {
                             )
                             .child(
                                 svg()
-                                    .path("image/arrow_circle.svg")
+                                    .path("image/circle-arrow-demo.svg")
                                     .text_color(wgpui::black())
                                     .text_2xl()
                                     .size_8(),
@@ -150,7 +150,7 @@ impl Render for HelloWorld {
                                             .hover(|style| style.opacity(0.5))
                                     })),
                             )
-                            .child(img("image/black-cat-typing.gif").size_12()),
+                            .child(img("image/geometric-animation.gif").size_12()),
                     ),
             )
     }
@@ -159,7 +159,7 @@ impl Render for HelloWorld {
 fn main() {
     Application::new()
         .with_assets(Assets {
-            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples"),
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/legacy"),
         })
         .run(|cx: &mut App| {
             let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
