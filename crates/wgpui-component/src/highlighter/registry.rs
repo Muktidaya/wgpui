@@ -109,9 +109,7 @@ impl LanguageConfig {
     }
 }
 
-/// Theme for Tree-sitter Highlight
-///
-/// <https://docs.rs/tree-sitter-highlight/0.27.1/tree_sitter_highlight/>
+/// Semantic token colors used by syntax highlighters and [`HighlightTheme`].
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, JsonSchema, Serialize, Deserialize)]
 pub struct SyntaxColors {
     pub attribute: Option<ThemeStyle>,
