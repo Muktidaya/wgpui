@@ -3,7 +3,9 @@
 Adapted from the historical GPUI Component/Kit theme catalog. Each JSON file
 preserves its original theme name, author and source URL. The source snapshot
 and original histories are recorded in [upstream provenance](../../../docs/kit/upstream-provenance.md).
-The retained [Apache-2.0 license](LICENSE-APACHE) accompanies this catalog.
+The retained [Apache-2.0 license](LICENSE-APACHE) accompanies the catalog adaptation.
+[Source-specific notices and open scope findings](SOURCE-NOTICES.md) apply to
+the underlying palettes; schema compatibility is separate from license review.
 
 These themes are optional data, not an automatically loaded bundle. Use
 `ThemeRegistry::load_themes_from_str` or an application-owned watched directory.

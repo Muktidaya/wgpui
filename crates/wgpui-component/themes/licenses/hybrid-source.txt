@@ -1,0 +1,70 @@
+" File:       hybrid.vim
+" Maintainer: Andrew Wong (w0ng)
+" URL:        https://github.com/w0ng/vim-hybrid
+" Modified:   27 Jan 2013 07:33 AM AEST
+" License:    MIT
+
+" Description:"{{{
+" ----------------------------------------------------------------------------
+" The default RGB colour palette is taken from Tomorrow-Night.vim:
+" https://github.com/chriskempson/vim-tomorrow-theme
+"
+" The reduced RGB colour palette is taken from Codecademy's online editor:
+" https://www.codecademy.com/learn
+"
+" The syntax highlighting scheme is taken from jellybeans.vim:
+" https://github.com/nanotech/jellybeans.vim
+"
+" The is code taken from solarized.vim:
+" https://github.com/altercation/vim-colors-solarized
+
+"}}}
+" Requirements And Recommendations:"{{{
+" ----------------------------------------------------------------------------
+" Requirements
+"   - gVim 7.3+ on Linux, Mac and Windows.
+"   - Vim 7.3+ on Linux and Mac, using a terminal that supports 256 colours.
+"
+" Due to the limited 256 palette, colours in Vim and gVim will still be slightly
+" different.
+"
+" In order to have Vim use the same colours as gVim (the way this colour scheme
+" is intended), it is recommended that you define the basic 16 colours in your
+" terminal.
+"
+" For Linux users (rxvt-unicode, xterm):
+"
+" 1.  Add the default palette to ~/.Xresources:
+"
+"         https://gist.github.com/3278077
+"
+"     or alternatively, add the reduced contrast palette to ~/.Xresources:
+"
+"         https://gist.github.com/w0ng/16e33902508b4a0350ae
+"
+" 2.  Add to ~/.vimrc:
+"
+"         let g:hybrid_custom_term_colors = 1
+"         let g:hybrid_reduced_contrast = 1 " Remove this line if using the default palette.
+"         colorscheme hybrid
+"
+" For OSX users (iTerm):
+"
+" 1.  Import the default colour preset into iTerm:
+"
+"         https://raw.githubusercontent.com/w0ng/dotfiles/master/iterm2/hybrid.itermcolors
+"
+"     or alternatively, import the reduced contrast color preset into iTerm:
+"
+"         https://raw.githubusercontent.com/w0ng/dotfiles/master/iterm2/hybrid-reduced-contrast.itermcolors
+"
+" 2.  Add to ~/.vimrc:
+"
+"         let g:hybrid_custom_term_colors = 1
+"         let g:hybrid_reduced_contrast = 1 " Remove this line if using the default palette.
+"         colorscheme hybrid
+
+"}}}
+" Initialisation:"{{{
+" ----------------------------------------------------------------------------
+
