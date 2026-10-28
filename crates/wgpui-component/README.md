@@ -19,6 +19,6 @@ The source candidate includes optional speech input, Syntect highlighting and th
 
 See the [Kit guide](https://github.com/Muktidaya/wgpui/blob/root/docs/kit.md)
 for package paths, features, migration details, and acceptance boundaries.
-Upstream's original documents remain in `upstream-kit/` in the source repository.
+Current architecture/design/testing guides live in `docs/kit/`; upstream provenance and retired source recovery are recorded there.
 
 Licensed under Apache-2.0. Upstream attribution and history are preserved.

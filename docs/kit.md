@@ -84,7 +84,7 @@ The renderer remains WGPUI's own backend. Browser, webview/shell and mobile plat
 
 Validation follows upstream's default GPUI behavior on WGPUI. The optional GPUI Fast backend has separate automatic-retention contracts: upstream gates nine whole tests and one render-count sub-block behind that backend feature. Those contracts are recorded as backend exclusions in the acceptance inventory. Ordinary selection, insertion, reordering, removal, remount, control and style assertions remain active. WGPUI renders uncached entity views normally and supports explicit cached views.
 
-The excluded upstream-kit directory remains historical reference source and does not define an active workspace.
+Historical reference content has been consolidated into [current Kit guides](kit/README.md), optional Component themes and selected native examples. [Upstream provenance](kit/upstream-provenance.md) records the retired sources and their recoverable Git history.
 
 Framework changes needed by the port include shaped character widths, device-pixel snapping, raw SVG bytes, custom test text systems, nested deferred draws with stable cache indices, accessibility focus metadata, and façade-aware derive macros. These changes retain WGPUI's rendering backend.
 

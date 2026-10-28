@@ -1,7 +1,7 @@
 [workspace]
 members = [".", "crates/wgpui-fps", "crates/wgpui-http-client", "crates/wgpui-derive", "crates/wgpui-perf", "crates/wgpui-base", "crates/wgpui-component", "crates/wgpui-kit-macros", "crates/wgpui-kit-assets", "crates/wgpui-platform", "crates/wgpui-kit", "crates/wgpui-kit-harness", "examples/kit-hello-world"]
 default-members = [".", "crates/wgpui-fps", "crates/wgpui-kit"]
-exclude = ["upstream-kit", "crates/wgpui-base/examples/native", "crates/wgpui-base/examples/wasm"]
+exclude = ["crates/wgpui-base/examples/native", "crates/wgpui-base/examples/wasm"]
 resolver = "3"
 
 [package]
@@ -28,7 +28,6 @@ exclude = [
     "flake.lock",
     "flake.nix",
     "scripts/",
-    "upstream-kit/",
     "crates/",
     "docs/kit-migration-plan.md",
     "docs/kit-migration-parity.json",

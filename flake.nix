@@ -68,7 +68,6 @@
               "flake.nix"
               "result"
               "target"
-              "upstream-kit"
             ])
             && !(lib.hasPrefix ".env" name);
         };

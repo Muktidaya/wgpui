@@ -106,7 +106,10 @@ fn painted_background_bounds(color: u32, cx: &mut VisualTestContext) -> Vec<Boun
             .painted_quads()
             .into_iter()
             .filter(|quad| quad.background == background)
-            .map(|quad| quad.bounds.map(|value| px(f64::from(value) as f32 / scale_factor)))
+            .map(|quad| {
+                quad.bounds
+                    .map(|value| px(f64::from(value) as f32 / scale_factor))
+            })
             .collect()
     })
 }

@@ -1,8 +1,10 @@
 [package]
 name = "wgpui-kit-hello-world"
+default-run = "wgpui-kit-hello-world"
 description = "A minimal application using WGPUI Kit."
 version = "0.8.1"
 publish = false
+license = "Apache-2.0"
 edition.workspace = true
 rust-version.workspace = true
 

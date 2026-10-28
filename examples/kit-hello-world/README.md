@@ -18,3 +18,7 @@ cargo +1.95.0 run -p wgpui-kit-hello-world
 The example is unpublished and does not require a sibling repository checkout.
 See [the Kit guide](../../docs/kit.md) for initialization, feature flags,
 published-version information and the candidate's validation boundaries.
+
+Additional adapted native examples are available as `--bin tooltip_top_edge` and
+`--bin custom_title_bar`; see [themes and examples](../../docs/kit/themes-and-examples.md).
+The default run target remains `wgpui-kit-hello-world`.

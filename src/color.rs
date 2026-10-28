@@ -26,12 +26,11 @@ pub fn rgba(hex: u32) -> Rgba {
 pub(crate) fn unpremultiply_rgba(bytes: &mut [u8]) {
     for pixel in bytes.chunks_exact_mut(4) {
         let alpha = u32::from(pixel[3]);
-        if alpha > 0 {
-            for channel in pixel.iter_mut().take(3) {
-                *channel = (u32::from(*channel) * 255 / alpha).min(255) as u8;
-            }
-        } else {
-            pixel[..3].fill(0);
+        for channel in pixel.iter_mut().take(3) {
+            *channel = (u32::from(*channel) * 255)
+                .checked_div(alpha)
+                .unwrap_or_default()
+                .min(255) as u8;
         }
     }
 }

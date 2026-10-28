@@ -8,8 +8,8 @@ Before changing UI, interaction, interface language, layout, styling,
 components, or application architecture, read and follow the repository's
 canonical guides:
 
-- [Design Guides](../../upstream-kit/website/docs/design-guides.md)
-- [Coding Guides](../../upstream-kit/website/docs/coding-guides.md)
+- [Design Guides](../../docs/kit/design-guides.md)
+- [Coding Guides](../../docs/kit/coding-guides.md)
 
 These guides are requirements, not optional inspiration. Do not copy generic
 web conventions, infer a design system from one existing screen, or add a
@@ -82,8 +82,8 @@ samply record cargo +1.95.0 run -p wgpui-kit-hello-world
 ### Architecture Refactoring Constraints
 
 The implemented foundation architecture is documented in
-`upstream-kit/docs/ARCHITECTURE.md`, with styling and motion rules in
-`upstream-kit/docs/STYLING-AND-MOTION.md`. Preserve these constraints when designing or
+`docs/kit/architecture.md`, with styling and motion rules in
+`docs/kit/styling-and-motion.md`. Preserve these constraints when designing or
 implementing this architecture:
 
 - Do not modify `gpui-base` unless the user explicitly requests a Base-layer
@@ -153,7 +153,7 @@ The first view of every window must be a `Root`.
 ### Dock System
 
 Layout behavior lives in `crates/wgpui-base/src/dock`; `crates/wgpui-component/src/dock` is a
-presentation skin (`DockSkin`) over it. See `upstream-kit/docs/ARCHITECTURE.md`.
+presentation skin (`DockSkin`) over it. See `docs/kit/architecture.md`.
 
 - **`LayoutTree`**: Pure-data layout tree, the single source of truth.
   - `NodeKind::Split` / `Tabs` / `Tiles`: containers, addressed by `NodeId`
@@ -210,7 +210,7 @@ Text input system based on Rope data structure:
    non-boolean fields prefixes every setter with `with_` and keeps the field name for
    readers. Value types whose fields are the definition and cannot grow (`Point`,
    `Selection`, `Edges`) are exempt. See the "Public Data Types Across the Seam" section
-   of `upstream-kit/docs/ARCHITECTURE.md`.
+   of `docs/kit/architecture.md`.
 8. **Spell `Context` out**: Name a context type `ComboboxTriggerContext`, never `…Ctx`.
    `cx` is reserved for GPUI's `App`, `Context<T>`, and `AsyncApp`, so `ctx` for anything
    else reads as a competing context. A callback receiving both takes the GPUI one as `cx`
@@ -266,22 +266,12 @@ Uses `rust-i18n` crate.
 
 ## Documentation
 
-- The documentation site source is in `upstream-kit/website/`.
-- Site docs have two locales: English (`upstream-kit/website/docs/`) and Chinese (`upstream-kit/website/zh-CN/docs/`).
-- When modifying any documentation file, always sync changes to both `en` and `zh-CN` versions.
-- `upstream-kit/docs/` holds internal architecture specifications (RFC, migration status, reviews).
-  These are single-language and are not published to the site; see `upstream-kit/docs/README.md`.
-- `skills/gpui-component/references/{coding,design}-guides.md` are verbatim copies
-  of the English `upstream-kit/website/docs/` originals, vendored so the skill works after
-  `npx skills add` in a project that does not have this repo. After editing either
-  guide, copy it across:
-
-  ```bash
-  cp website/docs/design-guides.md skills/gpui-component/references/design-guides.md
-  cp website/docs/coding-guides.md skills/gpui-component/references/coding-guides.md
-  ```
-
-  CI fails if the copies drift. Never edit the copy directly — edit `upstream-kit/website/docs/`.
+The current architecture, design, coding, style and testing guides live in
+`docs/kit/`. Update those canonical guides and the public API documentation when
+behavior changes. The historical multilingual website and vendored skill copies
+are retired; their recovery and provenance are documented in
+`docs/kit/upstream-provenance.md`. Do not describe them as active site or skill
+packages, and do not copy unsupported shell/browser contracts into native docs.
 
 ## Platform Support
 
@@ -291,19 +281,18 @@ Uses `rust-i18n` crate.
 
 The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--all-targets` checks, `--lib --tests` tests and an explicit real-renderer target. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
 
-## Skills Reference
+## Guide Reference
 
-This project has custom skills to assist with common development tasks:
-
-- [GPUI Kit reference](../../upstream-kit/skills/gpui-kit/SKILL.md): framework, component, and coding-guide references. This is vendored upstream guidance; its package/setup examples do not supersede the adapter's WGPUI package and workspace boundaries above.
-- [Design guide reference](../../upstream-kit/website/docs/design-guides.md): the retained desktop design guidance.
-- The old separate contributing-skill directory is absent. Use this file, the canonical guides, and established repository examples for contribution and PR conventions.
-
-Read the appropriate skill when working on tasks related to these areas.
+Use the canonical [design](../../docs/kit/design-guides.md),
+[coding](../../docs/kit/coding-guides.md),
+[architecture](../../docs/kit/architecture.md) and
+[testing](../../docs/kit/testing.md) guides for the current workspace.
+Historical installable skill copies are recoverable in Git but are not active
+packages in this checkout.
 
 ## Testing Guidelines
 
-See [.agents/rules/component-testing.md](../../upstream-kit/.agents/rules/component-testing.md) for detailed testing principles:
+See [testing principles](../../docs/kit/testing.md) for detailed testing principles:
 
 - **Simplicity First**: Focus on complex logic and core functionality, avoid excessive simple tests
 - **Builder Pattern Testing**: Test builder composition when it has nontrivial behavior or invariants; avoid boilerplate setter assertions

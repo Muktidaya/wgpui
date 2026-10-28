@@ -6,6 +6,6 @@ Supporting crates live under `crates/`; examples live under `examples/`. The fra
 
 The parity target includes the Kit API, component behavior, assets, test helpers, profiling, speech and syntax-highlighting features on the existing native backend. Alternative GPUI engines and browser or mobile integrations are outside this backend selection. Source import and compilation do not establish completed behavior or rendering acceptance.
 
-See [Kit documentation](kit.md), [the acceptance inventory](kit-migration-parity.json), and [release status](../STATUS.md) for the supported API and validation results. Unported sources in `upstream-kit/` remain historical references, excluded from the active workspace and published packages.
+See [Kit documentation](kit.md), [the acceptance inventory](kit-migration-parity.json), and [release status](../STATUS.md) for the supported API and validation results. The former historical snapshot is retired from the working tree; [upstream provenance](kit/upstream-provenance.md) records adapted guides, themes and examples plus Git recovery for unported source.
 
 Public project documents describe this repository's architecture, supported behavior and reproducible verification. Operator-specific migration plans and deployment context are maintained separately.

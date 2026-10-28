@@ -10,7 +10,7 @@ Processed images and color glyphs use straight-alpha RGBA; native byte orders an
 
 Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatch.md](docs/key_dispatch.md).
 
-This consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, an application façade and component library adapted from [GPUI Kit 0.8.1](https://github.com/longbridge/gpui-kit). See [STATUS.md](STATUS.md) for validation and release state.
+This consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, an application façade and component library adapted from [GPUI Kit 0.8.1](https://github.com/longbridge/gpui-kit). See [STATUS.md](STATUS.md) for validation and release state and [Kit engineering guides](docs/kit/README.md) for current architecture, design, themes and selected examples.
 
 Headless Linux rendering tests require a Vulkan implementation as well as the loader. On Debian and Ubuntu, Mesa software rendering uses `mesa-vulkan-drivers`, with `libegl1` and `libgl1-mesa-dri` for the OpenGL fallback. Install `vulkan-tools` and run `vulkaninfo --summary` to verify adapter discovery before the real-renderer tests. A loader or development headers alone do not supply a software GPU implementation.
 
