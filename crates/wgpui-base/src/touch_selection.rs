@@ -9,7 +9,7 @@
 //! to draw them. The handles and the menu themselves are drawn by the styled
 //! layer, which also decides how large a handle's touch target is.
 
-use gpui::{Bounds, Hsla, Pixels, Point, Window, fill, point, px, size};
+use wgpui::{Bounds, Hsla, Pixels, Point, Window, fill, point, px, size};
 
 /// One end of a selection, as a touch handle grabs it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

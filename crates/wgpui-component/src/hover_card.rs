@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Anchor, AnyElement, App, Context, ElementId, InteractiveElement as _, IntoElement,
     ParentElement, RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
-use gpui_base::HoverCard as BaseHoverCard;
-pub use gpui_base::HoverCardState;
-use instant::Duration;
+use wgpui_base::HoverCard as BaseHoverCard;
+pub use wgpui_base::HoverCardState;
 
 use crate::{StyledExt as _, popover::Popover};
 
@@ -171,7 +171,7 @@ impl RenderOnce for HoverCard {
 mod tests {
     use super::*;
     use crate::{button::Button, h_flex};
-    use gpui::{Context, Render, point, px};
+    use wgpui::{Context, Render, point, px};
 
     struct TriggerStyleHarness {
         styled: bool,
@@ -209,8 +209,8 @@ mod tests {
     /// `trigger_style` styles the container the parent lays out and the card
     /// is anchored to. Applied to anything nested inside it, `w_full` would
     /// resolve against a container that only wraps its content.
-    #[gpui::test]
-    fn trigger_style_is_applied_to_the_trigger_container(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_style_is_applied_to_the_trigger_container(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|_, _| TriggerStyleHarness { styled: false });
         cx.update(|window, cx| window.draw(cx).clear());

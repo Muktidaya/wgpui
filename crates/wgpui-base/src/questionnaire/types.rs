@@ -1,6 +1,6 @@
 use std::{error::Error, fmt, rc::Rc};
 
-use gpui::{Entity, SharedString};
+use wgpui::{Entity, SharedString};
 
 use crate::input::InputState;
 

@@ -3,14 +3,14 @@ use std::rc::Rc;
 
 use instant::Instant;
 
-use gpui::{
+use wgpui::{
     App, Axis, BorderStyle, Bounds, ContentMask, Edges, Element, ElementId, GlobalElementId,
     Hitbox, Hsla, InteractiveElement as _, IntoElement, IsZero as _, LayoutId, OngoingScroll,
     PaintQuad, ParentElement as _, Point, Position, ScrollDelta, ScrollEvent, ScrollHandle,
     StatefulInteractiveElement as _, Style, StyleRefinement, Styled as _, Window, div, px,
     relative,
 };
-use gpui::{Corners, Pixels};
+use wgpui::{Corners, Pixels};
 
 use crate::{AxisExt, OngoingScrollExt as _, ScrollbarHandle, StyledExt as _};
 
@@ -129,7 +129,7 @@ pub(crate) fn horizontal_scroll_area(
 /// Like [`ScrollableMask`], it must be a sibling of the scrolled element so it
 /// does not move with the scroll offset.
 pub struct RoundedFrameCover {
-    corner_radii: Corners<Option<gpui::AbsoluteLength>>,
+    corner_radii: Corners<Option<wgpui::AbsoluteLength>>,
     backdrop: Option<Hsla>,
     frame_border: Pixels,
 }
@@ -192,7 +192,7 @@ impl Element for RoundedFrameCover {
     fn request_layout(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
@@ -210,7 +210,7 @@ impl Element for RoundedFrameCover {
     fn prepaint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         _: &mut Window,
@@ -229,7 +229,7 @@ impl Element for RoundedFrameCover {
     fn paint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         cover_bounds: &mut Self::PrepaintState,
@@ -246,7 +246,7 @@ impl Element for RoundedFrameCover {
             bounds.size.height += self.frame_border * 2.;
         }
         let rem_size = window.rem_size();
-        let resolve = |corner: Option<gpui::AbsoluteLength>| {
+        let resolve = |corner: Option<wgpui::AbsoluteLength>| {
             corner
                 .map(|radius| radius.to_pixels(rem_size))
                 .filter(|radius| !radius.is_zero())
@@ -297,8 +297,8 @@ fn corner_notch_path(
     x_dir: f32,
     y_dir: f32,
     radius: Pixels,
-) -> Option<gpui::Path<Pixels>> {
-    let mut builder = gpui::PathBuilder::fill();
+) -> Option<wgpui::Path<Pixels>> {
+    let mut builder = wgpui::PathBuilder::fill();
     builder.move_to(corner);
     builder.line_to(Point {
         x: corner.x + radius * x_dir,
@@ -330,7 +330,7 @@ fn corner_notch_path(
 /// This is only can handle once axis scrolling.
 ///
 /// Axis-dominant wheel events are consumed in the capture phase, so the mask
-/// wins over ancestor scrollers (e.g. `gpui::list`) that register their
+/// wins over ancestor scrollers (e.g. `wgpui::list`) that register their
 /// listeners after their children; events dominated by the other axis keep
 /// propagating. The mask stays inert while occluded.
 ///
@@ -399,7 +399,7 @@ impl<H: ScrollbarHandle + Clone> ScrollableMask<H> {
     /// Enable the debug border, to show the mask bounds.
     #[allow(dead_code)]
     pub fn debug(mut self) -> Self {
-        self.debug = Some(gpui::yellow());
+        self.debug = Some(wgpui::yellow());
         self
     }
 }
@@ -434,7 +434,7 @@ impl<H: ScrollbarHandle + Clone> Element for ScrollableMask<H> {
     fn request_layout(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
@@ -456,19 +456,19 @@ impl<H: ScrollbarHandle + Clone> Element for ScrollableMask<H> {
     fn prepaint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         window: &mut Window,
         _: &mut App,
     ) -> Self::PrepaintState {
-        window.insert_hitbox(bounds, gpui::HitboxBehavior::Normal)
+        window.insert_hitbox(bounds, wgpui::HitboxBehavior::Normal)
     }
 
     fn paint(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         hitbox: &mut Self::PrepaintState,
@@ -494,7 +494,7 @@ impl<H: ScrollbarHandle + Clone> Element for ScrollableMask<H> {
                     bounds,
                     border_widths: Edges::all(px(1.0)),
                     border_color: color,
-                    background: gpui::transparent_white().into(),
+                    background: wgpui::transparent_white().into(),
                     corner_radii: Corners::all(px(0.)),
                     border_style: BorderStyle::default(),
                 });
@@ -508,7 +508,7 @@ impl<H: ScrollbarHandle + Clone> Element for ScrollableMask<H> {
 
                 move |event: &ScrollEvent, phase, window, cx| {
                     // Handle in the capture phase: ancestor scrollers such as
-                    // `gpui::list` register their wheel listeners after their
+                    // `wgpui::list` register their wheel listeners after their
                     // children paint, so in the bubble phase (reverse
                     // registration order) they run first and would consume the
                     // vertical component of a trackpad swipe before this mask
@@ -634,7 +634,7 @@ impl<H: ScrollbarHandle + Clone> Element for ScrollableMask<H> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         Context, IntoElement, ListAlignment, ListState, Render, ScrollDelta, ScrollEvent,
         TestAppContext, VisualTestContext, Window, div, list, point, px,
     };
@@ -698,7 +698,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_ignores_vertical_wheel(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -723,7 +723,7 @@ mod tests {
     }
 
     /// Reproduces the markdown table case: the scroll area lives inside a
-    /// `gpui::list` item. The list registers its wheel listener after its
+    /// `wgpui::list` item. The list registers its wheel listener after its
     /// items paint, so in the bubble phase (reverse registration order) the
     /// list runs first and consumes `delta.y` of every trackpad swipe.
     struct ListWithHorizontalAreaTest {
@@ -782,7 +782,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_in_list_keeps_horizontal_dominant_wheel(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -803,7 +803,7 @@ mod tests {
         assert_eq!((scroll_top.item_ix, scroll_top.offset_in_item), (0, px(0.)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_in_list_bubbles_vertical_dominant_wheel(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -821,7 +821,7 @@ mod tests {
         assert_ne!((scroll_top.item_ix, scroll_top.offset_in_item), (0, px(0.)));
     }
 
-    /// A `MessageScroller`-shaped nesting: a `gpui::list` with a vertical
+    /// A `MessageScroller`-shaped nesting: a `wgpui::list` with a vertical
     /// mask bound to its `ListState`, inside an ancestor vertical scroller.
     struct ListWithVerticalMaskTest {
         outer_handle: ScrollHandle,
@@ -876,7 +876,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_contains_wheel_inside_the_list(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         // A large overdraw measures every row up front, so the mask sees the
@@ -895,12 +895,12 @@ mod tests {
         assert_eq!(outer_handle.offset().y, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_chains_to_the_ancestor_at_the_edge(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(1000.));
         // Start the inner list at its bottom edge (400 - 80 = 320).
-        list_state.scroll_to(gpui::ListOffset {
+        list_state.scroll_to(wgpui::ListOffset {
             item_ix: 8,
             offset_in_item: px(0.),
         });
@@ -917,7 +917,7 @@ mod tests {
         assert_eq!(outer_handle.offset().y, px(-40.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_covers_viewport_after_scrolled(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -942,7 +942,7 @@ mod tests {
         assert_eq!((scroll_top.item_ix, scroll_top.offset_in_item), (0, px(0.)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_traps_wheel_at_edge(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -966,7 +966,7 @@ mod tests {
         assert_eq!((scroll_top.item_ix, scroll_top.offset_in_item), (0, px(0.)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_ignores_wheel_when_occluded(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -983,7 +983,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_uses_horizontal_wheel(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1007,7 +1007,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(-40.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_area_claims_only_steps_that_move(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1037,7 +1037,7 @@ mod tests {
         cx.update(|window, cx| {
             let mut dispatch = |delta_x: f32| {
                 window.dispatch_event(
-                    gpui::PlatformInput::Scroll(ScrollEvent {
+                    wgpui::PlatformInput::Scroll(ScrollEvent {
                         position: point(px(10.), px(10.)),
                         delta: ScrollDelta::Pixels(point(px(delta_x), px(0.))),
                         ..Default::default()
@@ -1089,7 +1089,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_mask_keeps_axis_lock_within_a_gesture(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let cx = setup_horizontal_area_test(cx, &scroll_handle);
@@ -1112,7 +1112,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(-50.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_mask_releases_axis_lock_on_a_strong_turn(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let cx = setup_horizontal_area_test(cx, &scroll_handle);
@@ -1191,7 +1191,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_consumes_wheel_when_scrollable(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         let inner_handle = ScrollHandle::new();
@@ -1208,7 +1208,7 @@ mod tests {
         assert_eq!(outer_handle.offset().y, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_hands_off_to_parent_at_edge(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         let inner_handle = ScrollHandle::new();
@@ -1235,7 +1235,7 @@ mod tests {
         assert_eq!(inner_handle.offset().y, px(-240.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_bubbles_when_no_overflow(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         let inner_handle = ScrollHandle::new();
@@ -1255,7 +1255,7 @@ mod tests {
         assert_eq!(inner_handle.offset().y, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_ignores_transient_overscroll(cx: &mut TestAppContext) {
         let outer_handle = ScrollHandle::new();
         let inner_handle = ScrollHandle::new();
@@ -1284,7 +1284,7 @@ mod tests {
         assert_eq!(inner_handle.offset().y, px(-240.));
     }
 
-    /// The vertical mask nested in a `gpui::list` ancestor: the list
+    /// The vertical mask nested in a `wgpui::list` ancestor: the list
     /// registers its wheel listener after its items paint, so only a
     /// capture-phase mask can stop it from scrolling on the same event.
     struct ListWithVerticalAreaTest {
@@ -1322,7 +1322,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mask_in_list_consumes_wheel_when_scrollable(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let list_state = ListState::new(10, ListAlignment::Top, px(0.));
@@ -1409,7 +1409,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_wheel_scrolls_the_strip_and_then_the_parent(cx: &mut TestAppContext) {
         let (cx, strip, page) = vertical_wheel_test(cx);
         let line_height = cx.update(|window, _| window.line_height());
@@ -1431,7 +1431,7 @@ mod tests {
         assert_eq!(strip.offset().x, px(-200.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_wheel_leaves_trackpads_and_horizontal_wheels_to_the_scroller(
         cx: &mut TestAppContext,
     ) {

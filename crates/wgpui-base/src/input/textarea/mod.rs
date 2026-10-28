@@ -1,4 +1,4 @@
-use gpui::{App, Entity, IntoElement, RenderOnce, Window};
+use wgpui::{App, Entity, IntoElement, RenderOnce, Window};
 
 use super::{InputBaseState, TextareaMode};
 

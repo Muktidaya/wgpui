@@ -1,5 +1,5 @@
-use gpui::{IntoElement, ParentElement as _, Styled as _, div, px};
-use gpui_base::{h_resizable, resizable_panel};
+use wgpui::{IntoElement, ParentElement as _, Styled as _, div, px};
+use wgpui_base::{h_resizable, resizable_panel};
 
 use super::super::BaseShowcase;
 

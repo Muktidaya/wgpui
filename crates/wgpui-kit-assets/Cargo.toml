@@ -21,7 +21,7 @@ doctest = false
 
 [dependencies]
 anyhow.workspace = true
-gpui.workspace = true
+wgpui.workspace = true
 log.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]

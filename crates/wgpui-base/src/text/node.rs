@@ -5,7 +5,8 @@ use std::{
     sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-use gpui::{
+use markdown::mdast;
+use wgpui::{
     AnyElement, App, Axis, Bounds, DefiniteLength, Div, Element, ElementId, FontStyle, FontWeight,
     GlobalElementId, HighlightStyle, Hsla, Image, ImageFormat, ImageSource, InspectorElementId,
     InteractiveElement as _, IntoElement, IsZero as _, LayoutId, ObjectFit, Overflow,
@@ -13,7 +14,6 @@ use gpui::{
     StatefulInteractiveElement, StyleRefinement, Styled, StyledImage as _, TextStyleRefinement,
     WhiteSpace, Window, div, img, prelude::FluentBuilder as _, px, relative, rems,
 };
-use markdown::mdast;
 
 use crate::{
     GlobalState, ScrollableMask, Scrollbar, StyledExt, h_flex,
@@ -357,7 +357,7 @@ impl Element for CustomBlockElement {
         self.content.paint(window, cx);
         if selection == Some(BlockSelection::Full) {
             let color = view.as_ref().unwrap().read(cx).text_view_style.selection();
-            window.paint_quad(gpui::fill(bounds, color));
+            window.paint_quad(wgpui::fill(bounds, color));
         }
     }
 }
@@ -2021,7 +2021,7 @@ impl std::fmt::Debug for TableColumnWidthsCache {
 }
 
 struct TableColumnWidths {
-    text_system: Weak<gpui::WindowTextSystem>,
+    text_system: Weak<wgpui::WindowTextSystem>,
     /// The styles the header row and the body rows render with.
     text_styles: TableTextStyles,
     rem_size: Pixels,
@@ -2037,8 +2037,8 @@ struct TableColumnWidths {
 /// `style.table_cell` on every cell, in the order the elements apply them.
 #[derive(Clone, PartialEq)]
 struct TableTextStyles {
-    head: gpui::TextStyle,
-    body: gpui::TextStyle,
+    head: wgpui::TextStyle,
+    body: wgpui::TextStyle,
     head_refinement: TextStyleRefinement,
     body_refinement: TextStyleRefinement,
 }
@@ -2066,7 +2066,7 @@ impl TableTextStyles {
         }
     }
 
-    fn row(&self, row_ix: usize) -> &gpui::TextStyle {
+    fn row(&self, row_ix: usize) -> &wgpui::TextStyle {
         if row_ix == 0 { &self.head } else { &self.body }
     }
 
@@ -2620,7 +2620,7 @@ impl CodeBlock {
             // Scroll mode is opted in by setting `style.code_block`'s
             // `overflow.y` to `Overflow::Scroll`.
             // The mask consumes the wheel in the capture phase, so an ancestor
-            // `gpui::list` doesn't scroll on the same event. Mask, scrollbar
+            // `wgpui::list` doesn't scroll on the same event. Mask, scrollbar
             // and actions are siblings of the scrolled block, so they stay
             // pinned to the viewport instead of moving with the code.
             div()
@@ -2738,14 +2738,14 @@ fn mark_highlight(mark: &TextMark, node_cx: &NodeContext, cx: &App) -> InlineHig
         highlight.font_style = Some(FontStyle::Italic);
     }
     if mark.strikethrough {
-        highlight.strikethrough = Some(gpui::StrikethroughStyle {
-            thickness: gpui::px(1.),
+        highlight.strikethrough = Some(wgpui::StrikethroughStyle {
+            thickness: wgpui::px(1.),
             ..Default::default()
         });
     }
     if mark.underline {
-        highlight.underline = Some(gpui::UnderlineStyle {
-            thickness: gpui::px(1.),
+        highlight.underline = Some(wgpui::UnderlineStyle {
+            thickness: wgpui::px(1.),
             ..Default::default()
         });
     }
@@ -3209,8 +3209,8 @@ fn leaf_element_id(fade_key: Option<TextLeafKey>) -> ElementId {
 
 /// A link's underline: a hairline in a translucent link color, so a run of
 /// links reads as text first and as links second.
-fn link_underline(style: &TextViewStyle) -> gpui::UnderlineStyle {
-    gpui::UnderlineStyle {
+fn link_underline(style: &TextViewStyle) -> wgpui::UnderlineStyle {
+    wgpui::UnderlineStyle {
         thickness: px(1.),
         color: Some(style.link().opacity(0.4)),
         ..Default::default()
@@ -3454,7 +3454,7 @@ fn measure_table_text_columns(
                         })
                     })
                     .collect::<Vec<_>>();
-                let mut line_w = gpui::Pixels::ZERO;
+                let mut line_w = wgpui::Pixels::ZERO;
                 for (range, scale) in
                     text_size_ranges(line.len(), &line_highlights, font_size, window.rem_size())
                 {
@@ -4021,7 +4021,7 @@ impl BlockNode {
             // `horizontal_scroll_area` clips with `overflow_hidden` and
             // delegates the wheel to a sibling `ScrollableMask`, so the
             // gesture is locked to its starting axis and a horizontal swipe
-            // is consumed before an ancestor scroller (`gpui::list` under
+            // is consumed before an ancestor scroller (`wgpui::list` under
             // `TextView::scrollable`) can take its vertical component.
             horizontal_scroll_area(
                 block_element_id("table", table.span, options.ix),
@@ -4076,7 +4076,7 @@ impl BlockNode {
     /// could clip that, and gpui masks are rectangular.)
     fn table_row_corner_radii(style: &TextViewStyle, window: &Window) -> [Option<Pixels>; 4] {
         let rem_size = window.rem_size();
-        let inset = |radius: Option<gpui::AbsoluteLength>| {
+        let inset = |radius: Option<wgpui::AbsoluteLength>| {
             radius.map(|radius| (radius.to_pixels(rem_size) - px(1.)).max(px(0.)))
         };
         let radii = &style.table().corner_radii;
@@ -4529,10 +4529,13 @@ mod tests {
 
     #[test]
     fn block_plugin_geometry_selects_whole_blocks_in_both_drag_directions() {
-        let bounds = Bounds::new(gpui::point(px(10.), px(20.)), gpui::size(px(100.), px(40.)));
+        let bounds = Bounds::new(
+            wgpui::point(px(10.), px(20.)),
+            wgpui::size(px(100.), px(40.)),
+        );
         let inside = bounds.center();
-        let above = gpui::point(px(0.), px(0.));
-        let below = gpui::point(px(0.), px(80.));
+        let above = wgpui::point(px(0.), px(0.));
+        let below = wgpui::point(px(0.), px(80.));
         for (start, end) in [(above, inside), (inside, below), (above, below)] {
             assert!(custom_block_is_selected(bounds, start, end));
             assert!(custom_block_is_selected(bounds, end, start));
@@ -4541,10 +4544,10 @@ mod tests {
         // Pointer travel during a click, and any drag that never leaves the
         // block, select nothing.
         for (start, end) in [
-            (inside, inside + gpui::point(px(1.), px(0.))),
+            (inside, inside + wgpui::point(px(1.), px(0.))),
             (
                 bounds.origin,
-                bounds.bottom_right() - gpui::point(px(1.), px(1.)),
+                bounds.bottom_right() - wgpui::point(px(1.), px(1.)),
             ),
         ] {
             assert!(!custom_block_is_selected(bounds, start, end));
@@ -4552,8 +4555,8 @@ mod tests {
         }
         assert!(!custom_block_is_selected(
             bounds,
-            gpui::point(px(150.), px(30.)),
-            gpui::point(px(160.), px(40.))
+            wgpui::point(px(150.), px(30.)),
+            wgpui::point(px(160.), px(40.))
         ));
     }
 
@@ -4636,7 +4639,7 @@ mod tests {
 
     #[test]
     fn custom_inline_inherits_marks_and_resolves_link_references() {
-        use gpui::{Empty, TestApp};
+        use wgpui::{Empty, TestApp};
         let mut app = TestApp::new();
         let mut window = app.open_window(|_, _| Empty);
         window.update(|_, _, cx| {
@@ -4678,7 +4681,7 @@ mod tests {
     fn table_column_uses_prepared_inline_metrics_after_resource_update() {
         use crate::text::InlineElement;
         use crate::text::inline::test_draw::in_prepaint;
-        use gpui::{Image, ImageFormat, TestApp};
+        use wgpui::{Image, ImageFormat, TestApp};
         let mut app = TestApp::new();
         let width = Arc::new(std::sync::atomic::AtomicUsize::new(400));
         let render_width = width.clone();
@@ -4688,7 +4691,7 @@ mod tests {
                 move |_, _, _, _| {
                     Some(
                         InlineElement::new(
-                            gpui::img(Arc::new(Image::from_bytes(
+                            wgpui::img(Arc::new(Image::from_bytes(
                                 ImageFormat::Svg,
                                 b"<svg/>".to_vec(),
                             )))
@@ -4741,7 +4744,7 @@ mod tests {
     fn blockquote_typography_reaches_nested_table_measurement() {
         use crate::text::inline::test_draw::in_prepaint;
         use crate::text::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::TestApp;
+        use wgpui::TestApp;
 
         let quote = BlockNode::Blockquote {
             children: vec![BlockNode::Table(table_of(
@@ -4795,7 +4798,7 @@ mod tests {
     fn table_columns_cache_preserves_plain_widths_and_clones() {
         use crate::text::inline::test_draw::in_prepaint;
         use crate::text::inline::test_fonts::{BODY, WideMonoTextSystem, record_shaped_lines};
-        use gpui::{Refineable as _, TestApp, TextStyle};
+        use wgpui::{Refineable as _, TestApp, TextStyle};
 
         let long = "é界".repeat(2048);
         let table = table_of(
@@ -4874,7 +4877,7 @@ mod tests {
     fn table_columns_cache_tracks_typography() {
         use crate::text::inline::test_draw::in_prepaint;
         use crate::text::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{Refineable as _, TestApp, TextStyle};
+        use wgpui::{Refineable as _, TestApp, TextStyle};
 
         let code = "0123456789";
         let mut paragraph = Paragraph::default();
@@ -4952,7 +4955,7 @@ mod tests {
         use crate::text::format::markdown;
         use crate::text::inline::test_draw::in_prepaint;
         use crate::text::inline::test_fonts::{BODY, WideMonoTextSystem};
-        use gpui::{Refineable as _, TestApp, TextStyle};
+        use wgpui::{Refineable as _, TestApp, TextStyle};
 
         let mut node_cx = NodeContext::default();
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
@@ -4991,7 +4994,7 @@ mod tests {
     #[test]
     fn table_column_of_inline_code_cells_fits_the_mono_width() {
         use crate::text::inline::test_fonts::{MONO, WideMonoTextSystem};
-        use gpui::{Empty, TestApp};
+        use wgpui::{Empty, TestApp};
 
         let code = "method_name()";
         let mut paragraph = Paragraph::default();
@@ -5076,7 +5079,7 @@ mod tests {
             vec![(
                 0..2,
                 HighlightStyle {
-                    color: Some(gpui::rgb(0x0000ff).into()),
+                    color: Some(wgpui::rgb(0x0000ff).into()),
                     ..Default::default()
                 },
             )]
@@ -5085,7 +5088,7 @@ mod tests {
             vec![(
                 0..2,
                 HighlightStyle {
-                    color: Some(gpui::rgb(0xffff00).into()),
+                    color: Some(wgpui::rgb(0xffff00).into()),
                     ..Default::default()
                 },
             )]
@@ -5095,8 +5098,8 @@ mod tests {
         let light_styles = block.highlighted_styles(&light);
         let dark_styles = block.highlighted_styles(&dark);
 
-        assert_eq!(light_styles[0].1.color, Some(gpui::rgb(0x0000ff).into()));
-        assert_eq!(dark_styles[0].1.color, Some(gpui::rgb(0xffff00).into()));
+        assert_eq!(light_styles[0].1.color, Some(wgpui::rgb(0x0000ff).into()));
+        assert_eq!(dark_styles[0].1.color, Some(wgpui::rgb(0xffff00).into()));
         assert_eq!(block.code(), "42", "the document must survive the swap");
     }
 
@@ -5754,7 +5757,7 @@ mod tests {
 
     #[test]
     fn test_image_node_source() {
-        use gpui::{ImageFormat, ImageSource, Resource};
+        use wgpui::{ImageFormat, ImageSource, Resource};
 
         fn image_node(url: &str) -> ImageNode {
             ImageNode {
@@ -5823,7 +5826,7 @@ mod tests {
         assert_eq!(wrap(TextMark::default().code()), "`x`");
         assert_eq!(wrap(TextMark::default().strikethrough()), "~~x~~");
         assert_eq!(
-            wrap(TextMark::default().highlight(gpui::rgb(0xfef08a).into())),
+            wrap(TextMark::default().highlight(wgpui::rgb(0xfef08a).into())),
             "==x=="
         );
         // No Markdown syntax for underline, so it keeps the tag it came from.

@@ -1,4 +1,4 @@
-use gpui::{Axis, Pixels};
+use wgpui::{Axis, Pixels};
 
 use super::layout::{NodeKind, PaneNode, PaneRef, PaneTree, PanelId, RootKind};
 use super::state::{PanelInfo, PanelState};
@@ -204,7 +204,7 @@ fn collect_tab_panels(children: &[PanelState], builder: &mut dyn PanelBuilder) -
 
 #[cfg(test)]
 mod tests {
-    use gpui::px;
+    use wgpui::px;
 
     use super::super::layout::RootKind;
     use super::super::state::DockAreaState;

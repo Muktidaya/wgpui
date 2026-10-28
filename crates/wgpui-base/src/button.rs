@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, MouseButton, ParentElement, Refineable as _, RenderOnce, Role, SharedString,
     Stateful, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, relative,
 };
-use smallvec::SmallVec;
 
 use crate::{
     RoleOverride, Selectable, StateStyle, StyledExt as _, TestSupportExt as _,
@@ -286,7 +286,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, ClickEvent, Context, Element as _, KeyDownEvent, KeyUpEvent, Keystroke,
         Modifiers, Render, TestAppContext, VisualTestContext, accesskit, canvas, point, px,
     };
@@ -352,7 +352,7 @@ mod tests {
         (cx, button_clicks, parent_clicks, keyboard_events)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_activation_fires_once(cx: &mut TestAppContext) {
         let (cx, button_clicks, _, keyboard_events) = harness(cx, false);
 
@@ -362,7 +362,7 @@ mod tests {
         assert_eq!(keyboard_events.get(), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_and_space_use_one_native_keyboard_click_each(cx: &mut TestAppContext) {
         let (cx, button_clicks, _, keyboard_events) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -387,7 +387,7 @@ mod tests {
         assert_eq!(keyboard_events.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_button_is_inert_and_blocks_parent_activation(cx: &mut TestAppContext) {
         let (cx, button_clicks, parent_clicks, _) = harness(cx, true);
 
@@ -447,7 +447,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabling_focused_button_preserves_bidirectional_traversal(cx: &mut TestAppContext) {
         cx.update(crate::init);
         for (key, expected, back, opposite) in
@@ -506,12 +506,12 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn fixed_height_button_centers_ordinary_child_geometry(cx: &mut TestAppContext) {
         type Captured = Arc<
             Mutex<(
-                Option<gpui::Bounds<gpui::Pixels>>,
-                Option<gpui::Bounds<gpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
             )>,
         >;
 
@@ -591,8 +591,8 @@ mod tests {
 
     #[test]
     fn selected_disabled_and_instance_styles_follow_the_shared_priority() {
-        let selected_color = gpui::hsla(0.6, 0.7, 0.5, 1.0);
-        let disabled_color = gpui::hsla(0.1, 0.2, 0.3, 0.5);
+        let selected_color = wgpui::hsla(0.6, 0.7, 0.5, 1.0);
+        let disabled_color = wgpui::hsla(0.1, 0.2, 0.3, 0.5);
         let button = |selected, disabled| {
             Button::new("button")
                 .selected(selected)
@@ -622,7 +622,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_role_label_and_disabled_action_surface(cx: &mut TestAppContext) {
         type Captured = Arc<Mutex<Option<(accesskit::Node, accesskit::Node)>>>;
 

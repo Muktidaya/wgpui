@@ -1,18 +1,18 @@
 //! Language editing configuration. Grammar resources live in `highlighter`.
 
-pub use gpui_base::input::language_config::LanguageConfig;
+pub use wgpui_base::input::language_config::LanguageConfig;
 
-use gpui_base::input::{AutoClosingPair, BracketPair, IndentationRules, SyntaxContext};
 use regex::Regex;
 use std::sync::LazyLock;
+use wgpui_base::input::{AutoClosingPair, BracketPair, IndentationRules, SyntaxContext};
 
 struct ComponentLanguages {
     defaults: std::collections::HashMap<&'static str, std::rc::Rc<LanguageConfig>>,
     fallback: std::rc::Rc<LanguageConfig>,
 }
 
-impl gpui_base::input::LanguageProvider for ComponentLanguages {
-    fn language_name(&self, name: &str) -> gpui::SharedString {
+impl wgpui_base::input::LanguageProvider for ComponentLanguages {
+    fn language_name(&self, name: &str) -> wgpui::SharedString {
         crate::highlighter::LanguageRegistry::singleton().editing_language_name(name)
     }
 
@@ -23,13 +23,13 @@ impl gpui_base::input::LanguageProvider for ComponentLanguages {
     fn syntax_context_provider(
         &self,
         name: &str,
-    ) -> Option<std::rc::Rc<dyn gpui_base::input::SyntaxContextProvider>> {
+    ) -> Option<std::rc::Rc<dyn wgpui_base::input::SyntaxContextProvider>> {
         super::syntax_context::syntax_context_provider(name)
     }
 }
 
-pub(crate) fn init(cx: &mut gpui::App) {
-    gpui_base::input::set_language_provider(
+pub(crate) fn init(cx: &mut wgpui::App) {
+    wgpui_base::input::set_language_provider(
         std::rc::Rc::new(ComponentLanguages {
             defaults: ["text", "json", "python"]
                 .into_iter()

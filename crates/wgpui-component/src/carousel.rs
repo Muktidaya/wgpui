@@ -8,7 +8,7 @@ pub use carousel::{
 };
 pub use state::{CarouselEvent, CarouselState};
 
-use gpui::{App, KeyBinding};
+use wgpui::{App, KeyBinding};
 
 use crate::actions::{SelectDown, SelectFirst, SelectLast, SelectLeft, SelectRight, SelectUp};
 

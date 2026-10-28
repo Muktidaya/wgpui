@@ -52,7 +52,7 @@ impl RangeBounds<usize> for Selection {
     }
 }
 
-use gpui::Pixels;
+use wgpui::Pixels;
 
 use super::selection::CursorId;
 
@@ -251,7 +251,7 @@ impl Default for Selections {
 mod tests {
     use super::*;
     use crate::input::Position;
-    use gpui::px;
+    use wgpui::px;
 
     #[test]
     fn selection_keeps_its_public_range_api() {

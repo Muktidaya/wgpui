@@ -26,9 +26,9 @@ pub use events::TestEventExt;
 pub use input::TestInput;
 pub use query::TestQueryExt;
 
-pub use gpui_base::TestSupportExt;
-use gpui_base::test_support as observation;
-pub use gpui_base::test_support::ElementSnapshot;
+pub use wgpui_base::TestSupportExt;
+use wgpui_base::test_support as observation;
+pub use wgpui_base::test_support::ElementSnapshot;
 
 /// Testing operations on GPUI's existing window.
 pub trait TestWindowExt {

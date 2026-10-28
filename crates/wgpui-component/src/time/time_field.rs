@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{
+use wgpui::{
     App, ElementId, Entity, Focusable as _, FontFeatures, IntoElement, ParentElement as _,
     RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
@@ -10,8 +10,8 @@ use crate::{
     ThemeStyled as _, input::input_style,
 };
 
-use gpui_base::TimeField as BaseTimeField;
-pub use gpui_base::{HourCycle, TimeFieldEvent, TimeFieldState, TimePrecision, TimeSegment};
+use wgpui_base::TimeField as BaseTimeField;
+pub use wgpui_base::{HourCycle, TimeFieldEvent, TimeFieldState, TimePrecision, TimeSegment};
 
 /// Digits of equal width (OpenType `tnum`), so a value that changes while it
 /// is edited keeps its width instead of shifting with each digit.
@@ -26,7 +26,7 @@ fn period_label(pm: bool) -> impl IntoElement {
         div()
             .col_start(1)
             .row_start(1)
-            .when(!active, |this| this.text_color(gpui::transparent_black()))
+            .when(!active, |this| this.text_color(wgpui::transparent_black()))
             .child(text)
     };
     div()
@@ -144,12 +144,12 @@ impl RenderOnce for TimeField {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, px};
+    use wgpui::{AppContext as _, px};
 
     use super::*;
 
-    #[gpui::test]
-    fn test_time_field_builder(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_time_field_builder(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         let state = window.update(|window, cx| {
             cx.new(|cx| {
@@ -177,36 +177,36 @@ mod tests {
     }
 
     #[cfg(feature = "test-support")]
-    impl gpui::Render for FieldHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+    impl wgpui::Render for FieldHarness {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div().child(TimeField::new(&self.state).with_id("time").w(px(200.)))
         }
     }
 
     #[cfg(feature = "test-support")]
-    fn click_at(cx: &mut gpui::VisualTestContext, position: gpui::Point<gpui::Pixels>) {
-        cx.simulate_click(position, gpui::Modifiers::default());
+    fn click_at(cx: &mut wgpui::VisualTestContext, position: wgpui::Point<wgpui::Pixels>) {
+        cx.simulate_click(position, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
     }
 
     #[cfg(feature = "test-support")]
-    #[gpui::test]
-    fn pressing_outside_the_segments_focuses_the_first_segment(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pressing_outside_the_segments_focuses_the_first_segment(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|window, cx| FieldHarness {
             state: cx.new(|cx| TimeFieldState::new(window, cx)),
         });
         cx.update(|window, cx| window.draw(cx).clear());
         let state = cx.update(|_, cx| view.read(cx).state.clone());
-        let segment = |cx: &mut gpui::VisualTestContext, id: &'static str| {
+        let segment = |cx: &mut wgpui::VisualTestContext, id: &'static str| {
             cx.update(|window, _| {
-                gpui_base::test_support::find(window, &[], &ElementId::from(id))
+                wgpui_base::test_support::find(window, &[], &ElementId::from(id))
                     .expect("segment is painted")
                     .bounds()
                     .center()
             })
         };
-        let blank = gpui::point(px(180.), segment(cx, "hour").y);
+        let blank = wgpui::point(px(180.), segment(cx, "hour").y);
 
         click_at(cx, blank);
         cx.update(|window, cx| {

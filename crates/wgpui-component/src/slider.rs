@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use crate::{ActiveTheme, AxisExt, StyledExt, ThemeStyled as _};
-pub use gpui_base::slider::{SliderEvent, SliderScale, SliderState, SliderValue};
-use gpui_base::{Slider as BaseSlider, SliderIndicator, SliderThumb, SliderTrack, spring};
+pub use wgpui_base::slider::{SliderEvent, SliderScale, SliderState, SliderValue};
+use wgpui_base::{Slider as BaseSlider, SliderIndicator, SliderThumb, SliderTrack, spring};
 
-use gpui::{
+use wgpui::{
     App, Axis, Background, Corners, DefiniteLength, ElementId, Entity, EntityId, Hsla,
     InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Pixels, RenderOnce,
     SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
@@ -325,7 +325,7 @@ impl RenderOnce for Slider {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, Context, Modifiers, Render, TestAppContext, point};
+    use wgpui::{AppContext as _, Context, Modifiers, Render, TestAppContext, point};
 
     use super::*;
 
@@ -346,7 +346,7 @@ mod tests {
     fn harness(
         cx: &mut TestAppContext,
         disabled: bool,
-    ) -> (&mut gpui::VisualTestContext, Entity<SliderState>) {
+    ) -> (&mut wgpui::VisualTestContext, Entity<SliderState>) {
         cx.update(crate::theme::init);
         let state = cx.new(|_| SliderState::new());
         let result = state.clone();
@@ -355,14 +355,14 @@ mod tests {
         (cx, result)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_updates_the_migrated_state(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
         cx.simulate_click(point(px(50.), px(12.)), Modifiers::default());
         cx.update(|_, cx| assert!((state.read(cx).value().end() - 50.).abs() < 1.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_slider_is_inert(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, true);
         cx.simulate_click(point(px(50.), px(12.)), Modifiers::default());

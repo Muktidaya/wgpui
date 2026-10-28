@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, ElementId, Entity, InteractiveElement, IntoElement, ParentElement, RenderOnce,
     Role, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, svg,
 };
-use gpui_base::RadioGroup;
-use rust_i18n::t;
+use wgpui_base::RadioGroup;
 
 use crate::{
     ActiveTheme as _, IconName, Sizable, Size, StyledExt as _, ThemeStyled as _,
@@ -16,7 +16,7 @@ use crate::{
     kbd::Kbd,
 };
 
-use gpui_base::questionnaire::{
+use wgpui_base::questionnaire::{
     QuestionnaireChoiceControl, QuestionnaireChoiceState, QuestionnaireState,
     QuestionnaireValidationError,
 };
@@ -34,9 +34,9 @@ type ChoiceRenderer =
 /// A root renders before its children, so the entry is in place by the time a
 /// part looks for it; a part rendered outside a root falls back to `Medium`.
 #[derive(Default)]
-struct QuestionnaireSizes(std::collections::HashMap<gpui::EntityId, Size>);
+struct QuestionnaireSizes(std::collections::HashMap<wgpui::EntityId, Size>);
 
-impl gpui::Global for QuestionnaireSizes {}
+impl wgpui::Global for QuestionnaireSizes {}
 
 /// Bounded so an application that builds and drops many questionnaires cannot
 /// grow the table without end. Every root rewrites its entry on the next frame,
@@ -65,21 +65,21 @@ fn resolve_size(own: Option<Size>, state: &Entity<QuestionnaireState>, cx: &App)
 /// radius tokens; the size picks which of them apply.
 #[derive(Clone, Copy)]
 struct QuestionnaireMetrics {
-    root_gap: gpui::Pixels,
-    item_gap: gpui::Pixels,
-    choices_gap: gpui::Pixels,
-    choice_gap: gpui::Pixels,
-    content_gap: gpui::Pixels,
-    choice_padding_x: gpui::Pixels,
-    choice_padding_y: gpui::Pixels,
-    choice_min_height: gpui::Pixels,
-    choice_radius: gpui::Pixels,
-    indicator_size: gpui::Pixels,
-    indicator_mark_size: gpui::Pixels,
-    indicator_check_size: gpui::Pixels,
-    shortcut_size: gpui::Pixels,
-    shortcut_text_size: gpui::Pixels,
-    shortcut_radius: gpui::Pixels,
+    root_gap: wgpui::Pixels,
+    item_gap: wgpui::Pixels,
+    choices_gap: wgpui::Pixels,
+    choice_gap: wgpui::Pixels,
+    content_gap: wgpui::Pixels,
+    choice_padding_x: wgpui::Pixels,
+    choice_padding_y: wgpui::Pixels,
+    choice_min_height: wgpui::Pixels,
+    choice_radius: wgpui::Pixels,
+    indicator_size: wgpui::Pixels,
+    indicator_mark_size: wgpui::Pixels,
+    indicator_check_size: wgpui::Pixels,
+    shortcut_size: wgpui::Pixels,
+    shortcut_text_size: wgpui::Pixels,
+    shortcut_radius: wgpui::Pixels,
 }
 
 impl QuestionnaireMetrics {
@@ -207,7 +207,7 @@ fn progress_text_style<T: Styled>(element: T, size: Size, cx: &App) -> T {
         Size::Size(value) => element.text_size(value * 0.75),
         _ => apply_text_token(element, typography.xs),
     }
-    .font_weight(gpui::FontWeight::MEDIUM)
+    .font_weight(wgpui::FontWeight::MEDIUM)
 }
 
 fn description_text_style<T: Styled>(element: T, size: Size, cx: &App) -> T {
@@ -223,13 +223,13 @@ fn title_text_style<T: Styled>(element: T, size: Size, cx: &App) -> T {
         Size::Size(value) => element.text_size(value * 1.125),
         Size::Medium => apply_text_token(element, typography.lg),
     }
-    .font_weight(gpui::FontWeight::MEDIUM)
+    .font_weight(wgpui::FontWeight::MEDIUM)
 }
 
 /// The line box the answer label occupies. An indicator or a shortcut badge
 /// centers on that first line, so a two-line answer keeps them beside the
 /// label rather than drifting toward the description.
-fn answer_line_height(size: Size, cx: &App) -> gpui::Pixels {
+fn answer_line_height(size: Size, cx: &App) -> wgpui::Pixels {
     let typography = cx.theme().semantic_tokens().typography;
     match size {
         Size::XSmall => typography.xs.line_height,
@@ -241,11 +241,11 @@ fn answer_line_height(size: Size, cx: &App) -> gpui::Pixels {
 }
 
 /// How far to push an adornment of `height` down so it centers on that line.
-fn center_on_answer_line(height: gpui::Pixels, size: Size, cx: &App) -> gpui::Pixels {
-    ((answer_line_height(size, cx) - height) * 0.5).max(gpui::Pixels::ZERO)
+fn center_on_answer_line(height: wgpui::Pixels, size: Size, cx: &App) -> wgpui::Pixels {
+    ((answer_line_height(size, cx) - height) * 0.5).max(wgpui::Pixels::ZERO)
 }
 
-fn apply_text_token<T: Styled>(element: T, token: gpui_base::TextStyleToken) -> T {
+fn apply_text_token<T: Styled>(element: T, token: wgpui_base::TextStyleToken) -> T {
     element
         .text_size(token.size)
         .line_height(token.line_height)
@@ -253,13 +253,13 @@ fn apply_text_token<T: Styled>(element: T, token: gpui_base::TextStyleToken) -> 
 }
 
 fn item_label(
-    definition: &gpui_base::questionnaire::QuestionnaireItemDefinition,
+    definition: &wgpui_base::questionnaire::QuestionnaireItemDefinition,
 ) -> Option<SharedString> {
     Some(definition.accessibility_label().clone())
 }
 
 fn item_description(
-    definition: &gpui_base::questionnaire::QuestionnaireItemDefinition,
+    definition: &wgpui_base::questionnaire::QuestionnaireItemDefinition,
 ) -> Option<SharedString> {
     definition.description().cloned()
 }
@@ -352,7 +352,7 @@ impl RenderOnce for Questionnaire {
             .key_context("Questionnaire")
             .track_focus(&focus_handle)
             .capture_key_down(move |event, window, cx| {
-                gpui_base::questionnaire::handle_key_down(&state, event, window, cx)
+                wgpui_base::questionnaire::handle_key_down(&state, event, window, cx)
             })
             .flex()
             .flex_col()
@@ -478,12 +478,12 @@ macro_rules! questionnaire_item_part {
             fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
                 let Some(definition) = self.state.read(cx).item_definition(&self.item) else {
                     report_unknown_item(&self.item);
-                    return gpui::Empty.into_any_element();
+                    return wgpui::Empty.into_any_element();
                 };
                 let fallback = $fallback(definition);
                 let has_children = !self.children.is_empty();
                 if !has_children && fallback.is_none() {
-                    return gpui::Empty.into_any_element();
+                    return wgpui::Empty.into_any_element();
                 }
                 let colors = cx.theme().semantic_tokens().colors;
                 // The item stacks its parts on one gap. A title with no
@@ -569,13 +569,13 @@ impl RenderOnce for QuestionnaireItem {
         let active = state.current_item().is_some_and(|name| name == &self.item);
         let Some(item_state) = state.item_state(&self.item) else {
             report_unknown_item(&self.item);
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         if !active || item_state.is_disabled() {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
         let Some(definition) = state.item_definition(&self.item) else {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let focus_handle = state.item_focus_handle(&self.item).cloned();
         let label = definition.accessibility_label().clone();
@@ -649,10 +649,10 @@ impl RenderOnce for QuestionnaireChoices {
         let active = state.current_item().is_some_and(|name| name == &self.item);
         let Some(item) = state.item_state(&self.item) else {
             report_unknown_item(&self.item);
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         if !active || item.is_disabled() {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
         let metrics = QuestionnaireMetrics::new(resolve_size(self.size, &self.state, cx), cx);
 
@@ -784,7 +784,7 @@ fn style_choice_card<T>(
     cx: &App,
 ) -> T
 where
-    T: Styled + ParentElement + StatefulInteractiveElement + gpui::prelude::FluentBuilder,
+    T: Styled + ParentElement + StatefulInteractiveElement + wgpui::prelude::FluentBuilder,
 {
     let tokens = cx.theme().semantic_tokens();
     base.flex()
@@ -831,17 +831,17 @@ impl RenderOnce for QuestionnaireChoice {
             } else {
                 report_unknown_choice(&self.item, &self.value);
             }
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         if !active {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
         let Some(item) = state.item_state(&self.item) else {
             report_unknown_item(&self.item);
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let Some(definition) = state.choice_definition(&self.item, &self.value) else {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let multiple = item.is_multiple();
         let label = definition.accessibility_label().clone();
@@ -943,10 +943,11 @@ impl RenderOnce for QuestionnaireChoice {
         let os = cx.platform_info().os;
         let default_shortcut = || {
             let Some(shortcut) = shortcut.clone() else {
-                return gpui::Empty.into_any_element();
+                return wgpui::Empty.into_any_element();
             };
-            let Ok(keystroke) = gpui::Keystroke::parse_with_os(&shortcut.to_lowercase(), os) else {
-                return gpui::Empty.into_any_element();
+            let Ok(keystroke) = wgpui::Keystroke::parse_with_os(&shortcut.to_lowercase(), os)
+            else {
+                return wgpui::Empty.into_any_element();
             };
             Kbd::new(keystroke)
                 .outline()
@@ -960,7 +961,7 @@ impl RenderOnce for QuestionnaireChoice {
                 .text_color(colors.muted_foreground)
                 .font_family(mono_font.clone())
                 .text_size(metrics.shortcut_text_size)
-                .font_weight(gpui::FontWeight::MEDIUM)
+                .font_weight(wgpui::FontWeight::MEDIUM)
                 .rounded(metrics.shortcut_radius)
                 .refine_style(&self.shortcut_style)
                 .into_any_element()
@@ -984,7 +985,7 @@ impl RenderOnce for QuestionnaireChoice {
         let Some(control) =
             QuestionnaireChoiceControl::new(&self.state, item_name, choice_value, id, cx)
         else {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         match control {
             QuestionnaireChoiceControl::Checkbox(base) => style_choice_card(
@@ -1116,16 +1117,16 @@ impl RenderOnce for QuestionnaireInput {
         let active = state.current_item().is_some_and(|name| name == &self.item);
         let Some(item_state) = state.item_state(&self.item) else {
             report_unknown_item(&self.item);
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let Some(definition) = state.item_definition(&self.item) else {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let Some(input_definition) = definition.input() else {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         if !active {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
 
         let size = resolve_size(self.size, &self.state, cx);
@@ -1188,7 +1189,7 @@ impl ParentElement for QuestionnaireError {
     }
 }
 
-fn questionnaire_error_root(id: ElementId) -> gpui::Stateful<gpui::Div> {
+fn questionnaire_error_root(id: ElementId) -> wgpui::Stateful<wgpui::Div> {
     div().id(id).role(Role::Alert)
 }
 
@@ -1207,11 +1208,11 @@ impl RenderOnce for QuestionnaireError {
         let state = self.state.read(cx);
         let Some(item) = state.item_state(&self.item) else {
             report_unknown_item(&self.item);
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         };
         let error = state.error(&self.item).cloned();
         if !item.is_invalid() || error.is_none() {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
         let has_children = !self.children.is_empty();
         let colors = cx.theme().semantic_tokens().colors;
@@ -1350,7 +1351,7 @@ macro_rules! questionnaire_action_part {
                     QuestionnaireAction::Submit => navigation.is_submit_visible(),
                 };
                 if !visible {
-                    return gpui::Empty.into_any_element();
+                    return wgpui::Empty.into_any_element();
                 }
 
                 let anchors_trailing_actions = match action {
@@ -1410,12 +1411,12 @@ questionnaire_action_part!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Element as _, Focusable as _, KeyDownEvent, Keystroke, Render,
         TestAppContext, VisualTestContext, accesskit, px,
     };
 
-    use gpui_base::questionnaire::{
+    use wgpui_base::questionnaire::{
         QuestionnaireChoiceDefinition, QuestionnaireEvent, QuestionnaireInputDefinition,
         QuestionnaireItemDefinition, QuestionnaireShortcutMode,
     };
@@ -1582,7 +1583,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn progress_projects_numeric_accessibility(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
@@ -1612,7 +1613,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn actions_stay_inside_questionnaire_width(cx: &mut TestAppContext) {
         let (cx, state) = actions_visual_harness(cx, false);
         let entity_id = state.entity_id();
@@ -1662,7 +1663,7 @@ mod tests {
         assert_eq!(submit.right(), last_actions.right());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn action_instance_style_overrides_default_trailing_anchor(cx: &mut TestAppContext) {
         let (cx, state) = actions_visual_harness(cx, true);
         let entity_id = state.entity_id();
@@ -1719,7 +1720,7 @@ mod tests {
         cx: &mut TestAppContext,
         root_size: Size,
         part_size: Option<Size>,
-    ) -> gpui::Bounds<gpui::Pixels> {
+    ) -> wgpui::Bounds<wgpui::Pixels> {
         cx.update(crate::init);
         let (_view, cx) = cx.add_window_view(move |_, cx| {
             let state = cx.new(|cx| {
@@ -1742,7 +1743,7 @@ mod tests {
         cx.debug_bounds("scale-choice").expect("choice rendered")
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn parts_take_their_scale_from_the_root_and_a_part_may_override_it(cx: &mut TestAppContext) {
         // A part left alone must land exactly where the same part told to use
         // the root's size lands: the root publishes the scale for all of them.
@@ -1759,7 +1760,7 @@ mod tests {
         assert_eq!(overridden.size, inherited.size);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortcut_guards_held_keys_before_activation(cx: &mut TestAppContext) {
         let (cx, state) = visual_harness(
             cx,
@@ -1796,7 +1797,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn root_keyboard_preserves_navigation_and_radio_semantics(cx: &mut TestAppContext) {
         let (cx, state) = visual_harness(
             cx,
@@ -1848,7 +1849,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn empty_input_enter_stays_put_and_arrows_move_to_answers(cx: &mut TestAppContext) {
         let (cx, state) = input_visual_harness(cx, false);
         focus_input(cx, &state, "first");
@@ -1935,7 +1936,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn filled_group_input_keeps_text_editing_directions(cx: &mut TestAppContext) {
         let (cx, state) = input_visual_harness(cx, true);
         cx.update(|window, cx| {
@@ -1984,7 +1985,7 @@ mod tests {
     struct ChooseHarness {
         state: Entity<QuestionnaireState>,
         submits: usize,
-        _subscription: gpui::Subscription,
+        _subscription: wgpui::Subscription,
     }
 
     impl Render for ChooseHarness {
@@ -2087,7 +2088,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
         let selector = Box::leak(format!("choice-{item}-{value}").into_boxed_str());
         let bounds = cx.debug_bounds(selector).expect("choice rendered");
-        cx.simulate_click(bounds.center(), gpui::Modifiers::default());
+        cx.simulate_click(bounds.center(), wgpui::Modifiers::default());
     }
 
     fn press(cx: &mut VisualTestContext, key: &str) {
@@ -2098,7 +2099,7 @@ mod tests {
             is_held: false,
             prefer_character_input: false,
         });
-        cx.simulate_event(gpui::KeyUpEvent { keystroke });
+        cx.simulate_event(wgpui::KeyUpEvent { keystroke });
     }
 
     fn focus_choice(
@@ -2129,7 +2130,7 @@ mod tests {
         cx.update(|_, cx| state.read(cx).answer(item).unwrap().choices().to_vec())
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_single_choice_shows_it_then_advances(cx: &mut TestAppContext) {
         let (cx, view, state) = choose_harness(cx);
 
@@ -2173,7 +2174,7 @@ mod tests {
         assert_eq!(current(cx, &state), "second");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortcuts_and_space_advance_while_arrows_only_move(cx: &mut TestAppContext) {
         let (cx, _, state) = choose_harness(cx);
 

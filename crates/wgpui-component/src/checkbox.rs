@@ -5,18 +5,18 @@ use crate::{
     text::Text, tooltip::ComponentTooltip, v_flex,
 };
 use crate::{StyleSized as _, StyledExt as _, ThemeStyled as _};
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, InteractiveElement, IntoElement, MouseButton, ParentElement,
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, px, relative, rems, svg,
 };
-use gpui_base::{CheckboxIndicator, spring};
+use wgpui_base::{CheckboxIndicator, spring};
 
 /// A Checkbox element.
 #[derive(IntoElement)]
 pub struct Checkbox {
     id: ElementId,
-    base: gpui_base::Checkbox,
+    base: wgpui_base::Checkbox,
     style: StyleRefinement,
     // `Text` is legacy presentation state. During render it is composed into
     // the Base Checkbox child seam together with application children.
@@ -40,7 +40,7 @@ impl Checkbox {
         let id = id.into();
         Self {
             id: id.clone(),
-            base: gpui_base::Checkbox::new(id),
+            base: wgpui_base::Checkbox::new(id),
             style: StyleRefinement::default(),
             label: None,
             accessibility_label: None,
@@ -70,7 +70,7 @@ impl Checkbox {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip.show_delay = Some(delay);
         self
@@ -128,14 +128,14 @@ impl Checkbox {
 }
 
 impl InteractiveElement for Checkbox {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
 impl StatefulInteractiveElement for Checkbox {}
 
 impl Styled for Checkbox {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -366,7 +366,7 @@ impl RenderOnce for Checkbox {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, TestAppContext,
         VisualTestContext, point,
     };
@@ -450,7 +450,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_pointer_activation_fires_once_without_moving_focus(cx: &mut TestAppContext) {
         let (cx, clicks, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -459,7 +459,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, clicks, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -471,7 +471,7 @@ mod tests {
         assert_eq!(clicks.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_disabled_is_inert_and_pointer_activation_bubbles(cx: &mut TestAppContext) {
         let (cx, clicks, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -481,7 +481,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_prepaints_label_and_custom_content_through_the_base_slot(cx: &mut TestAppContext) {
         struct ContentHarness;
 

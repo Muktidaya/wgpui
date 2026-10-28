@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, relative, rems,
 };

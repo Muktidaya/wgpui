@@ -53,7 +53,7 @@ impl PaneTree {
         let root = PaneNode::new(
             next_node_id(),
             NodeKind::Split {
-                axis: gpui::Axis::Horizontal,
+                axis: wgpui::Axis::Horizontal,
                 children: Vec::new(),
                 sizes: Vec::new(),
             },
@@ -165,7 +165,7 @@ impl PaneTree {
 }
 
 #[cfg(test)]
-use gpui::{Axis, Pixels};
+use wgpui::{Axis, Pixels};
 
 #[cfg(test)]
 impl PaneTree {

@@ -10,7 +10,7 @@ pub(crate) use completion_menu::*;
 pub(crate) use diagnostic_popover::*;
 pub(crate) use hover_popover::*;
 
-use gpui::{
+use wgpui::{
     App, Div, ElementId, InteractiveElement as _, SharedString, Stateful, StyleRefinement,
     Styled as _, Window, div, px, rems,
 };

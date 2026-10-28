@@ -7,7 +7,7 @@ use std::{
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{App, Bounds, Entity, Global, OwnedMenu, Pixels, Point};
+use wgpui::{App, Bounds, Entity, Global, OwnedMenu, Pixels, Point};
 
 use crate::text::TextViewState;
 
@@ -184,7 +184,7 @@ pub(crate) fn confine_to_cell(
     if painting != Some(cell) {
         return None;
     }
-    let cursor = gpui::point(
+    let cursor = wgpui::point(
         cursor.x.clamp(cell.left(), cell.right()),
         cursor.y.clamp(cell.top(), cell.bottom()),
     );
@@ -196,11 +196,11 @@ mod tests {
     use super::*;
 
     mod table_cell {
-        use gpui::{Bounds, point, px, size};
+        use wgpui::{Bounds, point, px, size};
 
         use super::super::confine_to_cell;
 
-        fn cell(x: f32) -> Bounds<gpui::Pixels> {
+        fn cell(x: f32) -> Bounds<wgpui::Pixels> {
             Bounds::new(point(px(x), px(0.)), size(px(100.), px(30.)))
         }
 
@@ -261,8 +261,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn initialization_is_idempotent_and_suppression_can_be_reset(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn initialization_is_idempotent_and_suppression_can_be_reset(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
             GlobalState::init(cx);
             GlobalState::suppress_text_selection(cx);
@@ -283,8 +283,8 @@ mod tests {
     /// Popup state is routinely dropped without being closed first, and a
     /// registration that survived it would disable everything that steps aside
     /// for an open popup, permanently.
-    #[gpui::test]
-    fn a_dropped_registration_closes_the_deferred_context(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn a_dropped_registration_closes_the_deferred_context(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
             GlobalState::init(cx);
 

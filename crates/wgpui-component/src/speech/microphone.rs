@@ -5,8 +5,8 @@ use cpal::{
     FromSample, Sample, SampleFormat, SizedSample, StreamConfig,
     traits::{DeviceTrait as _, HostTrait as _, StreamTrait as _},
 };
-use gpui::{App, Subscription};
 use smol::channel::{Sender, unbounded};
+use wgpui::{App, Subscription};
 
 use super::{AudioFormat, AudioInput, AudioSink, SpeechError};
 

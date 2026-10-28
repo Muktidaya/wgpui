@@ -1,6 +1,6 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use gpui::{App, ElementId, Entity, Path, Pixels, Point, Window};
+use wgpui::{App, ElementId, Entity, Path, Pixels, Point, Window};
 
 /// A tessellated path reused across frames while its shape is unchanged.
 ///
@@ -134,7 +134,7 @@ impl ShapeKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{PathBuilder, point, px};
+    use wgpui::{PathBuilder, point, px};
 
     fn diagonal() -> Option<Path<Pixels>> {
         let mut builder = PathBuilder::stroke(px(2.));

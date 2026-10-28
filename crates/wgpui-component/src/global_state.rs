@@ -1,9 +1,9 @@
-use gpui::App;
+use wgpui::App;
 
-pub use gpui_base::GlobalState;
+pub use wgpui_base::GlobalState;
 
 pub(crate) fn init(cx: &mut App) {
-    // Preserve the legacy initialization point while `gpui_base::init` remains
+    // Preserve the legacy initialization point while `wgpui_base::init` remains
     // after Root initialization for focus-trap ordering compatibility.
     GlobalState::init(cx);
 }

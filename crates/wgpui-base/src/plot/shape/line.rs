@@ -1,6 +1,6 @@
 // @reference: https://d3js.org/d3-shape/line
 
-use gpui::{
+use wgpui::{
     Background, BorderStyle, Bounds, Hsla, PaintQuad, Path, PathBuilder, Pixels, Point, Window, px,
     quad, size,
 };
@@ -32,7 +32,7 @@ impl<T> Default for Line<T> {
             curve: Curve::default(),
             dot: false,
             dot_size: px(4.),
-            dot_fill: gpui::transparent_black().into(),
+            dot_fill: wgpui::transparent_black().into(),
             dot_stroke: None,
         }
     }
@@ -126,7 +126,7 @@ impl<T> Line<T> {
     /// Paint the dots on the Line.
     fn paint_dot(&self, dot: Point<Pixels>) -> PaintQuad {
         quad(
-            gpui::bounds(dot, size(self.dot_size, self.dot_size)),
+            wgpui::bounds(dot, size(self.dot_size, self.dot_size)),
             self.dot_size / 2.,
             self.dot_fill,
             px(1.),
@@ -262,7 +262,7 @@ impl<T> Line<T> {
 mod tests {
     use super::*;
 
-    use gpui::{Bounds, point, px};
+    use wgpui::{Bounds, point, px};
 
     #[test]
     fn test_line_path() {

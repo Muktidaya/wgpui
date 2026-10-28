@@ -2,7 +2,7 @@
 //! file containing Git conflict markers.
 use std::ops::Range;
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 use super::{
     DiffFile, DiffFileStatus, DiffParseError,

@@ -1,7 +1,6 @@
-extern crate wgpui_component as gpui_component;
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     App, Context, IntoElement, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, Styled,
     TestAppContext, Window, div, prelude::*, px,
 };
@@ -94,7 +93,7 @@ impl Render for Harness {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn controlled_change_callbacks_preserve_activation_and_replace_aliases(cx: &mut TestAppContext) {
     cx.update(wgpui_component::init);
     for control in [
@@ -124,7 +123,7 @@ fn controlled_change_callbacks_preserve_activation_and_replace_aliases(cx: &mut 
                 let target = visual.debug_bounds("control-target").unwrap();
                 // Click inside the leading control, not the full-width wrapper.
                 visual.simulate_click(
-                    gpui::point(target.left() + px(8.), target.center().y),
+                    wgpui::point(target.left() + px(8.), target.center().y),
                     Modifiers::default(),
                 );
                 visual.update(|window, cx| {
@@ -158,7 +157,7 @@ fn controlled_change_callbacks_preserve_activation_and_replace_aliases(cx: &mut 
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn owner_applies_requested_value_before_the_next_activation(cx: &mut TestAppContext) {
     struct Owner {
         checked: bool,
@@ -186,7 +185,7 @@ fn owner_applies_requested_value_before_the_next_activation(cx: &mut TestAppCont
         requests: vec![],
     });
     visual.update(|window, cx| window.draw(cx).clear());
-    visual.simulate_click(gpui::point(px(8.), px(8.)), Modifiers::default());
+    visual.simulate_click(wgpui::point(px(8.), px(8.)), Modifiers::default());
     visual.update(|window, cx| {
         window.draw(cx).clear();
         window.focus_next(cx);

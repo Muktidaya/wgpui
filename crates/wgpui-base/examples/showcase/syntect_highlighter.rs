@@ -1,12 +1,12 @@
 use std::{collections::HashMap, ops::Range, sync::LazyLock};
 
-use gpui::{Context, HighlightStyle, SharedString, Window};
-use gpui_base::input::{
-    EditorState, FoldRange, HighlightStyleResolver, InputEdit, InputHighlighter, Rope,
-};
 use syntect::{
     parsing::{ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
+};
+use wgpui::{Context, HighlightStyle, SharedString, Window};
+use wgpui_base::input::{
+    EditorState, FoldRange, HighlightStyleResolver, InputEdit, InputHighlighter, Rope,
 };
 
 /// Loading the default syntax definitions deserializes a few megabytes, so share

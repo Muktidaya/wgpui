@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use gpui::{App, Axis, Entity, Pixels};
+use wgpui::{App, Axis, Entity, Pixels};
 
 use super::node::{NodeKind, PaneNode, PanelId};
 use super::tree::{PaneTree, RootKind};
@@ -212,13 +212,13 @@ impl PaneTree {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{TestAppContext, px};
+    use wgpui::{TestAppContext, px};
 
     use super::super::PaneRef;
     use super::*;
     use crate::dock::test_support::TestPanel;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_described_split_lowers_to_a_split_of_tab_groups(cx: &mut TestAppContext) {
         let (tree, panels) = cx.update(|cx| {
             let alpha = TestPanel::new("Alpha", cx);
@@ -240,7 +240,7 @@ mod tests {
         else {
             panic!("expected a split root");
         };
-        assert_eq!(axis, gpui::Axis::Horizontal);
+        assert_eq!(axis, wgpui::Axis::Horizontal);
         assert_eq!(children.len(), 2);
         assert_eq!(sizes, &[Some(px(300.)), None]);
         assert!(matches!(children[0].kind(), PaneRef::Tabs { panels, .. } if panels.len() == 1));
@@ -248,7 +248,7 @@ mod tests {
 
     /// Ported from `DockItem::split_with_sizes_adds_each_child_once`, which
     /// guarded a `StackPanel` that once added every child twice.
-    #[gpui::test]
+    #[wgpui::test]
     fn split_with_sizes_adds_each_child_once(cx: &mut TestAppContext) {
         let (tree, _) = cx.update(|cx| {
             let alpha = TestPanel::new("Alpha", cx);
@@ -276,7 +276,7 @@ mod tests {
         assert_ne!(children[0].id(), children[1].id());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_bare_tab_group_is_wrapped_for_a_split_root(cx: &mut TestAppContext) {
         let (tree, _) = cx.update(|cx| {
             let alpha = TestPanel::new("Alpha", cx);
@@ -286,7 +286,7 @@ mod tests {
         assert!(matches!(tree.root().kind(), PaneRef::Split { .. }));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_active_index_selects_the_displayed_tab(cx: &mut TestAppContext) {
         let (tree, _) = cx.update(|cx| {
             let alpha = TestPanel::new("Alpha", cx);

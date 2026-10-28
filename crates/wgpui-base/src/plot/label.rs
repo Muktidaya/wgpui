@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use gpui::{
+use wgpui::{
     App, Bounds, FontWeight, Hsla, Pixels, Point, ShapedLine, SharedString, TextAlign, TextRun,
     Window, point, px,
 };

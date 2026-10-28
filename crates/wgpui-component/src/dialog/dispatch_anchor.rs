@@ -1,4 +1,4 @@
-use gpui::{Action, App, FocusHandle, InteractiveElement as _, IntoElement, Styled, Window, div};
+use wgpui::{Action, App, FocusHandle, InteractiveElement as _, IntoElement, Styled, Window, div};
 
 /// A focus node of a dialog control's own, so the control can dispatch its
 /// action on the dialog it sits in rather than on whatever holds focus when

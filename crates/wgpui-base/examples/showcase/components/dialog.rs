@@ -1,5 +1,5 @@
 use super::*;
-use gpui::{MouseButton, relative};
+use wgpui::{MouseButton, relative};
 
 impl BaseShowcase {
     pub(in super::super) fn dialog(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -16,8 +16,8 @@ impl BaseShowcase {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .bg(gpui::black())
-                    .text_color(gpui::white())
+                    .bg(wgpui::black())
+                    .text_color(wgpui::white())
                     .on_click(move |_, _, cx| {
                         _ = open_entity.update(cx, |this, cx| {
                             this.dialog_open = true;
@@ -62,7 +62,7 @@ impl BaseShowcase {
                                     .border_color(super::example_rgb(0xd4d4d4))
                                     .child(
                                         DialogTitle::new()
-                                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                                            .font_weight(wgpui::FontWeight::SEMIBOLD)
                                             .child("Edit profile"),
                                     )
                                     .child(
@@ -99,7 +99,7 @@ impl BaseShowcase {
                                             .justify_end()
                                             .gap_2()
                                             .child(
-                                                gpui_base::DialogClose::new().child(
+                                                wgpui_base::DialogClose::new().child(
                                                     Button::new("dialog-cancel")
                                                         .h_7()
                                                         .line_height(relative(1.))

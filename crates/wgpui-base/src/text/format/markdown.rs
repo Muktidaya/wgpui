@@ -1,11 +1,11 @@
 use std::{collections::BTreeMap, ops::Range, sync::Arc};
 
-use gpui::SharedString;
 use markdown::{
     ParseOptions,
     mdast::{self, Node},
     unist::Point,
 };
+use wgpui::SharedString;
 
 use crate::text::{
     document::ParsedDocument,
@@ -1167,7 +1167,7 @@ fn ast_to_node(source: &str, value: mdast::Node, cx: &mut NodeContext) -> BlockN
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::ParentElement;
+    use wgpui::ParentElement;
 
     use crate::text::{MarkdownExtensions, MarkdownNode, MarkdownPlugin};
 
@@ -2011,8 +2011,8 @@ mod tests {
             .as_ref()
             .expect("expected inline html image");
         assert_eq!(image.url.as_ref(), "https://example.com/avatar.png");
-        assert_eq!(image.width, Some(gpui::px(32.).into()));
-        assert_eq!(image.height, Some(gpui::px(32.).into()));
+        assert_eq!(image.width, Some(wgpui::px(32.).into()));
+        assert_eq!(image.height, Some(wgpui::px(32.).into()));
     }
 
     #[test]
@@ -2384,7 +2384,7 @@ mod tests {
         assert_eq!(marked(|mark| mark.strikethrough), ["h"]);
     }
 
-    fn highlight_runs(paragraph: &Paragraph) -> Vec<(String, gpui::Hsla)> {
+    fn highlight_runs(paragraph: &Paragraph) -> Vec<(String, wgpui::Hsla)> {
         paragraph
             .children
             .iter()
@@ -2419,14 +2419,14 @@ mod tests {
         assert_eq!(
             highlight_runs(paragraph),
             [
-                ("highlighted".into(), gpui::rgb(0xfef08a).into()),
+                ("highlighted".into(), wgpui::rgb(0xfef08a).into()),
                 (
                     "red".into(),
-                    gpui::Rgba::try_from("#ff000059").unwrap().into()
+                    wgpui::Rgba::try_from("#ff000059").unwrap().into()
                 ),
                 (
                     "hex".into(),
-                    gpui::Rgba::try_from("#336699").unwrap().into()
+                    wgpui::Rgba::try_from("#336699").unwrap().into()
                 ),
             ]
         );
@@ -2544,10 +2544,10 @@ mod tests {
         fn render(
             &self,
             node: &MarkdownNode,
-            _window: &mut gpui::Window,
-            _cx: &mut gpui::App,
-        ) -> impl gpui::IntoElement {
-            gpui::div().child(node.as_text().to_string())
+            _window: &mut wgpui::Window,
+            _cx: &mut wgpui::App,
+        ) -> impl wgpui::IntoElement {
+            wgpui::div().child(node.as_text().to_string())
         }
     }
 

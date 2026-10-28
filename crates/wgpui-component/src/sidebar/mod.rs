@@ -5,13 +5,13 @@ use crate::{
     scroll::ScrollableElement,
     v_flex,
 };
-use gpui::{
+use std::{rc::Rc, time::Duration};
+use wgpui::{
     AbsoluteLength, AnyElement, App, ClickEvent, DefiniteLength, EdgesRefinement, ElementId,
     InteractiveElement as _, IntoElement, Length, ListAlignment, ListState, ParentElement, Pixels,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, div, list, prelude::FluentBuilder,
     px,
 };
-use std::{rc::Rc, time::Duration};
 
 use crate::animation::{EffectTransition, ease_in_out_cubic};
 
@@ -452,7 +452,7 @@ impl<E: SidebarItem> RenderOnce for Sidebar<E> {
                         .px_3()
                         .gap_y_3()
                         .when(layout.icon_collapsed, |this| this.p_2())
-                        .child(gpui_base::ScrollBounce::new(
+                        .child(wgpui_base::ScrollBounce::new(
                             "bounce",
                             &list_state,
                             list(list_state.clone(), {

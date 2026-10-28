@@ -1,6 +1,4 @@
-extern crate wgpui_component as gpui_component;
-
-use gpui::{
+use wgpui::{
     Axis, Div, InteractiveElement as _, Length, ParentElement as _, Pixels, Stateful,
     StatefulInteractiveElement as _, Styled as _, blue, green, prelude::FluentBuilder as _, px,
     red,
@@ -38,7 +36,7 @@ fn focus_ring_api_exposes_component_state_without_visual_options() {
 #[test]
 fn base_crate_exports_the_same_foundation_types() {
     let legacy = wgpui_component::Edges::all(1_u8);
-    let base: gpui_base::Edges<u8> = legacy;
+    let base: wgpui_base::Edges<u8> = legacy;
 
     assert_eq!(base.top, 1);
     assert_eq!(base.right, 1);
@@ -48,8 +46,8 @@ fn base_crate_exports_the_same_foundation_types() {
 
 #[test]
 fn motion_core_types_are_available_from_the_base_facade() {
-    let timing = gpui_base::Timing::new(std::time::Duration::from_millis(100))
-        .ease(gpui_base::Easing::Linear);
+    let timing = wgpui_base::Timing::new(std::time::Duration::from_millis(100))
+        .ease(wgpui_base::Easing::Linear);
     assert_eq!(
         timing
             .sample(std::time::Duration::from_millis(50))
@@ -60,19 +58,19 @@ fn motion_core_types_are_available_from_the_base_facade() {
 
 #[test]
 fn base_avatar_uses_application_owned_image_and_fallback_slots() {
-    let _ = gpui_base::Avatar::new()
-        .image(gpui_base::AvatarImage::new(gpui::ImageSource::from(
+    let _ = wgpui_base::Avatar::new()
+        .image(wgpui_base::AvatarImage::new(wgpui::ImageSource::from(
             "avatar.png",
         )))
-        .fallback(gpui_base::AvatarFallback::new().child("JL"));
+        .fallback(wgpui_base::AvatarFallback::new().child("JL"));
 }
 
 #[test]
 fn base_sheet_accepts_application_owned_overlay_and_surface() {
-    fn build(cx: &mut gpui::App) {
-        let _ = gpui_base::Sheet::new(cx)
-            .overlay(gpui::div())
-            .surface(gpui::div())
+    fn build(cx: &mut wgpui::App) {
+        let _ = wgpui_base::Sheet::new(cx)
+            .overlay(wgpui::div())
+            .surface(wgpui::div())
             .overlay_closable(false)
             .on_close(|_, _, _| {});
     }
@@ -82,38 +80,38 @@ fn base_sheet_accepts_application_owned_overlay_and_surface() {
 
 #[test]
 fn base_dialog_owns_modal_actions_and_alert_defaults() {
-    fn dialog(cx: &mut gpui::App) {
-        let handle = gpui_base::DialogHandle::new(true);
-        let _ = gpui_base::Dialog::new(cx)
+    fn dialog(cx: &mut wgpui::App) {
+        let handle = wgpui_base::DialogHandle::new(true);
+        let _ = wgpui_base::Dialog::new(cx)
             .handle(handle.clone())
             .on_open_change(|_, _, _, _| {})
-            .backdrop(gpui_base::DialogBackdrop::new())
-            .popup(gpui_base::DialogPopup::new())
+            .backdrop(wgpui_base::DialogBackdrop::new())
+            .popup(wgpui_base::DialogPopup::new())
             .on_ok(|_, _, _| true)
             .on_cancel(|_, _, _| true)
             .on_close(|_, _, _| {});
-        let _ = gpui_base::AlertDialog::new(cx)
+        let _ = wgpui_base::AlertDialog::new(cx)
             .handle(handle)
-            .backdrop(gpui_base::AlertDialogBackdrop::new())
-            .popup(gpui_base::AlertDialogPopup::new());
+            .backdrop(wgpui_base::AlertDialogBackdrop::new())
+            .popup(wgpui_base::AlertDialogPopup::new());
     }
 
     let _ = dialog;
-    let _ = gpui_base::DialogTitle::new().child("Title");
-    let _ = gpui_base::DialogDescription::new().child("Description");
-    let _ = gpui_base::DialogClose::new().child(gpui::div());
-    let _ = gpui_base::AlertDialogTrigger::new(gpui::div());
-    let _ = gpui_base::AlertDialogTitle::new().child("Title");
-    let _ = gpui_base::AlertDialogDescription::new().child("Description");
-    let _ = gpui_base::AlertDialogAction::new().child(gpui::div());
-    let _ = gpui_base::AlertDialogCancel::new().child(gpui::div());
-    let _: gpui_base::actions::Cancel = wgpui_component::dialog::Cancel;
-    let _: gpui_base::actions::Confirm = wgpui_component::dialog::Confirm { secondary: false };
+    let _ = wgpui_base::DialogTitle::new().child("Title");
+    let _ = wgpui_base::DialogDescription::new().child("Description");
+    let _ = wgpui_base::DialogClose::new().child(wgpui::div());
+    let _ = wgpui_base::AlertDialogTrigger::new(wgpui::div());
+    let _ = wgpui_base::AlertDialogTitle::new().child("Title");
+    let _ = wgpui_base::AlertDialogDescription::new().child("Description");
+    let _ = wgpui_base::AlertDialogAction::new().child(wgpui::div());
+    let _ = wgpui_base::AlertDialogCancel::new().child(wgpui::div());
+    let _: wgpui_base::actions::Cancel = wgpui_component::dialog::Cancel;
+    let _: wgpui_base::actions::Confirm = wgpui_component::dialog::Confirm { secondary: false };
 }
 
 #[test]
 fn base_button_accepts_application_owned_state_styles() {
-    let _button = gpui_base::Button::new("save")
+    let _button = wgpui_base::Button::new("save")
         .accessibility_label("Save")
         .disabled(false)
         .on_click(|_, _, _| {})
@@ -126,29 +124,29 @@ fn base_button_accepts_application_owned_state_styles() {
 
 #[test]
 fn base_controls_expose_typed_semantic_style_contexts() {
-    let _ = gpui_base::Button::new("button")
+    let _ = wgpui_base::Button::new("button")
         .styles(|styles| styles.disabled(|style| style.opacity(0.5)));
-    let _ = gpui_base::Checkbox::new("checkbox").styles(|styles| {
+    let _ = wgpui_base::Checkbox::new("checkbox").styles(|styles| {
         styles
             .checked(|style| style.bg(green()))
             .indeterminate(|style| style.bg(blue()))
             .disabled(|style| style.when(true, |style| style.opacity(0.5)))
     });
     let _ =
-        gpui_base::Radio::new("radio").styles(|styles| styles.checked(|style| style.bg(green())));
+        wgpui_base::Radio::new("radio").styles(|styles| styles.checked(|style| style.bg(green())));
+    let _ = wgpui_base::Switch::new("switch")
+        .styles(|styles| styles.checked(|style| style.bg(green())));
+    let _ = wgpui_base::Toggle::new("toggle")
+        .styles(|styles| styles.pressed(|style| style.bg(green())));
     let _ =
-        gpui_base::Switch::new("switch").styles(|styles| styles.checked(|style| style.bg(green())));
-    let _ =
-        gpui_base::Toggle::new("toggle").styles(|styles| styles.pressed(|style| style.bg(green())));
-    let _ =
-        gpui_base::Link::new("link").styles(|styles| styles.disabled(|style| style.opacity(0.5)));
-    let _ = gpui_base::Tab::new("tab").styles(|styles| {
+        wgpui_base::Link::new("link").styles(|styles| styles.disabled(|style| style.opacity(0.5)));
+    let _ = wgpui_base::Tab::new("tab").styles(|styles| {
         styles
             .selected(|style| style.bg(green()))
             .disabled(|style| style.opacity(0.5))
     });
-    let _ = gpui_base::Tabs::new("tabs").child(
-        gpui_base::Tab::new("first")
+    let _ = wgpui_base::Tabs::new("tabs").child(
+        wgpui_base::Tab::new("first")
             .selected(true)
             .on_click(|_, _, _| {}),
     );
@@ -156,7 +154,7 @@ fn base_controls_expose_typed_semantic_style_contexts() {
 
 #[test]
 fn base_collapsible_uses_normal_child_and_content_slots() {
-    let _ = gpui_base::Collapsible::new()
+    let _ = wgpui_base::Collapsible::new()
         .open(true)
         .child("Trigger")
         .content("Content");
@@ -168,25 +166,27 @@ fn base_collapsible_uses_normal_child_and_content_slots() {
 
 #[test]
 fn base_accordion_uses_normal_parts_and_children() {
-    let trigger = gpui_base::AccordionTrigger::new("trigger")
+    let trigger = wgpui_base::AccordionTrigger::new("trigger")
         .open(true)
         .disabled(false)
         .child("Title");
-    let header = gpui_base::AccordionHeader::new(trigger).level(3);
-    let panel = gpui_base::AccordionPanel::new().open(true).child("Content");
-    let item = gpui_base::AccordionItem::new()
+    let header = wgpui_base::AccordionHeader::new(trigger).level(3);
+    let panel = wgpui_base::AccordionPanel::new()
+        .open(true)
+        .child("Content");
+    let item = wgpui_base::AccordionItem::new()
         .open(true)
         .header(header)
         .panel(panel);
-    let _ = gpui_base::Accordion::new("accordion").child(item);
+    let _ = wgpui_base::Accordion::new("accordion").child(item);
 }
 
 #[test]
 fn legacy_behavior_traits_are_the_base_traits() {
-    fn selectable<T: gpui_base::Selectable>(value: T) -> T {
+    fn selectable<T: wgpui_base::Selectable>(value: T) -> T {
         value
     }
-    fn disableable<T: gpui_base::Disableable>(value: T) -> T {
+    fn disableable<T: wgpui_base::Disableable>(value: T) -> T {
         value
     }
 
@@ -196,49 +196,49 @@ fn legacy_behavior_traits_are_the_base_traits() {
 
 #[test]
 fn legacy_measure_type_is_the_base_type() {
-    fn accepts_base(_: gpui_base::Measure) {}
+    fn accepts_base(_: wgpui_base::Measure) {}
     accepts_base(wgpui_component::Measure::new("compat"));
 }
 
 #[test]
 fn base_progress_accepts_application_owned_indicator_content() {
-    let _ = gpui_base::Progress::new("progress")
+    let _ = wgpui_base::Progress::new("progress")
         .value(42.)
-        .child(gpui_base::ProgressTrack::new())
-        .child(gpui_base::ProgressIndicator::new().child(gpui::div()));
+        .child(wgpui_base::ProgressTrack::new())
+        .child(wgpui_base::ProgressIndicator::new().child(wgpui::div()));
 }
 
 #[test]
 fn base_table_and_toast_accept_application_owned_composition() {
-    let row = gpui_base::TableRow::new("row", 1)
-        .child(gpui_base::TableHead::new("head", 1).child("Name"))
-        .child(gpui_base::TableCell::new("cell", 1).child("Ada"));
-    let _ = gpui_base::Table::new("table")
-        .child(gpui_base::TableHeader::new("header").child(row))
-        .child(gpui_base::TableBody::new("body"))
-        .child(gpui_base::TableCaption::new("caption").child("People"));
+    let row = wgpui_base::TableRow::new("row", 1)
+        .child(wgpui_base::TableHead::new("head", 1).child("Name"))
+        .child(wgpui_base::TableCell::new("cell", 1).child("Ada"));
+    let _ = wgpui_base::Table::new("table")
+        .child(wgpui_base::TableHeader::new("header").child(row))
+        .child(wgpui_base::TableBody::new("body"))
+        .child(wgpui_base::TableCaption::new("caption").child("People"));
 
-    let _ = gpui_base::ToastStack::new("toasts", gpui_base::ToastStackState::default())
-        .child(gpui_base::Toast::new("toast").child("Saved"));
+    let _ = wgpui_base::ToastStack::new("toasts", wgpui_base::ToastStackState::default())
+        .child(wgpui_base::Toast::new("toast").child("Saved"));
 }
 
 #[test]
 fn legacy_tree_models_are_base_types() {
-    fn accepts_base(_: gpui_base::TreeItem) {}
+    fn accepts_base(_: wgpui_base::TreeItem) {}
     accepts_base(wgpui_component::tree::TreeItem::new("id", "Label"));
 }
 
 #[test]
 fn base_combobox_accepts_application_owned_content() {
-    fn build(trigger: gpui::FocusHandle, content: gpui::FocusHandle) {
-        let _ = gpui_base::Combobox::new("language")
+    fn build(trigger: wgpui::FocusHandle, content: wgpui::FocusHandle) {
+        let _ = wgpui_base::Combobox::new("language")
             .open(true)
             .disabled(false)
             .focus_handle(&trigger)
             .content_focus_handle(&content)
             .on_open_change(|_, _, _| {})
             .on_confirm(|_, _| {})
-            .child(gpui::div());
+            .child(wgpui::div());
     }
 
     let _ = build;
@@ -246,67 +246,67 @@ fn base_combobox_accepts_application_owned_content() {
 
 #[test]
 fn base_input_frames_accept_application_owned_content() {
-    let _ = gpui_base::InputBase::new("input").child(gpui::div());
-    fn build_number(state: &gpui::Entity<gpui_base::input::InputState>) {
-        let _ = gpui_base::NumberInput::new(state)
+    let _ = wgpui_base::InputBase::new("input").child(wgpui::div());
+    fn build_number(state: &wgpui::Entity<wgpui_base::input::InputState>) {
+        let _ = wgpui_base::NumberInput::new(state)
             .on_step(|_, _, _| {})
             .decrement_button(|button| button.child("-"))
             .increment_button(|button| button.child("+"))
-            .input(gpui::div())
-            .child(gpui::div());
+            .input(wgpui::div())
+            .child(wgpui::div());
     }
     let _ = build_number;
-    let _ = gpui_base::NumberInputText::new().child(gpui::div());
+    let _ = wgpui_base::NumberInputText::new().child(wgpui::div());
 
-    let _: gpui_base::StepAction = wgpui_component::input::StepAction::Increment;
+    let _: wgpui_base::StepAction = wgpui_component::input::StepAction::Increment;
 }
 
 #[test]
 fn base_input_accepts_application_owned_highlighters() {
     struct CustomHighlighter;
 
-    impl gpui_base::input::InputHighlighter for CustomHighlighter {
-        fn language(&self) -> gpui::SharedString {
+    impl wgpui_base::input::InputHighlighter for CustomHighlighter {
+        fn language(&self) -> wgpui::SharedString {
             "custom".into()
         }
 
         fn update(
             &mut self,
-            _: Option<gpui_base::input::InputEdit>,
-            _: &gpui_base::input::Rope,
+            _: Option<wgpui_base::input::InputEdit>,
+            _: &wgpui_base::input::Rope,
             _: bool,
-            _: &mut gpui::Window,
-            _: &mut gpui::Context<gpui_base::input::EditorState>,
+            _: &mut wgpui::Window,
+            _: &mut wgpui::Context<wgpui_base::input::EditorState>,
         ) {
         }
 
         fn styles(
             &self,
             _: &std::ops::Range<usize>,
-            _: &dyn gpui_base::input::HighlightStyleResolver,
-        ) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+            _: &dyn wgpui_base::input::HighlightStyleResolver,
+        ) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
             Vec::new()
         }
 
-        fn fold_ranges(&self, _: &gpui_base::input::Rope) -> Vec<gpui_base::input::FoldRange> {
+        fn fold_ranges(&self, _: &wgpui_base::input::Rope) -> Vec<wgpui_base::input::FoldRange> {
             Vec::new()
         }
     }
 
-    let factory: gpui_base::input::InputHighlighterFactory =
+    let factory: wgpui_base::input::InputHighlighterFactory =
         std::rc::Rc::new(|_| Some(Box::new(CustomHighlighter)));
     let _ = factory;
 }
 
 #[test]
 fn legacy_list_settings_are_the_base_type() {
-    fn accepts_base(_: gpui_base::ListSettings) {}
+    fn accepts_base(_: wgpui_base::ListSettings) {}
     accepts_base(wgpui_component::list::ListSettings::default());
 }
 
 #[test]
 fn legacy_global_state_is_the_base_type() {
-    fn accepts_base(_: &gpui_base::GlobalState) {}
+    fn accepts_base(_: &wgpui_base::GlobalState) {}
     fn through_legacy(state: &wgpui_component::GlobalState) {
         accepts_base(state);
     }
@@ -316,7 +316,7 @@ fn legacy_global_state_is_the_base_type() {
 
 #[test]
 fn legacy_popover_state_is_the_base_type() {
-    fn accepts_base(_: &gpui_base::PopoverState) {}
+    fn accepts_base(_: &wgpui_base::PopoverState) {}
     fn through_legacy(state: &wgpui_component::popover::PopoverState) {
         accepts_base(state);
     }
@@ -326,7 +326,7 @@ fn legacy_popover_state_is_the_base_type() {
 
 #[test]
 fn legacy_hover_card_state_is_the_base_type() {
-    fn accepts_base(_: &gpui_base::HoverCardState) {}
+    fn accepts_base(_: &wgpui_base::HoverCardState) {}
     fn through_legacy(state: &wgpui_component::hover_card::HoverCardState) {
         accepts_base(state);
     }
@@ -336,20 +336,20 @@ fn legacy_hover_card_state_is_the_base_type() {
 
 #[test]
 fn base_tooltip_positioner_uses_normal_children() {
-    let _ = gpui_base::Tooltip::new("tooltip-popup")
+    let _ = wgpui_base::Tooltip::new("tooltip-popup")
         .child("Tooltip")
         .child("⌘K");
-    let _ = gpui_base::TooltipPositioner::new(gpui::Bounds::default())
+    let _ = wgpui_base::TooltipPositioner::new(wgpui::Bounds::default())
         .placement(wgpui_component::Placement::Right)
         .child("Tooltip");
 }
 
 #[test]
 fn transition_ids_accept_strings_and_named_channels() {
-    let _: gpui_base::TransitionId = "opacity".into();
-    let _: gpui_base::TransitionId = ("checkbox", "fill").into();
+    let _: wgpui_base::TransitionId = "opacity".into();
+    let _: wgpui_base::TransitionId = ("checkbox", "fill").into();
 
-    fn requires_interpolation<T: gpui_base::Interpolate>() {}
+    fn requires_interpolation<T: wgpui_base::Interpolate>() {}
     requires_interpolation::<f32>();
 }
 
@@ -358,10 +358,10 @@ fn legacy_styled_and_sizing_exports_remain_available() {
     use wgpui_component::Sizable as _;
 
     let _: wgpui_component::Size = wgpui_component::Size::Medium;
-    let _ = wgpui_component::StyledExt::font_medium(gpui::div());
+    let _ = wgpui_component::StyledExt::font_medium(wgpui::div());
     let _ = wgpui_component::h_flex();
     let _ = wgpui_component::v_flex();
-    let _ = wgpui_component::box_shadow(0., 0., 0., 0., gpui::hsla(0., 0., 0., 0.));
+    let _ = wgpui_component::box_shadow(0., 0., 0., 0., wgpui::hsla(0., 0., 0., 0.));
 
     struct SizedValue;
     impl wgpui_component::Sizable for SizedValue {
@@ -376,48 +376,48 @@ fn legacy_styled_and_sizing_exports_remain_available() {
 fn element_ext_is_available_from_base_and_the_legacy_root() {
     use wgpui_component::ElementExt as _;
 
-    fn requires_base<T: gpui_base::ElementExt>() {}
+    fn requires_base<T: wgpui_base::ElementExt>() {}
     fn requires_legacy<T: wgpui_component::ElementExt>() {}
-    requires_base::<gpui::Div>();
-    requires_legacy::<gpui::Div>();
+    requires_base::<wgpui::Div>();
+    requires_legacy::<wgpui::Div>();
 
-    let _ = gpui::div().on_prepaint(|_, _, _| {});
+    let _ = wgpui::div().on_prepaint(|_, _, _| {});
 }
 
 #[test]
 fn legacy_history_path_reexports_the_base_type() {
-    let _: wgpui_component::history::History<u8> = gpui_base::History::new();
-    let _: wgpui_component::history::UndoHistory<u8> = gpui_base::UndoHistory::new();
+    let _: wgpui_component::history::History<u8> = wgpui_base::History::new();
+    let _: wgpui_component::history::UndoHistory<u8> = wgpui_base::UndoHistory::new();
 }
 
 #[test]
 fn legacy_auto_scroll_path_reexports_the_base_type() {
-    fn through_legacy_path(scroll: gpui_base::AutoScroll) -> wgpui_component::scroll::AutoScroll {
+    fn through_legacy_path(scroll: wgpui_base::AutoScroll) -> wgpui_component::scroll::AutoScroll {
         scroll
     }
 
-    let _ = through_legacy_path(gpui_base::AutoScroll::default());
+    let _ = through_legacy_path(wgpui_base::AutoScroll::default());
 }
 
 #[test]
 fn root_resizable_paths_reexport_base_types() {
-    fn state_through_facade(state: gpui_base::ResizableState) -> wgpui_component::ResizableState {
+    fn state_through_facade(state: wgpui_base::ResizableState) -> wgpui_component::ResizableState {
         state
     }
 
     fn group_through_facade(
-        group: gpui_base::ResizablePanelGroup,
+        group: wgpui_base::ResizablePanelGroup,
     ) -> wgpui_component::ResizablePanelGroup {
         group
     }
 
-    fn panel_through_facade(panel: gpui_base::ResizablePanel) -> wgpui_component::ResizablePanel {
+    fn panel_through_facade(panel: wgpui_base::ResizablePanel) -> wgpui_component::ResizablePanel {
         panel
     }
 
-    let _ = state_through_facade(gpui_base::ResizableState::default());
-    let _ = group_through_facade(gpui_base::ResizablePanelGroup::new("group"));
-    let _ = panel_through_facade(gpui_base::resizable_panel());
+    let _ = state_through_facade(wgpui_base::ResizableState::default());
+    let _ = group_through_facade(wgpui_base::ResizablePanelGroup::new("group"));
+    let _ = panel_through_facade(wgpui_base::resizable_panel());
     let _ = wgpui_component::h_resizable("horizontal");
     let _ = wgpui_component::v_resizable("vertical");
 }
@@ -425,12 +425,12 @@ fn root_resizable_paths_reexport_base_types() {
 #[test]
 fn legacy_resizable_module_paths_remain_available() {
     fn panel_through_legacy(
-        panel: gpui_base::ResizablePanel,
+        panel: wgpui_base::ResizablePanel,
     ) -> wgpui_component::resizable::ResizablePanel {
         panel
     }
 
-    let _ = panel_through_legacy(gpui_base::resizable_panel());
+    let _ = panel_through_legacy(wgpui_base::resizable_panel());
     let _ = wgpui_component::resizable::h_resizable("horizontal");
     let _ = wgpui_component::resizable::v_resizable("vertical");
 }

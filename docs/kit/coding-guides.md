@@ -27,7 +27,7 @@ requested change from synchronizing an owner-supplied value.
 
 Initialize Kit once and open each window through its facade. Use the [current
 application example](../../examples/kit-hello-world/README.md) for compilable
-bootstrap code. Internal dependency aliases and public `AppContext` traits are
+bootstrap code. Downstream renamed dependencies and public `AppContext` traits are
 compatibility contracts; obsolete `WindowContext`, `ViewContext` and `Model<T>`
 examples are not templates for new code.
 

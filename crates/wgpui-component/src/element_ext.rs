@@ -1,6 +1,6 @@
-use gpui::{AnyElement, IntoElement};
+use wgpui::{AnyElement, IntoElement};
 
-pub use gpui_base::ElementExt;
+pub use wgpui_base::ElementExt;
 
 use crate::{Sizable, Size};
 

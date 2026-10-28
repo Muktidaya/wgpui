@@ -1,5 +1,5 @@
-use gpui::{AnyElement, App, IntoElement, StyleRefinement, Window};
 use std::rc::Rc;
+use wgpui::{AnyElement, App, IntoElement, StyleRefinement, Window};
 
 use crate::setting::{AnySettingField, RenderOptions, fields::SettingFieldRender};
 

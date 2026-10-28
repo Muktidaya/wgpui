@@ -1,12 +1,12 @@
 use crate::{ActiveTheme, Disableable, Icon, Selectable, Sizable as _, StyledExt, h_flex};
-use gpui::{
+use smallvec::SmallVec;
+use std::collections::HashMap;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, InteractiveElement, Interactivity, IntoElement,
     MouseButton, MouseDownEvent, MouseMoveEvent, ParentElement, RenderOnce, SharedString, Stateful,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
-use gpui_base::TestSupportExt as _;
-use smallvec::SmallVec;
-use std::collections::HashMap;
+use wgpui_base::TestSupportExt as _;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum ListItemMode {
@@ -162,13 +162,13 @@ impl Selectable for ListItem {
 }
 
 impl Styled for ListItem {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl ParentElement for ListItem {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.children.extend(elements);
     }
 }
@@ -279,7 +279,7 @@ impl RenderOnce for ListItem {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, Context, Render};
+    use wgpui::{AppContext as _, Context, Render};
 
     struct DragPreview;
 
@@ -289,8 +289,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn test_list_item_interactivity(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_list_item_interactivity(_cx: &mut wgpui::TestAppContext) {
         let mut item = ListItem::new("item")
             .on_drag(DragPreview, |_, _, _, cx| cx.new(|_| DragPreview))
             .drag_over::<DragPreview>(|style, _, _, _| style)

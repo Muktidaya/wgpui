@@ -6,7 +6,7 @@
 //! the anchor there puts the popup at the current frame's caret instead of
 //! the previous frame's.
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AvailableSpace, Bounds, Element, ElementId, GlobalElementId,
     InspectorElementId, IntoElement, LayoutId, Pixels, Point, Size, Style, WeakEntity, Window, px,
 };

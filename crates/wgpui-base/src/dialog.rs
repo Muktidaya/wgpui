@@ -4,13 +4,13 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, FocusHandle, InteractiveElement as _, IntoElement, KeyBinding,
     MouseButton, ParentElement, Pixels, RenderOnce, Role, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, anchored, deferred, div, point, prelude::FluentBuilder as _,
     px,
 };
-use smallvec::SmallVec;
 
 use crate::actions::{Cancel, Confirm};
 use crate::{FocusTrapElement as _, StyledExt as _};
@@ -252,7 +252,7 @@ dialog_part!(
 /// Unstyled title slot for a dialog surface.
 #[derive(IntoElement)]
 pub struct DialogTitle {
-    base: gpui::Div,
+    base: wgpui::Div,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -294,7 +294,7 @@ impl RenderOnce for DialogTitle {
 /// Unstyled descriptive-content slot for a dialog surface.
 #[derive(IntoElement)]
 pub struct DialogDescription {
-    base: gpui::Div,
+    base: wgpui::Div,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -648,13 +648,13 @@ impl RenderOnce for Dialog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, point};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{Context, Render, point};
 
-    #[gpui::test]
-    fn close_trigger_supplies_accessible_button(cx: &mut gpui::TestAppContext) {
-        use gpui::{Element as _, accesskit, canvas};
+    #[wgpui::test]
+    fn close_trigger_supplies_accessible_button(cx: &mut wgpui::TestAppContext) {
         use std::sync::{Arc, Mutex};
+        use wgpui::{Element as _, accesskit, canvas};
 
         struct Probe(Arc<Mutex<Option<accesskit::Node>>>);
         impl Render for Probe {
@@ -685,9 +685,9 @@ mod tests {
         assert!(node.supports_action(accesskit::Action::Click));
     }
 
-    #[gpui::test]
-    fn close_trigger_activates_once_and_respects_cancel_veto(cx: &mut gpui::TestAppContext) {
-        use gpui::{KeyDownEvent, KeyUpEvent, Keystroke};
+    #[wgpui::test]
+    fn close_trigger_activates_once_and_respects_cancel_veto(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{KeyDownEvent, KeyUpEvent, Keystroke};
 
         struct Harness {
             focus: FocusHandle,
@@ -763,8 +763,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn trigger_opens_shared_handle_and_reports_reason(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_opens_shared_handle_and_reports_reason(cx: &mut wgpui::TestAppContext) {
         let handle = DialogHandle::new(false);
         let changes = Rc::new(RefCell::new(Vec::new()));
         *handle.on_open_change.borrow_mut() = Some({
@@ -788,10 +788,10 @@ mod tests {
     /// The backdrop is the dimming surface every caller hands over as an
     /// `absolute()` element, so it has to have the host's box to resolve
     /// against — a collapsed wrapper leaves it zero-sized and invisible.
-    #[gpui::test]
-    fn the_backdrop_fills_the_host(cx: &mut gpui::TestAppContext) {
-        use gpui::{Bounds, canvas};
+    #[wgpui::test]
+    fn the_backdrop_fills_the_host(cx: &mut wgpui::TestAppContext) {
         use std::cell::Cell;
+        use wgpui::{Bounds, canvas};
 
         struct Harness {
             focus: FocusHandle,
@@ -839,8 +839,8 @@ mod tests {
 
     /// The backdrop sits under the popup, so a press on the popup must not
     /// reach it and dismiss the dialog.
-    #[gpui::test]
-    fn pressing_the_popup_does_not_dismiss(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pressing_the_popup_does_not_dismiss(cx: &mut wgpui::TestAppContext) {
         struct Harness(DialogHandle);
         impl Render for Harness {
             fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -875,10 +875,10 @@ mod tests {
         assert!(!handle.is_open(), "a press on the backdrop still dismisses");
     }
 
-    #[gpui::test]
-    fn the_popup_is_centered_by_default(cx: &mut gpui::TestAppContext) {
-        use gpui::{Bounds, canvas};
+    #[wgpui::test]
+    fn the_popup_is_centered_by_default(cx: &mut wgpui::TestAppContext) {
         use std::cell::Cell;
+        use wgpui::{Bounds, canvas};
 
         struct Harness(Rc<Cell<Bounds<Pixels>>>);
         impl Render for Harness {

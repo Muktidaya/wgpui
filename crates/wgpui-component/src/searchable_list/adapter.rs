@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, Context, IntoElement, ParentElement as _, Styled as _, Window, div};
+use wgpui::{AnyElement, App, Context, IntoElement, ParentElement as _, Styled as _, Window, div};
 
 use crate::{
     ActiveTheme, Disableable as _, Icon, IconName, IndexPath, Sizable as _, Size, StyleSized as _,
@@ -104,7 +104,7 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
         window: &mut Window,
         cx: &mut Context<ListState<Self>>,
     ) -> Option<Self::Item> {
-        use gpui::IntoElement as _;
+        use wgpui::IntoElement as _;
 
         let item = self.delegate.item(ix)?;
         // Read check state from the snapshot — never from an external entity, which would panic
@@ -167,7 +167,7 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
         query: &str,
         window: &mut Window,
         cx: &mut Context<ListState<Self>>,
-    ) -> gpui::Task<()> {
+    ) -> wgpui::Task<()> {
         self.delegate.perform_search(query, window, cx)
     }
 

@@ -1,4 +1,4 @@
-use gpui::{Bounds, HighlightStyle, point, px, rgb, size};
+use wgpui::{Bounds, HighlightStyle, point, px, rgb, size};
 
 use super::{
     DiffSide,

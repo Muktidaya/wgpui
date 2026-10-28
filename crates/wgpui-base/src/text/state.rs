@@ -11,7 +11,7 @@ use std::{
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Bounds, Context, EntityId, FocusHandle, IntoElement, KeyBinding,
     ListState, ParentElement as _, Pixels, Point, Render, SharedString, Styled as _, Task, Window,
     prelude::FluentBuilder as _, px,
@@ -164,7 +164,7 @@ pub struct TextViewState {
     pub(super) pending_reveal: Option<PendingReveal>,
     pub(super) selection_revision: usize,
     compatible_layout_update: bool,
-    layout_text_style: Option<(gpui::TextStyle, Pixels, f32)>,
+    layout_text_style: Option<(wgpui::TextStyle, Pixels, f32)>,
     parsed_error: Option<SharedString>,
     tx: Sender<UpdateOptions>,
     _parse_task: Task<()>,
@@ -230,7 +230,7 @@ impl TextViewState {
             // thumb size stays stable. Without this, off-screen blocks count
             // as zero height until scrolled into view, which makes the
             // scrollbar jitter as more blocks get measured during scrolling.
-            list_state: ListState::new(0, gpui::ListAlignment::Top, px(1000.)).measure_all(),
+            list_state: ListState::new(0, wgpui::ListAlignment::Top, px(1000.)).measure_all(),
             text_view_style: Arc::default(),
             code_block_actions: None,
             code_block_highlighter: None,
@@ -690,7 +690,7 @@ impl TextViewState {
     /// current rendered text, as with [`Self::set_range_highlights`].
     ///
     /// A [`Self::scrollable`] view scrolls itself. Otherwise the nearest
-    /// enclosing `gpui::list` scrolls, as long as the row holding the view is
+    /// enclosing `wgpui::list` scrolls, as long as the row holding the view is
     /// laid out, so scroll to that row first when it may be off screen. Any
     /// other scroll container scrolls through
     /// [`TextView::on_reveal`](crate::text::TextView::on_reveal). An empty
@@ -1405,12 +1405,12 @@ mod tests {
         MarkdownNode,
         node::{BlockNode, Span},
     };
-    use gpui::{Entity, TestAppContext};
+    use wgpui::{Entity, TestAppContext};
 
     mod stream_fade {
         use std::{cell::Cell, ops::Range, rc::Rc, time::Duration};
 
-        use gpui::{Entity, TestAppContext};
+        use wgpui::{Entity, TestAppContext};
 
         use super::super::*;
         use crate::{motion::Easing, text::stream_fade::TextLeafKey};
@@ -1452,7 +1452,7 @@ mod tests {
             })
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn push_str_fades_only_the_appended_text(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             state.update(cx, |state, cx| state.push_str(" world", cx));
@@ -1467,7 +1467,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn overtaken_parse_preserves_the_remaining_chunks_fade(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             let parsed = super::push_and_parse(&state, " one", cx);
@@ -1484,7 +1484,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn overtaken_parse_preserves_a_remaining_blocks_fade(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             let parsed = super::push_and_parse(&state, " one", cx);
@@ -1504,7 +1504,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn set_text_extending_the_text_fades_like_push_str(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             state.update(cx, |state, cx| state.set_text("hello world", cx));
@@ -1513,7 +1513,7 @@ mod tests {
             assert_eq!(fades(&state, TextLeafKey::block(0), cx), Some(vec![5..11]));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn set_text_replacing_the_text_shows_it_at_once(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             state.update(cx, |state, cx| state.push_str(" world", cx));
@@ -1526,7 +1526,7 @@ mod tests {
             assert_eq!(fades(&state, TextLeafKey::block(0), cx), None);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn completed_markup_refades_from_the_divergence(cx: &mut TestAppContext) {
             // The paragraph renders `text` (trailing space trimmed), then
             // `text **bo` literally.
@@ -1545,7 +1545,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn without_stagger_an_update_fades_as_one_chunk(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             state.update(cx, |state, cx| state.push_str(" one two three", cx));
@@ -1554,7 +1554,7 @@ mod tests {
             assert_eq!(fades(&state, TextLeafKey::block(0), cx), Some(vec![5..19]));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn words_of_one_update_start_one_after_another(cx: &mut TestAppContext) {
             let stagger = Duration::from_millis(100);
             let state = fading_state("hello", cx);
@@ -1585,7 +1585,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_new_paragraph_fades_as_a_whole(cx: &mut TestAppContext) {
             let state = fading_state("first", cx);
             state.update(cx, |state, cx| state.push_str("\n\nsecond", cx));
@@ -1595,7 +1595,7 @@ mod tests {
             assert_eq!(fades(&state, TextLeafKey::block(7), cx), Some(vec![0..6]));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn code_block_text_fades_by_block(cx: &mut TestAppContext) {
             let state = fading_state("```rs\nlet", cx);
             state.update(cx, |state, cx| state.push_str(" x", cx));
@@ -1604,7 +1604,7 @@ mod tests {
             assert_eq!(fades(&state, TextLeafKey::block(0), cx), Some(vec![3..5]));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn table_cells_fade_by_ordinal(cx: &mut TestAppContext) {
             let state = fading_state("| a | b |\n|---|---|\n| c | d", cx);
             state.update(cx, |state, cx| state.push_str("e |", cx));
@@ -1617,7 +1617,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn zero_duration_records_nothing(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("hello", cx)));
@@ -1630,7 +1630,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn reduced_motion_drops_the_fade(cx: &mut TestAppContext) {
             let state = fading_state("hello", cx);
             state.update(cx, |state, cx| state.push_str(" world", cx));
@@ -1642,7 +1642,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_fade_repaints_on_a_timer_until_nothing_fades(cx: &mut TestAppContext) {
             struct FadeRoot(Entity<TextViewState>);
             impl Render for FadeRoot {
@@ -1688,7 +1688,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn small_full_replace_parses_before_background_executor_runs(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let markdown = "# ready";
@@ -1700,7 +1700,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn large_markdown_and_html_full_replacements_wait_for_background_executor(
         cx: &mut TestAppContext,
     ) {
@@ -1740,7 +1740,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn inline_source_ranges_follow_streamed_tail_reparsing(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("中文 $a$\n\n尾 $x", cx)));
@@ -1785,7 +1785,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn async_full_replace_then_push_str_preserves_complete_source(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("old", cx)));
@@ -1832,7 +1832,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stream_commits_a_parse_that_a_newer_chunk_overtook(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("# Answer\n\n", cx)));
@@ -1853,7 +1853,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_parse_from_before_a_replacement_is_discarded(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("old", cx)));
@@ -1875,7 +1875,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn html_push_str_keeps_earlier_blocks(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::html("<p>first</p>", cx)));
@@ -1900,7 +1900,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn element_text_of_the_same_string_is_not_compared_again(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("", cx)));
@@ -1927,7 +1927,7 @@ mod tests {
         state.read_with(cx, |state, _| assert_eq!(state.text.as_str(), "hello"));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_text_then_push_str_appends_to_replaced_content(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("old", cx)));
@@ -1956,7 +1956,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn full_parse_coalesced_with_append_preserves_new_select_all(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("old", cx)));
@@ -1990,7 +1990,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_text_extending_markdown_appends_and_keeps_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("hello", cx)));
@@ -2015,7 +2015,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_text_streaming_markdown_matches_a_full_parse(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let streamed = cx.update(|cx| cx.new(|cx| TextViewState::markdown("# Title", cx)));
@@ -2056,7 +2056,7 @@ mod tests {
         assert_eq!(parsed_blocks(&streamed, cx), parsed_blocks(&parsed, cx));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_text_extending_html_parses_it_again(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let streamed = cx.update(|cx| cx.new(|cx| TextViewState::html("<ul><li>a</li>", cx)));
@@ -2075,7 +2075,7 @@ mod tests {
         assert_eq!(parsed_blocks(&streamed, cx), parsed_blocks(&parsed, cx));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_text_extending_after_a_parse_error_parses_it_again(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("hello", cx)));
@@ -2195,7 +2195,7 @@ mod tests {
         assert_eq!(parsed_update.revision, total_updates);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn select_all_returns_rendered_text(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("**quick** value", cx)));
@@ -2220,7 +2220,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn select_all_in_source_format_returns_source(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let markdown = "**quick** value";
@@ -2244,7 +2244,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selected_source_range_returns_full_markdown_source_for_select_all(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let markdown = "**quick** value";
@@ -2258,7 +2258,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selected_source_range_returns_none_for_html(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::html("<b>quick</b>", cx)));
@@ -2342,7 +2342,7 @@ mod tests {
         assert_eq!(children.len(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn parser_revision_reparses_same_name_inline_configuration(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("@member", cx)));
@@ -2375,7 +2375,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_markdown_extensions_reparses_existing_text(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("$TSLA.US", cx)));
@@ -2416,7 +2416,7 @@ mod tests {
     mod range_highlights {
         use std::ops::Range;
 
-        use gpui::{Entity, TestAppContext};
+        use wgpui::{Entity, TestAppContext};
 
         use super::super::*;
         use crate::text::stream_fade::TextLeafKey;
@@ -2429,7 +2429,7 @@ mod tests {
         }
 
         fn highlight(range: Range<usize>) -> RangeHighlight {
-            RangeHighlight::new(range, gpui::hsla(0.15, 1., 0.5, 0.4))
+            RangeHighlight::new(range, wgpui::hsla(0.15, 1., 0.5, 0.4))
         }
 
         /// Highlights `ranges` of the current rendered text.
@@ -2464,7 +2464,7 @@ mod tests {
             state.read_with(cx, |state, _| state.range_highlights.is_some())
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn rendered_text_is_the_plain_copy_text(cx: &mut TestAppContext) {
             let state = state(
                 "# Title\n\nhello **world** \\*\n\n- item\n\n| a | b |\n|---|---|\n| c | d |\n\n```\nlet x\n```",
@@ -2478,14 +2478,14 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_match_across_marks_paints_in_its_paragraph(cx: &mut TestAppContext) {
             let state = state("hello **world**", cx);
             set(&state, [0.."hello world".len()], cx).unwrap();
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [0..11]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn repeated_text_maps_to_the_occurrence_addressed(cx: &mut TestAppContext) {
             let state = state("foo\n\nfoo", cx);
             let second = state.read_with(cx, |state, _| {
@@ -2496,7 +2496,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(5), cx), [0..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_range_across_blocks_skips_the_separator(cx: &mut TestAppContext) {
             let state = state("ab\n\ncd", cx);
             // "ab\ncd\n": 1..4 is "b\nc".
@@ -2505,7 +2505,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(4), cx), [0..1]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn table_cells_and_code_blocks_are_leaves(cx: &mut TestAppContext) {
             let state = state("| a | b |\n|---|---|\n| c | d |\n\n```\nlet x\n```", cx);
             // "a b\nc d\n\nlet x\n"
@@ -2517,7 +2517,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(code_start), cx), [0..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn invalid_ranges_reject_the_whole_set(cx: &mut TestAppContext) {
             let state = state("中文\n\nab", cx);
             // "中文\nab\n"
@@ -2534,7 +2534,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [0..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn text_outside_every_block_is_left_unpainted(cx: &mut TestAppContext) {
             let source = "foo one\n\n<div>foo two</div>\n\n| foo | x |\n|---|---|\n\nfoo three";
             let state = state(source, cx);
@@ -2559,14 +2559,14 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(last), cx), [0..3, 3..4]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_later_highlight_paints_over_an_earlier_one(cx: &mut TestAppContext) {
             let state = state("abcdef", cx);
             set(&state, [0..6, 2..3], cx).unwrap();
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [0..6, 2..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn html_text_is_unsupported(cx: &mut TestAppContext) {
             let html = cx.update(|cx| cx.new(|cx| TextViewState::html("<p>one</p>", cx)));
             cx.run_until_parked();
@@ -2578,7 +2578,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn inline_objects_are_skipped(cx: &mut TestAppContext) {
             let state = state("x $a$ y", cx);
             state.update(cx, |state, cx| {
@@ -2605,7 +2605,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [0..2, 3..5]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn push_str_keeps_earlier_blocks_and_clips_the_changed_tail(cx: &mut TestAppContext) {
             let state = state("first\n\na **b", cx);
             // "first\na **b\n"
@@ -2619,7 +2619,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(7), cx), [0..2]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn push_str_keeps_a_block_whose_text_is_unchanged(cx: &mut TestAppContext) {
             let state = state("first\n\nsecond", cx);
             set(&state, [6..12], cx).unwrap();
@@ -2630,7 +2630,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(7), cx), [0..6]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn push_str_drops_highlights_of_a_leaf_that_is_gone(cx: &mut TestAppContext) {
             let state = state("first\n\n| a |", cx);
             set(&state, [0..5, 6..11], cx).unwrap();
@@ -2643,7 +2643,7 @@ mod tests {
             assert!(painted(&state, TextLeafKey::table_cell(7, 0), cx).is_empty());
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn replacing_text_drops_highlights_only_where_it_changed(cx: &mut TestAppContext) {
             let state = state("first\n\nsecond", cx);
             set(&state, [0..5, 6..12], cx).unwrap();
@@ -2658,7 +2658,7 @@ mod tests {
             assert!(!has_highlights(&state, cx));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_highlight_follows_its_block_past_an_earlier_edit(cx: &mut TestAppContext) {
             let state = state("foo\n\nbar\n\nbar", cx);
             // "foo\nbar\nbar\n": the first "bar", in the block at source 5.
@@ -2677,7 +2677,7 @@ mod tests {
             assert!(painted(&state, TextLeafKey::block(9), cx).is_empty());
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn appending_a_copy_of_the_last_block_keeps_the_highlight_on_it(cx: &mut TestAppContext) {
             let state = state("a\n\nfoo", cx);
             // "a\nfoo\n"
@@ -2688,7 +2688,7 @@ mod tests {
             assert!(painted(&state, TextLeafKey::block(8), cx).is_empty());
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn deleting_a_table_row_drops_highlights_in_the_rows_it_moves(cx: &mut TestAppContext) {
             let table = "| a | b |\n|---|---|\n| x | 1 |\n| x | 2 |";
             let without_middle_row = "| a | b |\n|---|---|\n| x | 2 |";
@@ -2709,7 +2709,7 @@ mod tests {
             }
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn streaming_table_rows_keeps_the_highlights_of_earlier_rows(cx: &mut TestAppContext) {
             let state = state("| a | b |\n|---|---|\n| x | 1 |", cx);
             // "a b\nx 1\n\n"
@@ -2722,7 +2722,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::table_cell(0, 2), cx), [0..1]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_edit_in_an_earlier_block_keeps_later_highlights(cx: &mut TestAppContext) {
             let state = state("one\n\ntwo", cx);
             set(&state, [0..3, 4..7], cx).unwrap();
@@ -2732,7 +2732,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(6), cx), [0..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_append_after_a_full_update_compares_every_block(cx: &mut TestAppContext) {
             let state = state("first\n\nsecond", cx);
             set(&state, [0..5], cx).unwrap();
@@ -2756,7 +2756,7 @@ mod tests {
             assert!(!has_highlights(&state, cx));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn streaming_through_set_text_keeps_highlights(cx: &mut TestAppContext) {
             let state = state("first\n\nsec", cx);
             // "first\nsec\n"
@@ -2767,7 +2767,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(7), cx), [0..3]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_full_parse_merged_with_an_append_compares_every_block(cx: &mut TestAppContext) {
             let state = state("", cx);
             // The small text is committed at once, and its background parse
@@ -2789,7 +2789,7 @@ mod tests {
             assert!(painted(&state, TextLeafKey::block(0), cx).is_empty());
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_full_update_before_an_append_drops_replaced_highlights(cx: &mut TestAppContext) {
             let state = state("first", cx);
             set(&state, [0..5], cx).unwrap();
@@ -2802,7 +2802,7 @@ mod tests {
             assert!(!has_highlights(&state, cx));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn reparsing_unchanged_text_keeps_highlights(cx: &mut TestAppContext) {
             let state = state("first", cx);
             set(&state, [0..5], cx).unwrap();
@@ -2822,13 +2822,13 @@ mod tests {
 
         impl Render for Root {
             fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-                gpui::div()
+                wgpui::div()
                     .w(px(120.))
                     .child(crate::text::TextView::new(&self.state).selectable(true))
             }
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn highlights_paint_across_inline_code_tables_and_code_blocks(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let markdown = "wrapping text with `inline code` and a [link](https://x.y) \
@@ -2879,7 +2879,7 @@ mod tests {
             start..start + needle.len()
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn source_ranges_highlight_the_text_rendered_from_them(cx: &mut TestAppContext) {
             let markdown =
                 "In Rust, we use `u128` to handle **larger** numbers\n\n| a | **b** |\n|---|---|";
@@ -2906,7 +2906,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn select_all_converts_to_every_rendered_character(cx: &mut TestAppContext) {
             let markdown = "# Title\n\nhello **world**\n\n- item";
             let state = state(markdown, cx);
@@ -2920,7 +2920,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_snapshot_converts_against_its_own_source(cx: &mut TestAppContext) {
             let state = state("first", cx);
             let before = state.read_with(cx, |state, _| state.rendered_text());
@@ -2954,7 +2954,7 @@ mod tests {
             assert_eq!(before.range_for_source(second), None);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn appended_blocks_convert_at_their_place_in_the_whole_source(cx: &mut TestAppContext) {
             let state = state("first\n\nsecond", cx);
             // The tail parse reparses from the last block, whose positions
@@ -2982,7 +2982,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_background_parse_converts_once_it_lands(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let markdown = format!(
@@ -3006,7 +3006,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn inline_objects_convert_whole_and_stay_unpainted(cx: &mut TestAppContext) {
             let markdown = "x $ab$ y";
             let state = state(markdown, cx);
@@ -3049,7 +3049,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [0..2, 4..6]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_dragged_selection_highlights_through_its_source_range(cx: &mut TestAppContext) {
             struct SelectionRoot {
                 state: Entity<TextViewState>,
@@ -3057,7 +3057,7 @@ mod tests {
 
             impl Render for SelectionRoot {
                 fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-                    gpui::div()
+                    wgpui::div()
                         .w(px(160.))
                         .child(crate::TextSelectionLayer)
                         .child(crate::text::TextView::new(&self.state))
@@ -3074,13 +3074,13 @@ mod tests {
             cx.update(|window, cx| window.draw(cx).clear());
             let bounds = state.read_with(cx, |state, _| state.bounds());
             assert!(bounds.size.height > px(30.), "the text wraps, {bounds:?}");
-            let start = bounds.origin + gpui::point(px(2.), px(4.));
-            let end = bounds.bottom_right() - gpui::point(px(2.), px(4.));
-            cx.simulate_mouse_down(start, gpui::MouseButton::Left, gpui::Modifiers::default());
+            let start = bounds.origin + wgpui::point(px(2.), px(4.));
+            let end = bounds.bottom_right() - wgpui::point(px(2.), px(4.));
+            cx.simulate_mouse_down(start, wgpui::MouseButton::Left, wgpui::Modifiers::default());
             cx.update(|window, cx| window.draw(cx).clear());
-            cx.simulate_mouse_move(end, gpui::MouseButton::Left, gpui::Modifiers::default());
+            cx.simulate_mouse_move(end, wgpui::MouseButton::Left, wgpui::Modifiers::default());
             cx.update(|window, cx| window.draw(cx).clear());
-            cx.simulate_mouse_up(end, gpui::MouseButton::Left, gpui::Modifiers::default());
+            cx.simulate_mouse_up(end, wgpui::MouseButton::Left, wgpui::Modifiers::default());
             cx.update(|window, cx| window.draw(cx).clear());
 
             let range = state.update(cx, |state, cx| {
@@ -3105,7 +3105,7 @@ mod tests {
             assert_eq!(painted(&state, TextLeafKey::block(0), cx), [range]);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn html_views_convert_no_source(cx: &mut TestAppContext) {
             let html = cx.update(|cx| cx.new(|cx| TextViewState::html("<p>one</p>", cx)));
             cx.run_until_parked();
@@ -3117,7 +3117,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn clear_range_highlights_removes_them(cx: &mut TestAppContext) {
             let state = state("first", cx);
             set(&state, [0..5], cx).unwrap();
@@ -3127,7 +3127,7 @@ mod tests {
     }
 
     mod reveal_range {
-        use gpui::{
+        use wgpui::{
             Entity, InteractiveElement as _, ListAlignment, ListState, ScrollHandle,
             StatefulInteractiveElement as _, TestAppContext, VisualTestContext, div, list,
         };
@@ -3258,7 +3258,7 @@ mod tests {
         fn scroll_top(
             state: &Entity<TextViewState>,
             cx: &mut VisualTestContext,
-        ) -> gpui::ListOffset {
+        ) -> wgpui::ListOffset {
             state.read_with(cx, |state, _| state.list_state.logical_scroll_top())
         }
 
@@ -3276,7 +3276,7 @@ mod tests {
                 .join(" ")
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_scrollable_view_scrolls_to_an_offscreen_block(cx: &mut TestAppContext) {
             let (state, cx) = window(&paragraphs(200), Container::Scrollable, cx);
             reveal(&state, "paragraph 150", cx);
@@ -3289,7 +3289,7 @@ mod tests {
             assert!(scroll_top(&state, cx).item_ix <= 3);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_append_adding_blocks_keeps_the_scroll_position(cx: &mut TestAppContext) {
             let (state, cx) = window(&paragraphs(200), Container::Scrollable, cx);
             reveal(&state, "paragraph 100", cx);
@@ -3306,7 +3306,7 @@ mod tests {
             assert_unmoved(&state, top, cx);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_scrollable_view_scrolls_to_a_line_inside_a_long_paragraph(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(400), Container::Scrollable, cx);
             reveal(&state, "w390", cx);
@@ -3316,7 +3316,7 @@ mod tests {
             assert!(top.offset_in_item > px(100.), "{top:?}");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn revealing_a_visible_line_does_not_scroll(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(400), Container::Scrollable, cx);
             reveal(&state, "w200", cx);
@@ -3334,7 +3334,7 @@ mod tests {
             }
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_enclosing_list_scrolls_to_a_line_of_a_fit_content_view(cx: &mut TestAppContext) {
             let outer = ListState::new(2, ListAlignment::Top, px(1000.));
             let (state, cx) = window(&words(400), Container::List(outer.clone()), cx);
@@ -3345,7 +3345,7 @@ mod tests {
             assert!(top.offset_in_item > px(100.), "{top:?}");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn on_reveal_scrolls_a_container_that_ignores_scroll_requests(cx: &mut TestAppContext) {
             let handle = ScrollHandle::new();
             let (state, cx) = window(&words(400), Container::Div(handle.clone()), cx);
@@ -3354,7 +3354,7 @@ mod tests {
             assert!(handle.offset().y < px(-100.), "{:?}", handle.offset());
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_reveal_that_cannot_be_shown_gives_up(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(4000), Container::Fixed, cx);
             reveal(&state, "w3990", cx);
@@ -3365,7 +3365,7 @@ mod tests {
             assert!(!is_pending(&state, cx));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_reveal_not_carried_out_in_time_is_dropped(cx: &mut TestAppContext) {
             let (state, cx) = window(&paragraphs(200), Container::Scrollable, cx);
             request(&state, "paragraph 150", cx, |_, cx| {
@@ -3377,7 +3377,7 @@ mod tests {
             assert_eq!(scroll_top(&state, cx).item_ix, 0);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_empty_range_reveals_its_line(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(400), Container::Scrollable, cx);
             reveal(&state, "w390", cx);
@@ -3399,7 +3399,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_position_after_the_last_character_reveals_its_line(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(400), Container::Scrollable, cx);
             reveal(&state, "w399", cx);
@@ -3440,7 +3440,7 @@ mod tests {
 
         fn assert_unmoved(
             state: &Entity<TextViewState>,
-            top: gpui::ListOffset,
+            top: wgpui::ListOffset,
             cx: &mut VisualTestContext,
         ) {
             assert!(!is_pending(state, cx));
@@ -3451,7 +3451,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn the_end_of_the_text_and_its_separators_reveal_the_last_line(cx: &mut TestAppContext) {
             let (state, cx) = window(&words(400), Container::Scrollable, cx);
             reveal(&state, "w399", cx);
@@ -3479,7 +3479,7 @@ mod tests {
             assert_unmoved(&state, top, cx);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn the_end_of_a_block_above_reveals_its_last_line(cx: &mut TestAppContext) {
             let second = (0..400)
                 .map(|ix| format!("v{ix}"))
@@ -3504,7 +3504,7 @@ mod tests {
             assert!(top.offset_in_item > px(1000.), "{top:?}");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn an_empty_view_has_nothing_to_reveal(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("", cx)));
@@ -3515,7 +3515,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn revealing_a_visible_block_does_not_scroll(cx: &mut TestAppContext) {
             let markdown = format!("{}\n\n<div>html</div>\n\n{}", words(400), words(400));
             let (state, cx) = window(&markdown, Container::Scrollable, cx);
@@ -3528,7 +3528,7 @@ mod tests {
             assert_unmoved(&state, top, cx);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_line_of_an_inline_flow_counts_as_shown_once_scrolled_to(cx: &mut TestAppContext) {
             // Inline code every tenth word, so the rows are taller than the
             // body line and land between pixels.
@@ -3548,7 +3548,7 @@ mod tests {
             assert!(scroll_top(&state, cx).offset_in_item > px(1000.));
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_range_starting_on_a_line_break_reveals_the_next_line(cx: &mut TestAppContext) {
             let code = (0..200)
                 .map(|ix| format!("line {ix}"))
@@ -3561,7 +3561,7 @@ mod tests {
             assert!(top.offset_in_item > px(1000.), "{top:?}");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_range_starting_on_a_line_break_in_an_inline_flow_reveals_the_next_line(
             cx: &mut TestAppContext,
         ) {
@@ -3577,7 +3577,7 @@ mod tests {
             assert!(top.offset_in_item > px(1000.), "{top:?}");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_reveal_is_dropped_when_its_text_before_it_changes(cx: &mut TestAppContext) {
             let (state, cx) = window(&paragraphs(200), Container::Scrollable, cx);
             let target = "first words then the target";
@@ -3597,7 +3597,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_clamped_view_does_not_reveal(cx: &mut TestAppContext) {
             let outer = ListState::new(2, ListAlignment::Top, px(1000.));
             let (state, cx) = window(&words(400), Container::Clamped(outer.clone()), cx);
@@ -3606,7 +3606,7 @@ mod tests {
             assert_eq!(outer.logical_scroll_top().item_ix, 0);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn text_outside_every_block_reveals_its_block(cx: &mut TestAppContext) {
             let markdown = format!("{}\n\n<div>html text</div>", paragraphs(100));
             let (state, cx) = window(&markdown, Container::Scrollable, cx);
@@ -3619,7 +3619,7 @@ mod tests {
             );
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_reveal_follows_its_text_past_an_edit_before_it(cx: &mut TestAppContext) {
             let (state, cx) = window(&paragraphs(200), Container::Scrollable, cx);
             // An inserted paragraph moves the target down one block.
@@ -3641,7 +3641,7 @@ mod tests {
             });
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn malformed_ranges_and_html_views_are_rejected(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let state = cx.update(|cx| cx.new(|cx| TextViewState::markdown("first\n\nsecond", cx)));

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, Context, ElementId, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
     RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
@@ -12,7 +12,7 @@ use crate::{
     scroll::ScrollableElement,
 };
 
-pub use gpui_base::{TreeEntry, TreeEvent, TreeItem, TreeState};
+pub use wgpui_base::{TreeEntry, TreeEvent, TreeItem, TreeState};
 
 /// Create a [`Tree`].
 pub fn tree<R>(state: &Entity<TreeState>, render_item: R) -> Tree
@@ -88,7 +88,7 @@ impl RenderOnce for Tree {
             .id(self.id)
             .size_full()
             .child(
-                gpui_base::Tree::new(&self.state)
+                wgpui_base::Tree::new(&self.state)
                     .item(move |ix, entry, entry_state, window, cx| {
                         // Capture only the id: cloning the entry would deep-clone
                         // its whole subtree for every visible row on every frame.
@@ -124,7 +124,7 @@ impl RenderOnce for Tree {
                     .relative()
                     .size_full()
                     .map(|tree| {
-                        gpui_base::ScrollBounce::new("tree-scroll-bounce", &scroll_handle, tree)
+                        wgpui_base::ScrollBounce::new("tree-scroll-bounce", &scroll_handle, tree)
                             .when_some(self.scroll_bounce, |bounce, on| bounce.enabled(on))
                     }),
             )
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn legacy_tree_types_are_base_types() {
-        fn accepts_base(_: gpui_base::TreeItem) {}
+        fn accepts_base(_: wgpui_base::TreeItem) {}
         accepts_base(TreeItem::new("id", "Label"));
     }
 }

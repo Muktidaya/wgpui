@@ -1,9 +1,6 @@
-extern crate gpui as wgpui;
-extern crate wgpui_component as gpui_component;
-
 use std::{cell::Cell, rc::Rc};
 
-use gpui::{App, Context, IntoElement, TestAppContext, Window, div};
+use wgpui::{App, Context, IntoElement, TestAppContext, Window, div};
 use wgpui_component::table::{Column, TableDelegate, TableState};
 
 struct DumpDelegate {
@@ -47,7 +44,7 @@ fn new_table(
     rows: usize,
     columns: usize,
 ) -> (
-    gpui::WindowHandle<TableState<DumpDelegate>>,
+    wgpui::WindowHandle<TableState<DumpDelegate>>,
     Rc<Cell<usize>>,
 ) {
     cx.skip_drawing();
@@ -67,7 +64,7 @@ fn new_table(
     (window, cell_text_calls)
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn dump_range_clamps_and_only_materializes_requested_rows(cx: &mut TestAppContext) {
     let (window, cell_text_calls) = new_table(cx, 100, 2);
 
@@ -86,7 +83,7 @@ fn dump_range_clamps_and_only_materializes_requested_rows(cx: &mut TestAppContex
     assert_eq!(cell_text_calls.get(), 4);
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn dump_still_materializes_the_complete_table(cx: &mut TestAppContext) {
     let (window, cell_text_calls) = new_table(cx, 3, 2);
 

@@ -1,13 +1,13 @@
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     Anchor, AnyElement, App, ElementId, Entity, FocusHandle, Focusable, Hsla,
     InteractiveElement as _, IntoElement, ParentElement, RenderOnce, SharedString,
     StatefulInteractiveElement as _, StyleRefinement, Styled, TextAlign, Window, div, hsla,
     linear_color_stop, linear_gradient, prelude::FluentBuilder as _,
 };
-use rust_i18n::t;
 
-use gpui_base::{ColorPicker as BaseColorPicker, ColorSwatch};
-pub use gpui_base::{ColorPickerEvent, ColorPickerState};
+use wgpui_base::{ColorPicker as BaseColorPicker, ColorSwatch};
+pub use wgpui_base::{ColorPickerEvent, ColorPickerState};
 
 use crate::{
     ActiveTheme as _, Colorize as _, Icon, Selectable, Sizable, Size, StyleSized, StyledExt as _,
@@ -598,7 +598,7 @@ impl RenderOnce for ColorSelect {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, Context, Render, TestAppContext};
+    use wgpui::{AppContext as _, Context, Render, TestAppContext};
 
     use super::*;
 
@@ -616,7 +616,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn repeated_palette_colors_have_independent_focus_stops(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|window, cx| PaletteHarness {
@@ -640,7 +640,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_explicit_accessibility_label_replaces_the_visible_one(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -667,7 +667,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_color_select_builder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -699,11 +699,13 @@ mod tests {
 
     impl Render for SelectHarness {
         fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-            div().w(gpui::px(400.)).child(ColorSelect::new(&self.state))
+            div()
+                .w(wgpui::px(400.))
+                .child(ColorSelect::new(&self.state))
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_click_anywhere_on_the_color_select_opens_the_picker(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|window, cx| SelectHarness {
@@ -715,7 +717,7 @@ mod tests {
 
         // Far from the swatch, where only the field frame can take the click.
         cx.simulate_click(
-            gpui::point(gpui::px(300.), gpui::px(16.)),
+            wgpui::point(wgpui::px(300.), wgpui::px(16.)),
             Default::default(),
         );
         cx.update(|window, cx| window.draw(cx).clear());

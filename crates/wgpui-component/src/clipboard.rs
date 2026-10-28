@@ -1,10 +1,10 @@
 use std::{rc::Rc, time::Duration};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, ClipboardItem, ElementId, IntoElement, RenderOnce, SharedString, Window,
     prelude::FluentBuilder,
 };
-use rust_i18n::t;
 
 use crate::{
     IconName, Sizable, Size,
@@ -54,7 +54,7 @@ impl Clipboard {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip_show_delay = Some(delay);
         self

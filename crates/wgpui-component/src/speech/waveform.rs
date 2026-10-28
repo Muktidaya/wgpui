@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Bounds, ContentMask, Entity, IntoElement, ParentElement as _, Path, PathBuilder, Pixels,
     RenderOnce, StyleRefinement, Styled, Window, canvas, div, point, px, size,
 };

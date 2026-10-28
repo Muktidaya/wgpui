@@ -5,17 +5,14 @@
 //!
 //! Run with `cargo bench -p gpui-base --bench text_view_scroll`.
 
-extern crate gpui as wgpui;
-extern crate wgpui_base as gpui_base;
-
 use std::fmt::Write as _;
 
-use gpui::{
+use wgpui::{
     AppContext as _, BenchAppContext, Context, Entity, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, ScrollHandle, StatefulInteractiveElement as _, Styled as _, Window,
     div, point, px,
 };
-use gpui_base::text::{TextView, TextViewState};
+use wgpui_base::text::{TextView, TextViewState};
 
 /// A long assistant answer: headings, emphasis, links, lists, a code block,
 /// and plenty of prose paragraphs.
@@ -88,18 +85,18 @@ impl Render for Chat {
     }
 }
 
-#[gpui::bench]
+#[wgpui::bench]
 fn text_view_scroll(cx: &mut BenchAppContext) {
     scroll_answer(markdown(), cx);
 }
 
-#[gpui::bench]
+#[wgpui::bench]
 fn text_view_scroll_inline_code(cx: &mut BenchAppContext) {
     scroll_answer(markdown_with_inline_code(), cx);
 }
 
 fn scroll_answer(markdown: String, cx: &mut BenchAppContext) {
-    cx.update(gpui_base::init);
+    cx.update(wgpui_base::init);
     let mut window = cx.add_empty_window();
     let chat = window.update(|window, cx| {
         window.replace_root(cx, |_, cx| Chat {
@@ -125,5 +122,5 @@ fn scroll_answer(markdown: String, cx: &mut BenchAppContext) {
     });
 }
 
-gpui::bench_group!(benches, text_view_scroll, text_view_scroll_inline_code);
-gpui::bench_main!(benches);
+wgpui::bench_group!(benches, text_view_scroll, text_view_scroll_inline_code);
+wgpui::bench_main!(benches);

@@ -7,7 +7,7 @@ use crate::{
     menu::PopupMenu,
     scroll::ScrollableMask,
 };
-use gpui::{
+use wgpui::{
     App, AppContext as _, ClickEvent, Context, DismissEvent, Entity, FocusHandle, Focusable,
     InteractiveElement as _, IntoElement, KeyBinding, MouseButton, OwnedMenu, ParentElement,
     Render, Role, ScrollHandle, SharedString, StatefulInteractiveElement, Styled, Subscription,
@@ -295,7 +295,7 @@ impl Render for AppMenu {
             .when(is_open, |this| {
                 this.child(deferred(
                     anchored()
-                        .anchor(gpui::Anchor::TopLeft)
+                        .anchor(wgpui::Anchor::TopLeft)
                         .snap_to_window_with_margin(px(8.))
                         .child(
                             div()
@@ -313,7 +313,7 @@ impl Render for AppMenu {
 mod tests {
     use super::*;
 
-    use gpui::TestAppContext;
+    use wgpui::TestAppContext;
 
     struct TestRoot {
         menu_bar: Entity<AppMenuBar>,
@@ -330,7 +330,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn preserves_action_context_while_switching_menus(cx: &mut TestAppContext) {
         let (root, cx) = cx.add_window_view(|window, cx| {
             let first_focus = cx.focus_handle();

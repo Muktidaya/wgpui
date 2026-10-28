@@ -1,5 +1,5 @@
-use gpui::{Axis, Pixels};
 use serde::{Deserialize, Serialize};
+use wgpui::{Axis, Pixels};
 
 /// Used to serialize and deserialize the DockArea.
 ///
@@ -138,7 +138,7 @@ impl Default for PanelState {
 impl PanelState {
     /// Create a new leaf state for a panel with the given name.
     ///
-    /// The base layer has no `Panel` trait yet (`gpui_component::dock::Panel`
+    /// The base layer has no `Panel` trait yet (`wgpui_component::dock::Panel`
     /// is layered above), so this takes the name directly rather than
     /// deriving it from a panel value.
     pub fn new(panel_name: impl Into<String>) -> Self {
@@ -193,7 +193,7 @@ impl DockPlacement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::px;
+    use wgpui::px;
 
     /// The whole of a real user's file, not just its outline: every dock and
     /// the nesting under each one. Ported from the old

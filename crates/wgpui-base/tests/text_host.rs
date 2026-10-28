@@ -1,13 +1,10 @@
-extern crate gpui as wgpui;
-extern crate wgpui_base as gpui_base;
-
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
 };
 
-use gpui::{Context, IntoElement, ParentElement as _, Render, TestAppContext, Window, div};
-use gpui_base::{
+use wgpui::{Context, IntoElement, ParentElement as _, Render, TestAppContext, Window, div};
+use wgpui_base::{
     TextViewStyle,
     text::editor_host::{BlockNode, FlowPosition, LinkMark, RenderContext, parse_markdown},
 };
@@ -33,7 +30,7 @@ impl Render for ExternalText {
 }
 
 /// Compile and render as an outside consumer: no private node/context access.
-#[gpui::test]
+#[wgpui::test]
 fn external_host_uses_local_rendering_services(cx: &mut TestAppContext) {
     let highlights = Arc::new(AtomicUsize::new(0));
     let images = Arc::new(AtomicUsize::new(0));
@@ -64,7 +61,7 @@ fn external_host_uses_local_rendering_services(cx: &mut TestAppContext) {
                 ..Default::default()
             },
         );
-    cx.update(gpui_base::init);
+    cx.update(wgpui_base::init);
     let blocks = parse_markdown(
         "```rust\nfn main() {}\n```\n\n![image](test://image)\n\n[reference][target]\n\n[target]: https://example.com\n",
         Default::default(),

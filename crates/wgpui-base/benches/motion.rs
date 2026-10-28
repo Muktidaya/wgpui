@@ -1,6 +1,3 @@
-extern crate gpui as wgpui;
-extern crate wgpui_base as gpui_base;
-
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     hint::black_box,
@@ -8,7 +5,7 @@ use std::{
     time::Instant,
 };
 
-use gpui::{SpringConfig, SpringState};
+use wgpui::{SpringConfig, SpringState};
 use wgpui_base::{Easing, Keyframe, Keyframes, Stagger, StaggerOrigin, Timing};
 
 const BATCHES: usize = 31;

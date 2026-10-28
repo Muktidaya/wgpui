@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, Entity, IntoElement, SharedString, StyleRefinement, Styled,
     Window, prelude::FluentBuilder as _,
 };
@@ -31,7 +31,7 @@ impl<T> StringField<T> {
 
 struct State {
     input: Entity<InputState>,
-    _subscription: gpui::Subscription,
+    _subscription: wgpui::Subscription,
 }
 
 impl<T> SettingFieldRender for StringField<T>

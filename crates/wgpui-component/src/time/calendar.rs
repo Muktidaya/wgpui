@@ -1,14 +1,14 @@
 use chrono::Weekday;
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, ElementId, Entity, InteractiveElement, IntoElement, ParentElement, RenderOnce,
     SharedString, StyleRefinement, Styled, Window, prelude::FluentBuilder as _, px,
 };
-use rust_i18n::t;
 
 use crate::{ActiveTheme, Icon, IconName, Sizable, Size, StyledExt as _};
 
-use gpui_base::{Calendar as BaseCalendar, CalendarItemKind};
-pub use gpui_base::{CalendarEvent, CalendarState, Date, Matcher};
+use wgpui_base::{Calendar as BaseCalendar, CalendarItemKind};
+pub use wgpui_base::{CalendarEvent, CalendarState, Date, Matcher};
 
 fn month_name(month: i32) -> SharedString {
     match month {

@@ -4,8 +4,6 @@
 //! [`Assets`] for the default component bundle, or [`AllAssets`] for the full
 //! catalog. Applications can provide their own source for additional icons.
 
-extern crate gpui as wgpui;
-
 mod icon;
 pub use icon::{IconName, IconNamed};
 
@@ -16,7 +14,6 @@ pub use icon::{IconName, IconNamed};
 /// ## Usage
 ///
 /// ```rust,no_run
-/// # extern crate gpui as wgpui;
 /// use wgpui::*;
 /// use wgpui_kit_assets::Assets;
 ///
@@ -48,11 +45,11 @@ pub use wasm_assets::Assets;
 pub use wasm_assets::Assets as AllAssets;
 
 // Public only so exported macros can resolve dependencies in downstream crates,
-// including applications that depend solely on the gpui-kit umbrella crate.
+// including applications that depend solely on the WGPUI Kit umbrella crate.
 #[doc(hidden)]
 pub mod __private {
     pub use crate::icon::embedded::*;
-    pub use gpui::{AssetSource, Result, SharedString};
+    pub use wgpui::{AssetSource, Result, SharedString};
 }
 
 /// Embed only the selected icons in a native or WebAssembly application.

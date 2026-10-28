@@ -8,9 +8,9 @@ edition.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-gpui.workspace = true
-gpui-base = { path = "../.." }
-gpui_platform.workspace = true
+wgpui.workspace = true
+wgpui-base = { path = "../.." }
+wgpui-platform.workspace = true
 console_error_panic_hook = "0.1"
 console_log = "1.0"
 log.workspace = true
@@ -27,4 +27,4 @@ workspace = true
 # The shared showcase is included with `#[path]`, which cargo-machete cannot
 # follow when detecting its `gpui_base` and `syntect` imports.
 [package.metadata.cargo-machete]
-ignored = ["gpui-base", "reqwest_client", "syntect"]
+ignored = ["wgpui-base", "reqwest_client", "syntect"]

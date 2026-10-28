@@ -1,17 +1,17 @@
 use std::{ops::Range, time::Duration};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Context, ElementId, Entity, FollowMode, Hsla, InteractiveElement as _,
     IntoElement, ListAlignment, ListOffset, ListState, ParentElement as _, RenderOnce, Role,
     SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
     linear_color_stop, linear_gradient, list, prelude::FluentBuilder as _, px, rems,
 };
-use gpui_base::motion::{Transition, transition};
+use wgpui_base::motion::{Transition, transition};
 
 use crate::{ActiveTheme as _, Disableable as _, IconName, StyledExt as _, button::Button};
 use crate::{button::ButtonVariants as _, scroll::ScrollableElement as _};
 
-const LIST_OVERDRAW: gpui::Pixels = px(400.);
+const LIST_OVERDRAW: wgpui::Pixels = px(400.);
 const JUMP_BUTTON_TRANSITION: Duration = Duration::from_millis(200);
 const BOTTOM_FADE_TRANSITION: Duration = Duration::from_millis(200);
 
@@ -381,7 +381,7 @@ impl RenderOnce for MessageScroller {
             .child(
                 // The bounce scrolls the list itself, past the list's own
                 // scroll handler; tell the state, as that handler would.
-                gpui_base::ScrollBounce::new((root_id.clone(), "bounce"), &list_state, list)
+                wgpui_base::ScrollBounce::new((root_id.clone(), "bounce"), &list_state, list)
                     .on_scroll({
                         let state = self.state.downgrade();
                         move |_, cx| {
@@ -465,10 +465,10 @@ impl RenderOnce for MessageScroller {
 mod tests {
     use super::*;
     use crate::Sizable as _;
-    use gpui::AppContext as _;
+    use wgpui::AppContext as _;
 
-    #[gpui::test]
-    fn test_message_scroller_state_builder(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_message_scroller_state_builder(cx: &mut wgpui::TestAppContext) {
         let state = cx.new(|cx| MessageScrollerState::new(3, cx));
 
         cx.update(|cx| {
@@ -501,7 +501,7 @@ mod tests {
         state: Entity<MessageScrollerState>,
     }
 
-    impl gpui::Render for ScrollerHarness {
+    impl wgpui::Render for ScrollerHarness {
         fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
             div().size(px(400.)).child(
                 MessageScroller::new("messages", self.state.clone(), |_, _, _| div().h(px(40.)))
@@ -511,21 +511,21 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn test_logical_scroll_top_reports_the_row_at_the_top(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_logical_scroll_top_reports_the_row_at_the_top(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let state = cx.new(|cx| MessageScrollerState::new(30, cx));
         let (_, cx) = cx.add_window_view({
             let state = state.clone();
             move |_, _| ScrollerHarness { state }
         });
-        let draw = |cx: &mut gpui::VisualTestContext| {
+        let draw = |cx: &mut wgpui::VisualTestContext| {
             cx.run_until_parked();
             cx.update(|window, cx| {
                 _ = window.draw(cx);
             });
         };
-        let top = |cx: &mut gpui::VisualTestContext| {
+        let top = |cx: &mut wgpui::VisualTestContext| {
             cx.update(|_, cx| state.read(cx).logical_scroll_top())
         };
         draw(cx);
@@ -542,9 +542,9 @@ mod tests {
         assert_eq!(top(cx).item_ix, 10);
 
         // A wheel scroll by one row: its 40px and the 32px gap after it.
-        cx.simulate_event(gpui::ScrollEvent {
-            position: gpui::point(px(200.), px(200.)),
-            delta: gpui::ScrollDelta::Pixels(gpui::point(px(0.), px(-72.))),
+        cx.simulate_event(wgpui::ScrollEvent {
+            position: wgpui::point(px(200.), px(200.)),
+            delta: wgpui::ScrollDelta::Pixels(wgpui::point(px(0.), px(-72.))),
             ..Default::default()
         });
         let after_wheel = top(cx);
@@ -554,8 +554,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn test_message_scroller_builder(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_message_scroller_builder(cx: &mut wgpui::TestAppContext) {
         let state = cx.new(|cx| MessageScrollerState::new(0, cx));
         let scroller = MessageScroller::new("message-scroller", state, |_, _, _| div())
             .scrollbar(false)
@@ -567,13 +567,13 @@ mod tests {
             .with_jump_button_style(StyleRefinement::default())
             .with_jump_button_renderer(|button| button.large())
             .with_jump_button_transition(Duration::from_millis(300))
-            .with_bottom_fade(gpui::white());
+            .with_bottom_fade(wgpui::white());
 
         assert!(!scroller.scrollbar);
         assert!(!scroller.jump_button);
         assert_eq!(scroller.jump_button_label, "Latest");
         assert!(scroller.jump_button_renderer.is_some());
         assert_eq!(scroller.jump_button_transition, Duration::from_millis(300));
-        assert_eq!(scroller.bottom_fade, Some(gpui::white()));
+        assert_eq!(scroller.bottom_fade, Some(wgpui::white()));
     }
 }

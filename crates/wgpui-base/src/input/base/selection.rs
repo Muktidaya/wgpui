@@ -1,9 +1,9 @@
 use crate::input::InputModeKind;
 use std::ops::Range;
 
-use gpui::{Context, Window};
 use ropey::Rope;
 use sum_tree::Bias;
+use wgpui::{Context, Window};
 
 use super::{InputBaseState, RopeExt as _};
 use crate::text_boundary::word_range_from_chars;

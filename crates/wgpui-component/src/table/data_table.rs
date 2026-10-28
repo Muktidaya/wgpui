@@ -6,11 +6,11 @@ use crate::{
     },
     table::{TableDelegate, TableState},
 };
-use gpui::{
+use wgpui::{
     App, Edges, Entity, Focusable, InteractiveElement, IntoElement, KeyBinding, ParentElement,
     Pixels, RenderOnce, Styled, Window, div, prelude::FluentBuilder,
 };
-use gpui_base::TestSupportExt as _;
+use wgpui_base::TestSupportExt as _;
 
 const CONTEXT: &'static str = "DataTable";
 pub(super) fn init(cx: &mut App) {
@@ -238,7 +238,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Entity, Render, TestAppContext, VisualTestContext, Window, div,
         px,
     };
@@ -304,7 +304,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_data_table_builder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|window, cx| FocusRingHarness {
@@ -335,7 +335,7 @@ mod tests {
         assert!(table.focus_ring(true).is_focus_ring_enabled());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn data_table_draws_the_focus_ring_by_default(cx: &mut TestAppContext) {
         let cx = keyboard_focused_table(cx, true);
         assert!(
@@ -344,7 +344,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn data_table_focus_ring_can_be_turned_off(cx: &mut TestAppContext) {
         let cx = keyboard_focused_table(cx, false);
         assert!(

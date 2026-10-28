@@ -25,12 +25,12 @@
 
 use std::{cell::RefCell, collections::HashMap, ops::Range, rc::Rc, sync::Arc};
 
-use gpui::{
+use unicode_segmentation::UnicodeSegmentation as _;
+use wgpui::{
     AnyElement, App, Bounds, ClickEvent, ElementId, HighlightStyle, Hsla, ImageSource,
     InteractiveElement as _, IntoElement as _, ParentElement as _, Pixels, Point, SharedString,
     SharedUri, TextLayout, Window, WrappedLineLayout, div, point, px,
 };
-use unicode_segmentation::UnicodeSegmentation as _;
 
 use super::{
     TextViewDefaults, TextViewStyle,
@@ -640,7 +640,7 @@ fn whole_index_at(layout: &LayoutSnapshot, at: Point<Pixels>) -> usize {
 mod tests {
     use std::cell::Cell;
 
-    use gpui::{
+    use wgpui::{
         Context, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement, LayoutId,
         Render, Styled as _, TestAppContext, VisualTestContext, div, rgb, rgba,
     };
@@ -816,7 +816,7 @@ mod tests {
         InlineNode::custom(MarkdownNode::new("atom", ()).text("\u{FFFC}"))
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn keyed_leaves_report_geometry_and_unkeyed_leaves_do_not(cx: &mut TestAppContext) {
         let blocks = vec![
             BlockNode::Heading {
@@ -866,7 +866,7 @@ mod tests {
         assert!(geometries[&5].bounds().left() > geometries[&4].bounds().right() - px(1.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapped_leaf_maps_indices_and_positions(cx: &mut TestAppContext) {
         let text = "the quick brown fox jumps over the lazy dog and keeps running far away";
         let blocks = vec![BlockNode::Paragraph(plain(text).with_leaf_key(1))];
@@ -901,7 +901,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mixed_text_and_atoms_report_boxes(cx: &mut TestAppContext) {
         let mut paragraph = Paragraph::default();
         paragraph.push(InlineNode::new("ab"));
@@ -936,7 +936,7 @@ mod tests {
         assert_eq!(leaf.index_for_position(point(px(-40.), inside.y)), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mixed_flow_hits_land_on_grapheme_boundaries(cx: &mut TestAppContext) {
         // Accented, CJK and emoji text (a skin-tone sequence is one grapheme
         // of two chars) on both sides of atoms, so the leaf is a mixed flow.
@@ -988,7 +988,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mixed_flow_keeps_empty_lines_and_trailing_breaks(cx: &mut TestAppContext) {
         let mut paragraph = Paragraph::default();
         paragraph.push(atom());
@@ -1029,7 +1029,7 @@ mod tests {
         assert!(breaks.position_for_index(5).y > breaks.position_for_index(4).y);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn atom_decorations_are_painted_for_custom_nodes_and_images(cx: &mut TestAppContext) {
         let color: Hsla = rgba(0x12345680).into();
         let mut custom = Paragraph::default();
@@ -1050,7 +1050,7 @@ mod tests {
         ]);
         let (_, painted) =
             draw_and_inspect(cx, blocks, decorations, atom_plugin(), px(300.), |window| {
-                let background: gpui::Background = color.into();
+                let background: wgpui::Background = color.into();
                 window
                     .painted_quads()
                     .into_iter()
@@ -1063,7 +1063,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn rekeying_cloned_leaves_preserves_each_identity(cx: &mut TestAppContext) {
         let original = plain("shared source").with_leaf_key(1);
         let copy = original.clone().with_leaf_key(2);
@@ -1088,7 +1088,7 @@ mod tests {
         assert!(leaves[&3].bounds().top() < leaves[&4].bounds().top());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometry_is_an_immutable_snapshot(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let out = Geometries::default();
@@ -1121,7 +1121,7 @@ mod tests {
         assert_eq!(old.position_for_index(0), before.origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn empty_keyed_leaf_has_a_line_box_and_empty_unkeyed_leaf_stays_empty(cx: &mut TestAppContext) {
         let blocks = vec![
             BlockNode::Paragraph(Paragraph::default()),
@@ -1139,7 +1139,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn image_only_leaf_reports_its_box(cx: &mut TestAppContext) {
         let image = ImageNode {
             url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20'/>".into(),
@@ -1177,7 +1177,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn decorations_are_requested_per_keyed_leaf(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let recorder = Rc::new(Recorder::default());
@@ -1206,7 +1206,7 @@ mod tests {
         assert!(asked.iter().all(|key| *key == 1 || *key == 2), "{asked:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn decorated_leaves_still_report_geometry(cx: &mut TestAppContext) {
         let blocks = vec![BlockNode::Paragraph(plain("hello world").with_leaf_key(1))];
         let decorations = HashMap::from([(

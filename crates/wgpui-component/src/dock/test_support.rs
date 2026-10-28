@@ -4,15 +4,15 @@
 //! `mod tests` because the same double is needed by more than one of them: a
 //! tab group and a dock each hand a panel to a different frame, and the
 //! question — did the panel get a height? — is the same. Mirrors
-//! `gpui_base::dock::test_support`.
+//! `wgpui_base::dock::test_support`.
 
 use std::{cell::Cell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Context, Entity, EventEmitter, FocusHandle, Focusable, IntoElement,
     Pixels, Render, Styled as _, Window, div,
 };
-use gpui_base::dock::PanelEvent;
+use wgpui_base::dock::PanelEvent;
 
 use crate::{ElementExt as _, dock::Panel};
 
@@ -35,7 +35,7 @@ impl MeasuredProbe {
     }
 }
 
-impl gpui_base::dock::Panel for MeasuredProbe {
+impl wgpui_base::dock::Panel for MeasuredProbe {
     fn panel_name(&self) -> &'static str {
         "MeasuredProbe"
     }
@@ -66,11 +66,11 @@ impl Render for MeasuredProbe {
 /// needs the measurement `MeasuredProbe` does not keep.
 pub(crate) struct SizedProbe {
     focus_handle: FocusHandle,
-    size: Rc<Cell<gpui::Size<Pixels>>>,
+    size: Rc<Cell<wgpui::Size<Pixels>>>,
 }
 
 impl SizedProbe {
-    pub(crate) fn new(size: Rc<Cell<gpui::Size<Pixels>>>, cx: &mut App) -> Entity<Self> {
+    pub(crate) fn new(size: Rc<Cell<wgpui::Size<Pixels>>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self {
             focus_handle: cx.focus_handle(),
             size,
@@ -78,7 +78,7 @@ impl SizedProbe {
     }
 }
 
-impl gpui_base::dock::Panel for SizedProbe {
+impl wgpui_base::dock::Panel for SizedProbe {
     fn panel_name(&self) -> &'static str {
         "SizedProbe"
     }
@@ -128,7 +128,7 @@ impl HideableProbe {
     }
 }
 
-impl gpui_base::dock::Panel for HideableProbe {
+impl wgpui_base::dock::Panel for HideableProbe {
     fn panel_name(&self) -> &'static str {
         "HideableProbe"
     }

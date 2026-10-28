@@ -6,12 +6,12 @@ use std::{
     sync::Arc,
 };
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Context, ElementId, EventEmitter, FocusHandle, Focusable, HighlightStyle,
     ListAlignment, ListOffset, ListState, Pixels, ScrollHandle, SharedString, Size, Subscription,
     Task, Window, WindowId, point, px,
 };
-use gpui_base::{TextSelection, TextSelectionContentKey, TextSelectionEvent, TextSelectionHandle};
+use wgpui_base::{TextSelection, TextSelectionContentKey, TextSelectionEvent, TextSelectionHandle};
 
 use super::{
     DiffAnnotation, DiffConflictResolution, DiffFile, DiffFileStatus, DiffInlineUnit,

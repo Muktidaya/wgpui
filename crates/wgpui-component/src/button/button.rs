@@ -9,7 +9,7 @@ use crate::{
     styled::{FocusLine, focus_style},
     tooltip::{ManagedTooltipExt as _, Tooltip},
 };
-use gpui::{
+use wgpui::{
     AnyElement, App, Background, ClickEvent, Corners, Edges, ElementId, FocusHandle, Hsla,
     InteractiveElement, Interactivity, IntoElement, MouseButton, ParentElement, Pixels, RenderOnce,
     Role, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
@@ -189,7 +189,7 @@ impl ButtonVariant {
 #[derive(IntoElement)]
 pub struct Button {
     id: ElementId,
-    base: gpui_base::Button,
+    base: wgpui_base::Button,
     icon: Option<ButtonIcon>,
     label: Option<SharedString>,
     /// The announced name, when the visible content is not it.
@@ -217,11 +217,11 @@ pub struct Button {
     compact: bool,
     tooltip: Option<(
         SharedString,
-        Option<(Rc<Box<dyn gpui::Action>>, Option<SharedString>)>,
+        Option<(Rc<Box<dyn wgpui::Action>>, Option<SharedString>)>,
     )>,
     tooltip_placement: Option<Placement>,
     tooltip_show_delay: Option<Duration>,
-    tooltip_builder: Option<Rc<dyn Fn(&mut Window, &mut App) -> gpui::AnyView>>,
+    tooltip_builder: Option<Rc<dyn Fn(&mut Window, &mut App) -> wgpui::AnyView>>,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
     on_hover: Option<Rc<dyn Fn(&bool, &mut Window, &mut App)>>,
     loading: bool,
@@ -245,7 +245,7 @@ impl Button {
 
         Self {
             id: id.clone(),
-            base: gpui_base::Button::new(id),
+            base: wgpui_base::Button::new(id),
             icon: None,
             label: None,
             accessibility_label: None,
@@ -288,7 +288,7 @@ impl Button {
     }
 
     /// Uses a behavior primitive supplied by a compound Base control.
-    pub(crate) fn with_base(mut self, base: gpui_base::Button) -> Self {
+    pub(crate) fn with_base(mut self, base: wgpui_base::Button) -> Self {
         self.base = base;
         self
     }
@@ -420,7 +420,7 @@ impl Button {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip_show_delay = Some(delay);
         self
@@ -430,7 +430,7 @@ impl Button {
     pub fn tooltip_with_action(
         mut self,
         tooltip: impl Into<SharedString>,
-        action: &dyn gpui::Action,
+        action: &dyn wgpui::Action,
         context: Option<&str>,
     ) -> Self {
         self.tooltip = Some((
@@ -839,9 +839,9 @@ impl RenderOnce for Button {
         })
         .when_some(self.toggled, |this, toggled| {
             this.aria_toggled(if toggled {
-                gpui::accesskit::Toggled::True
+                wgpui::accesskit::Toggled::True
             } else {
-                gpui::accesskit::Toggled::False
+                wgpui::accesskit::Toggled::False
             })
         })
         .track_focus(&focus_handle)
@@ -1404,7 +1404,7 @@ impl ButtonVariant {
 mod tests {
     use super::*;
     use crate::IconName;
-    use gpui::{linear_color_stop, linear_gradient, px};
+    use wgpui::{linear_color_stop, linear_gradient, px};
 
     /// A button's announced name is its label, unless it was given one — which
     /// is the case an icon-only button and a row-shaped button both need.
@@ -1429,11 +1429,11 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn disabled_legacy_button_keeps_existing_pointer_blocking(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn disabled_legacy_button_keeps_existing_pointer_blocking(cx: &mut wgpui::TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{Context, Modifiers, Render, point};
+        use wgpui::{Context, Modifiers, Render, point};
 
         struct Harness(Rc<Cell<usize>>, Rc<Cell<usize>>);
 
@@ -1473,11 +1473,11 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
-    fn enabled_button_delegates_pointer_enter_and_space_once(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn enabled_button_delegates_pointer_enter_and_space_once(cx: &mut wgpui::TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{
+        use wgpui::{
             ClickEvent, Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, point,
         };
 
@@ -1532,13 +1532,13 @@ mod tests {
     /// A button keeps the application's focus handle, so focus the application
     /// gives it shows on the button and activates it from the keyboard.
     #[cfg(feature = "test-support")]
-    #[gpui::test]
+    #[wgpui::test]
     fn caller_owned_focus_handle_drives_focus_and_keyboard_activation(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{Context, KeyDownEvent, KeyUpEvent, Keystroke, Render};
+        use wgpui::{Context, KeyDownEvent, KeyUpEvent, Keystroke, Render};
 
         struct Harness {
             focus_handle: FocusHandle,
@@ -1573,7 +1573,7 @@ mod tests {
         });
 
         let button = cx.update(|window, _| {
-            gpui_base::test_support::find(window, &[], &ElementId::from("details"))
+            wgpui_base::test_support::find(window, &[], &ElementId::from("details"))
                 .expect("button is painted")
         });
         assert_eq!(button.focused(), Some(true));
@@ -1588,11 +1588,11 @@ mod tests {
         assert_eq!(clicks.get(), 1);
     }
 
-    #[gpui::test]
-    fn loading_button_keeps_existing_pointer_blocking(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn loading_button_keeps_existing_pointer_blocking(cx: &mut wgpui::TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{Context, Modifiers, Render, point};
+        use wgpui::{Context, Modifiers, Render, point};
 
         struct Harness(Rc<Cell<usize>>, Rc<Cell<usize>>);
 
@@ -1632,13 +1632,13 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn loading_button_without_callback_still_blocks_parent_activation(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{Context, Modifiers, Render, point};
+        use wgpui::{Context, Modifiers, Render, point};
 
         struct Harness(Rc<Cell<usize>>);
 
@@ -1673,10 +1673,10 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
-    fn base_activation_is_preserved_and_blocked_while_loading(cx: &mut gpui::TestAppContext) {
-        use gpui::{Context, Render, point};
+    #[wgpui::test]
+    fn base_activation_is_preserved_and_blocked_while_loading(cx: &mut wgpui::TestAppContext) {
         use std::{cell::Cell, rc::Rc};
+        use wgpui::{Context, Render, point};
 
         struct Harness {
             clicks: Rc<Cell<usize>>,
@@ -1688,7 +1688,7 @@ mod tests {
                 div().tab_group().child(
                     Button::new("close")
                         .with_base(
-                            gpui_base::Button::new("close")
+                            wgpui_base::Button::new("close")
                                 .on_click(move |_, _, _| clicks.set(clicks.get() + 1)),
                         )
                         .loading(self.loading)
@@ -1721,8 +1721,8 @@ mod tests {
         assert_eq!(clicks.get(), 1);
     }
 
-    #[gpui::test]
-    fn test_button_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_builder(_cx: &mut wgpui::TestAppContext) {
         let button = Button::new("complex-button")
             .label("Save Changes")
             .primary()
@@ -1790,8 +1790,8 @@ mod tests {
     /// A loading button must be as inert as a disabled one. `interactive` is what
     /// gates the hover and active styling, the `cursor_pointer` of link buttons and
     /// the `mouse_down` handler, none of which depend on a listener being set.
-    #[gpui::test]
-    fn test_button_loading_is_not_interactive(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_loading_is_not_interactive(_cx: &mut wgpui::TestAppContext) {
         assert!(Button::new("test").interactive());
         assert!(!Button::new("test").loading(true).interactive());
         assert!(!Button::new("test").disabled(true).interactive());
@@ -1809,8 +1809,8 @@ mod tests {
 
     /// `selected` is styling only; the toggle state must be opted into, so that
     /// ordinary buttons are not announced as toggle buttons.
-    #[gpui::test]
-    fn test_button_variant_methods(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_variant_methods(_cx: &mut wgpui::TestAppContext) {
         // Test variant check methods
         assert!(ButtonVariant::Link.is_link());
         assert!(ButtonVariant::Text.is_text());
@@ -1822,9 +1822,9 @@ mod tests {
         assert!(!ButtonVariant::Ghost.no_padding());
     }
 
-    #[gpui::test]
-    fn link_button_prepaints_its_child(cx: &mut gpui::TestAppContext) {
-        use gpui::{Context, Render};
+    #[wgpui::test]
+    fn link_button_prepaints_its_child(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{Context, Render};
 
         struct LinkButtonHarness;
 
@@ -1849,9 +1849,9 @@ mod tests {
         assert!(bounds.size.height > px(0.));
     }
 
-    #[gpui::test]
-    fn base_slot_prepaints_complete_button_content(cx: &mut gpui::TestAppContext) {
-        use gpui::{Context, Render};
+    #[wgpui::test]
+    fn base_slot_prepaints_complete_button_content(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{Context, Render};
 
         struct CompleteButtonHarness;
 
@@ -1891,8 +1891,8 @@ mod tests {
         assert!(bounds.size.height > px(0.));
     }
 
-    #[gpui::test]
-    fn test_outline_selected_uses_outline_active_style(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_outline_selected_uses_outline_active_style(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.update(|_, cx| {
@@ -1907,8 +1907,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_primary_button_uses_gradient_background_tokens(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_primary_button_uses_gradient_background_tokens(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.update(|_, cx| {
@@ -1939,8 +1939,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_outline_primary_keeps_original_depth(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_outline_primary_keeps_original_depth(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.update(|_, cx| {
@@ -1971,8 +1971,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_outline_buttons_use_semantic_gradient_tokens(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_outline_buttons_use_semantic_gradient_tokens(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.update(|_, cx| {
@@ -2028,8 +2028,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_disabled_outline_buttons_keep_semantic_backgrounds(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_disabled_outline_buttons_keep_semantic_backgrounds(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.update(|_, cx| {

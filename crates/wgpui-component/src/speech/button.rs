@@ -1,5 +1,7 @@
-use gpui::{App, ElementId, Entity, IntoElement, RenderOnce, StyleRefinement, Styled, Window, div};
 use rust_i18n::t;
+use wgpui::{
+    App, ElementId, Entity, IntoElement, RenderOnce, StyleRefinement, Styled, Window, div,
+};
 
 use crate::{
     Disableable, IconName, Selectable as _, Sizable, Size, StyledExt as _,
@@ -114,11 +116,11 @@ impl RenderOnce for SpeechButton {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, TestAppContext};
+    use wgpui::{AppContext as _, TestAppContext};
 
     use super::*;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_speech_button_builder(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|cx| SpeechState::new(cx).system_fallback(false)));
         let button = SpeechButton::new(&state)

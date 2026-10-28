@@ -1,11 +1,11 @@
 use std::{hash::Hash, rc::Rc};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, Bounds, ElementId, Hsla, IntoElement, Pixels, Point, SharedString, Window,
     fill, point, px,
 };
-use gpui_component_macros::IntoPlot;
-use rust_i18n::t;
+use wgpui_kit_macros::IntoPlot;
 
 use crate::{
     ActiveTheme,

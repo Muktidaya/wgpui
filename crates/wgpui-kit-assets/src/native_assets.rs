@@ -1,6 +1,6 @@
 use anyhow::anyhow;
-use gpui::{AssetSource, Result, SharedString};
 use std::borrow::Cow;
+use wgpui::{AssetSource, Result, SharedString};
 
 include!(concat!(env!("OUT_DIR"), "/default_assets.rs"));
 

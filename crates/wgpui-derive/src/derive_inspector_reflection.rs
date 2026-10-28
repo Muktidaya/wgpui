@@ -11,7 +11,7 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::gpui_path::gpui_crate;
+use crate::wgpui_path::wgpui_crate;
 
 pub fn derive_inspector_reflection(_args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = parse_macro_input!(input as Item);
@@ -43,8 +43,8 @@ fn generate_reflected_trait(trait_item: ItemTrait) -> TokenStream {
     let trait_name = &trait_item.ident;
     let vis = &trait_item.vis;
 
-    let gpui = gpui_crate();
-    let inspector_reflection_path = quote! { #gpui::inspector_reflection };
+    let wgpui = wgpui_crate();
+    let inspector_reflection_path = quote! { #wgpui::inspector_reflection };
 
     // Collect method information for methods of form fn name(self) -> Self or fn name(mut self) -> Self
     let mut method_infos = Vec::new();
@@ -224,47 +224,47 @@ fn try_expand_macro(macro_item: &syn::TraitItemMacro) -> Option<Vec<TraitItem>> 
 
     // Handle the known macros by calling their implementations
     match macro_name.as_str() {
-        "wgpui_macros::style_helpers" | "style_helpers" => {
+        "wgpui_derive::style_helpers" | "style_helpers" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::style_helpers(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::visibility_style_methods" | "visibility_style_methods" => {
+        "wgpui_derive::visibility_style_methods" | "visibility_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::visibility_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::margin_style_methods" | "margin_style_methods" => {
+        "wgpui_derive::margin_style_methods" | "margin_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::margin_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::padding_style_methods" | "padding_style_methods" => {
+        "wgpui_derive::padding_style_methods" | "padding_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::padding_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::position_style_methods" | "position_style_methods" => {
+        "wgpui_derive::position_style_methods" | "position_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::position_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::overflow_style_methods" | "overflow_style_methods" => {
+        "wgpui_derive::overflow_style_methods" | "overflow_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::overflow_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::cursor_style_methods" | "cursor_style_methods" => {
+        "wgpui_derive::cursor_style_methods" | "cursor_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::cursor_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::border_style_methods" | "border_style_methods" => {
+        "wgpui_derive::border_style_methods" | "border_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::border_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)
         }
-        "wgpui_macros::box_shadow_style_methods" | "box_shadow_style_methods" => {
+        "wgpui_derive::box_shadow_style_methods" | "box_shadow_style_methods" => {
             let tokens = macro_item.mac.tokens.clone();
             let expanded = crate::styles::box_shadow_style_methods(TokenStream::from(tokens));
             parse_expanded_items(expanded)

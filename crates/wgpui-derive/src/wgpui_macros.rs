@@ -3,11 +3,11 @@ mod derive_app_context;
 mod derive_into_element;
 mod derive_render;
 mod derive_visual_context;
-mod gpui_path;
 mod property_test;
 mod register_action;
 mod styles;
 mod test;
+mod wgpui_path;
 
 #[cfg(any(feature = "inspector", debug_assertions))]
 mod derive_inspector_reflection;
@@ -18,13 +18,13 @@ use syn::{DeriveInput, Ident};
 /// Runs an explicitly unsafe constructor using WGPUI's dependency path.
 #[proc_macro_attribute]
 pub fn ctor(args: TokenStream, input: TokenStream) -> TokenStream {
-    let gpui = gpui_path::gpui_crate();
+    let wgpui = wgpui_path::wgpui_crate();
     let args = proc_macro2::TokenStream::from(args);
     let input = proc_macro2::TokenStream::from(input);
     let separator = (!args.is_empty()).then(|| quote::quote!(,));
 
     quote::quote! {
-        #[#gpui::private::ctor::ctor(crate_path = #gpui::private::ctor #separator #args)]
+        #[#wgpui::private::ctor::ctor(crate_path = #wgpui::private::ctor #separator #args)]
         #input
     }
     .into()
@@ -63,7 +63,7 @@ pub fn derive_render(input: TokenStream) -> TokenStream {
 /// Failure to add the attribute causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(AppContext)]
 /// struct MyContext<'a> {
@@ -83,7 +83,7 @@ pub fn derive_app_context(input: TokenStream) -> TokenStream {
 /// Failure to add both attributes causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
@@ -94,7 +94,7 @@ pub fn derive_app_context(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
@@ -279,7 +279,7 @@ pub fn bench(args: TokenStream, input: TokenStream) -> TokenStream {
         .to_compile_error()
         .into();
     }
-    let gpui = gpui_path::gpui_crate();
+    let wgpui = wgpui_path::wgpui_crate();
     let name = &function.sig.ident;
     let attributes = &function.attrs;
     let visibility = &function.vis;
@@ -287,10 +287,10 @@ pub fn bench(args: TokenStream, input: TokenStream) -> TokenStream {
     let parameter = &function.sig.inputs[0];
     quote::quote! {
         #(#attributes)*
-        #visibility fn #name(criterion: &mut #gpui::private::criterion::Criterion) {
+        #visibility fn #name(criterion: &mut #wgpui::private::criterion::Criterion) {
             fn setup(#parameter) #body
             criterion.bench_function(stringify!(#name), |bencher| {
-                let mut context = #gpui::BenchAppContext::new(bencher);
+                let mut context = #wgpui::BenchAppContext::new(bencher);
                 setup(&mut context);
                 context.teardown();
             });

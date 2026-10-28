@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use gpui::{App, ElementId, Window};
+use wgpui::{App, ElementId, Window};
 
 use super::{MotionStatus, Transition, TransitionId};
 

@@ -1,6 +1,6 @@
 use super::ListItem;
 use crate::{skeleton::Skeleton, v_flex};
-use gpui::{IntoElement, ParentElement as _, RenderOnce, Styled};
+use wgpui::{IntoElement, ParentElement as _, RenderOnce, Styled};
 
 #[derive(IntoElement)]
 pub struct Loading;
@@ -9,7 +9,7 @@ pub struct Loading;
 struct LoadingItem;
 
 impl RenderOnce for LoadingItem {
-    fn render(self, _window: &mut gpui::Window, _cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _window: &mut wgpui::Window, _cx: &mut wgpui::App) -> impl IntoElement {
         ListItem::new("skeleton").disabled(true).child(
             v_flex()
                 .gap_1p5()
@@ -21,7 +21,7 @@ impl RenderOnce for LoadingItem {
 }
 
 impl RenderOnce for Loading {
-    fn render(self, _window: &mut gpui::Window, _cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _window: &mut wgpui::Window, _cx: &mut wgpui::App) -> impl IntoElement {
         v_flex()
             .py_2p5()
             .gap_3()

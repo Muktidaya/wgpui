@@ -1,5 +1,5 @@
 use super::*;
-use gpui::MouseButton;
+use wgpui::MouseButton;
 
 impl BaseShowcase {
     pub(in super::super) fn input(&self) -> impl IntoElement {

@@ -22,6 +22,7 @@ exclude = [
     "themes/twilight.json",
     # Requires the complete source-only catalog; packaged validation stays included.
     "tests/source_theme_catalog.rs",
+    "tests/source_dock_exports.rs",
 ]
 edition.workspace = true
 rust-version.workspace = true
@@ -36,9 +37,9 @@ speech = [
     "objc2-foundation/NSBundle", "objc2-foundation/NSDictionary", "objc2-foundation/NSError", "objc2-foundation/NSLocale",
     "windows/Foundation_Collections", "windows/Globalization", "windows/Media_SpeechRecognition",
 ]
-test-support = ["gpui/test-support", "gpui-base/test-support"]
-decimal = ["gpui-base/decimal"]
-inspector = ["gpui_macros/inspector", "gpui/inspector", "gpui-base/inspector"]
+test-support = ["wgpui/test-support", "wgpui-base/test-support"]
+decimal = ["wgpui-base/decimal"]
+inspector = ["wgpui_derive/inspector", "wgpui/inspector", "wgpui-base/inspector"]
 tree-sitter = ["dep:tree-sitter", "dep:tree-sitter-json"]
 
 # For syntax highlighting in Markdown and CodeEditor.
@@ -124,11 +125,11 @@ syntect = { workspace = true, optional = true }
 two-face = { workspace = true, optional = true }
 regex = "1.13.1"
 anyhow.workspace = true
-gpui = { workspace = true }
-gpui_macros.workspace = true
-gpui-base.workspace = true
-gpui-component-macros = { workspace = true }
-gpui-kit-assets = { workspace = true }
+wgpui = { workspace = true }
+wgpui_derive.workspace = true
+wgpui-base.workspace = true
+wgpui-kit-macros = { workspace = true }
+wgpui-kit-assets = { workspace = true }
 notify.workspace = true
 ropey.workspace = true
 rust-i18n.workspace = true
@@ -256,11 +257,11 @@ windows = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
-gpui = { workspace = true, features = ["test-support"] }
+wgpui = { workspace = true, features = ["test-support"] }
 indoc = "2.0.8"
 
 [lints]
 workspace = true
 
 [package.metadata.cargo-machete]
-ignored = ["gpui_macros"]
+ignored = ["wgpui_derive"]

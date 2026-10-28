@@ -1,4 +1,4 @@
-use gpui::Pixels;
+use wgpui::Pixels;
 
 use super::node::{NodeKind, PaneNode};
 use super::tree::{PaneTree, RootKind};
@@ -264,7 +264,7 @@ fn collapse_root(tree: &mut PaneTree, changed: &mut bool) {
 #[cfg(test)]
 mod tests {
     use super::super::*;
-    use gpui::{Axis, Pixels, px};
+    use wgpui::{Axis, Pixels, px};
 
     fn panel(n: u64) -> PanelId {
         PanelId::from_u64(n)

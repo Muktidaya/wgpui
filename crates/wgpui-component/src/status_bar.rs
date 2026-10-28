@@ -1,8 +1,8 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
 use crate::{ActiveTheme, StyledExt, h_flex};
 

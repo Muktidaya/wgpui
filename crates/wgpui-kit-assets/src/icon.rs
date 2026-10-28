@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, IntoElement, RenderOnce, SharedString, Styled, Window, svg};
+use wgpui::{AnyElement, App, IntoElement, RenderOnce, SharedString, Styled, Window, svg};
 
 include!(concat!(env!("OUT_DIR"), "/icon_name.rs"));
 

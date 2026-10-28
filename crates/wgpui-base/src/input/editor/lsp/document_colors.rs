@@ -1,9 +1,9 @@
 use anyhow::Result;
-use gpui::{App, Context, Hsla, Task, Window};
 use instant::Duration;
 use lsp_types::ColorInformation;
 use ropey::Rope;
 use std::ops::Range;
+use wgpui::{App, Context, Hsla, Task, Window};
 
 use crate::input::{EditorMode, InputBaseState, Lsp, RopeExt};
 
@@ -34,7 +34,7 @@ fn document_colors_from_response(
     let mut document_colors = colors
         .iter()
         .map(|info| {
-            let color = gpui::Rgba {
+            let color = wgpui::Rgba {
                 r: info.color.red,
                 g: info.color.green,
                 b: info.color.blue,
@@ -159,21 +159,21 @@ mod tests {
         lsp.document_colors.extend([
             (
                 LspRange::new(Position::new(0, 10), Position::new(0, 5)),
-                gpui::red(),
+                wgpui::red(),
             ),
             (
                 LspRange::new(Position::new(0, 10), Position::new(0, 10)),
-                gpui::green(),
+                wgpui::green(),
             ),
             (
                 LspRange::new(Position::new(0, 5), Position::new(0, 10)),
-                gpui::blue(),
+                wgpui::blue(),
             ),
         ]);
 
         assert_eq!(
             lsp.document_colors_for_range(&text, &(0..0)),
-            vec![(5..10, gpui::blue())]
+            vec![(5..10, wgpui::blue())]
         );
     }
 }

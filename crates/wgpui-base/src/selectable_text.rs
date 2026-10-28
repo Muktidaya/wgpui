@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     App, BorderStyle, Bounds, Corners, Edges, Element, ElementId, GlobalElementId, Hitbox,
     HitboxBehavior, Hsla, InspectorElementId, IntoElement, LayoutId, PaintQuad, Pixels, Point,
     SharedString, StyledText, TextStyleRefinement, Window, transparent_black,
@@ -73,7 +73,7 @@ impl SelectableText {
     }
 
     fn paint_selection(
-        layout: &gpui::TextLayout,
+        layout: &wgpui::TextLayout,
         range: Range<usize>,
         color: Hsla,
         window: &mut Window,
@@ -238,7 +238,7 @@ impl Element for SelectableText {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{
+    use wgpui::{
         Bounds, Context, IntoElement, Modifiers, MouseButton, ParentElement as _, Render,
         Styled as _, TestAppContext, Window, div, point, px, size,
     };
@@ -259,7 +259,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn explicit_handle_constructor_preserves_document_contract(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let handle = TextSelectionHandle::new("alpha beta", cx);
@@ -267,7 +267,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn local_handle_participates_in_window_selection(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SelectableTextTestView);
         cx.update(|window, cx| {
@@ -275,17 +275,17 @@ mod tests {
         });
 
         cx.simulate_mouse_down(
-            gpui::point(px(1.), px(12.)),
+            wgpui::point(px(1.), px(12.)),
             MouseButton::Left,
             Modifiers::default(),
         );
         cx.simulate_mouse_move(
-            gpui::point(px(220.), px(12.)),
+            wgpui::point(px(220.), px(12.)),
             Some(MouseButton::Left),
             Modifiers::default(),
         );
         cx.simulate_mouse_up(
-            gpui::point(px(220.), px(12.)),
+            wgpui::point(px(220.), px(12.)),
             MouseButton::Left,
             Modifiers::default(),
         );

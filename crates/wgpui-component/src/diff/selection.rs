@@ -8,13 +8,13 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, Element, ElementId, GlobalElementId, HighlightStyle, Hitbox,
     HitboxBehavior, InspectorElementId, IntoElement, LayoutId, ListState, MouseButton,
     MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels, Point, ScrollHandle, StyledText,
     TextLayout, Window, px,
 };
-use gpui_base::{
+use wgpui_base::{
     ScrollbarHandle, TextSelectionHandle, TextSelectionRegistration, TextSelectionRun,
 };
 
@@ -176,11 +176,11 @@ pub(super) fn word_range(text: &str, mut offset: usize) -> Option<Range<usize>> 
 fn distance_to_bounds(point: Point<Pixels>, bounds: Bounds<Pixels>) -> f32 {
     let dx: f32 = (bounds.left() - point.x)
         .max(point.x - bounds.right())
-        .max(gpui::px(0.))
+        .max(wgpui::px(0.))
         .into();
     let dy: f32 = (bounds.top() - point.y)
         .max(point.y - bounds.bottom())
-        .max(gpui::px(0.))
+        .max(wgpui::px(0.))
         .into();
     dx * dx + dy * dy
 }

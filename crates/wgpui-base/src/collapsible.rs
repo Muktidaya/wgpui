@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, IntoElement, ParentElement, RenderOnce, Styled, Window, div,
 };
 
@@ -53,7 +53,7 @@ impl Default for Collapsible {
 }
 
 impl Styled for Collapsible {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         self.base.style()
     }
 }
@@ -82,7 +82,7 @@ impl RenderOnce for Collapsible {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Context, InteractiveElement as _, Render, TestAppContext, px};
+    use wgpui::{Context, InteractiveElement as _, Render, TestAppContext, px};
 
     use super::*;
 
@@ -97,7 +97,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn content_is_only_rendered_while_open(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| Harness(false));
         cx.update(|window, cx| window.draw(cx).clear());

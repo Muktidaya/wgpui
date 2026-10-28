@@ -2,13 +2,13 @@ use crate::{
     ActiveTheme, Disableable, FocusableExt, Side, Sizable, Size, StyleSized as _, StyledExt,
     ThemeStyled as _, text::Text, tooltip::ComponentTooltip,
 };
-use gpui::{
+use std::{rc::Rc, time::Duration};
+use wgpui::{
     App, Background, ElementId, Hsla, InteractiveElement, IntoElement, ParentElement as _,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
     px,
 };
-use gpui_base::{Switch as BaseSwitch, SwitchThumb, SwitchTrack, spring};
-use std::{rc::Rc, time::Duration};
+use wgpui_base::{Switch as BaseSwitch, SwitchThumb, SwitchTrack, spring};
 
 /// A Switch element that can be toggled on or off.
 #[derive(IntoElement)]
@@ -113,7 +113,7 @@ impl Switch {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip.show_delay = Some(delay);
         self
@@ -134,7 +134,7 @@ impl Switch {
 }
 
 impl Styled for Switch {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -314,7 +314,7 @@ impl RenderOnce for Switch {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         StatefulInteractiveElement as _, TestAppContext, VisualTestContext, point,
     };
@@ -402,7 +402,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_pointer_activation_fires_once_and_focuses(cx: &mut TestAppContext) {
         let (cx, toggles, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -411,7 +411,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_switch_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, toggles, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -423,7 +423,7 @@ mod tests {
         assert_eq!(toggles.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_disabled_switch_is_inert_and_blocks_parent(cx: &mut TestAppContext) {
         let (cx, toggles, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -463,7 +463,7 @@ mod tests {
         cx
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_ring_hugs_the_track_when_the_switch_is_focused(cx: &mut TestAppContext) {
         let cx = focus_ring_harness(cx, false, true);
         assert!(
@@ -489,7 +489,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_ring_can_be_turned_off(cx: &mut TestAppContext) {
         let cx = focus_ring_harness(cx, false, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -504,7 +504,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_switch_takes_no_focus_and_draws_no_ring(cx: &mut TestAppContext) {
         let cx = focus_ring_harness(cx, true, true);
         cx.update(|window, cx| window.focus_next(cx));
@@ -516,7 +516,7 @@ mod tests {
         assert!(cx.debug_bounds("focus-ring").is_none());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn long_labels_preserve_track_size_in_narrow_containers(cx: &mut TestAppContext) {
         struct NarrowSwitch {
             size: Size,
@@ -567,7 +567,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn label_prepaints_with_the_base_switch_content(cx: &mut TestAppContext) {
         struct LabelHarness;
 

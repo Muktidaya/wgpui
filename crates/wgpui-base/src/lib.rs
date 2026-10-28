@@ -4,9 +4,6 @@
 //! colors, sizing, and motion belong to applications or the
 //! `wgpui-component` façade.
 
-// Style helper macros emit `wgpui`; imported source uses the `gpui` alias.
-extern crate gpui as wgpui;
-
 mod a11y_disabled;
 mod accordion;
 pub mod actions;
@@ -223,7 +220,7 @@ pub use undo_history::UndoHistory;
 pub use virtual_list::virtual_list;
 pub use virtual_list::{VirtualList, VirtualListScrollHandle, h_virtual_list, v_virtual_list};
 
-use gpui::App;
+use wgpui::App;
 
 /// Returns whether the application is compiled for iOS or Android.
 ///

@@ -9,7 +9,7 @@ use std::{
 };
 
 use anyhow::Result;
-use gpui::{
+use wgpui::{
     AnyElement, AnyView, App, AppContext as _, Axis, Bounds, Context, Div, Empty, Entity,
     EventEmitter, FocusHandle, Focusable, InteractiveElement as _, IntoElement, ParentElement,
     Pixels, Point, Render, SharedString, Stateful, Styled as _, Subscription, WeakEntity, Window,
@@ -2020,8 +2020,8 @@ impl DockArea {
     /// if every container entity had been torn down and rebuilt under the same
     /// key, which is exactly the failure the reconciliation contract exists to
     /// prevent.
-    pub(crate) fn container_entity_ids(&self) -> Vec<(NodeId, gpui::EntityId)> {
-        let mut ids: Vec<(NodeId, gpui::EntityId)> = self
+    pub(crate) fn container_entity_ids(&self) -> Vec<(NodeId, wgpui::EntityId)> {
+        let mut ids: Vec<(NodeId, wgpui::EntityId)> = self
             .groups
             .iter()
             .map(|(node, cached)| (*node, cached.entity.entity_id()))
@@ -2038,7 +2038,7 @@ impl DockArea {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{TestAppContext, VisualTestContext};
+    use wgpui::{TestAppContext, VisualTestContext};
 
     use std::{
         cell::{Cell, RefCell},
@@ -2085,7 +2085,7 @@ mod tests {
         cx.add_window_view(|window, cx| DockArea::new("test-dock", None, window, cx))
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dock_size_change_emits_one_layout_event(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2276,7 +2276,7 @@ mod tests {
         cx.read(|cx| area.read(cx).is_empty(DockPlacement::Center, cx))
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_layout_installs_and_dumps_back_to_the_same_state(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2300,7 +2300,7 @@ mod tests {
         assert_eq!(state.center.children[1].children[0].panel_name, "Beta");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_a_panel_reuses_its_entity(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);
@@ -2362,7 +2362,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_moved_panel_is_not_told_it_was_removed(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);
@@ -2377,7 +2377,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_a_panel_does_tell_it_it_was_removed(cx: &mut TestAppContext) {
         // Without this, `a_moved_panel_is_not_told_it_was_removed` would pass
         // just as well against a `DockArea` that never calls `on_removed` at
@@ -2398,7 +2398,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reconciling_an_unchanged_tree_creates_no_entities(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _alpha, cx) = two_groups(&log, cx);
@@ -2422,7 +2422,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_loaded_layout_round_trips_through_dump(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|_, cx| register_test_panels(cx));
@@ -2451,7 +2451,7 @@ mod tests {
         assert_eq!(dumped.center.children[0].children[0].panel_name, "Alpha");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dumped_live_layout_has_no_zero_sizes(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2491,7 +2491,7 @@ mod tests {
     /// measurement for a split it has on screen, and this pins that it does —
     /// preferring the tree here would persist the described `300.0` after a
     /// layout pass has already rescaled that slot to fit the window.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dumped_split_writes_the_sizes_it_is_actually_drawn_at(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2535,7 +2535,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_split_sizes_restores_a_share_and_reports_it(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2597,7 +2597,7 @@ mod tests {
     /// and sharing the container equally is the decision. Passing the `None`
     /// straight to `ResizableState` instead makes the new slot the flexible
     /// one among fixed siblings, and it stops looking like a half.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_dropped_beside_another_takes_half_the_split(cx: &mut TestAppContext) {
         let log = Log::default();
         let (area, panels, cx) = one_group(&log, &["Alpha", "Beta"], None, cx);
@@ -2638,7 +2638,7 @@ mod tests {
     }
 
     /// Moving a panel this area does not own is a no-op, not a ghost insert.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_move_of_an_unowned_panel_is_ignored(cx: &mut TestAppContext) {
         let log = Log::default();
         let (area, _panels, cx) = one_group(&log, &["Alpha", "Beta"], None, cx);
@@ -2658,7 +2658,7 @@ mod tests {
     /// The other drop geometry: a placement whose axis differs from the
     /// parent's wraps the target in a fresh split, so the sizes are decided
     /// by a `ResizableState` that has never been measured.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_dropped_across_the_axis_still_takes_half(cx: &mut TestAppContext) {
         let log = Log::default();
         let (area, panels, cx) = one_group(&log, &["Alpha", "Beta"], None, cx);
@@ -2702,7 +2702,7 @@ mod tests {
 
     /// A drop into a split that already holds more than one slot, which is the
     /// shape a real workspace is in by the time anyone drags anything.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_dropped_into_a_populated_split_takes_an_even_share(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         let panels = cx.update(|window, cx| {
@@ -2763,7 +2763,7 @@ mod tests {
     /// A dock's root is usually a bare tab group, so a drop beside it takes
     /// the "wrap the target in a new split" path rather than the "insert into
     /// the existing split" one — and that split has never been measured.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_dropped_beside_a_dock_takes_half(cx: &mut TestAppContext) {
         for placement in [DockPlacement::Bottom, DockPlacement::Left] {
             let (area, cx) = setup(cx);
@@ -2837,7 +2837,7 @@ mod tests {
     /// slot's placeholder measurement used to drag the fixed one with it when
     /// the container was first measured — the layout visibly jumped once,
     /// then settled.
-    #[gpui::test]
+    #[wgpui::test]
     fn an_explicit_slot_size_survives_the_first_layout_pass(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2928,7 +2928,7 @@ mod tests {
     /// layout pass had measured for it, so the split re-flexed from scratch
     /// and its sized neighbour shrank. This is the dock example's left column
     /// getting shorter on every tab click in the bottom dock.
-    #[gpui::test]
+    #[wgpui::test]
     fn switching_a_tab_leaves_an_untouched_split_where_it_was_drawn(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -2999,7 +2999,7 @@ mod tests {
     /// pixels measured in some other window, the first layout pass rescaled
     /// the state to the container it actually has, and handing the file's
     /// pixels back on a tab change slides the divider to a third position.
-    #[gpui::test]
+    #[wgpui::test]
     fn switching_a_tab_keeps_a_restored_split_at_its_rescaled_share(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -3057,7 +3057,7 @@ mod tests {
     /// is the load-bearing half: a build that dropped an unknown panel would
     /// still reach a fixpoint, so the region assertions below check the
     /// content is *there* before the fixpoint says it is stable.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_shipped_fixture_survives_a_load_dump_load_round_trip(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         let fixture: DockAreaState =
@@ -3091,7 +3091,7 @@ mod tests {
         assert_eq!(second, first, "dump == dump(load(dump))");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_unregistered_panel_survives_a_load_and_save_round_trip(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|_, cx| register_test_panels(cx));
@@ -3111,7 +3111,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dock_carries_its_own_tree_and_survives_a_round_trip(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         cx.update(|window, cx| {
@@ -3163,7 +3163,7 @@ mod tests {
         assert!(state.right_dock.is_none());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_moved_between_regions_keeps_its_active_state(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);
@@ -3180,7 +3180,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_groups_close_intent_reaches_the_tree(cx: &mut TestAppContext) {
         // Nothing else here proves `DockArea` subscribes to `TabGroupEvent`
         // at all: a group reports intents and does nothing itself, so an
@@ -3210,7 +3210,7 @@ mod tests {
         assert!(drain(&log).contains(&("Alpha", PanelSignal::Removed)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn replacing_the_center_tells_the_panels_that_left(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _alpha, cx) = two_groups(&log, cx);
@@ -3230,7 +3230,7 @@ mod tests {
         assert!(seen.contains(&("Beta", PanelSignal::Removed)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_a_zoomed_panel_clears_the_zoom(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);
@@ -3309,7 +3309,7 @@ mod tests {
     /// A panel no builder answers for becomes the skin's placeholder rather
     /// than base's draw-nothing one, so the "unknown panel" message the old
     /// `InvalidPanel` drew has somewhere to live.
-    #[gpui::test]
+    #[wgpui::test]
     fn an_unbuildable_panel_becomes_the_skins_placeholder(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let _ = crate::Theme::global_mut(cx);
@@ -3351,7 +3351,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_a_non_tail_child_shifts_the_split_sizes_with_it(cx: &mut TestAppContext) {
         // `ResizableState` keeps the authoritative size on `panels[ix]`, so a
         // tail-truncating sync leaves the survivors of a non-tail removal
@@ -3408,7 +3408,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_moves_between_the_center_and_a_dock(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);
@@ -3481,7 +3481,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_move_onto_an_unusable_target_leaves_no_stranded_panel(cx: &mut TestAppContext) {
         // `apply_insert` is a silent no-op when the target node's kind does
         // not match. Committing on the insert alone would early-return with
@@ -3542,7 +3542,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_all_hidden_container_reports_itself_invisible(cx: &mut TestAppContext) {
         // What the old `StackPanel::render` asked of each slot before hiding
         // it. `render_node` feeds this straight to `resizable_panel().visible`.
@@ -3582,7 +3582,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_locked_area_seals_its_groups(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _alpha, cx) = two_groups(&log, cx);
@@ -3610,7 +3610,7 @@ mod tests {
     /// An empty `StackPanel` used to dump as `PanelInfo::Panel`, the
     /// `PanelState` default, so restoring looked it up in `PanelRegistry` and
     /// failed.
-    #[gpui::test]
+    #[wgpui::test]
     fn empty_center_round_trips_as_a_stack(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         let center = cx.read(|cx| area.read(cx).dump(cx).center);
@@ -3623,7 +3623,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn fresh_center_is_empty(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
 
@@ -3633,7 +3633,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn center_holding_a_tab_group_is_not_empty(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3645,7 +3645,7 @@ mod tests {
     /// The tree still lists the group's node here until the last panel goes,
     /// so anything reading node counts rather than panels would report
     /// non-empty.
-    #[gpui::test]
+    #[wgpui::test]
     fn center_is_empty_again_once_every_panel_is_removed(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3661,7 +3661,7 @@ mod tests {
         assert!(is_center_empty(&area, cx));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn center_is_not_empty_after_adding_to_a_tab_group(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
         assert!(is_center_empty(&area, cx));
@@ -3680,7 +3680,7 @@ mod tests {
     /// The pre-wrapped companion of `add_panel`, for a layer that hands base
     /// its own handle. The panel it registers is the very handle it was
     /// given, keyed by the id that handle reports.
-    #[gpui::test]
+    #[wgpui::test]
     fn add_panel_view_registers_the_handle_it_was_given(cx: &mut TestAppContext) {
         let (area, cx) = setup(cx);
 
@@ -3706,7 +3706,7 @@ mod tests {
 
     /// Rendering skips invisible panels, so a centre holding only hidden ones
     /// draws nothing and counts as empty.
-    #[gpui::test]
+    #[wgpui::test]
     fn center_holding_only_hidden_panels_is_empty(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3733,7 +3733,7 @@ mod tests {
         assert!(is_center_empty(&area, cx));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn single_panel_group_receives_initial_active(cx: &mut TestAppContext) {
         let log = log_of();
         let (_area, _panels, cx) = one_group(&log, &["A"], None, cx);
@@ -3742,7 +3742,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("A", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn multi_tab_construction_notifies_only_displayed_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (_area, _panels, cx) = one_group(&log, &["A", "B", "C"], None, cx);
@@ -3752,7 +3752,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("A", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_index_restore_notifies_that_panel_only(cx: &mut TestAppContext) {
         let log = log_of();
         let (_area, _panels, cx) = one_group(&log, &["A", "B", "C"], Some(2), cx);
@@ -3761,7 +3761,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("C", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn switching_tabs_sends_false_then_true(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3775,7 +3775,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("A", false), ("B", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn select_panel_displays_that_tab_where_it_sits(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, panels, cx) = one_group(&log, &["A", "B", "C"], None, cx);
@@ -3803,7 +3803,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn select_panel_is_silent_for_the_displayed_or_an_unknown_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3823,7 +3823,7 @@ mod tests {
         assert_eq!(drain_active(&log), []);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reselecting_active_tab_stays_silent(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _panels, cx) = one_group(&log, &["A", "B"], None, cx);
@@ -3842,7 +3842,7 @@ mod tests {
     /// second group. It was a background tab there and so has been told
     /// nothing, which is what makes the arrival a genuine activation rather
     /// than a seeded handoff.
-    #[gpui::test]
+    #[wgpui::test]
     fn inserting_at_active_ix_swaps_notifications(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, cx) = setup(cx);
@@ -3879,7 +3879,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_before_active_keeps_displayed_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, panels, cx) = one_group(&log, &["A", "B", "C"], None, cx);
@@ -3906,7 +3906,7 @@ mod tests {
 
     /// Collapsing is now a dock closing, which is what
     /// `TabGroupConstraints::collapsed` carries.
-    #[gpui::test]
+    #[wgpui::test]
     fn collapse_and_expand_notify_active_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, cx) = setup(cx);
@@ -3942,7 +3942,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("A", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn background_add_is_silent_but_first_panel_is_not(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, cx) = setup(cx);
@@ -3983,7 +3983,7 @@ mod tests {
         assert_eq!(drain_active(&log), [("E", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_active_panel_to_other_group_stays_silent_for_it(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, cx) = setup(cx);
@@ -4021,7 +4021,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_active_panel_to_background_slot_deactivates_it(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, cx) = setup(cx);
@@ -4119,7 +4119,7 @@ mod tests {
     /// stayed on screen, and that is where the control that zooms back out
     /// lives. A zoom rendering the bare panel would still fill the area and
     /// still answer `is_zoomed()`; only the tab bar tells the two apart.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zoomed_group_is_drawn_whole_rather_than_as_its_bare_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, tab_bars, cx) = setup_recording(cx);
@@ -4166,7 +4166,7 @@ mod tests {
     ///
     /// A group left flagged zoomed reports itself locked for good, and a
     /// locked group refuses every drop.
-    #[gpui::test]
+    #[wgpui::test]
     fn clearing_the_zoom_from_outside_puts_the_groups_own_flag_back(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, _alpha, cx) = two_groups(&log, cx);
@@ -4205,7 +4205,7 @@ mod tests {
 
     /// A group that refuses to zoom must not leave the area showing it as
     /// zoomed: the area records a zoom only once the container agrees.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_that_refuses_to_zoom_leaves_the_area_unzoomed(cx: &mut TestAppContext) {
         let log = log_of();
         let (area, alpha, cx) = two_groups(&log, cx);

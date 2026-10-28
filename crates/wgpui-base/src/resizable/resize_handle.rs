@@ -1,6 +1,6 @@
 use std::{cell::Cell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, Div, Element, ElementId, Entity, GlobalElementId, Hitbox,
     HitboxBehavior, InteractiveElement, Interactivity, IntoElement, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, ParentElement as _, Pixels, Point, Render, StatefulInteractiveElement,
@@ -267,10 +267,10 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
     fn request_layout(
         &mut self,
         id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (wgpui::LayoutId, Self::RequestLayoutState) {
         let neg_offset = -HANDLE_PADDING;
         let axis = self.axis;
         let edge = self.edge;
@@ -395,8 +395,8 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
     fn prepaint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        bounds: gpui::Bounds<Pixels>,
+        _: Option<&wgpui::InspectorElementId>,
+        bounds: wgpui::Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         window: &mut Window,
         cx: &mut App,
@@ -414,8 +414,8 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
     fn paint(
         &mut self,
         id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        _: gpui::Bounds<Pixels>,
+        _: Option<&wgpui::InspectorElementId>,
+        _: wgpui::Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         hitbox: &mut Self::PrepaintState,
         window: &mut Window,
@@ -504,7 +504,7 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
 /// rest, `ring` for the thing the pointer currently owns. Before this the
 /// unprojected answer was `Hsla::default()`, which is transparent, so a
 /// consumer with no styled façade had no divider at all.
-pub(crate) fn handle_color(theme: &crate::Theme, active: bool) -> gpui::Hsla {
+pub(crate) fn handle_color(theme: &crate::Theme, active: bool) -> wgpui::Hsla {
     if active {
         theme
             .resizable
@@ -522,7 +522,7 @@ mod tests {
         rc::Rc,
     };
 
-    use gpui::{
+    use wgpui::{
         AnyElement, App, AppContext as _, Axis, Bounds, Context, DragMoveEvent, Empty,
         InteractiveElement as _, IntoElement, Modifiers, MouseButton, MouseDownEvent, MouseUpEvent,
         ParentElement as _, Pixels, Render, StatefulInteractiveElement as _, Styled as _,
@@ -682,7 +682,7 @@ mod tests {
     /// boundary, to make room for an indicator to overhang it, and along the
     /// whole seam that pixel of the dock showed past the line on one side of
     /// the area and opened a gap before it on the other.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_hugging_handle_draws_its_line_on_the_seam(cx: &mut TestAppContext) {
         for axis in [Axis::Horizontal, Axis::Vertical] {
             for edge in [HandleEdge::Leading, HandleEdge::Trailing] {
@@ -713,7 +713,7 @@ mod tests {
     /// from a panel drawn before the dock -- at that default priority, as
     /// `deferred(anchored())` is -- was painted first, and the dock's divider
     /// ran straight through it.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_hugging_handle_paints_beneath_a_popover_deferred_before_it(cx: &mut TestAppContext) {
         for axis in [Axis::Horizontal, Axis::Vertical] {
             for edge in [HandleEdge::Leading, HandleEdge::Trailing] {
@@ -746,7 +746,7 @@ mod tests {
 
     /// A renderer is told which edge the handle hugs, so it can keep what it
     /// centres on the line clear of the container's clip itself.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_renderer_is_told_the_edge_a_handle_hugs(cx: &mut TestAppContext) {
         for axis in [Axis::Horizontal, Axis::Vertical] {
             for edge in [HandleEdge::Leading, HandleEdge::Trailing] {
@@ -787,7 +787,7 @@ mod tests {
         assert!(ResizeHandleState::Dragging.is_active());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_unprojected_handle_resolves_from_the_theme_tokens(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let border = hsla(0., 0., 0.5, 1.0);
@@ -802,11 +802,11 @@ mod tests {
             assert_eq!(handle_color(&theme, true), ring);
             // The point of the change: the default used to be transparent, so
             // a divider with nothing projected onto it was not drawn at all.
-            assert_ne!(handle_color(&theme, false), gpui::Hsla::default());
+            assert_ne!(handle_color(&theme, false), wgpui::Hsla::default());
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_projected_handle_still_wins(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let projected = hsla(0.3, 0.4, 0.5, 1.0);
@@ -901,7 +901,7 @@ mod tests {
 
     /// Listeners a caller attaches to a handle reach the band, and leave the
     /// progression base reports to the appearance as it was.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_callers_listeners_reach_the_band(cx: &mut TestAppContext) {
         let heard = Rc::new(Heard::default());
         let (_, cx) = cx.add_window_view({

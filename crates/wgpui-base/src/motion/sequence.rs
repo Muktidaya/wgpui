@@ -1,4 +1,4 @@
-use gpui::{App, ElementId, Window};
+use wgpui::{App, ElementId, Window};
 
 use super::{Instant, Interpolate, MotionStatus, Transition, TransitionId};
 

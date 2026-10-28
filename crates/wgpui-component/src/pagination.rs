@@ -1,12 +1,12 @@
 use std::{ops::Range, rc::Rc};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString, StyleRefinement, Styled,
     Window, prelude::FluentBuilder, px,
 };
-use rust_i18n::t;
 
-use gpui_base::{Pagination as BasePagination, PaginationItem as PageItem, PaginationState};
+use wgpui_base::{Pagination as BasePagination, PaginationItem as PageItem, PaginationState};
 
 use crate::{
     Disableable, Icon, Sizable, Size, StyledExt,

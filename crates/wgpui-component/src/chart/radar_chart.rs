@@ -4,12 +4,12 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use num_traits::Zero;
+use wgpui::{
     AnyElement, App, AvailableSpace, Background, Bounds, ElementId, Hsla, IntoElement, Pixels,
     Point, SharedString, TextAlign, Window, point, px,
 };
-use gpui_component_macros::IntoPlot;
-use num_traits::Zero;
+use wgpui_kit_macros::IntoPlot;
 
 use crate::{
     ActiveTheme,
@@ -726,8 +726,8 @@ mod tests {
         let chart = RadarChart::new(data.clone())
             .label(|d| d.subject.clone())
             .value(|d| d.a)
-            .stroke(gpui::red())
-            .fill(gpui::red())
+            .stroke(wgpui::red())
+            .fill(wgpui::red())
             .name("A")
             .value(|d| d.b)
             .max_value(100.)
@@ -750,7 +750,7 @@ mod tests {
         assert!(!chart.grid);
         assert_eq!(chart.grid_levels, 5);
         assert!(chart.dot);
-        assert_eq!(chart.id, gpui::ElementId::Name("radar".into()));
+        assert_eq!(chart.id, wgpui::ElementId::Name("radar".into()));
 
         let values = (chart.values[0](&data[0]), chart.values[1](&data[0]));
         assert_eq!(values, (80., 60.));
@@ -790,7 +790,7 @@ mod tests {
         // Bounds 200x200 => center (100, 100), default outer radius 80,
         // hover region 80 + 10 (label gap) = 90.
         let chart: RadarChart<Item, f64> = RadarChart::new(data).value(|d| d.a);
-        let bounds = gpui::Bounds::new(point(px(0.), px(0.)), gpui::size(px(200.), px(200.)));
+        let bounds = wgpui::Bounds::new(point(px(0.), px(0.)), wgpui::size(px(200.), px(200.)));
 
         // The four spokes point at 12, 3, 6 and 9 o'clock.
         assert_eq!(

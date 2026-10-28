@@ -5,14 +5,14 @@ use crate::menu::menu_item::MenuItemElement;
 use crate::scroll::ScrollableElement;
 use crate::{ActiveTheme, ElementExt, Icon, IconName, Sizable as _, h_flex, v_flex};
 use crate::{Side, Size, kbd::Kbd};
-use gpui::{
+use wgpui::{
     Action, Anchor, AnyElement, App, AppContext, Bounds, Context, DismissEvent, Edges, Entity,
     EventEmitter, FocusHandle, Focusable, InteractiveElement, IntoElement, KeyBinding,
     ParentElement, Pixels, Render, Role, ScrollHandle, SharedString, StatefulInteractiveElement,
     Styled, WeakEntity, Window, anchored, deferred, div, prelude::FluentBuilder, px, rems,
 };
-use gpui::{ClickEvent, Half, MouseDownEvent, OwnedMenuItem, Point, Subscription};
-use gpui_base::TestSupportExt as _;
+use wgpui::{ClickEvent, Half, MouseDownEvent, OwnedMenuItem, Point, Subscription};
+use wgpui_base::TestSupportExt as _;
 
 use std::rc::Rc;
 
@@ -350,7 +350,7 @@ impl PopupMenu {
             external_link_icon: true,
             size: Size::default(),
             submenu_anchor: (Anchor::TopLeft, Pixels::ZERO),
-            priority: gpui_base::POPUP_PRIORITY,
+            priority: wgpui_base::POPUP_PRIORITY,
             _subscriptions: vec![],
         }
     }
@@ -1166,7 +1166,7 @@ impl PopupMenu {
             this.p_0()
                 .flex_nowrap()
                 .border_0()
-                .bg(gpui::transparent_white())
+                .bg(wgpui::transparent_white())
         })
     }
 
@@ -1209,7 +1209,7 @@ impl PopupMenu {
 
         let is_bottom_pos = bounds.origin.y + bounds.size.height > window.bounds().size.height;
         self.submenu_anchor = if is_bottom_pos {
-            (anchor.other_side_along(gpui::Axis::Vertical), left)
+            (anchor.other_side_along(wgpui::Axis::Vertical), left)
         } else {
             (anchor, left)
         };
@@ -1543,10 +1543,10 @@ impl Render for PopupMenu {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn custom_menu_item_preserves_mouse_event(cx: &mut gpui::TestAppContext) {
-        use gpui::{Modifiers, MouseButton, MouseUpEvent};
+    #[wgpui::test]
+    fn custom_menu_item_preserves_mouse_event(cx: &mut wgpui::TestAppContext) {
         use std::cell::RefCell;
+        use wgpui::{Modifiers, MouseButton, MouseUpEvent};
 
         cx.update(crate::init);
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1589,8 +1589,8 @@ mod tests {
         assert_eq!(event.up.click_count, 2);
     }
 
-    #[gpui::test]
-    fn popup_menu_item_a11y_label_uses_visible_label(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn popup_menu_item_a11y_label_uses_visible_label(cx: &mut wgpui::TestAppContext) {
         let submenu = cx.update(|cx| cx.new(|cx| PopupMenu::new(cx)));
 
         assert_eq!(PopupMenuItem::new("Open").a11y_label(), Some("Open".into()));

@@ -1,1 +1,1 @@
-pub use gpui_base::{History, UndoHistory};
+pub use wgpui_base::{History, UndoHistory};

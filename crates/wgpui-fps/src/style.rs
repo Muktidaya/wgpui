@@ -1,4 +1,4 @@
-use gpui::{Hsla, hsla};
+use wgpui::{Hsla, hsla};
 
 /// Colors used to paint the performance HUD.
 ///

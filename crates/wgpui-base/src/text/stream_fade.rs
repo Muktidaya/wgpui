@@ -14,7 +14,7 @@ use std::{ops::Range, sync::Arc, time::Duration};
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{ElementId, SharedString};
+use wgpui::{ElementId, SharedString};
 
 use super::{
     document::ParsedDocument,
@@ -151,7 +151,7 @@ impl TextLeafKey {
     }
 }
 
-/// Rendered byte ranges with the [`gpui::HighlightStyle::fade_out`] factor
+/// Rendered byte ranges with the [`wgpui::HighlightStyle::fade_out`] factor
 /// each one paints with this frame: `1.0` transparent, `0.0` opaque.
 pub(crate) type FadeRanges = Vec<(Range<usize>, f32)>;
 

@@ -1,4 +1,4 @@
-use gpui::App;
+use wgpui::App;
 
 mod column;
 mod data_table;

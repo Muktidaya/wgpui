@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     App, Context, Div, InteractiveElement as _, IntoElement, ParentElement as _, Pixels,
     SharedString, Stateful, Styled as _, Window, div,
 };

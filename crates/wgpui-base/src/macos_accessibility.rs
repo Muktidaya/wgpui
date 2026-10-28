@@ -1,6 +1,5 @@
 use std::{ffi::CString, ptr::null_mut};
 
-use gpui::Window;
 use objc2::{
     Message,
     encode::{Encode, EncodeArguments, EncodeReturn, Encoding},
@@ -12,6 +11,7 @@ use objc2::{
 use objc2_app_kit::{NSView, NSWindow};
 use objc2_foundation::NSPoint;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+use wgpui::Window;
 
 pub fn install_window_hit_test_forwarder(window: &Window) {
     let Some(view) = ns_view(window) else {

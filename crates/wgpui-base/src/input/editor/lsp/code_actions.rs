@@ -1,7 +1,7 @@
 use anyhow::Result;
-use gpui::{App, Context, Entity, SharedString, Task, Window};
 use lsp_types::CodeAction;
 use std::ops::Range;
+use wgpui::{App, Context, Entity, SharedString, Task, Window};
 
 use crate::input::{EditorMode, EditorState, InputBaseState, ToggleCodeActions};
 

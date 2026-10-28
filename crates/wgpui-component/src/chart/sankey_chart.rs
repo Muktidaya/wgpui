@@ -3,11 +3,11 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, Corners, ElementId, Hsla, IntoElement, Pixels, Point, SharedString,
     TextAlign, Window, fill, linear_color_stop, linear_gradient, point, prelude::FluentBuilder, px,
 };
-use gpui_component_macros::IntoPlot;
+use wgpui_kit_macros::IntoPlot;
 
 use super::{ChartAppear, caller_id, reveal_mask};
 use crate::{
@@ -832,7 +832,7 @@ mod tests {
             .node_align(SankeyAlign::Left)
             .iterations(10)
             .node_corner_radius(px(2.))
-            .node_color(|_| gpui::red())
+            .node_color(|_| wgpui::red())
             .node_label(|d| SharedString::from(d.to_string()))
             .value_label(|_, value| SharedString::from(format!("{}", value)))
             .labels(|d, value| {
@@ -866,8 +866,8 @@ mod tests {
         assert_eq!(label.font_size, None);
         assert_eq!(label.line_height(), TEXT_SIZE + TEXT_GAP);
 
-        let label = SankeyLabel::new("b").color(gpui::red()).font_size(14.);
-        assert_eq!(label.color, Some(gpui::red()));
+        let label = SankeyLabel::new("b").color(wgpui::red()).font_size(14.);
+        assert_eq!(label.color, Some(wgpui::red()));
         assert_eq!(label.font_size, Some(14.));
         assert_eq!(label.line_height(), 14. + TEXT_GAP);
 

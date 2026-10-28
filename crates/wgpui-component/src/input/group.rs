@@ -10,9 +10,9 @@
 
 use std::time::Duration;
 
-use gpui_base::TestSupportExt as _;
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Component, ElementId, InteractiveElement, Interactivity, IntoElement,
     MouseButton, ParentElement, RenderOnce, Role, SharedString, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, px, rems,
@@ -190,12 +190,12 @@ impl RenderOnce for InputGroup {
         let (border, background) = window.with_id(self.id.clone(), |window| {
             let transition = || {
                 let easing = easing.clone();
-                gpui_base::Transition::new(duration)
+                wgpui_base::Transition::new(duration)
                     .ease(move |progress| easing.sample(progress).clamp(0., 1.))
             };
             (
-                gpui_base::transition("border-color", appearance.border, transition(), window, cx),
-                gpui_base::transition(
+                wgpui_base::transition("border-color", appearance.border, transition(), window, cx),
+                wgpui_base::transition(
                     "background-color",
                     appearance.background,
                     transition(),
@@ -293,9 +293,9 @@ fn render_control(
 }
 
 struct GroupAppearance {
-    background: gpui::Hsla,
-    border: gpui::Hsla,
-    ring: Option<gpui::Hsla>,
+    background: wgpui::Hsla,
+    border: wgpui::Hsla,
+    ring: Option<wgpui::Hsla>,
 }
 
 impl GroupAppearance {
@@ -543,7 +543,7 @@ impl InputGroupButton {
 
     pub fn on_click(
         mut self,
-        handler: impl Fn(&gpui::ClickEvent, &mut Window, &mut App) + 'static,
+        handler: impl Fn(&wgpui::ClickEvent, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.button = self.button.on_click(handler);
         self

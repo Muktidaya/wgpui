@@ -1,6 +1,6 @@
 //! A visual row whose offsets remain in source UTF-8 bytes.
-use gpui::{App, Pixels, Point, ShapedLine, SharedString, TextAlign, Window, point, px};
 use std::ops::Range;
+use wgpui::{App, Pixels, Point, ShapedLine, SharedString, TextAlign, Window, point, px};
 
 pub(crate) struct InlineFragment {
     pub(crate) range: Range<usize>,

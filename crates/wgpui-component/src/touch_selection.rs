@@ -2,7 +2,7 @@
 //! behind, drawn over an [`crate::input::Input`] or over the window text
 //! selection that [`crate::text::TextView`] takes part in.
 //!
-//! Base owns the gesture and the drag; see [`gpui_base::TouchSelectionSnapshot`].
+//! Base owns the gesture and the drag; see [`wgpui_base::TouchSelectionSnapshot`].
 //! This module draws what Base laid out: a handle at each end of the
 //! selection, and a row of commands above it.
 
@@ -12,8 +12,8 @@ mod window_overlay;
 
 use std::rc::Rc;
 
-use gpui::{AnyElement, App, Bounds, ElementId, IntoElement, Pixels, Point, TouchPhase, Window};
-use gpui_base::{SelectionEdge, TouchHandle, TouchSelectionSnapshot};
+use wgpui::{AnyElement, App, Bounds, ElementId, IntoElement, Pixels, Point, TouchPhase, Window};
+use wgpui_base::{SelectionEdge, TouchHandle, TouchSelectionSnapshot};
 
 pub(crate) use edit_menu::{EditMenu, EditMenuItem};
 pub(crate) use handle::{DragHandler, SelectionHandles, SnapshotSource, SurfaceHandler};

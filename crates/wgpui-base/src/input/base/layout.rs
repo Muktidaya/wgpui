@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use gpui::{Bounds, Half, Pixels, ShapedLine, TextAlign, px};
+use wgpui::{Bounds, Half, Pixels, ShapedLine, TextAlign, px};
 
 use super::{WrappingIndent, display_map::LineLayout};
 

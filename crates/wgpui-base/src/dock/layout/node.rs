@@ -1,4 +1,4 @@
-use gpui::{Axis, EntityId, Pixels};
+use wgpui::{Axis, EntityId, Pixels};
 
 /// Stable container identity. Survives structural edits and normalization so
 /// the `DockArea` view cache does not tear down and rebuild entities.

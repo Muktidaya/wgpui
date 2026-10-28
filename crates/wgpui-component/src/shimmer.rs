@@ -1,10 +1,10 @@
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Animation, AnimationExt as _, App, Bounds, ContentMask, Element, ElementId, GlobalElementId,
     Hsla, InspectorElementId, IntoElement, LayoutId, LineLayout, ParentElement as _, Pixels, Point,
     RenderOnce, SharedString, StyleRefinement, Styled, StyledText, TextAlign, Window, WrapBoundary,
     div, point, px, size,
 };
-use instant::Duration;
 
 use crate::{ActiveTheme as _, Colorize as _, StyledExt as _};
 

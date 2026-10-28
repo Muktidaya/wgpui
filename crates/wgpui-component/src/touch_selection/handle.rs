@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, Bounds, Hitbox, HitboxBehavior, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, Pixels, Point, RenderOnce, Styled as _, TouchDragEvent, TouchPhase, Window,
     canvas, deferred,
 };
-use gpui_base::{SelectionEdge, TouchHandle, TouchSelectionSnapshot};
+use wgpui_base::{SelectionEdge, TouchHandle, TouchSelectionSnapshot};
 
 use crate::ActiveTheme as _;
 
@@ -21,7 +21,7 @@ pub(crate) type SurfaceHandler = Rc<dyn Fn(Bounds<Pixels>, &mut Window, &mut App
 /// above the input: its knobs reach past the field's edge, where the input's
 /// own clip would cut them off. (Text that takes part in the window selection
 /// paints its handles itself, in place; see
-/// [`gpui_base::TextSelectionHandle::paint_touch_handles`].)
+/// [`wgpui_base::TextSelectionHandle::paint_touch_handles`].)
 ///
 /// The handles read the selection's geometry as they paint, after the input
 /// has painted this frame, so they sit on the text as it is now rather than
@@ -217,6 +217,6 @@ impl RenderOnce for SelectionHandles {
             .absolute()
             .size_0(),
         )
-        .with_priority(gpui_base::POPUP_PRIORITY)
+        .with_priority(wgpui_base::POPUP_PRIORITY)
     }
 }

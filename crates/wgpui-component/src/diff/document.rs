@@ -1,6 +1,6 @@
 use std::{ops::Range, sync::Arc};
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 use super::conflict::DiffConflict;
 use super::parser::{DiffParseError, DiffParseOptions};

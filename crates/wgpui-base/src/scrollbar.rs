@@ -7,7 +7,9 @@ use crate::{
     animation::{ease_in_cubic, ease_out_cubic},
     theme::ActiveTheme as _,
 };
-use gpui::{
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use wgpui::{
     Anchor, App, Axis, Background, BorderStyle, Bounds, ContentMask, CursorStyle, Edges, Element,
     ElementId, EntityId, GlobalElementId, Hitbox, HitboxBehavior, Hsla, InspectorElementId,
     IntoElement, IsZero, LayoutId, ListState, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
@@ -15,8 +17,6 @@ use gpui::{
     TouchPhase, UniformListScrollHandle, Window, fill, point, prelude::FluentBuilder, px, relative,
     size,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 /// The width of the scrollbar (THUMB_ACTIVE_INSET * 2 + THUMB_ACTIVE_WIDTH)
 const WIDTH: Pixels = px(4. * 2. + 8.);
@@ -966,7 +966,7 @@ impl Scrollbar {
                 .or(self.styles.track.background)
                 .or(global_state.background)
                 .or(global.track.background)
-                .unwrap_or_else(gpui::transparent_black),
+                .unwrap_or_else(wgpui::transparent_black),
             state
                 .border
                 .or(self.styles.track.border)
@@ -1064,7 +1064,7 @@ impl Scrollbar {
             cx,
             &self.styles.track_active,
             &global.track_active,
-            gpui::transparent_black(),
+            wgpui::transparent_black(),
         );
         let (thumb, width, inset, radius, min_length) = self.resolve_thumb(
             cx,
@@ -1090,7 +1090,7 @@ impl Scrollbar {
             cx,
             &self.styles.track_active,
             &global.track_active,
-            gpui::transparent_black(),
+            wgpui::transparent_black(),
         );
         let (thumb, width, inset, radius, min_length) = self.resolve_thumb(
             cx,
@@ -1116,7 +1116,7 @@ impl Scrollbar {
             cx,
             &self.styles.track_hover,
             &global.track_hover,
-            gpui::transparent_black(),
+            wgpui::transparent_black(),
         );
         let (thumb, width, inset, radius, min_length) = self.resolve_thumb(
             cx,
@@ -1143,7 +1143,7 @@ impl Scrollbar {
             cx,
             &self.styles.track,
             &global.track,
-            gpui::transparent_black(),
+            wgpui::transparent_black(),
         );
         let (thumb, width, inset, radius, min_length) = self.resolve_thumb(
             cx,
@@ -1262,7 +1262,7 @@ impl Element for Scrollbar {
     type RequestLayoutState = ();
     type PrepaintState = PrepaintState;
 
-    fn id(&self) -> Option<gpui::ElementId> {
+    fn id(&self) -> Option<wgpui::ElementId> {
         Some(self.id.clone())
     }
 
@@ -1431,7 +1431,7 @@ impl Element for Scrollbar {
                         hitbox.origin.y + hitbox.size.height - track_width,
                     )
                 },
-                size: gpui::Size {
+                size: wgpui::Size {
                     width: if is_vertical {
                         track_width
                     } else {
@@ -1547,7 +1547,7 @@ impl Element for Scrollbar {
             };
 
             let bar_hitbox = window.with_content_mask(Some(ContentMask { bounds }), |window| {
-                window.insert_hitbox(bounds, gpui::HitboxBehavior::Normal)
+                window.insert_hitbox(bounds, wgpui::HitboxBehavior::Normal)
             });
 
             states.push(AxisPrepaintState {
@@ -1627,7 +1627,7 @@ impl Element for Scrollbar {
                         cx.paint_quad(PaintQuad {
                             bounds: painted_bounds,
                             corner_radii: (0.).into(),
-                            background: gpui::transparent_black().into(),
+                            background: wgpui::transparent_black().into(),
                             border_widths: if is_vertical {
                                 Edges {
                                     top: px(0.),
@@ -1870,7 +1870,7 @@ mod tests {
 
     use std::cell::{Cell, RefCell};
 
-    use gpui::{
+    use wgpui::{
         Context, InteractiveElement as _, Modifiers, MouseButton, ParentElement as _, Render,
         Styled as _, TestAppContext, VisualTestContext, div,
     };
@@ -2311,7 +2311,7 @@ mod tests {
         (cx, handle)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn thumb_drag_reaches_content_end_when_track_includes_padding(cx: &mut TestAppContext) {
         let handle = TestHandle::new(size(px(100.), px(160.)));
         let (_, cx) = cx.add_window_view({
@@ -2369,11 +2369,11 @@ mod tests {
 
     #[test]
     fn typed_styles_are_fluent_and_include_geometry() {
-        let track = gpui::hsla(0.1, 0.2, 0.3, 1.0);
-        let border = gpui::hsla(0.2, 0.3, 0.4, 1.0);
-        let thumb = gpui::hsla(0.3, 0.4, 0.5, 1.0);
-        let hover = gpui::hsla(0.4, 0.5, 0.6, 1.0);
-        let active = gpui::hsla(0.5, 0.6, 0.7, 1.0);
+        let track = wgpui::hsla(0.1, 0.2, 0.3, 1.0);
+        let border = wgpui::hsla(0.2, 0.3, 0.4, 1.0);
+        let thumb = wgpui::hsla(0.3, 0.4, 0.5, 1.0);
+        let hover = wgpui::hsla(0.4, 0.5, 0.6, 1.0);
+        let active = wgpui::hsla(0.5, 0.6, 0.7, 1.0);
         let scrollbar = Scrollbar::new(&TestHandle::new(Size::default())).styles(|styles| {
             styles
                 .track(|style| {
@@ -2409,16 +2409,16 @@ mod tests {
         assert_eq!(scrollbar.styles.thumb_active.radius, Some(px(4.5)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn unstyled_thumb_follows_the_theme_rather_than_a_fixed_colour(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let scrollbar = Scrollbar::new(&TestHandle::new(Size::default()));
 
-            let light = gpui::hsla(0., 0., 0.04, 1.0);
+            let light = wgpui::hsla(0., 0., 0.04, 1.0);
             crate::Theme::global_mut(cx).tokens.colors.foreground = light;
             let (on_light, ..) = scrollbar.style_for_normal(cx);
 
-            let dark = gpui::hsla(0., 0., 0.98, 1.0);
+            let dark = wgpui::hsla(0., 0., 0.98, 1.0);
             crate::Theme::global_mut(cx).tokens.colors.foreground = dark;
             let (on_dark, ..) = scrollbar.style_for_normal(cx);
 
@@ -2430,11 +2430,11 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_styled_thumb_still_beats_the_theme_derived_default(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let chosen = gpui::hsla(0.6, 0.5, 0.5, 1.0);
-            crate::Theme::global_mut(cx).tokens.colors.foreground = gpui::hsla(0., 0., 0.98, 1.0);
+            let chosen = wgpui::hsla(0.6, 0.5, 0.5, 1.0);
+            crate::Theme::global_mut(cx).tokens.colors.foreground = wgpui::hsla(0., 0., 0.98, 1.0);
 
             let scrollbar = Scrollbar::new(&TestHandle::new(Size::default()))
                 .styles(|styles| styles.thumb(|style| style.bg(chosen)));
@@ -2444,12 +2444,12 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn instance_styles_override_theme_scrollbar_defaults(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let theme_track = gpui::hsla(0.1, 0.2, 0.3, 1.0);
-            let theme_thumb = gpui::hsla(0.2, 0.3, 0.4, 1.0);
-            let instance_thumb = gpui::hsla(0.3, 0.4, 0.5, 1.0);
+            let theme_track = wgpui::hsla(0.1, 0.2, 0.3, 1.0);
+            let theme_thumb = wgpui::hsla(0.2, 0.3, 0.4, 1.0);
+            let instance_thumb = wgpui::hsla(0.3, 0.4, 0.5, 1.0);
 
             crate::Theme::global_mut(cx).scrollbar = crate::ScrollbarTheme::new()
                 .with_mode(ScrollbarMode::Always)
@@ -2471,7 +2471,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn auto_hide_modes_use_a_six_pixel_resting_thumb(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let handle = TestHandle::new(Size::default());
@@ -2483,7 +2483,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn every_mode_expands_only_for_thumb_hover(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let handle = TestHandle::new(Size::default());
@@ -2500,7 +2500,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_track_click_updates_vertical_offset(cx: &mut TestAppContext) {
         let (cx, vertical) = harness(
             cx,
@@ -2513,7 +2513,7 @@ mod tests {
         assert_eq!(vertical.offset().x, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_track_click_updates_horizontal_offset(cx: &mut TestAppContext) {
         let (cx, horizontal) = harness(
             cx,
@@ -2526,7 +2526,7 @@ mod tests {
         assert_eq!(horizontal.offset().y, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn no_overflow_has_no_interactive_track(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,
@@ -2538,7 +2538,7 @@ mod tests {
         assert_eq!(handle.offset(), Point::default());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn hidden_hover_scrollbar_ignores_track_click(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,
@@ -2550,7 +2550,7 @@ mod tests {
         assert_eq!(handle.offset(), Point::default());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn hidden_hover_scrollbar_ignores_thumb_drag(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,
@@ -2627,7 +2627,7 @@ mod tests {
         (cx, handle)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_press_on_an_element_over_the_track_is_left_to_it(cx: &mut TestAppContext) {
         let cover = Bounds::new(point(px(50.), px(60.)), size(px(50.), px(40.)));
         let (cx, handle) = covered_harness(cx, ScrollbarMode::Always, cover);
@@ -2639,7 +2639,7 @@ mod tests {
         assert!(handle.offset().y < px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn hovering_an_element_over_a_hover_scrollbar_does_not_reveal_it(cx: &mut TestAppContext) {
         let cover = Bounds::new(point(px(50.), px(0.)), size(px(50.), px(50.)));
         let (cx, handle) = covered_harness(cx, ScrollbarMode::Hover, cover);
@@ -2651,7 +2651,7 @@ mod tests {
         assert_eq!(handle.offset(), Point::default());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn hovering_reveals_scrollbar_for_track_interaction(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,
@@ -2667,7 +2667,7 @@ mod tests {
         assert!(handle.offset().y < px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_notifications_are_throttled_and_deliver_the_latest_offset(cx: &mut TestAppContext) {
         let handle = TestHandle::new(size(px(100.), px(1000.)));
         let (view, cx) = cx.add_window_view({
@@ -2776,7 +2776,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn repeated_touch_and_mouse_drags_keep_the_painted_grab_point(cx: &mut TestAppContext) {
         struct Probe {
             scrollbar: Scrollbar,
@@ -2984,7 +2984,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn touch_thumb_drag_moves_down_and_cancel_releases_handle(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,
@@ -3013,7 +3013,7 @@ mod tests {
         assert_eq!(handle.drag_ends.get(), 1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn thumb_drag_notifies_handle_start_and_end(cx: &mut TestAppContext) {
         let (cx, handle) = harness(
             cx,

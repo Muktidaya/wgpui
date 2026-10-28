@@ -2,16 +2,6 @@
 //!
 //! Based on the `Input` example from the `gpui` crate.
 //! <https://github.com/zed-industries/zed/blob/main/crates/gpui/examples/input.rs>
-use gpui::TextAlign;
-use gpui::{
-    Action, App, AppContext, Bounds, ClipboardItem, Context, Edges, Entity, EntityInputHandler,
-    EventEmitter, FocusHandle, Focusable, InteractiveElement as _, IntoElement, KeyBinding,
-    MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement as _, Pixels, Point,
-    Render, ScrollEvent, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _,
-    Subscription, UTF16Selection, WeakFocusHandle, Window, actions, div, point,
-    prelude::FluentBuilder as _, px,
-};
-use gpui::{Autocapitalize, TextInputAction, TextInputConfiguration};
 use ropey::{Rope, RopeSlice};
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -20,6 +10,16 @@ use std::ops::Range;
 use std::rc::Rc;
 use sum_tree::Bias;
 use unicode_segmentation::*;
+use wgpui::TextAlign;
+use wgpui::{
+    Action, App, AppContext, Bounds, ClipboardItem, Context, Edges, Entity, EntityInputHandler,
+    EventEmitter, FocusHandle, Focusable, InteractiveElement as _, IntoElement, KeyBinding,
+    MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement as _, Pixels, Point,
+    Render, ScrollEvent, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _,
+    Subscription, UTF16Selection, WeakFocusHandle, Window, actions, div, point,
+    prelude::FluentBuilder as _, px,
+};
+use wgpui::{Autocapitalize, TextInputAction, TextInputConfiguration};
 
 use super::{
     DiagnosticSet, DisplayMap, InputContextMenuCapabilities, InputEditorStyle,
@@ -511,7 +511,7 @@ pub struct InputBaseState<M: InputModeKind> {
     /// The deferred scroll offset to apply on next layout.
     pub(crate) deferred_scroll_offset: Option<Point<Pixels>>,
     /// The size of the scrollable content.
-    pub(crate) scroll_size: gpui::Size<Pixels>,
+    pub(crate) scroll_size: wgpui::Size<Pixels>,
     pub(super) editor_scrollbar_snapshot: Cell<Option<EditorScrollbarSnapshot>>,
     /// The widest measured unwrapped line width and what it was measured for.
     pub(super) longest_line_width: Cell<Option<(LongestLineKey, Pixels)>>,
@@ -586,7 +586,7 @@ pub struct InputBaseState<M: InputModeKind> {
 /// disabled, read-only and masked state.
 #[derive(Clone, Debug)]
 pub struct InputAccessibility {
-    role: Option<gpui::Role>,
+    role: Option<wgpui::Role>,
     label: Option<SharedString>,
     placeholder: Option<SharedString>,
     accessibility_id: Option<SharedString>,
@@ -594,7 +594,7 @@ pub struct InputAccessibility {
 }
 
 impl InputAccessibility {
-    pub fn new(role: Option<gpui::Role>) -> Self {
+    pub fn new(role: Option<wgpui::Role>) -> Self {
         Self {
             role,
             label: None,
@@ -625,7 +625,7 @@ impl InputAccessibility {
         self
     }
 
-    pub fn role(&self) -> Option<gpui::Role> {
+    pub fn role(&self) -> Option<wgpui::Role> {
         self.role
     }
 
@@ -766,7 +766,7 @@ impl<M: InputModeKind> InputBaseState<M> {
     /// actual text style.
     pub fn prewrap(
         &mut self,
-        font: gpui::Font,
+        font: wgpui::Font,
         font_size: Pixels,
         width: Pixels,
         cx: &mut Context<Self>,
@@ -999,7 +999,7 @@ impl<M: InputModeKind> InputBaseState<M> {
             scroll_handle: ScrollHandle::new(),
             scroll_bounce: crate::ScrollBounce::enabled_by_default(),
             overscroll: Overscroll::default(),
-            scroll_size: gpui::size(px(0.), px(0.)),
+            scroll_size: wgpui::size(px(0.), px(0.)),
             editor_scrollbar_snapshot: Cell::new(None),
             longest_line_width: Cell::new(None),
             editor_paddings: Edges::default(),
@@ -1119,11 +1119,11 @@ impl<M: InputModeKind> InputBaseState<M> {
 
     fn handle_accessibility_set_value(
         &mut self,
-        data: Option<&gpui::accesskit::ActionData>,
+        data: Option<&wgpui::accesskit::ActionData>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(gpui::accesskit::ActionData::Value(value)) = data else {
+        let Some(wgpui::accesskit::ActionData::Value(value)) = data else {
             return;
         };
         // The action may have been queued before editability changed.
@@ -2859,7 +2859,7 @@ impl<M: InputModeKind> InputBaseState<M> {
         let delta = event.delta.pixel_delta(line_height);
 
         let old_offset = self.scroll_handle.offset();
-        let precise = matches!(event.delta, gpui::ScrollDelta::Pixels(_));
+        let precise = matches!(event.delta, wgpui::ScrollDelta::Pixels(_));
         if !precise || !self.scroll_bounce || cx.reduce_motion() || !self.overflows_vertically() {
             let displaced = self.overscroll.offset() != 0.;
             self.overscroll.reset();
@@ -2896,7 +2896,7 @@ impl<M: InputModeKind> InputBaseState<M> {
             // Axis drift must not drop the end of a vertical drag.
             if matches!(
                 event.touch_phase,
-                gpui::TouchPhase::Ended | gpui::TouchPhase::Cancelled
+                wgpui::TouchPhase::Ended | wgpui::TouchPhase::Cancelled
             ) && self.overscroll.offset() != 0.
             {
                 self.overscroll.packet(
@@ -3459,20 +3459,24 @@ impl<M: InputModeKind> InputBaseState<M> {
     }
 
     /// Current scroll offset of the editor viewport.
-    pub fn scroll_offset(&self) -> gpui::Point<gpui::Pixels> {
+    pub fn scroll_offset(&self) -> wgpui::Point<wgpui::Pixels> {
         self.scroll_handle.offset()
     }
 
     /// Set scroll offset of the editor viewport.
     ///
     /// The offset will be clamped to the valid range, and applied after the next layout.
-    pub fn set_scroll_offset(&mut self, offset: gpui::Point<gpui::Pixels>, cx: &mut Context<Self>) {
+    pub fn set_scroll_offset(
+        &mut self,
+        offset: wgpui::Point<wgpui::Pixels>,
+        cx: &mut Context<Self>,
+    ) {
         self.deferred_scroll_offset = Some(offset);
         cx.notify();
     }
 
     /// Laid-out line height; `None` before first layout.
-    pub fn line_height(&self) -> Option<gpui::Pixels> {
+    pub fn line_height(&self) -> Option<wgpui::Pixels> {
         self.last_layout.as_ref().map(|l| l.line_height)
     }
 
@@ -4950,7 +4954,7 @@ impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
 
     fn character_index_for_point(
         &mut self,
-        point: gpui::Point<Pixels>,
+        point: wgpui::Point<Pixels>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<usize> {
@@ -5028,7 +5032,7 @@ impl<M: InputModeKind> Render for InputBaseState<M> {
                             && (window.is_a11y_active() || cfg!(feature = "test-support")),
                         |this| this.aria_value(self.text.to_string()),
                     )
-                    .on_a11y_action(gpui::AccessibleAction::Focus, {
+                    .on_a11y_action(wgpui::AccessibleAction::Focus, {
                         let entity = entity.clone();
                         move |_, window, cx| {
                             entity.update(cx, |state, cx| {
@@ -5037,7 +5041,7 @@ impl<M: InputModeKind> Render for InputBaseState<M> {
                         }
                     })
                     .when(self.is_editable(), |this| {
-                        this.on_a11y_action(gpui::AccessibleAction::SetValue, {
+                        this.on_a11y_action(wgpui::AccessibleAction::SetValue, {
                             let entity = entity.clone();
                             move |data, window, cx| {
                                 entity.update(cx, |state, cx| {
@@ -5110,7 +5114,7 @@ impl<M: InputModeKind> Render for InputBaseState<M> {
                                 state.token_activation(
                                     span.range().start,
                                     bounds,
-                                    gpui::ClickEvent::Keyboard(gpui::KeyboardClickEvent {
+                                    wgpui::ClickEvent::Keyboard(wgpui::KeyboardClickEvent {
                                         bounds,
                                         ..Default::default()
                                     }),
@@ -5191,7 +5195,7 @@ impl<M: InputModeKind> Render for InputBaseState<M> {
 mod tests {
     use super::*;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_actions_recheck_live_editability(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (state, cx) = cx.add_window_view(|window, cx| {
@@ -5217,7 +5221,7 @@ mod tests {
         assert_eq!(state.read_with(cx, |state, _| state.value()), "initial");
         assert_eq!(changes.get(), 0);
 
-        let action = gpui::accesskit::ActionData::Value("updated🦀".into());
+        let action = wgpui::accesskit::ActionData::Value("updated🦀".into());
         cx.update(|window, cx| {
             state.update(cx, |state, cx| {
                 state.handle_accessibility_set_value(Some(&action), window, cx)
@@ -5233,7 +5237,7 @@ mod tests {
                     state.set_readonly(!disabled, cx);
                     state.handle_accessibility_focus(window, cx);
                     assert_eq!(state.focus_handle.is_focused(window), !disabled);
-                    let rejected = gpui::accesskit::ActionData::Value("rejected".into());
+                    let rejected = wgpui::accesskit::ActionData::Value("rejected".into());
                     state.handle_accessibility_set_value(Some(&rejected), window, cx);
                 });
             });
@@ -5259,13 +5263,13 @@ mod tests {
         assert_eq!(state.read_with(cx, |state, _| state.value()), "updated🦀");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_set_value_preserves_exact_editor_text(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (editor, cx) = cx.add_window_view(|window, cx| {
             crate::input::EditorState::new(window, cx).language("rust")
         });
-        let action = gpui::accesskit::ActionData::Value("(".into());
+        let action = wgpui::accesskit::ActionData::Value("(".into());
         cx.update(|window, cx| {
             editor.update(cx, |editor, cx| {
                 editor.handle_accessibility_set_value(Some(&action), window, cx)
@@ -5274,7 +5278,7 @@ mod tests {
         assert_eq!(editor.read_with(cx, |editor, _| editor.value()), "(");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn revealing_a_password_keeps_text_assistance_disabled(cx: &mut TestAppContext) {
         cx.update(crate::init);
         cx.open_window(size(px(400.), px(100.)), |window, cx| {
@@ -5288,11 +5292,11 @@ mod tests {
             assert_eq!(state.read(cx).text_input_configuration(), hidden);
             state.update(cx, |state, cx| state.toggle_masked(window, cx));
             assert_eq!(state.read(cx).text_input_configuration(), hidden);
-            gpui::EmptyView
+            wgpui::EmptyView
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn text_input_configuration_follows_the_input(cx: &mut TestAppContext) {
         use crate::input::{InputState, TextareaState};
 
@@ -5310,7 +5314,7 @@ mod tests {
                         .autocapitalize(Autocapitalize::Words)
                 }),
             ));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let (plain, masked, textarea, search) = states.unwrap();
 
@@ -5344,14 +5348,14 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_unicode_completions_use_byte_coordinates_after_edits_and_invocation(
         cx: &mut TestAppContext,
     ) {
         use crate::input::{CompletionProvider, EditorState};
-        use gpui::Task;
         use lsp_types::{CompletionContext, CompletionResponse};
         use std::cell::RefCell;
+        use wgpui::Task;
 
         #[derive(Default)]
         struct Provider {
@@ -5384,7 +5388,7 @@ mod tests {
         let mut editor = None;
         let window = cx.open_window(size(px(400.), px(100.)), |window, cx| {
             editor = Some(cx.new(|cx| EditorState::new(window, cx).default_value("aa")));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let editor = editor.unwrap();
         let provider = Rc::new(Provider::default());
@@ -5424,7 +5428,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_wrap_and_size_refresh(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         let width = Rc::new(Cell::new(4000.));
@@ -5466,7 +5470,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_geometry_and_reentrant_activation(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         let view = InputView::build(cx, |state| state.default_value("before @alice after"));
@@ -5513,7 +5517,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_click_selects_it(cx: &mut TestAppContext) {
         use crate::input::InlineToken;
         cx.update(crate::init);
@@ -5538,17 +5542,17 @@ mod tests {
         let bounds = view
             .input
             .read_with(&visual, |state, _| state.range_to_bounds(&(7..13)).unwrap());
-        visual.simulate_click(bounds.center(), gpui::Modifiers::default());
+        visual.simulate_click(bounds.center(), wgpui::Modifiers::default());
         visual.run_until_parked();
         view.input.read_with(&visual, |state, _| {
             assert_eq!(state.selected_range(), 7..13, "a click selects the token");
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_reports_presence_without_selecting(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
-        use gpui::{Bounds, point, px, size};
+        use wgpui::{Bounds, point, px, size};
         cx.update(crate::init);
         let view = InputView::build(cx, |state| state.default_value("before @alice after"));
         let bounds = Bounds::new(point(px(10.), px(20.)), size(px(100.), px(20.)));
@@ -5638,7 +5642,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_exit_delivered_when_token_removed(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         use std::cell::RefCell;
@@ -5678,7 +5682,7 @@ mod tests {
                 .copied()
                 .expect("placed token bounds")
         });
-        visual.simulate_mouse_move(known_bounds.center(), None, gpui::Modifiers::default());
+        visual.simulate_mouse_move(known_bounds.center(), None, wgpui::Modifiers::default());
         visual.run_until_parked();
         visual.update(|window, cx| window.draw(cx).clear());
         assert_eq!(events.borrow().as_slice(), &[("a".into(), true)]);
@@ -5700,7 +5704,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_bounds_stay_single_row_at_wrap_boundary(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         cx.update(crate::init);
@@ -5756,7 +5760,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_same_offset_replacement_exits_predecessor(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         use std::{cell::RefCell, rc::Rc};
@@ -5786,7 +5790,7 @@ mod tests {
         let bounds = view
             .input
             .read_with(&visual, |state, _| state.token_bounds[&0]);
-        visual.simulate_mouse_move(bounds.center(), None, gpui::Modifiers::default());
+        visual.simulate_mouse_move(bounds.center(), None, wgpui::Modifiers::default());
         visual.run_until_parked();
         visual.update(|window, cx| window.draw(cx).clear());
         assert_eq!(events.borrow().as_slice(), &[("a".into(), true)]);
@@ -5803,9 +5807,9 @@ mod tests {
         visual.run_until_parked();
         visual.update(|window, cx| window.draw(cx).clear());
         visual.simulate_mouse_move(
-            bounds.center() + gpui::point(px(1.), px(0.)),
+            bounds.center() + wgpui::point(px(1.), px(0.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         visual.run_until_parked();
         visual.update(|window, cx| window.draw(cx).clear());
@@ -5824,7 +5828,7 @@ mod tests {
             .update(&mut visual, |state, cx| state.set_disabled(false, cx));
         visual.update(|window, cx| window.draw(cx).clear());
         visual.run_until_parked();
-        visual.simulate_mouse_move(bounds.center(), None, gpui::Modifiers::default());
+        visual.simulate_mouse_move(bounds.center(), None, wgpui::Modifiers::default());
         visual.run_until_parked();
         assert_eq!(
             events.borrow().as_slice(),
@@ -5837,9 +5841,9 @@ mod tests {
             ]
         );
         visual.simulate_mouse_move(
-            bounds.bottom_right() + gpui::point(px(10.), px(10.)),
+            bounds.bottom_right() + wgpui::point(px(10.), px(10.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         visual.run_until_parked();
         assert_eq!(
@@ -5855,10 +5859,10 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_older_exit_keeps_newer_snapshot(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
-        use gpui::{Bounds, point, px, size};
+        use wgpui::{Bounds, point, px, size};
         cx.update(crate::init);
         let view = InputView::build(cx, |state| state.default_value("@a @b"));
         let bounds = Bounds::new(point(px(10.), px(20.)), size(px(100.), px(20.)));
@@ -5908,7 +5912,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_late_exit_matches_replaced_token(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         cx.update(crate::init);
@@ -5924,7 +5928,7 @@ mod tests {
                     state.set_token_presentation(
                         InlineTokenPresentation::default().on_token_hover(|_, _, _| {}),
                     );
-                    let bounds = gpui::Bounds::default();
+                    let bounds = wgpui::Bounds::default();
                     state.token_hover(0, bounds, true, Some(&a)).unwrap();
                     state
                         .replace_range_with_token(0..2, b.clone(), window, cx)
@@ -5941,10 +5945,10 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_exit_keeps_entry_utf16_after_edit(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(crate::init);
         let view = InputView::build(cx, |state| state.default_value("🙂 @a"));
         view.window_handle
@@ -5956,7 +5960,7 @@ mod tests {
                     state.set_token_presentation(
                         InlineTokenPresentation::default().on_token_hover(|_, _, _| {}),
                     );
-                    let bounds = gpui::Bounds::default();
+                    let bounds = wgpui::Bounds::default();
                     let (_, enter) = state.token_hover(5, bounds, true, None).unwrap();
                     assert_eq!(enter.range_utf16(), (3, 5));
                     state.replace_text_in_range(Some(0..2), "abcd", window, cx);
@@ -5968,7 +5972,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_hover_callback_edit_preserves_both_exits(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenPresentation};
         cx.update(crate::init);
@@ -5985,7 +5989,7 @@ mod tests {
                     state.set_token_presentation(
                         InlineTokenPresentation::default().on_token_hover(|_, _, _| {}),
                     );
-                    let bounds = gpui::Bounds::default();
+                    let bounds = wgpui::Bounds::default();
                     state.token_hover(0, bounds, true, None).unwrap();
                     state.token_hover(3, bounds, true, None).unwrap();
                     // Model an edit in B's enter callback before A's queued exit.
@@ -6001,7 +6005,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_edit_history_and_validation(cx: &mut TestAppContext) {
         let view = InputView::build(cx, |state| state.default_value("问 @alice!"));
         view.window_handle
@@ -6053,7 +6057,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_token_textarea_ime_and_modes(cx: &mut TestAppContext) {
         use crate::input::{InlineToken, InlineTokenError, InputContent};
         let view = InputView::build_textarea(cx, |state| state);
@@ -6137,7 +6141,7 @@ mod tests {
     }
 
     use crate::theme::Theme;
-    use gpui::{TestAppContext, VisualTestContext, size};
+    use wgpui::{TestAppContext, VisualTestContext, size};
 
     use crate::input::{EditorMode, EditorState, InputMode, LanguageConfig, TabSize, TextareaMode};
 
@@ -6167,7 +6171,7 @@ mod tests {
 
     struct InputView<M: InputModeKind> {
         input: Entity<InputBaseState<M>>,
-        window_handle: gpui::WindowHandle<TestRoot<M>>,
+        window_handle: wgpui::WindowHandle<TestRoot<M>>,
     }
 
     /// Helper to open a state of one mode in a window for testing.
@@ -6244,13 +6248,13 @@ mod tests {
         view: &InputView<M>,
         cx: &mut VisualTestContext,
         dy: f32,
-        phase: gpui::TouchPhase,
+        phase: wgpui::TouchPhase,
     ) {
         cx.update(|window, cx| {
             view.input.update(cx, |state, cx| {
                 state.on_scroll_wheel(
                     &ScrollEvent {
-                        delta: gpui::ScrollDelta::Pixels(point(px(0.), px(dy))),
+                        delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(dy))),
                         touch_phase: phase,
                         ..Default::default()
                     },
@@ -6268,9 +6272,9 @@ mod tests {
             .join("\n")
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_stretches_past_the_end_and_springs_back(cx: &mut TestAppContext) {
-        use gpui::TouchPhase::{Ended, Moved, Started};
+        use wgpui::TouchPhase::{Ended, Moved, Started};
 
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6319,7 +6323,7 @@ mod tests {
         view: &InputView<TextareaMode>,
         cx: &mut VisualTestContext,
     ) -> (Pixels, f32) {
-        use gpui::TouchPhase::{Moved, Started};
+        use wgpui::TouchPhase::{Moved, Started};
 
         cx.update(|window, cx| window.draw(cx).clear());
         swipe(view, cx, -20., Started);
@@ -6329,7 +6333,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_stays_put_under_reduced_motion(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let view = InputView::build_textarea(cx, |state| {
@@ -6341,7 +6345,7 @@ mod tests {
         assert_eq!(stretch, 0., "the edge does not stretch");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_follows_the_platform_by_default(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| state.default_value(long_text()));
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -6354,7 +6358,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_leaves_text_that_fits(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value("one line")
@@ -6364,7 +6368,7 @@ mod tests {
         assert_eq!((end, stretch), (px(0.), 0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_resets_when_replacement_text_fits(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6377,14 +6381,14 @@ mod tests {
                 .update(cx, |state, cx| state.set_value("short", window, cx));
             window.draw(cx).clear();
         });
-        swipe(&view, &mut cx, 0., gpui::TouchPhase::Ended);
+        swipe(&view, &mut cx, 0., wgpui::TouchPhase::Ended);
         view.input.read_with(&cx, |state, _| {
             assert_eq!(state.overscroll.offset(), 0.);
             assert_eq!(state.scroll_handle.offset().y, px(0.));
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_releases_when_the_end_packet_is_horizontal(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6396,8 +6400,8 @@ mod tests {
             view.input.update(cx, |state, cx| {
                 state.on_scroll_wheel(
                     &ScrollEvent {
-                        delta: gpui::ScrollDelta::Pixels(point(px(1.), px(0.))),
-                        touch_phase: gpui::TouchPhase::Ended,
+                        delta: wgpui::ScrollDelta::Pixels(point(px(1.), px(0.))),
+                        touch_phase: wgpui::TouchPhase::Ended,
                         ..Default::default()
                     },
                     window,
@@ -6417,7 +6421,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_ordinary_mouse_wheel_does_not_stretch(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6428,8 +6432,8 @@ mod tests {
             view.input.update(cx, |state, cx| {
                 state.on_scroll_wheel(
                     &ScrollEvent {
-                        delta: gpui::ScrollDelta::Lines(point(0., -100_000.)),
-                        touch_phase: gpui::TouchPhase::Moved,
+                        delta: wgpui::ScrollDelta::Lines(point(0., -100_000.)),
+                        touch_phase: wgpui::TouchPhase::Moved,
                         ..Default::default()
                     },
                     window,
@@ -6441,7 +6445,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_bounce_new_wheel_input_interrupts_the_return(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6449,7 +6453,7 @@ mod tests {
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
         let (end, stretch) = swipe_past_the_end(&view, &mut cx);
         assert!(stretch < 0.);
-        swipe(&view, &mut cx, 0., gpui::TouchPhase::Ended);
+        swipe(&view, &mut cx, 0., wgpui::TouchPhase::Ended);
         cx.executor()
             .advance_clock(std::time::Duration::from_millis(16));
         cx.update(|window, cx| {
@@ -6457,8 +6461,8 @@ mod tests {
             view.input.update(cx, |state, cx| {
                 state.on_scroll_wheel(
                     &ScrollEvent {
-                        delta: gpui::ScrollDelta::Lines(point(0., 2.)),
-                        touch_phase: gpui::TouchPhase::Moved,
+                        delta: wgpui::ScrollDelta::Lines(point(0., 2.)),
+                        touch_phase: wgpui::TouchPhase::Moved,
                         ..Default::default()
                     },
                     window,
@@ -6470,7 +6474,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_turning_scroll_bounce_off_drops_the_stretch(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| {
             state.scroll_bounce(true).default_value(long_text())
@@ -6489,7 +6493,7 @@ mod tests {
 
     /// The frame is laid out by the application, which should not have to
     /// center a single line inside it.
-    #[gpui::test]
+    #[wgpui::test]
     fn single_line_is_centered_in_a_taller_frame(cx: &mut TestAppContext) {
         struct Frame(Entity<InputBaseState<InputMode>>);
         impl Render for Frame {
@@ -6517,7 +6521,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_noop_scroll_notifies_diagnostic_dismissal(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
@@ -6525,7 +6529,7 @@ mod tests {
         let mut input = None;
         let window = cx.open_window(size(px(400.), px(100.)), |window, cx| {
             input = Some(cx.new(|cx| crate::input::EditorState::new(window, cx)));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let input = input.unwrap();
         input.update(cx, |state, cx| {
@@ -6543,7 +6547,7 @@ mod tests {
                 input.update(cx, |state, cx| {
                     state.on_scroll_wheel(
                         &ScrollEvent {
-                            delta: gpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
+                            delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
                             ..Default::default()
                         },
                         window,
@@ -6564,7 +6568,7 @@ mod tests {
                 input.update(cx, |state, cx| {
                     state.on_scroll_wheel(
                         &ScrollEvent {
-                            delta: gpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
+                            delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
                             ..Default::default()
                         },
                         window,
@@ -6576,7 +6580,7 @@ mod tests {
         assert_eq!(notifications.get(), 1, "an unchanged input must stay quiet");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_cursor_layout_consumer_updates_after_selection(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
         struct Panel {
@@ -6595,7 +6599,7 @@ mod tests {
                 div().size_full().child(
                     self.0
                         .clone()
-                        .cached(gpui::StyleRefinement::default().size_full()),
+                        .cached(wgpui::StyleRefinement::default().size_full()),
                 )
             }
         }
@@ -6640,7 +6644,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_input_scroll_offset_notifies_only_on_change(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
@@ -6648,7 +6652,7 @@ mod tests {
         let mut input = None;
         let _window = cx.open_window(size(px(400.), px(100.)), |window, cx| {
             input = Some(cx.new(|cx| crate::input::InputState::new(window, cx)));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let input = input.unwrap();
         let notifications = Rc::new(Cell::new(0));
@@ -6702,7 +6706,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_line_number_notifies_only_on_change(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
@@ -6710,7 +6714,7 @@ mod tests {
         let mut input = None;
         let window = cx.open_window(size(px(400.), px(100.)), |window, cx| {
             input = Some(cx.new(|cx| crate::input::EditorState::new(window, cx)));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let input = input.unwrap();
         let shown = input.read_with(cx, |state, _| state.mode.line_number());
@@ -6738,7 +6742,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_value_on_unfocused_input_stays_quiet(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
@@ -6746,7 +6750,7 @@ mod tests {
         let mut input = None;
         let window = cx.open_window(size(px(400.), px(100.)), |window, cx| {
             input = Some(cx.new(|cx| crate::input::InputState::new(window, cx)));
-            gpui::EmptyView
+            wgpui::EmptyView
         });
         let input = input.unwrap();
         cx.run_until_parked();
@@ -6778,7 +6782,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_input_does_not_invalidate_cached_parent_during_paint(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
 
@@ -6798,7 +6802,7 @@ mod tests {
                 div().size_full().child(
                     self.0
                         .clone()
-                        .cached(gpui::StyleRefinement::default().size_full()),
+                        .cached(wgpui::StyleRefinement::default().size_full()),
                 )
             }
         }
@@ -6849,7 +6853,7 @@ mod tests {
         assert!(renders.get() > before, "resizing must invalidate layout");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn textarea_cursor_treats_crlf_as_one_newline(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::build_textarea(cx, |state| state);
@@ -6888,7 +6892,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn only_a_multi_line_input_paints_scrollbars(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -6906,7 +6910,7 @@ mod tests {
             .update(cx, |state, _| assert!(state.shows_scrollbar()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn context_menu_handler_is_deferred_and_respects_disabled(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
         cx.update(crate::init);
@@ -6964,7 +6968,7 @@ mod tests {
         assert_eq!(calls.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn context_menu_handler_can_read_its_input(cx: &mut TestAppContext) {
         use std::{cell::Cell, rc::Rc};
         cx.update(crate::init);
@@ -6987,7 +6991,7 @@ mod tests {
         assert_eq!(cursor.get(), Some(2));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_readonly_rejects_user_edits_only(cx: &mut TestAppContext) {
         let input_view = InputView::new(cx);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7049,7 +7053,7 @@ mod tests {
     /// must reveal it in one frame. The cursor-follow in `layout_cursors` runs
     /// only on the frame the selection changes, so its old one-line step left
     /// the caret offscreen after typing at the end of a long paste.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_edit_reveals_far_offscreen_caret(cx: &mut TestAppContext) {
         let mut input = None;
         let window = cx.open_window(size(px(720.), px(400.)), |window, cx| {
@@ -7110,7 +7114,7 @@ mod tests {
     /// Regression test: changing the auto-grow limits keeps the rows fitted to
     /// the text. `set_auto_grow` used to start over at `min_rows`, and the rows
     /// were counted again only on the next edit or wrap width change.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_auto_grow_keeps_rows_fitted(cx: &mut TestAppContext) {
         let mut input = None;
         let window = cx.open_window(size(px(720.), px(400.)), |window, cx| {
@@ -7149,7 +7153,7 @@ mod tests {
     /// matches what `update_scroll_offset` persists (no jitter). A small
     /// `cursor_surrounding_lines` override used to mismatch the hardcoded
     /// 3-line edge clearance in `scroll_to`, overshooting `safe_y_min`.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scroll_to_eob_does_not_overshoot_safe_range(cx: &mut TestAppContext) {
         let input_view = InputView::new(cx);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7210,12 +7214,12 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_next_search_match_reveals_with_padding_after_manual_scroll(cx: &mut TestAppContext) {
         assert_search_reveals_with_padding_after_manual_scroll(false, cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_previous_search_match_reveals_with_padding_after_manual_scroll(
         cx: &mut TestAppContext,
     ) {
@@ -7349,7 +7353,7 @@ mod tests {
         (editor, search_requests)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_search_shortcut_reaches_the_host_when_not_searchable(cx: &mut TestAppContext) {
         let (editor, search_requests) = press_search_shortcut(cx, false);
         assert_eq!(search_requests.get(), 1);
@@ -7359,7 +7363,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_search_shortcut_opens_the_panel_when_searchable(cx: &mut TestAppContext) {
         let (editor, search_requests) = press_search_shortcut(cx, true);
         assert_eq!(search_requests.get(), 0);
@@ -7369,7 +7373,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_search_query_highlights_without_the_panel(cx: &mut TestAppContext) {
         let input_view = InputView::build_editor(cx, |state| state.searchable(false));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7397,7 +7401,7 @@ mod tests {
 
     /// A closed search skips rescanning on edits, so every path that reads
     /// the matches again must see the edited text, not the text at close.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_closed_search_resyncs_matches_after_edits(cx: &mut TestAppContext) {
         let input_view = InputView::build_editor(cx, |state| state.searchable(false));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7418,7 +7422,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_search_reveals_offscreen_wrapped_match(cx: &mut TestAppContext) {
         let input_view = InputView::new(cx);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7457,7 +7461,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_step(cx: &mut TestAppContext) {
         let input = InputView::build(cx, |state| state).input;
 
@@ -7485,7 +7489,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_normalization(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state.mask_pattern(MaskPattern::Number {
@@ -7544,7 +7548,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_mask_pattern_accepts_non_ascii_text(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state.mask_pattern("9999年99月"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7563,7 +7567,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_normalization_with_separator(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state.mask_pattern(MaskPattern::Number {
@@ -7588,7 +7592,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_clamp_on_blur(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state
@@ -7619,7 +7623,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_undo_with_mask(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state.mask_pattern(MaskPattern::Number {
@@ -7654,7 +7658,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_coalesces_adjacent_typing_transactions(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7672,7 +7676,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_cursor_movement_splits_typing(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7694,7 +7698,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_splits_backward_and_forward_delete(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7716,7 +7720,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_coalesces_directional_character_deletes(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7744,7 +7748,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_atomic_paste_isolated_from_typing(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7768,7 +7772,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_programmatic_insert_is_atomic(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7789,7 +7793,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_selection_round_trip_splits_typing(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7811,7 +7815,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_enter_is_atomic(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7840,7 +7844,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_single_line_return_commits_the_typing_session(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7872,7 +7876,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_submit_on_enter_commits_the_textarea_session(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.submit_on_enter(true));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7900,7 +7904,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_blur_commits_the_typing_session(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7922,7 +7926,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_keeps_rapid_lines_in_distinct_transactions(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7949,7 +7953,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_coalesces_long_unicode_typing_without_a_timer(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -7978,7 +7982,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_long_multiline_sequence_has_structural_boundaries(
         cx: &mut TestAppContext,
     ) {
@@ -8028,7 +8032,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_masked_input_keeps_its_value_out_of_the_clipboard(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8066,7 +8070,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_masked_input_collapses_word_boundaries(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8106,7 +8110,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_masked_input_disables_the_copy_context_menu_items(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8127,7 +8131,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_cut_and_repeated_pastes_are_distinct_transactions(
         cx: &mut TestAppContext,
     ) {
@@ -8156,7 +8160,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_word_and_line_deletes_do_not_coalesce(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8179,7 +8183,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_multiline_replacement_is_one_atomic_transaction(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8201,7 +8205,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_composition_isolated_from_long_typing(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8227,7 +8231,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_selected_replacement_is_atomic(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8251,7 +8255,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_leading_dot_editable(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state.mask_pattern(MaskPattern::Number {
@@ -8282,7 +8286,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_number_input_escape_invalid_text(cx: &mut TestAppContext) {
         // A pre-existing invalid text (e.g. a `default_value` that does not
         // conform) must not trap the user, the edit is allowed to fix it.
@@ -8319,7 +8323,7 @@ mod tests {
     /// After `set_value` on a single-line input the caret sits at the end (like
     /// HTML `<input>`), yet the view is scrolled back to the start so a long
     /// value shows its beginning instead of its tail.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_value_single_line_caret_at_end_view_at_start(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8369,7 +8373,7 @@ mod tests {
     /// `replace_all` on a single-line input replaces the text, puts the
     /// caret at the end, and — like `set_value` — snaps the view back to the
     /// start so a long value shows its beginning instead of its tail.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_all_single_line(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8423,7 +8427,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_single_line_removes_newlines(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state.default_value("default\nvalue"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8455,7 +8459,7 @@ mod tests {
     /// `replace_all` on a multi-line (non-code-editor) input clears the
     /// selection to `0..0` and resets the scroll offset, but does not set a
     /// deferred scroll offset (single-line only).
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_all_multi_line(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8486,7 +8490,7 @@ mod tests {
 
     /// Unlike `set_value`, `replace_all` records the change so the user can
     /// undo it back to the previous text and redo to the new text.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_all_preserves_undo_history(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8522,7 +8526,7 @@ mod tests {
 
     /// `replace_all` on a code editor marks a pending update and resets LSP
     /// state, so diagnostics/completions refresh against the new text.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_all_code_editor(cx: &mut TestAppContext) {
         let input_view = InputView::new(cx);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8544,7 +8548,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_selected_range(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state.default_value("hello world"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8567,7 +8571,7 @@ mod tests {
     }
 
     /// A single-edit batch round-trips through undo/redo.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_text_in_ranges_single_edit(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.default_value("hello world"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8589,7 +8593,7 @@ mod tests {
 
     /// A single undo restores the exact original text and a single redo
     /// re-applies all edits, verifying the back-to-front application ordering.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_text_in_ranges_multi_edit_transaction(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.default_value("aaa bbb ccc"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8628,11 +8632,11 @@ mod tests {
     /// A multi-edit change reaches the highlighter once, with every edit in
     /// application order and the text right after each, which is what the
     /// default `update_batch` replays through `update` one edit at a time.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replace_text_in_ranges_drives_the_highlighter_once(cx: &mut TestAppContext) {
         use crate::input::{FoldRange, HighlightStyleResolver, InputEdit, InputHighlighter};
-        use gpui::HighlightStyle;
         use std::cell::RefCell;
+        use wgpui::HighlightStyle;
 
         struct RecordingHighlighter(Rc<RefCell<Vec<Vec<String>>>>);
 
@@ -8708,7 +8712,7 @@ mod tests {
     }
 
     /// An IME composition (marking then commit) undoes as a single unit.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_ime_composition_undoes_as_one_unit(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.default_value(""));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8736,7 +8740,7 @@ mod tests {
 
     /// A keystroke right after a committed composition must be its own undo
     /// entry, not merged into the (finalized) composition transaction.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_edit_after_composition_is_separate_undo(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.default_value(""));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8764,7 +8768,7 @@ mod tests {
 
     /// Canceling a composition via `unmark_text` closes its transaction so it
     /// does not leak and swallow a later edit.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_composition_cancel_via_unmark_does_not_leak(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| state.default_value(""));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8784,7 +8788,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_set_selected_range_clips_to_utf8_boundaries(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state.default_value("éx"));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8802,7 +8806,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_ime_selection_is_relative_to_replacement_start(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state.default_value("你好 "));
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8821,7 +8825,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_composition_is_one_undo_group(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8843,7 +8847,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_consecutive_compositions_are_separate_groups(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8881,7 +8885,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_typing_after_composition_is_a_separate_group(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8906,7 +8910,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_composition_cancel_leaves_no_entry(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8925,7 +8929,7 @@ mod tests {
     }
 
     /// The macOS Korean IME rewrites the character it just inserted.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_ime_rewrites_of_typed_char_are_one_group(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8956,7 +8960,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_rewrite_after_cursor_movement_is_separate(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -8979,7 +8983,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_selection_restored_by_undo_and_redo(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9002,7 +9006,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_forward_delete_restores_cursor(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9021,7 +9025,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_selection_movement_preserves_redo(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9043,7 +9047,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_noop_edit_preserves_redo(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9063,7 +9067,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_cursor_round_trip_stops_typing_coalescing(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9084,7 +9088,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_noop_edit_breaks_coalescing_without_clearing_history(
         cx: &mut TestAppContext,
     ) {
@@ -9107,7 +9111,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_manager_masked_redo_restores_actual_cursor(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| {
             state.mask_pattern(MaskPattern::Number {
@@ -9138,7 +9142,7 @@ mod tests {
     /// A fold keeps its own first and last line visible, so a position on
     /// either of them opens nothing. Nested folds all open at once, sibling
     /// folds stay closed, and the opened ranges stay fold candidates.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_unfold_at(cx: &mut TestAppContext) {
         use crate::input::{FoldRange, Position};
 
@@ -9210,7 +9214,7 @@ mod tests {
     ///
     /// Both used to be dropped by one call, so clicking away threw away
     /// decorations the application had installed and never asked to remove.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_blur_keeps_decorations(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9222,8 +9226,8 @@ mod tests {
                 let _collection = state.create_decorations_collection(
                     vec![crate::input::TextDecoration::new(
                         0..6,
-                        gpui::HighlightStyle {
-                            font_weight: Some(gpui::FontWeight::BOLD),
+                        wgpui::HighlightStyle {
+                            font_weight: Some(wgpui::FontWeight::BOLD),
                             ..Default::default()
                         },
                     )],
@@ -9260,7 +9264,7 @@ mod tests {
     ///
     /// An auto-growing textarea capped at one row used to report itself as
     /// single-line, because the answer was derived from the row counts.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_kind_does_not_follow_the_row_count(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| state.auto_grow(1, 1));
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9271,7 +9275,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_textarea_prewrap_prepares_content_rows_before_layout(cx: &mut TestAppContext) {
         cx.update(crate::init);
         for (value, expected_rows) in [("", 1), ("one\ntwo", 2)] {
@@ -9287,12 +9291,12 @@ mod tests {
                     assert_eq!(state.value(), value);
                     state
                 });
-                gpui::EmptyView
+                wgpui::EmptyView
             });
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_textarea_prewrap_respects_soft_wrap_before_layout(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let value = "select id, name, email, phone from users where active\nlimit 10";
@@ -9314,12 +9318,12 @@ mod tests {
                     assert_eq!(state.value(), value);
                     state
                 });
-                gpui::EmptyView
+                wgpui::EmptyView
             });
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_prewrap_counts_wrapped_rows_before_the_first_paint(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let text = "select id, name, email, phone from users where active\nlimit 10";
@@ -9335,7 +9339,7 @@ mod tests {
                     state
                 });
                 input = Some(editor);
-                gpui::EmptyView
+                wgpui::EmptyView
             });
             let rows = input
                 .unwrap()
@@ -9348,7 +9352,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_prewrap_uses_the_configured_tab_stops(cx: &mut TestAppContext) {
         cx.update(crate::init);
         cx.open_window(size(px(400.), px(100.)), |window, cx| {
@@ -9376,13 +9380,13 @@ mod tests {
                 }
                 state
             });
-            gpui::EmptyView
+            wgpui::EmptyView
         });
     }
 
     /// Prewrap counts with the state's wrapping indent, as the first layout
     /// does: continuation rows indented as deep as their line take more rows.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_prewrap_wraps_with_the_wrapping_indent(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let text = "            select id, name, email, phone from users where active";
@@ -9398,7 +9402,7 @@ mod tests {
                     state.prewrap(font, px(14.), px(200.), cx);
                     state
                 }));
-                gpui::EmptyView
+                wgpui::EmptyView
             });
             rows.push(
                 input
@@ -9410,7 +9414,7 @@ mod tests {
     }
 
     /// Once the editor is laid out, layout owns the wrap and prewrap leaves it.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_prewrap_does_nothing_once_laid_out(cx: &mut TestAppContext) {
         struct Frame(Entity<crate::input::EditorState>);
         impl Render for Frame {
@@ -9449,7 +9453,7 @@ mod tests {
     ///
     /// The default lives in the shared constructor, where a mode-specific
     /// `new` can silently fail to restore it; this pins it down.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_soft_wrap_is_enabled_by_default(cx: &mut TestAppContext) {
         let textarea = InputView::build_textarea(cx, |state| state);
         let mut textarea_cx = VisualTestContext::from_window(textarea.window_handle.into(), cx);
@@ -9556,23 +9560,23 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_alt_drag_selects_a_block_and_replaces_each_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
         for modifiers in [
-            gpui::Modifiers {
+            wgpui::Modifiers {
                 alt: true,
                 ..Default::default()
             },
-            gpui::Modifiers {
+            wgpui::Modifiers {
                 alt: true,
                 shift: true,
                 ..Default::default()
             },
             #[cfg(target_os = "linux")]
-            gpui::Modifiers {
+            wgpui::Modifiers {
                 alt: true,
                 control: true,
                 ..Default::default()
@@ -9632,7 +9636,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_alt_drag_extends_upward_from_an_existing_cursor(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
@@ -9653,7 +9657,7 @@ mod tests {
                 origin + point(x, layout.line_height * 0.5),
             )
         });
-        let modifiers = gpui::Modifiers {
+        let modifiers = wgpui::Modifiers {
             alt: true,
             ..Default::default()
         };
@@ -9663,7 +9667,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "a|bcd\na|bcd\na|bcd");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_alt_drag_over_a_short_row_keeps_the_block_width(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
@@ -9689,7 +9693,7 @@ mod tests {
                 origin + point(x_of(5), layout.line_height * 1.5),
             )
         });
-        let modifiers = gpui::Modifiers {
+        let modifiers = wgpui::Modifiers {
             alt: true,
             shift: true,
             ..Default::default()
@@ -9705,7 +9709,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_alt_mouse_release_outside_editor_ends_column_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
@@ -9716,7 +9720,7 @@ mod tests {
             state.last_bounds.unwrap().origin
                 + point(layout.line_number_width + px(2.), layout.line_height * 0.5)
         });
-        let modifiers = gpui::Modifiers {
+        let modifiers = wgpui::Modifiers {
             alt: true,
             ..Default::default()
         };
@@ -9728,7 +9732,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_consumed_keystrokes_keep_cursor_visible(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9762,7 +9766,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_mouse_down_shows_cursor_like_a_cursor_move(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
@@ -9804,7 +9808,7 @@ mod tests {
         cx.simulate_mouse_up(second, MouseButton::Left, Default::default());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_actions_reveal_hidden_carets(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9842,7 +9846,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_keyboard_dispatch(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9870,7 +9874,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "ax|b\nax|b\nax|b");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_platform_word_selection_dispatch(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9894,7 +9898,7 @@ mod tests {
     }
 
     #[cfg(not(target_os = "macos"))]
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_horizontal_selection_dispatch(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9938,7 +9942,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "x|b\nx|b");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_alt_click_dispatch(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let view = InputView::<EditorMode>::new(cx);
@@ -9954,7 +9958,7 @@ mod tests {
         });
         cx.simulate_click(
             position,
-            gpui::Modifiers {
+            wgpui::Modifiers {
                 alt: true,
                 ..Default::default()
             },
@@ -9963,7 +9967,7 @@ mod tests {
             .read_with(&cx, |state, _| assert_eq!(state.selections.len(), 2));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_selection(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -9991,7 +9995,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_selection_preserves_crlf_boundaries(cx: &mut TestAppContext) {
         let view = InputView::build_textarea(cx, |state| state.default_value("a\r\nb"));
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10020,7 +10024,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_selection_merges_overlaps_before_copy_and_cut(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10051,15 +10055,15 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_selection_clears_inline_completion(cx: &mut TestAppContext) {
         use crate::input::CompletionProvider;
-        use gpui::Task;
         use lsp_types::{
             CompletionContext, CompletionResponse, InlineCompletionContext, InlineCompletionItem,
             InlineCompletionResponse,
         };
         use std::time::Duration;
+        use wgpui::Task;
 
         struct Provider(Rc<Cell<usize>>);
 
@@ -10136,7 +10140,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_word_delete_undo_restores_caret(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10150,7 +10154,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_merged_delete_undo_restores_all_carets(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10164,7 +10168,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "a|b|c");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_shift_end_respects_soft_wrap_end(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10182,7 +10186,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_outdent_unindented_unicode_is_unchanged(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10196,7 +10200,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "|你好\n|世界");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_column_selection_stays_on_unicode_boundaries(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10218,7 +10222,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_editor_decorations_follow_typing(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10228,7 +10232,7 @@ mod tests {
                 state.create_decorations_collection(
                     vec![crate::input::TextDecoration::new(
                         4..7,
-                        gpui::HighlightStyle::default(),
+                        wgpui::HighlightStyle::default(),
                     )],
                     cx,
                 );
@@ -10240,7 +10244,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_backspace_preserves_escaped_quote_terminator(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10254,7 +10258,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, r#"{"s":"\|"}"#);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_ordinary_typing_does_not_query_syntax(cx: &mut TestAppContext) {
         struct UnexpectedQuery;
         impl crate::input::SyntaxContextProvider for UnexpectedQuery {
@@ -10276,7 +10280,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "abc|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_is_atomic_at_history_limit(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10296,7 +10300,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, &format!("{}(|)", "a".repeat(999)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_comment_closer_is_inserted_literally(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10310,7 +10314,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "// ()|)");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_explicit_range_skip_does_not_delete_existing_closer_on_undo(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10335,7 +10339,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_pair_redo_restores_interior_cursor(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10355,7 +10359,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(|)");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_pair_enter_redo_restores_interior_cursor(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10386,7 +10390,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{\n  |\n}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_parens(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10406,7 +10410,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(x|)");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_skip_over_closer(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10424,7 +10428,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_no_pair_inside_word(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10438,7 +10442,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "don'|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_quote_after_cjk(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10453,7 +10457,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "中'|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_closer_skips_at_string_end(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10470,7 +10474,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_backspace_pair_with_cjk_prefix(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10483,7 +10487,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "中|abc");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_enter_split_respects_smart_indent_off(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10505,7 +10509,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{\n|}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_enter_split_is_independent_of_auto_close(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10527,7 +10531,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{\n  |\n}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_language_config_applies_before_render_and_on_language_change(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, set_language_config};
         let view = InputView::<EditorMode>::new(cx);
@@ -10566,7 +10570,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_language_service_replacement_updates_syntax_without_render(cx: &mut TestAppContext) {
         use crate::input::{LanguageProvider, SyntaxContextProvider, set_language_provider};
         struct StringLanguages(Rc<Cell<usize>>);
@@ -10601,7 +10605,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_language_config_updates_existing_editors(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, set_language_config};
         let view = InputView::<EditorMode>::new(cx);
@@ -10630,7 +10634,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "«|»");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_close_before_is_language_configurable(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10655,7 +10659,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(|)word");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_pair_context_restrictions_are_per_pair(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         let view = InputView::<EditorMode>::new(cx);
@@ -10679,7 +10683,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "([|)");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multichar_delimiters_insert_delete_and_skip(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         struct BlockComment;
@@ -10725,7 +10729,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "/**/|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_auto_closed_pairs_fallback_and_explicit_disable(cx: &mut TestAppContext) {
         use crate::input::BracketPair;
         let view = InputView::<EditorMode>::new(cx);
@@ -10748,7 +10752,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "««|»");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_open_composition_preserves_generated_pairs(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         let view = InputView::<EditorMode>::new(cx);
@@ -10776,7 +10780,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "/**/|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_undo_does_not_promote_literal_comment_delimiters(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         let view = InputView::<EditorMode>::new(cx);
@@ -10801,7 +10805,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "/|*/");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multiple_generated_pairs_retain_their_identity(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         struct CommentScope;
@@ -10853,7 +10857,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "|()");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_replacing_generated_opener_invalidates_the_pair(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext};
         let view = InputView::<EditorMode>::new(cx);
@@ -10879,7 +10883,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "//*|*/");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_configuration_preserves_compiled_regex_options(cx: &mut TestAppContext) {
         use crate::input::IndentationRules;
         let view = InputView::<EditorMode>::new(cx);
@@ -10911,7 +10915,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "BEGIN\n  |");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_indent_patterns_are_applied_on_enter(cx: &mut TestAppContext) {
         use crate::input::IndentationRules;
         let view = InputView::<EditorMode>::new(cx);
@@ -10939,7 +10943,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_custom_language_config(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -10973,7 +10977,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_skip_records_no_history(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11000,7 +11004,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(a|)");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_pair_insert_undo_removes_both(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11019,7 +11023,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_escaped_quote_does_not_skip(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11033,7 +11037,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "\"hello\\\"|\"");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_even_backslashes_still_skip(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11047,7 +11051,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "\"hello\\\\\"|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_editor_options_survive_configuration_replacement(cx: &mut TestAppContext) {
         use crate::input::{BracketPair, LanguageConfig};
 
@@ -11087,7 +11091,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_smart_indent_suppressed_in_strings(cx: &mut TestAppContext) {
         use std::rc::Rc;
 
@@ -11113,7 +11117,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "  x = {\n  |");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_split_suppressed_in_strings(cx: &mut TestAppContext) {
         use std::rc::Rc;
 
@@ -11139,7 +11143,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{\n|}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_comment_context_disables_pairing(cx: &mut TestAppContext) {
         use std::rc::Rc;
 
@@ -11158,7 +11162,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "(|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_backspace_deletes_empty_pair(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11170,7 +11174,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_backspace_keeps_closer_with_content(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11183,7 +11187,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{|}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_enter_splits_brackets(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11213,7 +11217,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "{\n  x|\n}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_enter_smart_indent_after_brace(cx: &mut TestAppContext) {
         let view = InputView::<EditorMode>::new(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11233,7 +11237,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "fn main() {\n  |");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_block_indent_tracks_all_preceding_edits(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11250,7 +11254,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "|ab\n|cd\n|ef");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_block_outdent_clamps_cursor_inside_indent(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11262,7 +11266,7 @@ mod tests {
         assert_cursors(&mut cx, &view.input, "ab\n|cd");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_ime_restores_original_selection(cx: &mut TestAppContext) {
         let view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11299,9 +11303,9 @@ mod tests {
                 selection
             });
 
-            cx.simulate_ime_event(gpui::ImeEvent::Enabled)
+            cx.simulate_ime_event(wgpui::ImeEvent::Enabled)
                 .expect("focused input accepts native IME events");
-            cx.simulate_ime_event(gpui::ImeEvent::Preedit(String::new(), None))
+            cx.simulate_ime_event(wgpui::ImeEvent::Preedit(String::new(), None))
                 .expect("empty native preedit without a composition");
             view.input.read_with(&cx, |state, _| {
                 assert_eq!(state.value(), "😀界終");
@@ -11309,14 +11313,14 @@ mod tests {
                 assert!(!state.undo_manager.has_undos());
             });
 
-            cx.simulate_ime_event(gpui::ImeEvent::Preedit("ni🦀".into(), Some((6, 6))))
+            cx.simulate_ime_event(wgpui::ImeEvent::Preedit("ni🦀".into(), Some((6, 6))))
                 .expect("native preedit cursor uses UTF-8 byte offsets");
             view.input.read_with(&cx, |state, _| {
                 assert_eq!(state.value(), "😀ni🦀終");
                 assert_eq!(state.selected_range(), 10..10);
                 assert_eq!(state.ime_marked_range, Some((4..10).into()));
             });
-            cx.simulate_ime_event(gpui::ImeEvent::Preedit(String::new(), None))
+            cx.simulate_ime_event(wgpui::ImeEvent::Preedit(String::new(), None))
                 .expect("native empty preedit clears the previous candidate");
             cx.update(|window, cx| {
                 view.input.update(cx, |state, cx| {
@@ -11327,13 +11331,13 @@ mod tests {
                 });
             });
 
-            cx.simulate_ime_event(gpui::ImeEvent::Preedit(String::new(), None))
+            cx.simulate_ime_event(wgpui::ImeEvent::Preedit(String::new(), None))
                 .expect("repeated native empty preedit");
             view.input.read_with(&cx, |state, _| {
                 assert_eq!(state.value(), "😀終");
                 assert!(state.undo_manager.has_open_transaction());
             });
-            cx.simulate_ime_event(gpui::ImeEvent::Commit("你".into()))
+            cx.simulate_ime_event(wgpui::ImeEvent::Commit("你".into()))
                 .expect("native candidate commit");
             cx.update(|window, cx| {
                 view.input.update(cx, |state, cx| {
@@ -11361,7 +11365,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_cleared_preedit_commit_restores_unicode_selection_as_one_undo(cx: &mut TestAppContext) {
         let input = InputView::build(cx, |state| state);
         assert_cleared_preedit_preserves_composition(input, cx);
@@ -11371,7 +11375,7 @@ mod tests {
         assert_cleared_preedit_preserves_composition(editor, cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_native_ime_disabled_clears_preedit_and_closes_undo_transaction(
         cx: &mut TestAppContext,
     ) {
@@ -11387,13 +11391,13 @@ mod tests {
                     });
                     window.draw(cx).clear();
                 });
-                cx.simulate_ime_event(gpui::ImeEvent::Preedit("ni".into(), Some((2, 2))))
+                cx.simulate_ime_event(wgpui::ImeEvent::Preedit("ni".into(), Some((2, 2))))
                     .expect("native composition starts");
                 if clear_first {
-                    cx.simulate_ime_event(gpui::ImeEvent::Preedit(String::new(), None))
+                    cx.simulate_ime_event(wgpui::ImeEvent::Preedit(String::new(), None))
                         .expect("native preedit clears before cancellation");
                 }
-                cx.simulate_ime_event(gpui::ImeEvent::Disabled)
+                cx.simulate_ime_event(wgpui::ImeEvent::Disabled)
                     .expect("native IME cancellation");
                 cx.update(|window, cx| {
                     view.input.update(cx, |state, cx| {
@@ -11428,7 +11432,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_noop_does_not_change_redo_selection(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11447,7 +11451,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_insert_text(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11462,7 +11466,7 @@ mod tests {
         assert_cursors(&mut cx, &input, ">>>|hello >>>|world>>>|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_delete_backward(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11478,7 +11482,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "|island| car|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_delete_forward_merges(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11494,7 +11498,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "hello|orld");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_multiline_insert_and_delete(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11521,7 +11525,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "|1\n|2\n|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_cursor_below_preserves_column(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11536,7 +11540,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "ab|cd\nab|cd");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_add_cursor_at_rejects_duplicates(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11555,7 +11559,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_undo_redo_restores_selections(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11584,7 +11588,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "a|1\na|2\na|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_undo_redo_different_line_lengths(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11613,7 +11617,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "abc123a|\nabc12345a|\nabc1234567a|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_undo_multiple_inserts(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11646,7 +11650,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "abc|1\nabc|2\nabc|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_backspace_run_is_one_undo(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11671,7 +11675,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "abc|1\nabc|2\nabc|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_adding_a_cursor_splits_the_typing_gesture(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11696,7 +11700,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "a|1\n2|\n3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_indent_is_one_undo(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11713,7 +11717,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "|1\n|2\n|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_indent_then_outdent_roundtrips(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11736,7 +11740,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "|1\n|2\n|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_inline_outdent_only_removes_line_indentation(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11769,7 +11773,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "1|2\n1|2");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_readonly_multi_cursor_commands_leave_state_unchanged(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11789,7 +11793,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_edit_preserves_the_active_cursor(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11808,7 +11812,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_block_indent_outdent_with_selection(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11844,7 +11848,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_word_movement(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11900,7 +11904,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_selection_commands(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11939,7 +11943,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_replace_selection(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11964,7 +11968,7 @@ mod tests {
         assert_cursors(&mut cx, &input, "x|\nx|\nx|");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_escape_collapses(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -11981,7 +11985,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_build_columnar_selection(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -12002,7 +12006,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_columnar_selection_keeps_width_over_short_rows(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -12024,7 +12028,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_cursor_paste_distributes_lines(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -12043,9 +12047,9 @@ mod tests {
         assert_cursors(&mut cx, &input, "x|1\ny|2\nz|3");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_paste_without_text_leaves_the_selection_alone(cx: &mut TestAppContext) {
-        use gpui::{Image, ImageFormat};
+        use wgpui::{Image, ImageFormat};
 
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -12069,7 +12073,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_paste_target_tracks_edits_and_selections(cx: &mut TestAppContext) {
         let view = multi_line(cx);
         let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
@@ -12109,7 +12113,7 @@ mod tests {
         assert_ne!(input.read_with(&cx, |state, _| state.paste_target()), moved);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_ime_candidate_bounds_fallback_before_repaint(cx: &mut TestAppContext) {
         let input_view = InputView::build_textarea(cx, |state| {
             state.default_value("这是一段已经输入的中文文字")

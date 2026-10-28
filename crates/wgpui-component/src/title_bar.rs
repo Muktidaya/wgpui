@@ -3,15 +3,15 @@ use std::rc::Rc;
 use crate::{
     ActiveTheme, Icon, IconName, InteractiveElementExt as _, Sizable as _, StyledExt, h_flex,
 };
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Background, ClickEvent, Context, Decorations, Hsla, InteractiveElement,
     IntoElement, MouseButton, ParentElement, Pixels, Render, RenderOnce, Rgba,
     StatefulInteractiveElement as _, StyleRefinement, Styled, TitlebarOptions, Window,
     WindowControlArea, WindowOptions, div, linear_color_stop, linear_gradient,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::TestSupportExt as _;
-use smallvec::SmallVec;
+use wgpui_base::TestSupportExt as _;
 
 pub const TITLE_BAR_HEIGHT: Pixels = px(34.);
 #[cfg(target_os = "macos")]
@@ -61,7 +61,7 @@ impl TitleBar {
         TitlebarOptions {
             title: None,
             appears_transparent: true,
-            traffic_light_position: Some(gpui::point(px(9.0), px(9.0))),
+            traffic_light_position: Some(wgpui::point(px(9.0), px(9.0))),
         }
     }
 
@@ -71,7 +71,7 @@ impl TitleBar {
     /// [`crate::TitleBar`], so the title bar owns dragging and double clicking itself:
     ///
     /// ```no_run
-    /// # mod wgpui_kit { pub use gpui::*; pub extern crate wgpui_component as component; }
+    /// # mod wgpui_kit { pub use wgpui::*; pub extern crate wgpui_component as component; }
     /// # use wgpui_kit::WindowOptions;
     /// # use wgpui_kit::component::TitleBar;
     /// let options = WindowOptions {
@@ -297,7 +297,7 @@ impl RenderOnce for WindowControls {
 }
 
 impl Styled for TitleBar {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -412,7 +412,7 @@ impl RenderOnce for TitleBar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Rgba, linear_color_stop, linear_gradient};
+    use wgpui::{Rgba, linear_color_stop, linear_gradient};
 
     #[test]
     fn test_default_title_bar_background() {

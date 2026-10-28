@@ -1,7 +1,7 @@
 use crate::TestSupportExt as _;
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, FocusHandle, InteractiveElement, Interactivity, IntoElement,
     ParentElement, RenderOnce, Role, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     div,
@@ -19,7 +19,7 @@ type OpenChange = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 /// positioning, and visual presentation; Base owns focus and open/dismiss keyboard behavior.
 #[derive(IntoElement)]
 pub struct DatePicker {
-    base: crate::ObservedElement<gpui::Stateful<Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     open: bool,
     disabled: bool,
     focus_handle: FocusHandle,
@@ -71,7 +71,7 @@ impl InteractiveElement for DatePicker {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }

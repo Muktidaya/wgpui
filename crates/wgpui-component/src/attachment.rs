@@ -1,6 +1,7 @@
 use std::{rc::Rc, time::Duration};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AbsoluteLength, AnyElement, App, Axis, Bounds, ClickEvent, ElementId, Hsla, ImageSource,
     InteractiveElement as _, IntoElement, MouseButton, ObjectFit, ParentElement, Path, PathBuilder,
     Pixels, Refineable as _, RenderOnce, ScrollHandle, SharedString,
@@ -8,11 +9,10 @@ use gpui::{
     canvas, div, img, linear_color_stop, linear_gradient, point, prelude::FluentBuilder as _, px,
     relative, rems, white,
 };
-use gpui_base::{
+use wgpui_base::{
     is_mobile,
     motion::{Transition, transition},
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme as _, Icon, IconName, InteractiveElementExt as _, Sizable, Size, StyledExt as _,
@@ -1422,11 +1422,11 @@ mod tests {
         let handle = ScrollHandle::new();
         let group = AttachmentGroup::new("group")
             .track_scroll(&handle)
-            .with_edge_fade(gpui::black())
+            .with_edge_fade(wgpui::black())
             .child("first")
             .child("second");
         assert!(group.scroll_handle.is_some());
-        assert_eq!(group.edge_fade, Some(gpui::black()));
+        assert_eq!(group.edge_fade, Some(wgpui::black()));
         assert_eq!(group.children.len(), 2);
         assert!(AttachmentGroup::new("plain").scroll_handle.is_none());
         assert!(AttachmentGroup::new("plain").edge_fade.is_none());
@@ -1702,7 +1702,7 @@ mod tests {
     mod click_dispatch {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{Context, Modifiers, Render, TestAppContext, point, px};
+        use wgpui::{Context, Modifiers, Render, TestAppContext, point, px};
 
         use super::super::*;
         use crate::button::Button;
@@ -1735,7 +1735,7 @@ mod tests {
             }
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn whole_card_click_stays_below_the_actions(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let card_clicks = Rc::new(Cell::new(0));
@@ -1765,7 +1765,7 @@ mod tests {
     mod retry_dispatch {
         use std::{cell::Cell, rc::Rc};
 
-        use gpui::{
+        use wgpui::{
             Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, TestAppContext,
             VisualTestContext, point, px,
         };
@@ -1804,7 +1804,7 @@ mod tests {
             (cx, retries)
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn failed_media_without_source_retries_by_pointer_and_keyboard(cx: &mut TestAppContext) {
             let (cx, retries) = harness(cx, true);
             cx.simulate_click(point(px(20.), px(20.)), Modifiers::default());
@@ -1822,7 +1822,7 @@ mod tests {
             assert_eq!(retries.get(), 2);
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn failed_media_without_retry_has_no_action(cx: &mut TestAppContext) {
             let (cx, retries) = harness(cx, false);
             cx.simulate_click(point(px(20.), px(20.)), Modifiers::default());

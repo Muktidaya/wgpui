@@ -1,9 +1,9 @@
 mod language_name;
-pub use gpui_base::input::{
+pub(crate) use language_name::language_name;
+pub use wgpui_base::input::{
     Diagnostic, DiagnosticEntry, DiagnosticRelatedInformation, DiagnosticSet, DiagnosticSeverity,
     DiagnosticSummary, DiagnosticTag, RelatedInformation,
 };
-pub(crate) use language_name::language_name;
 
 mod diagnostic_styles;
 pub(crate) use diagnostic_styles::*;
@@ -20,7 +20,7 @@ mod syntect_backend;
 pub(crate) use syntect_backend::{highlight_code, input_highlighter_factory};
 
 #[cfg(not(any(feature = "tree-sitter", feature = "syntect")))]
-pub(crate) fn input_highlighter_factory() -> gpui_base::input::InputHighlighterFactory {
+pub(crate) fn input_highlighter_factory() -> wgpui_base::input::InputHighlighterFactory {
     std::rc::Rc::new(|_| None)
 }
 

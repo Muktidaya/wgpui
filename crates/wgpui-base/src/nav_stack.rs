@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::Duration};
 
-use gpui::{
+use wgpui::{
     AnyElement, AnyView, App, Context, Div, ElementId, Entity, EventEmitter,
     InteractiveElement as _, IntoElement, ParentElement as _, RenderOnce, StyleRefinement, Styled,
     Window, div, prelude::FluentBuilder as _,
@@ -534,7 +534,7 @@ impl RenderOnce for NavPage {
 mod tests {
     use std::{cell::RefCell, time::Duration};
 
-    use gpui::{AppContext as _, Render, TestAppContext};
+    use wgpui::{AppContext as _, Render, TestAppContext};
 
     use super::*;
 
@@ -566,7 +566,7 @@ mod tests {
         (stack, events)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn push_and_pop_keep_the_root(cx: &mut TestAppContext) {
         let (stack, events) = stack(cx);
         let (root, second) = (page(cx), page(cx));
@@ -615,7 +615,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pop_to_root_returns_everything_above_it(cx: &mut TestAppContext) {
         let (stack, _) = stack(cx);
         let pages: Vec<AnyView> = (0..3).map(|_| page(cx)).collect();
@@ -642,7 +642,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn replace_swaps_the_top_and_pushes_into_an_empty_stack(cx: &mut TestAppContext) {
         let (stack, events) = stack(cx);
         let (first, second) = (page(cx), page(cx));
@@ -689,7 +689,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn popped_views_wait_for_forward_until_the_next_push(cx: &mut TestAppContext) {
         let (stack, events) = stack(cx);
         let pages: Vec<AnyView> = (0..3).map(|_| page(cx)).collect();
@@ -739,7 +739,7 @@ mod tests {
         assert!(events.borrow().contains(&NavStackEvent::Forwarded));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_immediate_change_records_its_motion_and_supersedes_the_running_one(
         cx: &mut TestAppContext,
     ) {
@@ -780,7 +780,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_outgoing_view_is_dropped_once_its_exit_has_run(cx: &mut TestAppContext) {
         let stack = cx.new(|_| NavStackState::new());
         let (root, second) = (page(cx), page(cx));
@@ -812,7 +812,7 @@ mod tests {
         assert!(stack.read_with(cx, |stack, _| stack.transit.is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_new_operation_replaces_the_running_transition(cx: &mut TestAppContext) {
         let (stack, _) = stack(cx);
         let pages: Vec<AnyView> = (0..3).map(|_| page(cx)).collect();

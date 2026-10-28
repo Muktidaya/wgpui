@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gpui::Pixels;
+use wgpui::Pixels;
 
 use crate::Placement;
 
@@ -348,7 +348,7 @@ fn split_parent_of(path: &super::tree::NodePath) -> Option<(super::tree::NodePat
 mod tests {
     use super::super::*;
     use crate::Placement;
-    use gpui::{Axis, px};
+    use wgpui::{Axis, px};
 
     fn panel(n: u64) -> PanelId {
         PanelId::from_u64(n)

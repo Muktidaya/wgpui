@@ -1,7 +1,7 @@
-use gpui::{
+use wgpui::{
     Context, IntoElement, ParentElement as _, Styled as _, div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::{Button, Pagination, PaginationItem, PaginationState};
+use wgpui_base::{Button, Pagination, PaginationItem, PaginationState};
 
 use super::super::BaseShowcase;
 

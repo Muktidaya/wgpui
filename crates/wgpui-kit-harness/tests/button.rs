@@ -1,10 +1,8 @@
-extern crate gpui as wgpui;
-
-use gpui::{
+use wgpui::{
     AppContext, Context, IntoElement, ParentElement, Render, Styled, TestAppContext, Window,
     WindowOptions, div,
 };
-use gpui_component::button::*;
+use wgpui_component::button::*;
 
 struct ButtonView;
 
@@ -18,11 +16,11 @@ impl Render for ButtonView {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn primary_button_renders(cx: &mut TestAppContext) {
     cx.skip_drawing();
     cx.update(|cx| {
-        gpui_component::init(cx);
+        wgpui_component::init(cx);
         cx.open_window(WindowOptions::default(), |_window, cx| {
             cx.new(|_| ButtonView)
         })

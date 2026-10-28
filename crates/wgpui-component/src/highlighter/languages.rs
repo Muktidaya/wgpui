@@ -1,4 +1,4 @@
-use gpui::SharedString;
+use wgpui::SharedString;
 
 use crate::highlighter::GrammarConfig;
 

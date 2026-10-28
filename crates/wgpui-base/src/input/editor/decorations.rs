@@ -1,9 +1,9 @@
 use crate::input::EditorMode;
 use std::{collections::BTreeMap, ops::Range};
 
-use gpui::{App, Context, HighlightStyle, Hsla, WeakEntity};
 use ropey::Rope;
 use sum_tree::Bias;
+use wgpui::{App, Context, HighlightStyle, Hsla, WeakEntity};
 
 use super::{InputBaseState, RopeExt as _};
 
@@ -677,11 +677,11 @@ mod tests {
     fn collections_are_independent_and_ranges_are_clipped() {
         let text = Rope::from("héllo");
         let first_style = HighlightStyle {
-            font_weight: Some(gpui::FontWeight::BOLD),
+            font_weight: Some(wgpui::FontWeight::BOLD),
             ..Default::default()
         };
         let second_style = HighlightStyle {
-            background_color: Some(gpui::red()),
+            background_color: Some(wgpui::red()),
             ..Default::default()
         };
         let mut collections = DecorationCollections::default();

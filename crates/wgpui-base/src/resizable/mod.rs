@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     Along, App, Axis, Bounds, Context, ElementId, EventEmitter, IsZero, Pixels, Window, px,
 };
 
@@ -453,7 +453,7 @@ mod tests {
         rc::Rc,
     };
 
-    use gpui::{
+    use wgpui::{
         App, AppContext as _, Context, InputEvent as _, InteractiveElement as _, IntoElement,
         Modifiers, MouseButton, ParentElement as _, Pixels, Render, Styled as _, TestAppContext,
         VisualTestContext, Window, div, point, prelude::FluentBuilder as _, px, size,
@@ -487,7 +487,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mixed_sizing_is_stable_between_resize_and_followup_frame(cx: &mut TestAppContext) {
         let (view, cx) = cx.add_window_view(|_, _| MixedSizingHarness { width: px(800.) });
         cx.update(|window, cx| {
@@ -515,7 +515,7 @@ mod tests {
     struct FixedPanelHarness {
         width: Pixels,
         fixed: bool,
-        state: gpui::Entity<ResizableState>,
+        state: wgpui::Entity<ResizableState>,
     }
 
     impl Render for FixedPanelHarness {
@@ -547,7 +547,7 @@ mod tests {
     /// panels share the rest in their proportions, and a container briefly
     /// too small for the fixed panel does not lose those proportions. A drag
     /// on another handle does not take space from it either.
-    #[gpui::test]
+    #[wgpui::test]
     fn fixed_panel_keeps_its_size_across_a_container_resize(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| ResizableState::default()));
         let (view, cx) = cx.add_window_view({
@@ -615,7 +615,7 @@ mod tests {
 
     /// A panel made fixed after its first frame, while its bounds stay the
     /// same, keeps its size on the next container resize.
-    #[gpui::test]
+    #[wgpui::test]
     fn panel_made_fixed_in_place_keeps_its_size_across_a_container_resize(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| ResizableState::default()));
         let (view, cx) = cx.add_window_view({
@@ -646,7 +646,7 @@ mod tests {
 
     struct CallerStateHarness {
         width: Pixels,
-        state: gpui::Entity<ResizableState>,
+        state: wgpui::Entity<ResizableState>,
     }
 
     impl Render for CallerStateHarness {
@@ -667,7 +667,7 @@ mod tests {
     /// A group whose state the caller owns (`with_state`, as the dock does)
     /// has no `use_keyed_state` observer behind it, so the settling frame has
     /// to be scheduled by the deferred notify rather than by that observer.
-    #[gpui::test]
+    #[wgpui::test]
     fn caller_owned_state_settles_on_the_same_frame(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| ResizableState::default()));
         let (view, cx) = cx.add_window_view({
@@ -695,7 +695,7 @@ mod tests {
     }
 
     struct ResizableHarness {
-        state: gpui::Entity<ResizableState>,
+        state: wgpui::Entity<ResizableState>,
         resizes: Rc<Cell<usize>>,
     }
 
@@ -726,7 +726,7 @@ mod tests {
         cx: &mut TestAppContext,
     ) -> (
         &mut VisualTestContext,
-        gpui::Entity<ResizableState>,
+        wgpui::Entity<ResizableState>,
         Rc<Cell<usize>>,
     ) {
         let state = cx.update(|cx| cx.new(|_| ResizableState::default()));
@@ -741,7 +741,7 @@ mod tests {
         (cx, state, resizes)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dynamic_panel_lifecycle_is_owned_by_resizable_state(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| ResizableState::default()));
 
@@ -765,7 +765,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn group_measures_panels_and_programmatic_resize_uses_drag_rules(cx: &mut TestAppContext) {
         let (cx, state, _) = harness(cx);
         let first = cx.debug_bounds("first-panel").unwrap();
@@ -784,7 +784,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_the_handle_resizes_and_emits_once(cx: &mut TestAppContext) {
         let (cx, state, resizes) = harness(cx);
         let boundary = cx.debug_bounds("second-panel").unwrap().left();
@@ -816,7 +816,7 @@ mod tests {
         assert_eq!(resizes.get(), 1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_before_the_next_paint_resizes_and_emits_once(cx: &mut TestAppContext) {
         let (cx, state, resizes) = harness(cx);
         let boundary = cx.debug_bounds("second-panel").unwrap().left();
@@ -825,7 +825,7 @@ mod tests {
         // allow a paint between events and hide stale listener state.
         cx.update(|window, cx| {
             window.dispatch_event(
-                gpui::MouseDownEvent {
+                wgpui::MouseDownEvent {
                     position: point(boundary - px(2.), px(50.)),
                     button: MouseButton::Left,
                     click_count: 1,
@@ -836,7 +836,7 @@ mod tests {
             );
             for x in [boundary + px(10.), px(220.)] {
                 window.dispatch_event(
-                    gpui::MouseMoveEvent {
+                    wgpui::MouseMoveEvent {
                         position: point(x, px(50.)),
                         pressed_button: Some(MouseButton::Left),
                         ..Default::default()
@@ -853,7 +853,7 @@ mod tests {
             // active index from the gesture that just finished.
             for _ in 0..2 {
                 window.dispatch_event(
-                    gpui::MouseUpEvent {
+                    wgpui::MouseUpEvent {
                         position: point(px(220.), px(50.)),
                         button: MouseButton::Left,
                         click_count: 1,
@@ -864,7 +864,7 @@ mod tests {
                 );
             }
             window.dispatch_event(
-                gpui::MouseMoveEvent {
+                wgpui::MouseMoveEvent {
                     position: point(px(260.), px(50.)),
                     ..Default::default()
                 }
@@ -877,7 +877,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn cancelled_drag_does_not_reuse_the_painted_index(cx: &mut TestAppContext) {
         let (cx, state, resizes) = harness(cx);
         let boundary = cx.debug_bounds("second-panel").unwrap().left();
@@ -901,7 +901,7 @@ mod tests {
             // Cancel after painting the active index, then deliver queued
             // events without replacing that frame's listeners.
             window.dispatch_event(
-                gpui::MouseMoveEvent {
+                wgpui::MouseMoveEvent {
                     position: point(px(260.), px(50.)),
                     pressed_button: Some(MouseButton::Left),
                     ..Default::default()
@@ -910,7 +910,7 @@ mod tests {
                 cx,
             );
             window.dispatch_event(
-                gpui::MouseUpEvent {
+                wgpui::MouseUpEvent {
                     position: point(px(260.), px(50.)),
                     button: MouseButton::Left,
                     click_count: 1,
@@ -974,7 +974,7 @@ mod tests {
     /// sheet's backdrop lit up as the pointer crossed where it lay, and a
     /// press there counted as a press on the handle. They ask the hitbox now,
     /// and an occluding element in front of it answers for it.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_covered_handle_stays_idle(cx: &mut TestAppContext) {
         let seen: Rc<RefCell<Vec<ResizeHandleState>>> = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({
@@ -1001,7 +1001,7 @@ mod tests {
         assert_eq!(*seen.borrow(), vec![ResizeHandleState::Idle]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_handle_reports_the_press_and_the_drag_to_its_renderer(cx: &mut TestAppContext) {
         let seen: Rc<RefCell<Vec<ResizeHandleState>>> = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({
@@ -1066,7 +1066,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_size_binds_the_cross_axis(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SizedGroupHarness);
         cx.update(|window, cx| window.draw(cx).clear());

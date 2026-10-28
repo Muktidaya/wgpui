@@ -55,11 +55,11 @@ mod selective_actions_import {
     }
 }
 
-/// `wgpui_kit::gpui` is hidden but kept, for code that keeps `gpui::…` paths.
+/// `wgpui_kit::gpui` is hidden but kept, for code that keeps `wgpui::…` paths.
 mod gpui_by_name {
     use wgpui_kit::*;
 
-    type Through = gpui::Window;
+    type Through = wgpui::Window;
     type Spelled = wgpui_kit::gpui::Window;
 }
 

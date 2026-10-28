@@ -1,12 +1,12 @@
 use std::{hash::Hash, rc::Rc};
 
-use gpui::{
+use num_traits::Zero;
+use wgpui::{
     AnyElement, App, Bounds, ElementId, Hsla, IntoElement, Pixels, Point, SharedString, TextAlign,
     Window, point, px,
 };
-use gpui_base::motion::spring;
-use gpui_component_macros::IntoPlot;
-use num_traits::Zero;
+use wgpui_base::motion::spring;
+use wgpui_kit_macros::IntoPlot;
 
 use super::{ChartAppear, caller_id};
 use crate::{
@@ -613,7 +613,7 @@ fn spread_labels(items: &mut [LabelLayout], top: f32, bottom: f32) {
 
 #[cfg(test)]
 mod tests {
-    use gpui::size;
+    use wgpui::size;
 
     use super::*;
 

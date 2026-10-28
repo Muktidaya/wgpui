@@ -1,9 +1,8 @@
 // Style helper macros emit `wgpui`; imported source uses the `gpui` alias.
-extern crate gpui as wgpui;
 
-use gpui::App;
 use std::ops::Deref;
 use std::sync::LazyLock;
+use wgpui::App;
 
 mod component_traits;
 mod element_ext;
@@ -23,7 +22,7 @@ mod window_border;
 mod window_ext;
 
 pub(crate) mod actions {
-    pub use gpui_base::actions::*;
+    pub use wgpui_base::actions::*;
 }
 
 pub mod accordion;
@@ -98,13 +97,6 @@ pub mod tree;
 pub use crate::Disableable;
 pub use element_ext::*;
 pub use global_state::GlobalState;
-pub use gpui_base::Root;
-pub use gpui_base::animation;
-pub use gpui_base::{
-    AxisExt, Edges, FocusTrapElement, InteractiveElementExt, LengthExt, Measure, OngoingScrollExt,
-    Placement, Side, measure, measure_if,
-};
-pub use gpui_component_macros::icon_named;
 pub use icon::*;
 pub use index_path::IndexPath;
 pub use input::{Rope, RopeExt, RopeLines};
@@ -119,6 +111,13 @@ pub use theme::*;
 pub use time::{calendar, date_picker, time_field};
 pub use title_bar::*;
 pub use virtual_list::{VirtualList, VirtualListScrollHandle, h_virtual_list, v_virtual_list};
+pub use wgpui_base::Root;
+pub use wgpui_base::animation;
+pub use wgpui_base::{
+    AxisExt, Edges, FocusTrapElement, InteractiveElementExt, LengthExt, Measure, OngoingScrollExt,
+    Placement, Side, measure, measure_if,
+};
+pub use wgpui_kit_macros::icon_named;
 pub use window_border::{WindowBorder, window_border, window_paddings};
 pub use window_ext::WindowExt;
 
@@ -133,7 +132,7 @@ pub fn init(cx: &mut App) {
     #[cfg(any(feature = "inspector", debug_assertions))]
     inspector::init(cx);
     root::init(cx);
-    gpui_base::init(cx);
+    wgpui_base::init(cx);
     input::init(cx);
     diff::init(cx);
     date_picker::init(cx);
@@ -166,6 +165,6 @@ pub fn set_locale(locale: &str) {
 /// rendered cell, so cache it instead of reading the environment each call.
 #[inline]
 pub(crate) fn measure_enable() -> bool {
-    static MEASURE_ENABLED: LazyLock<bool> = LazyLock::new(gpui_base::measurement_enabled);
+    static MEASURE_ENABLED: LazyLock<bool> = LazyLock::new(wgpui_base::measurement_enabled);
     *MEASURE_ENABLED
 }

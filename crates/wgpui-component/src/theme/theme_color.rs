@@ -2,9 +2,9 @@ use std::{ops::Deref, sync::Arc};
 
 use crate::{ThemeMode, theme::DEFAULT_THEME_COLORS};
 
-use gpui::{Background, Fill, Hsla};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{Background, Fill, Hsla};
 
 /// A theme token that keeps a solid representative color and its renderable background.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -349,7 +349,7 @@ macro_rules! define_theme_tokens {
         ///
         /// This type intentionally includes component-specific fields such as
         /// `button_primary`, `tab_active`, and `table_hover`. New application-owned
-        /// components should use [`gpui_base::SemanticThemeTokens`] instead. The
+        /// components should use [`wgpui_base::SemanticThemeTokens`] instead. The
         /// legacy fields remain public so existing theme files and direct field
         /// access continue to work unchanged.
         #[derive(Debug, Default, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]

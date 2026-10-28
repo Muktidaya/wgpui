@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Background, Bounds, FontWeight, Hsla, PathBuilder, Pixels, Point, SharedString, TextAlign,
     Window, point, px,
 };
@@ -253,7 +253,7 @@ fn axis_text(label: &AxisText, origin: Point<Pixels>) -> Text {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Hsla, px};
+    use wgpui::{Hsla, px};
 
     use super::*;
 

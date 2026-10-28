@@ -2,7 +2,7 @@
 //! rolling frame time chart, and this process' GPU, CPU and memory usage.
 //!
 //! Frame data comes from WGPUI's frame trace
-//! ([`gpui::FrameTimingCollector`]). The observed rate uses each frame's
+//! ([`wgpui::FrameTimingCollector`]). The observed rate uses each frame's
 //! presentation-submission timestamp; it does not measure physical scanout or
 //! GPU completion. The frame cost measures the framework's CPU draw work. The
 //! headline estimates redraw capacity from that cost and the reported display
@@ -11,7 +11,7 @@
 //! Render it wherever it should appear, guarded by your own flag:
 //!
 //! ```no_run
-//! # use gpui::{prelude::*, *};
+//! # use wgpui::{prelude::*, *};
 //! # use wgpui_fps::fps_monitor;
 //! # struct Example { show_fps: bool }
 //! # impl Render for Example {
@@ -47,7 +47,7 @@ pub use overlay::FpsOverlay;
 
 use std::collections::HashMap;
 
-use gpui::{App, AppContext as _, Entity, Global, Window, WindowId};
+use wgpui::{App, AppContext as _, Entity, Global, Window, WindowId};
 
 /// The performance HUD, pinned to the top right of its parent.
 ///
@@ -59,7 +59,7 @@ use gpui::{App, AppContext as _, Entity, Global, Window, WindowId};
 /// when it should be visible:
 ///
 /// ```no_run
-/// # use gpui::{prelude::*, *};
+/// # use wgpui::{prelude::*, *};
 /// # use wgpui_fps::fps_monitor;
 /// # struct Example { show_fps: bool }
 /// # impl Render for Example {
@@ -107,13 +107,13 @@ impl Global for Monitors {}
 /// explicit trace setting is preserved even when it changes while the HUD is
 /// visible.
 pub(crate) struct FrameTraceGuard {
-    _scope: gpui::profiler::TraceGuard,
+    _scope: wgpui::profiler::TraceGuard,
 }
 
 impl FrameTraceGuard {
     pub(crate) fn acquire() -> Self {
         Self {
-            _scope: gpui::profiler::trace_scope(),
+            _scope: wgpui::profiler::trace_scope(),
         }
     }
 }
@@ -126,11 +126,11 @@ mod tests {
     fn dropping_an_inner_guard_keeps_tracing_on_for_the_outer_guard() {
         let outer = FrameTraceGuard::acquire();
         let inner = FrameTraceGuard::acquire();
-        assert!(gpui::profiler::trace_enabled());
+        assert!(wgpui::profiler::trace_enabled());
 
         drop(inner);
         assert!(
-            gpui::profiler::trace_enabled(),
+            wgpui::profiler::trace_enabled(),
             "the outer guard still needs the trace"
         );
 
@@ -139,11 +139,11 @@ mod tests {
     #[test]
     fn host_can_enable_tracing_while_a_monitor_scope_is_active() {
         let monitor = FrameTraceGuard::acquire();
-        let changed = gpui::profiler::set_trace_enabled(true);
+        let changed = wgpui::profiler::set_trace_enabled(true);
         drop(monitor);
-        assert!(gpui::profiler::trace_enabled());
+        assert!(wgpui::profiler::trace_enabled());
         if changed {
-            gpui::profiler::set_trace_enabled(false);
+            wgpui::profiler::set_trace_enabled(false);
         }
     }
 }

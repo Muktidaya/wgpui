@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::panic::Location;
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, Axis, Bounds, ContentMask, Element, ElementId, GlobalElementId, Hitbox, IntoElement,
     IsZero as _, LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     OngoingScroll, Position, ScrollEvent, Style, TouchPhase, Window, relative,
@@ -25,12 +25,12 @@ use crate::{AxisExt as _, OngoingScrollExt as _, global_state::GlobalState};
 pub(super) struct CarouselScrollMask {
     axis: Axis,
     id: ElementId,
-    state: gpui::Entity<CarouselState>,
+    state: wgpui::Entity<CarouselState>,
 }
 
 impl CarouselScrollMask {
     #[track_caller]
-    pub(super) fn new(axis: Axis, state: &gpui::Entity<CarouselState>) -> Self {
+    pub(super) fn new(axis: Axis, state: &wgpui::Entity<CarouselState>) -> Self {
         Self {
             axis,
             id: caller_id(),
@@ -72,14 +72,14 @@ impl Element for CarouselScrollMask {
     fn request_layout(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
         let mut style = Style::default();
         style.position = Position::Absolute;
-        style.inset.top = gpui::px(0.).into();
-        style.inset.left = gpui::px(0.).into();
+        style.inset.top = wgpui::px(0.).into();
+        style.inset.left = wgpui::px(0.).into();
         style.size.width = relative(1.).into();
         style.size.height = relative(1.).into();
         (window.request_layout(style, None, cx), ())
@@ -88,20 +88,20 @@ impl Element for CarouselScrollMask {
     fn prepaint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        bounds: Bounds<gpui::Pixels>,
+        _: Option<&wgpui::InspectorElementId>,
+        bounds: Bounds<wgpui::Pixels>,
         _: &mut Self::RequestLayoutState,
         window: &mut Window,
         _: &mut App,
     ) -> Self::PrepaintState {
-        window.insert_hitbox(bounds, gpui::HitboxBehavior::Normal)
+        window.insert_hitbox(bounds, wgpui::HitboxBehavior::Normal)
     }
 
     fn paint(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        _: Bounds<gpui::Pixels>,
+        _: Option<&wgpui::InspectorElementId>,
+        _: Bounds<wgpui::Pixels>,
         _: &mut Self::RequestLayoutState,
         hitbox: &mut Self::PrepaintState,
         window: &mut Window,
@@ -167,7 +167,7 @@ impl Element for CarouselScrollMask {
                         // bubble listener. Clear its observable selection state
                         // here so a Carousel drag cannot leave a stale drag or
                         // participant-local selection behind.
-                        gpui_base::TextSelection::clear(window, cx);
+                        wgpui_base::TextSelection::clear(window, cx);
                     }
                 } else if suppress_release {
                     // All capture handlers have now cleared their pressed
@@ -191,18 +191,18 @@ impl Element for CarouselScrollMask {
 
                 if !delta.x.is_zero() && !delta.y.is_zero() {
                     if delta.x.abs() > delta.y.abs() {
-                        delta.y = gpui::Pixels::ZERO;
+                        delta.y = wgpui::Pixels::ZERO;
                     } else {
-                        delta.x = gpui::Pixels::ZERO;
+                        delta.x = wgpui::Pixels::ZERO;
                     }
                 }
 
                 // Ignore the secondary axis. The lock above keeps this stable
                 // throughout a precise trackpad gesture.
                 if axis.is_horizontal() {
-                    delta.y = gpui::Pixels::ZERO;
+                    delta.y = wgpui::Pixels::ZERO;
                 } else {
-                    delta.x = gpui::Pixels::ZERO;
+                    delta.x = wgpui::Pixels::ZERO;
                 }
 
                 let precise = event.delta.precise();
@@ -266,7 +266,7 @@ fn caller_id() -> ElementId {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, Axis, Context, Entity, InteractiveElement as _, IntoElement, Modifiers,
         MouseButton, ParentElement as _, Render, ScrollDelta, ScrollEvent, ScrollHandle,
         StatefulInteractiveElement as _, Styled as _, TestAppContext, TouchPhase,
@@ -313,7 +313,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_over_child_button_suppresses_click_without_leaving_it_pending(
         cx: &mut TestAppContext,
     ) {
@@ -420,7 +420,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_carousel_hands_scroll_to_parent_at_edge(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| {
@@ -441,7 +441,7 @@ mod tests {
         assert!(outer_handle.offset().y < px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_carousel_keeps_a_wheel_burst_away_from_the_parent(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_axis(Axis::Vertical)));
@@ -467,7 +467,7 @@ mod tests {
         assert!(outer_handle.offset().y < px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_carousel_owns_a_trackpad_gesture_until_it_ends(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_axis(Axis::Vertical)));

@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AvailableSpace, Bounds, CursorStyle, Element, ElementId, GlobalElementId,
     Hitbox, HitboxBehavior, InspectorElementId, IntoElement, LayoutId, MouseButton, MouseDownEvent,
     ParentElement, Pixels, Refineable as _, Role, SharedString, Size, Styled, StyledText,
@@ -154,7 +154,7 @@ pub(super) struct InlineObjectSelectionProjection {
 }
 
 impl InlineObjectSelectionProjection {
-    pub(super) fn project(&self, start: gpui::Point<Pixels>, end: gpui::Point<Pixels>) {
+    pub(super) fn project(&self, start: wgpui::Point<Pixels>, end: wgpui::Point<Pixels>) {
         if let Some(selected) = self.selected.upgrade()
             && let Ok(mut selected) = selected.lock()
         {
@@ -173,8 +173,8 @@ impl InlineObjectSelectionProjection {
 
 fn object_in_selection(
     bounds: Bounds<Pixels>,
-    start: gpui::Point<Pixels>,
-    end: gpui::Point<Pixels>,
+    start: wgpui::Point<Pixels>,
+    end: wgpui::Point<Pixels>,
 ) -> bool {
     point_in_text_selection(
         bounds.origin,
@@ -258,7 +258,7 @@ impl Element for InlineObject {
         Some(Role::GenericContainer)
     }
 
-    fn write_a11y_info(&self, node: &mut gpui::accesskit::Node) {
+    fn write_a11y_info(&self, node: &mut wgpui::accesskit::Node) {
         node.set_role(Role::GenericContainer);
         node.set_label(self.accessibility_label.as_ref());
         node.set_read_only();
@@ -274,7 +274,7 @@ impl Element for InlineObject {
         let metrics = self.object.metrics;
         (
             window.request_layout(
-                gpui::Style {
+                wgpui::Style {
                     size: size(metrics.size.width.into(), metrics.size.height.into()),
                     ..Default::default()
                 },
@@ -361,14 +361,14 @@ impl Element for InlineObject {
         }
         if selected {
             let color = view.as_ref().unwrap().read(cx).text_view_style.selection();
-            window.paint_quad(gpui::fill(bounds, color));
+            window.paint_quad(wgpui::fill(bounds, color));
         }
         if let Some(link) = self.link.clone() {
             window.set_cursor_style(CursorStyle::PointingHand, hitbox);
             let link_hitbox = hitbox.clone();
             let link_view = view.clone();
             let handler = self.link_click_handler.clone();
-            window.on_mouse_event(move |event: &gpui::MouseUpEvent, phase, window, cx| {
+            window.on_mouse_event(move |event: &wgpui::MouseUpEvent, phase, window, cx| {
                 if !phase.bubble()
                     || !link_hitbox.is_hovered(window)
                     || link_view
@@ -379,7 +379,7 @@ impl Element for InlineObject {
                 }
                 crate::TextSelection::end(window, cx);
                 cx.stop_propagation();
-                let click = gpui::ClickEvent::Mouse(gpui::MouseClickEvent {
+                let click = wgpui::ClickEvent::Mouse(wgpui::MouseClickEvent {
                     down: MouseDownEvent {
                         button: event.button,
                         position: event.position,
@@ -470,7 +470,7 @@ mod tests {
 
     #[test]
     fn native_padding_and_fixed_size_are_measured_without_fake_scaling() {
-        let mut app = gpui::TestApp::new();
+        let mut app = wgpui::TestApp::new();
         in_prepaint(&mut app, |window, cx| {
             let native = InlineElement::new(
                 div()
@@ -495,7 +495,7 @@ mod tests {
 
     #[test]
     fn invalid_baseline_uses_text_fallback_and_zero_width_remains_finite() {
-        let mut app = gpui::TestApp::new();
+        let mut app = wgpui::TestApp::new();
         in_prepaint(&mut app, |window, cx| {
             for baseline in [px(f32::NAN), px(-1.), px(30.)] {
                 let native =
@@ -518,8 +518,8 @@ mod tests {
 
     #[test]
     fn atomic_wrapper_does_not_mislabel_native_controls_as_images() {
-        let mut app = gpui::TestApp::new();
-        let mut window = app.open_window(|_, _| gpui::Empty);
+        let mut app = wgpui::TestApp::new();
+        let mut window = app.open_window(|_, _| wgpui::Empty);
         window.update(|_, window, cx| {
             let measured =
                 MeasuredInlineObject::measure("member", None, &TextStyle::default(), window, cx);
@@ -532,7 +532,7 @@ mod tests {
                 Bounds::default(),
                 Bounds::default(),
             );
-            let mut accessible = gpui::accesskit::Node::new(Role::Unknown);
+            let mut accessible = wgpui::accesskit::Node::new(Role::Unknown);
             object.write_a11y_info(&mut accessible);
             assert_eq!(accessible.role(), Role::GenericContainer);
             assert_eq!(accessible.label(), Some("Member profile"));

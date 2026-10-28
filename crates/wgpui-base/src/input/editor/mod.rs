@@ -1,4 +1,4 @@
-use gpui::{App, Div, Entity, InteractiveElement as _, IntoElement, RenderOnce, Stateful, Window};
+use wgpui::{App, Div, Entity, InteractiveElement as _, IntoElement, RenderOnce, Stateful, Window};
 
 use super::{EditorMode, InputBaseState, InputModeKind};
 
@@ -19,7 +19,7 @@ impl InputModeKind for EditorMode {
     fn hover_definition_style(
         state: &InputBaseState<Self>,
         _cx: &App,
-    ) -> Option<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+    ) -> Option<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         state.hover_definition_style()
     }
 
@@ -27,7 +27,7 @@ impl InputModeKind for EditorMode {
         state: &InputBaseState<Self>,
         window: &mut Window,
         _cx: &App,
-    ) -> Option<gpui::Hitbox> {
+    ) -> Option<wgpui::Hitbox> {
         state.hover_definition_hitbox(window)
     }
 
@@ -60,7 +60,7 @@ impl InputModeKind for EditorMode {
     fn refresh_language_features(
         state: &mut InputBaseState<Self>,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         let text = state.text().clone();
         state.extras.lsp.update(&text, window, cx);
@@ -69,7 +69,7 @@ impl InputModeKind for EditorMode {
     fn accept_inline_completion(
         state: &mut InputBaseState<Self>,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         state.accept_inline_completion(window, cx)
     }
@@ -80,17 +80,17 @@ impl InputModeKind for EditorMode {
 
     fn on_click(
         state: &mut InputBaseState<Self>,
-        event: &gpui::MouseDownEvent,
+        event: &wgpui::MouseDownEvent,
         offset: usize,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         state.handle_click_hover_definition(event, offset, window, cx)
     }
 
     fn clear_hover_state(
         state: &mut InputBaseState<Self>,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.clear_hover_state(cx);
     }
@@ -100,21 +100,21 @@ impl InputModeKind for EditorMode {
         range: &std::ops::Range<usize>,
         text: &str,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.handle_completion_trigger(range, text, window, cx);
     }
 
     fn clear_inline_completion(
         state: &mut InputBaseState<Self>,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.clear_inline_completion(cx);
     }
 
     fn hide_context_menu(
         state: &mut InputBaseState<Self>,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.hide_context_menu(cx);
     }
@@ -125,9 +125,9 @@ impl InputModeKind for EditorMode {
 
     fn handle_context_menu_action(
         state: &mut InputBaseState<Self>,
-        action: Box<dyn gpui::Action>,
+        action: Box<dyn wgpui::Action>,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         state.handle_action_for_context_menu(action, window, cx)
     }
@@ -136,7 +136,7 @@ impl InputModeKind for EditorMode {
         state: &mut InputBaseState<Self>,
         offset: usize,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.handle_hover_definition(offset, window, cx);
     }
@@ -144,9 +144,9 @@ impl InputModeKind for EditorMode {
     fn on_mouse_move(
         state: &mut InputBaseState<Self>,
         offset: usize,
-        event: &gpui::MouseMoveEvent,
+        event: &wgpui::MouseMoveEvent,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         state.handle_mouse_move(offset, event, window, cx);
     }
@@ -157,7 +157,7 @@ impl InputModeKind for EditorMode {
         text: &ropey::Rope,
         folding: bool,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         let mut highlighter = highlighter.borrow_mut();
         let Some(highlighter) = highlighter.as_mut() else {
@@ -171,7 +171,7 @@ impl InputModeKind for EditorMode {
         edits: &[(super::InputEdit, ropey::Rope)],
         folding: bool,
         window: &mut Window,
-        cx: &mut gpui::Context<InputBaseState<Self>>,
+        cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
         let mut highlighter = highlighter.borrow_mut();
         let Some(highlighter) = highlighter.as_mut() else {
@@ -248,7 +248,7 @@ impl crate::input::InputExtras for super::EditorExtras {
         text: &ropey::Rope,
         range: &std::ops::Range<usize>,
         resolver: &dyn crate::input::HighlightStyleResolver,
-    ) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         self.lsp.semantic_tokens_for_range(text, range, resolver)
     }
 
@@ -256,7 +256,7 @@ impl crate::input::InputExtras for super::EditorExtras {
         &self,
         text: &ropey::Rope,
         range: &std::ops::Range<usize>,
-    ) -> Vec<(std::ops::Range<usize>, gpui::Hsla)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::Hsla)> {
         self.lsp.document_colors_for_range(text, range)
     }
 

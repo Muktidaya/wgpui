@@ -1,10 +1,10 @@
 pub use crate::component_traits::{Collapsible, Disableable, Selectable};
 pub use crate::sizing::{Sizable, Size, StyleSized};
-use gpui::{
+use wgpui::{
     App, BoxShadow, Corners, Edges, Hsla, InteractiveElement as _, ParentElement, Pixels,
     StyleRefinement, Styled, Window, div, hsla, prelude::FluentBuilder as _, px,
 };
-pub use gpui_base::{FocusableExt, RoleOverride, StyledExt, box_shadow, h_flex, v_flex};
+pub use wgpui_base::{FocusableExt, RoleOverride, StyledExt, box_shadow, h_flex, v_flex};
 
 use crate::ActiveTheme as _;
 
@@ -157,7 +157,7 @@ pub trait ThemeStyled: Styled + Sized {
     /// Round this element as far as its size allows — a circle if it is square,
     /// a pill if it is not — unless the theme squares its corners.
     ///
-    /// Use this instead of [`gpui::Styled::rounded_full`] on anything the theme
+    /// Use this instead of [`wgpui::Styled::rounded_full`] on anything the theme
     /// owns. A hardcoded `rounded_full` survives [`crate::Theme::radius`] being
     /// set to zero, which leaves avatars, badge dots and slider thumbs round in
     /// a UI that is square everywhere else. See [`crate::Theme::radius_full`].
@@ -195,7 +195,7 @@ impl<T: Styled + Sized> ThemeStyled for T {
 }
 
 fn border_widths(style: &StyleRefinement, rem_size: Pixels) -> Edges<Pixels> {
-    let width = |value: Option<gpui::AbsoluteLength>| {
+    let width = |value: Option<wgpui::AbsoluteLength>| {
         value.map(|v| v.to_pixels(rem_size)).unwrap_or_default()
     };
     let widths = &style.border_widths;
@@ -208,7 +208,7 @@ fn border_widths(style: &StyleRefinement, rem_size: Pixels) -> Edges<Pixels> {
 }
 
 fn corner_radii(style: &StyleRefinement, rem_size: Pixels) -> Corners<Pixels> {
-    let radius = |value: Option<gpui::AbsoluteLength>| {
+    let radius = |value: Option<wgpui::AbsoluteLength>| {
         value.map(|v| v.to_pixels(rem_size)).unwrap_or_default()
     };
     let radii = &style.corner_radii;

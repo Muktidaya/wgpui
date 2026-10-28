@@ -23,8 +23,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gpui::{Div, Entity, Stateful, Window};
 use ropey::Rope;
+use wgpui::{Div, Entity, Stateful, Window};
 
 use super::decorations::DecorationCollections;
 use super::lsp::{ContextMenuContent, HoverDefinition, InlineCompletion};
@@ -33,7 +33,7 @@ use crate::input::{
     TextDecoration,
 };
 use crate::input::{HoverPopoverState, Lsp};
-use gpui::Task;
+use wgpui::Task;
 
 use super::InputBaseState;
 
@@ -94,7 +94,7 @@ pub trait InputExtras: Default + 'static {
         _text: &Rope,
         _range: &std::ops::Range<usize>,
         _resolver: &dyn HighlightStyleResolver,
-    ) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         Vec::new()
     }
 
@@ -103,7 +103,7 @@ pub trait InputExtras: Default + 'static {
         &self,
         _text: &Rope,
         _range: &std::ops::Range<usize>,
-    ) -> Vec<(std::ops::Range<usize>, gpui::Hsla)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::Hsla)> {
         Vec::new()
     }
 
@@ -166,7 +166,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _text: &Rope,
         _folding: bool,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -177,15 +177,15 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _edits: &[(InputEdit, Rope)],
         _folding: bool,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// The range highlighted while Cmd-hovering a symbol, with its style.
     fn hover_definition_style(
         _state: &InputBaseState<Self>,
-        _cx: &gpui::App,
-    ) -> Option<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+        _cx: &wgpui::App,
+    ) -> Option<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         None
     }
 
@@ -193,8 +193,8 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn hover_definition_hitbox(
         _state: &InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &gpui::App,
-    ) -> Option<gpui::Hitbox> {
+        _cx: &wgpui::App,
+    ) -> Option<wgpui::Hitbox> {
         None
     }
 
@@ -224,7 +224,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn refresh_language_features(
         _state: &mut InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -232,7 +232,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn accept_inline_completion(
         _state: &mut InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -245,10 +245,10 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Reacts to a click, for Cmd-click go-to-definition.
     fn on_click(
         _state: &mut InputBaseState<Self>,
-        _event: &gpui::MouseDownEvent,
+        _event: &wgpui::MouseDownEvent,
         _offset: usize,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -256,7 +256,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Drops hover state when the pointer leaves or focus moves.
     fn clear_hover_state(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -266,35 +266,35 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _range: &std::ops::Range<usize>,
         _text: &str,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Drops any inline completion after the text or cursor moved.
     fn clear_inline_completion(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Closes any open completion or code-action menu.
     fn hide_context_menu(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Whether a completion or code-action menu is currently open.
-    fn is_context_menu_open(_state: &InputBaseState<Self>, _cx: &gpui::App) -> bool {
+    fn is_context_menu_open(_state: &InputBaseState<Self>, _cx: &wgpui::App) -> bool {
         false
     }
 
     /// Lets an open menu consume the action first. Returns true when it did.
     fn handle_context_menu_action(
         _state: &mut InputBaseState<Self>,
-        _action: Box<dyn gpui::Action>,
+        _action: Box<dyn wgpui::Action>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -307,7 +307,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _state: &mut InputBaseState<Self>,
         _offset: usize,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -315,9 +315,9 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn on_mouse_move(
         _state: &mut InputBaseState<Self>,
         _offset: usize,
-        _event: &gpui::MouseMoveEvent,
+        _event: &wgpui::MouseMoveEvent,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 

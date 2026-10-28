@@ -1,6 +1,5 @@
 #[cfg(target_family = "wasm")]
 use async_channel::bounded;
-use gpui::Corners;
 #[cfg(not(target_family = "wasm"))]
 use smol::channel::bounded;
 use std::{
@@ -14,8 +13,9 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
 };
+use wgpui::Corners;
 
-use gpui::{
+use wgpui::{
     App, BorderStyle, Bounds, ClickEvent, CursorStyle, Edges, Element, ElementId, Global,
     GlobalElementId, Half, HighlightStyle, Hitbox, HitboxBehavior, Hsla, InspectorElementId,
     IntoElement, LayoutId, MouseButton, MouseClickEvent, MouseDownEvent, MouseMoveEvent,
@@ -132,7 +132,7 @@ impl From<HighlightStyle> for InlineHighlight {
 
 /// Merges two highlight lists over one text into non-overlapping ranges,
 /// cutting at every endpoint of every input range. Same sweep as
-/// [`gpui::combine_highlights`], for [`InlineHighlight`] payloads.
+/// [`wgpui::combine_highlights`], for [`InlineHighlight`] payloads.
 pub(super) fn combine_highlights(
     a: impl IntoIterator<Item = (Range<usize>, InlineHighlight)>,
     b: impl IntoIterator<Item = (Range<usize>, InlineHighlight)>,
@@ -197,7 +197,7 @@ pub(super) fn fade_highlights(
             continue;
         };
         if let Some(code) = &mut highlight.code_style {
-            if let Some(background) = code.background.as_ref().and_then(gpui::Fill::color) {
+            if let Some(background) = code.background.as_ref().and_then(wgpui::Fill::color) {
                 code.background = Some(background.opacity(1. - fade_out).into());
             }
             if let Some(border) = &mut code.border_color {
@@ -522,7 +522,7 @@ impl InlineState {
 /// The native lines and placement of a completed paint. `TextLayout::clone`
 /// shares mutable measurement state; these immutable shaped lines do not.
 struct PaintedSelectionLayout {
-    lines: smallvec::SmallVec<[Arc<gpui::WrappedLineLayout>; 1]>,
+    lines: smallvec::SmallVec<[Arc<wgpui::WrappedLineLayout>; 1]>,
     bounds: Bounds<Pixels>,
     line_height: Pixels,
     len: usize,
@@ -851,13 +851,13 @@ impl Inline {
     /// Paint selected bounds for debug.
     #[allow(unused)]
     fn paint_selected_bounds(&self, bounds: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
-        window.paint_quad(gpui::PaintQuad {
+        window.paint_quad(wgpui::PaintQuad {
             bounds,
-            background: gpui::hsla(0.58, 0.85, 0.62, 0.01).into(),
+            background: wgpui::hsla(0.58, 0.85, 0.62, 0.01).into(),
             corner_radii: Corners::default(),
-            border_color: gpui::transparent_black(),
+            border_color: wgpui::transparent_black(),
             border_style: BorderStyle::default(),
-            border_widths: gpui::Edges::all(px(0.)),
+            border_widths: wgpui::Edges::all(px(0.)),
         });
     }
 
@@ -1026,7 +1026,7 @@ impl Inline {
         text_layout: &TextLayout,
         bounds: &Bounds<Pixels>,
         window: &mut Window,
-        color: gpui::Hsla,
+        color: wgpui::Hsla,
     ) {
         let mut start = selection.start;
         let mut end = selection.end;
@@ -1050,7 +1050,7 @@ impl Inline {
                 px(0.),
                 color,
                 Edges::default(),
-                gpui::transparent_black(),
+                wgpui::transparent_black(),
                 BorderStyle::default(),
             ));
         } else {
@@ -1062,7 +1062,7 @@ impl Inline {
                 px(0.),
                 color,
                 Edges::default(),
-                gpui::transparent_black(),
+                wgpui::transparent_black(),
                 BorderStyle::default(),
             ));
 
@@ -1075,7 +1075,7 @@ impl Inline {
                     px(0.),
                     color,
                     Edges::default(),
-                    gpui::transparent_black(),
+                    wgpui::transparent_black(),
                     BorderStyle::default(),
                 ));
             }
@@ -1088,7 +1088,7 @@ impl Inline {
                 px(0.),
                 color,
                 Edges::default(),
-                gpui::transparent_black(),
+                wgpui::transparent_black(),
                 BorderStyle::default(),
             ));
         }
@@ -1105,7 +1105,7 @@ impl Inline {
         let line_height = text_layout.line_height();
         for (range, color) in &self.range_backgrounds {
             for (row, left, right) in range_boxes(&glyphs, range.clone()) {
-                window.paint_quad(gpui::fill(
+                window.paint_quad(wgpui::fill(
                     Bounds::from_corners(
                         point(origin.x + left, origin.y + line_height * row as f32),
                         point(origin.x + right, origin.y + line_height * (row + 1) as f32),
@@ -1789,12 +1789,12 @@ pub(super) fn point_in_text_selection(
 #[cfg(test)]
 mod fade_highlights_tests {
     use super::*;
-    use gpui::Styled as _;
+    use wgpui::Styled as _;
 
     #[test]
     fn fades_text_and_background_only_inside_the_range() {
         let code = InlineHighlight::from(HighlightStyle {
-            background_color: Some(gpui::red()),
+            background_color: Some(wgpui::red()),
             ..Default::default()
         });
         let combined = fade_highlights(vec![(0..4, code)], &[(2..6, 0.5)]);
@@ -1818,12 +1818,12 @@ mod fade_highlights_tests {
     #[test]
     fn fades_explicit_decoration_colors_with_the_text() {
         let link = InlineHighlight::from(HighlightStyle {
-            underline: Some(gpui::UnderlineStyle {
-                color: Some(gpui::blue()),
+            underline: Some(wgpui::UnderlineStyle {
+                color: Some(wgpui::blue()),
                 ..Default::default()
             }),
-            strikethrough: Some(gpui::StrikethroughStyle {
-                color: Some(gpui::red()),
+            strikethrough: Some(wgpui::StrikethroughStyle {
+                color: Some(wgpui::red()),
                 ..Default::default()
             }),
             ..Default::default()
@@ -1840,11 +1840,11 @@ mod fade_highlights_tests {
         let code = InlineHighlight {
             code_style: Some(
                 StyleRefinement::default()
-                    .bg(gpui::red())
-                    .border_color(gpui::blue()),
+                    .bg(wgpui::red())
+                    .border_color(wgpui::blue()),
             ),
             ..InlineHighlight::from(HighlightStyle {
-                background_color: Some(gpui::red()),
+                background_color: Some(wgpui::red()),
                 ..Default::default()
             })
         };
@@ -1876,7 +1876,7 @@ mod fade_highlights_tests {
     #[test]
     fn no_fades_leave_highlights_untouched() {
         let bold = InlineHighlight::from(HighlightStyle {
-            font_weight: Some(gpui::FontWeight::BOLD),
+            font_weight: Some(wgpui::FontWeight::BOLD),
             ..Default::default()
         });
         let highlights = vec![(1..3, bold)];
@@ -1891,7 +1891,7 @@ mod line_bounds_tests {
         test_draw::in_prepaint,
         test_fonts::{BODY, WideMonoTextSystem},
     };
-    use gpui::{AvailableSpace, TestApp, size};
+    use wgpui::{AvailableSpace, TestApp, size};
 
     /// The character walk this replaced, kept as the oracle: one box per
     /// character from `position_for_index`, unioned per row.
@@ -2032,7 +2032,7 @@ mod range_highlight_tests {
         test_draw::in_prepaint,
         test_fonts::{BODY, WideMonoTextSystem},
     };
-    use gpui::{AvailableSpace, TestApp, size};
+    use wgpui::{AvailableSpace, TestApp, size};
 
     /// Lays `text` out at `wrap_width` and returns the highlight boxes of
     /// `range` with rows aligned by `align`: the left and right edges past
@@ -2198,8 +2198,8 @@ mod range_highlight_tests {
 /// run comes out visibly short.
 #[cfg(test)]
 pub(super) mod test_draw {
-    use gpui::{App, Context, IntoElement, Render, Styled as _, TestApp, Window, canvas, px};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{App, Context, IntoElement, Render, Styled as _, TestApp, Window, canvas, px};
 
     struct Probe {
         body: Option<Box<dyn FnOnce(&mut Window, &mut App)>>,
@@ -2246,12 +2246,12 @@ pub(super) mod test_draw {
 
 #[cfg(test)]
 pub(super) mod test_fonts {
-    use gpui::{
+    use std::{borrow::Cow, cell::RefCell};
+    use wgpui::{
         Bounds, DevicePixels, Font, FontId, FontMetrics, FontRun, FontWeight, GlyphId, LineLayout,
         Pixels, PlatformTextSystem, RenderGlyphParams, ShapedGlyph, ShapedRun, Size, point, px,
         size,
     };
-    use std::{borrow::Cow, cell::RefCell};
 
     pub(crate) const BODY: &str = "Body";
     pub(crate) const MONO: &str = "Mono";
@@ -2427,8 +2427,8 @@ mod tests {
         GlyphBox, InlineHighlight, aligned_row_left, combine_highlights, point_in_text_selection,
         range_boxes, text_runs,
     };
-    use gpui::{FontWeight, HighlightStyle, SharedString, TextAlign, TextStyle, point, px};
     use std::ops::Range;
+    use wgpui::{FontWeight, HighlightStyle, SharedString, TextAlign, TextStyle, point, px};
 
     fn mono(style: HighlightStyle) -> InlineHighlight {
         InlineHighlight {
@@ -2791,8 +2791,8 @@ mod tests {
 
 #[cfg(test)]
 mod retained_layout_tests {
-    use gpui::Styled as _;
-    use gpui::{
+    use wgpui::Styled as _;
+    use wgpui::{
         AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, TestAppContext,
         Window, div, px,
     };
@@ -2820,7 +2820,7 @@ mod retained_layout_tests {
     /// Without the hand-over rule the second copy's prepaint replaced the
     /// first copy's entry, and the first copy painted with the second's
     /// layout — at the second's bounds.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_same_paragraph_rendered_twice_in_a_frame_keeps_one_layout_and_paints_both(
         cx: &mut TestAppContext,
     ) {
@@ -2851,10 +2851,10 @@ mod retained_layout_tests {
             &state,
             super::RetainedLayout {
                 state: Arc::downgrade(&state),
-                styled_text: gpui::StyledText::new(text),
+                styled_text: wgpui::StyledText::new(text),
                 text: text.into(),
                 runs: Vec::new(),
-                text_style: gpui::TextStyle::default(),
+                text_style: wgpui::TextStyle::default(),
                 rem_size: px(16.),
                 scale_factor: 2.,
             },
@@ -2893,7 +2893,7 @@ mod retained_layout_tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_background_drop_releases_layouts_without_another_hand_over(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| {
@@ -2926,7 +2926,7 @@ mod retained_layout_tests {
     /// `Inline` per wrapped fragment. The fragments' states have to outlive
     /// the frame, or every frame shapes the fragments again and leaves the
     /// table an entry nobody will take.
-    #[gpui::test]
+    #[wgpui::test]
     fn inline_flow_fragments_keep_their_layouts_across_frames(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, cx| Once {
@@ -2956,7 +2956,7 @@ mod retained_layout_tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortening_an_inline_flow_releases_obsolete_fragment_layouts(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let source = "word `code` ".repeat(100);
@@ -2991,7 +2991,7 @@ mod retained_layout_tests {
     /// A text view that is dropped (a closed document, a list row that is
     /// gone) gives its shaped text back at the next frame, rather than once
     /// the table has filled up with thousands of paragraphs.
-    #[gpui::test]
+    #[wgpui::test]
     fn dropping_a_text_view_releases_its_layouts(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let paragraphs = (0..40)
@@ -3049,7 +3049,7 @@ mod retained_layout_tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_the_last_text_view_releases_its_layouts(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let paragraphs = (0..40)

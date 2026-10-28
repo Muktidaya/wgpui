@@ -1,5 +1,5 @@
-use gpui::{Edges, Pixels, Styled, px};
 use serde::{Deserialize, Serialize};
+use wgpui::{Edges, Pixels, Styled, px};
 
 /// A size for elements.
 #[derive(Clone, Default, Copy, PartialEq, Eq, Debug, Deserialize, Serialize)]
@@ -344,7 +344,7 @@ impl<T: Styled> StyleSized<T> for T {
 }
 #[cfg(test)]
 mod tests {
-    use gpui::px;
+    use wgpui::px;
 
     use crate::Size;
 

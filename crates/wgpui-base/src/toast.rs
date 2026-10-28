@@ -5,7 +5,7 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::Duration};
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, MouseMoveEvent, ParentElement, Pixels, RenderOnce, Role, Stateful,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, canvas, div,
@@ -354,7 +354,7 @@ impl InteractiveElement for ToastStack {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -642,7 +642,7 @@ impl InteractiveElement for Toast {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -662,7 +662,7 @@ impl RenderOnce for Toast {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Element as _, accesskit, point};
+    use wgpui::{Element as _, accesskit, point};
 
     #[test]
     fn manager_pauses_timeout_and_removes_only_after_exit() {
@@ -791,8 +791,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn toast_exposes_alert_semantics(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn toast_exposes_alert_semantics(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let mut node = accesskit::Node::new(Role::Alert);
@@ -804,13 +804,13 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn stack_bootstraps_measurement_without_zero_height_clipping(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn stack_bootstraps_measurement_without_zero_height_clipping(cx: &mut wgpui::TestAppContext) {
         struct Harness {
             state: ToastStackState,
         }
-        impl gpui::Render for Harness {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        impl wgpui::Render for Harness {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 ToastStack::new("stack", self.state.clone())
                     .w(px(300.))
                     .item("first", div().h(px(80.)).child("Visible"))
@@ -833,14 +833,14 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn stack_expands_for_hover_and_focus(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn stack_expands_for_hover_and_focus(cx: &mut wgpui::TestAppContext) {
         struct Harness {
             state: ToastStackState,
             focus: FocusHandle,
         }
-        impl gpui::Render for Harness {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        impl wgpui::Render for Harness {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 ToastStack::new("stack", self.state.clone())
                     .focus_handle(self.focus.clone())
                     .w(px(300.))
@@ -854,19 +854,19 @@ mod tests {
         });
         cx.update(|window, cx| window.draw(cx).clear());
 
-        cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(10.), px(10.)), None, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
 
-        cx.simulate_mouse_move(point(px(400.), px(400.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(400.), px(400.)), None, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(!view.state.is_expanded()));
 
-        cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(10.), px(10.)), None, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
 
-        cx.simulate_mouse_move(point(px(400.), px(400.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(400.), px(400.)), None, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
         view.read_with(cx, |view, _| assert!(!view.state.is_expanded()));
 
@@ -878,14 +878,14 @@ mod tests {
         view.read_with(cx, |view, _| assert!(view.state.is_expanded()));
     }
 
-    #[gpui::test]
-    fn keyed_stack_reflow_moves_from_the_current_visual_position(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn keyed_stack_reflow_moves_from_the_current_visual_position(cx: &mut wgpui::TestAppContext) {
         struct Harness {
             state: ToastStackState,
             show_second: bool,
         }
-        impl gpui::Render for Harness {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        impl wgpui::Render for Harness {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 ToastStack::new("stack", self.state.clone())
                     .w(px(300.))
                     .item(
@@ -937,16 +937,16 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn bottom_stack_reflow_moves_up_without_an_opposite_direction_jump(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         struct Harness {
             state: ToastStackState,
             show_second: bool,
         }
-        impl gpui::Render for Harness {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        impl wgpui::Render for Harness {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 div().relative().size(px(300.)).child(
                     ToastStack::new("bottom-stack", self.state.clone())
                         .placement(Anchor::BottomRight)

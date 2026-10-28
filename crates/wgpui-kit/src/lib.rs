@@ -77,9 +77,10 @@ macro_rules! actions {
 
 extern crate self as wgpui_kit;
 
-pub use ::gpui::*;
+pub use ::wgpui::*;
 
 #[doc(hidden)]
+// Public compatibility spelling retained for existing Kit consumers; internal code uses WGPUI names.
 pub use crate as gpui;
 
 #[doc(hidden)]
@@ -91,9 +92,9 @@ pub const GPUI_FAST: bool = false;
 #[cfg(feature = "test-support")]
 pub mod test;
 
-pub use ::gpui_base as base;
-pub use ::gpui_platform as platform;
-pub use gpui_base::is_mobile;
+pub use ::wgpui_base as base;
+pub use ::wgpui_platform as platform;
+pub use wgpui_base::is_mobile;
 
 /// The styled component library.
 ///
@@ -120,11 +121,11 @@ pub use gpui_base::is_mobile;
 /// }
 /// ```
 #[cfg(feature = "component")]
-pub use ::gpui_component as component;
+pub use ::wgpui_component as component;
 #[cfg(feature = "assets")]
-pub use ::gpui_kit_assets as assets;
+pub use ::wgpui_kit_assets as assets;
 
-pub use ::gpui_platform::application;
+pub use ::wgpui_platform::application;
 
 /// Opens application content inside Base's root lifecycle and plugin host.
 pub fn open_window<V: Render>(
@@ -150,10 +151,10 @@ pub fn open_window<V: Render>(
 /// is `base::init`.
 pub fn init(cx: &mut App) {
     #[cfg(feature = "component")]
-    gpui_component::init(cx);
+    wgpui_component::init(cx);
     #[cfg(not(feature = "component"))]
-    gpui_base::init(cx);
+    wgpui_base::init(cx);
 }
 
 /// Fluent UI test observation, inert unless `test-support` is enabled.
-pub use gpui_base::TestSupportExt;
+pub use wgpui_base::TestSupportExt;

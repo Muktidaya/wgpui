@@ -1,14 +1,14 @@
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{
+use rust_i18n::t;
+use smallvec::SmallVec;
+use wgpui::{
     Anchor, AnyElement, App, Background, Bounds, ClickEvent, Edges, ElementId, Entity, EntityId,
     InteractiveElement, IntoElement, ParentElement, Pixels, RenderOnce, ScrollHandle, SharedString,
     StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div, point,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::spring;
-use rust_i18n::t;
-use smallvec::SmallVec;
+use wgpui_base::spring;
 
 use super::{
     Tab, TabVariant,
@@ -48,7 +48,7 @@ impl TabIndicatorBounds {
 #[derive(IntoElement)]
 pub struct TabBar {
     id: ElementId,
-    base: gpui_base::Tabs,
+    base: wgpui_base::Tabs,
     style: StyleRefinement,
     scroll_handle: Option<ScrollHandle>,
     prefix: Option<AnyElement>,
@@ -69,7 +69,7 @@ impl TabBar {
         let id = id.into();
         Self {
             id: id.clone(),
-            base: gpui_base::Tabs::new(id).px(px(-1.)),
+            base: wgpui_base::Tabs::new(id).px(px(-1.)),
             style: StyleRefinement::default(),
             children: SmallVec::new(),
             scroll_handle: None,
@@ -304,8 +304,8 @@ impl TabBar {
         &self,
         selected_ix: usize,
         bounds_rc: &Option<Rc<RefCell<TabIndicatorBounds>>>,
-        prev_selected: &gpui::Entity<usize>,
-        anim_params: &gpui::Entity<(Pixels, Pixels, u64)>,
+        prev_selected: &wgpui::Entity<usize>,
+        anim_params: &wgpui::Entity<(Pixels, Pixels, u64)>,
         cx: &mut App,
     ) {
         let rc = match bounds_rc {
@@ -863,7 +863,7 @@ mod tests {
         rc::Rc,
     };
 
-    use gpui::{Context, Modifiers, MouseButton, MouseUpEvent, Render, TestAppContext};
+    use wgpui::{Context, Modifiers, MouseButton, MouseUpEvent, Render, TestAppContext};
 
     use super::*;
     use crate::scroll::ScrollableElement as _;
@@ -899,7 +899,7 @@ mod tests {
         group_handler: bool,
         disabled: bool,
     ) -> (
-        &mut gpui::VisualTestContext,
+        &mut wgpui::VisualTestContext,
         Rc<Cell<usize>>,
         Rc<Cell<usize>>,
     ) {
@@ -920,7 +920,7 @@ mod tests {
         (cx, child_clicks, group_clicks)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn group_callback_overrides_child_callback(cx: &mut TestAppContext) {
         let (cx, child_clicks, group_clicks) = harness(cx, true, false);
         let position = cx.debug_bounds("first-tab").unwrap().center();
@@ -929,7 +929,7 @@ mod tests {
         assert_eq!(group_clicks.get(), 1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn child_callback_is_preserved_without_group_callback(cx: &mut TestAppContext) {
         let (cx, child_clicks, group_clicks) = harness(cx, false, false);
         let position = cx.debug_bounds("first-tab").unwrap().center();
@@ -938,7 +938,7 @@ mod tests {
         assert_eq!(group_clicks.get(), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_tab_suppresses_child_and_group_callbacks(cx: &mut TestAppContext) {
         let (cx, child_clicks, group_clicks) = harness(cx, true, true);
         let position = cx.debug_bounds("first-tab").unwrap().center();
@@ -983,7 +983,7 @@ mod tests {
     /// Opens the overflow menu and activates its first item.
     fn choose_first_menu_item(
         group_handler: bool,
-        activate: impl FnOnce(&mut gpui::VisualTestContext),
+        activate: impl FnOnce(&mut wgpui::VisualTestContext),
         cx: &mut TestAppContext,
     ) -> (Vec<String>, Vec<ClickEvent>) {
         cx.update(crate::init);
@@ -1016,7 +1016,7 @@ mod tests {
         (clicks.borrow().clone(), events.borrow().clone())
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_menu_runs_the_tab_callback_without_a_bar_callback(cx: &mut TestAppContext) {
         assert_eq!(
             choose_first_menu_item(false, |cx| cx.simulate_keystrokes("down enter"), cx).0,
@@ -1024,7 +1024,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_menu_prefers_the_bar_callback(cx: &mut TestAppContext) {
         assert_eq!(
             choose_first_menu_item(true, |cx| cx.simulate_keystrokes("down enter"), cx).0,
@@ -1033,16 +1033,16 @@ mod tests {
     }
 
     #[cfg(feature = "test-support")]
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_menu_preserves_pointer_events_and_keyboard_activation(cx: &mut TestAppContext) {
         let position = Cell::new(point(px(0.), px(0.)));
         let (clicks, events) = choose_first_menu_item(
             false,
             |cx| {
                 let item = cx.update(|window, _| {
-                    gpui_base::test_support::find_all(window, &[], &ElementId::from(0usize))
+                    wgpui_base::test_support::find_all(window, &[], &ElementId::from(0usize))
                         .into_iter()
-                        .find(|item| item.role() == Some(gpui::Role::MenuItem))
+                        .find(|item| item.role() == Some(wgpui::Role::MenuItem))
                         .expect("first overflow menu item")
                 });
                 position.set(item.bounds().center());
@@ -1082,7 +1082,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn prefix_content_and_suffix_keep_their_order(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let (_, cx) = cx.add_window_view(|_, _| ContentHarness);
@@ -1205,12 +1205,12 @@ mod tests {
         }
     }
 
-    fn draw(cx: &mut gpui::VisualTestContext) {
+    fn draw(cx: &mut wgpui::VisualTestContext) {
         cx.run_until_parked();
         cx.update(|window, cx| window.draw(cx).clear());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrolling_to_a_tab_uses_logical_tab_indices(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1241,7 +1241,7 @@ mod tests {
         assert_eq!(scroll_handle.children_count(), 6);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrolling_to_a_new_tab_preserves_the_explicit_target(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1274,7 +1274,7 @@ mod tests {
         assert_eq!(scroll_handle.children_count(), 6);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrolling_to_a_new_tab_preserves_bar_padding(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         for (size, padding) in [
@@ -1323,7 +1323,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_an_unselected_trailing_tab_preserves_manual_scrolling(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1339,7 +1339,7 @@ mod tests {
         });
 
         draw(cx);
-        scroll_handle.set_offset(gpui::point(px(-100.), px(0.)));
+        scroll_handle.set_offset(wgpui::point(px(-100.), px(0.)));
         draw(cx);
         assert_eq!(scroll_handle.offset().x, px(-100.));
 
@@ -1352,7 +1352,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(-100.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn changing_selection_does_not_move_manual_scrolling(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1368,7 +1368,7 @@ mod tests {
         });
 
         draw(cx);
-        scroll_handle.set_offset(gpui::point(px(-100.), px(0.)));
+        scroll_handle.set_offset(wgpui::point(px(-100.), px(0.)));
         draw(cx);
 
         view.update(cx, |view, cx| {
@@ -1380,7 +1380,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(-100.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn changing_tab_labels_does_not_move_manual_scrolling(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1396,7 +1396,7 @@ mod tests {
         });
 
         draw(cx);
-        scroll_handle.set_offset(gpui::point(px(-100.), px(0.)));
+        scroll_handle.set_offset(wgpui::point(px(-100.), px(0.)));
         draw(cx);
 
         view.update(cx, |view, cx| {
@@ -1408,7 +1408,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, px(-100.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_the_tab_bar_preserves_manual_scrolling(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -1424,7 +1424,7 @@ mod tests {
         });
 
         draw(cx);
-        scroll_handle.set_offset(gpui::point(px(-100.), px(0.)));
+        scroll_handle.set_offset(wgpui::point(px(-100.), px(0.)));
         draw(cx);
         assert_eq!(scroll_handle.offset().x, px(-100.));
         let viewport_size = scroll_handle.bounds().size;
@@ -1469,7 +1469,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn flex_tabs_share_the_available_width(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         for variant in [
@@ -1536,7 +1536,7 @@ mod tests {
         group_handler: bool,
         scroll_handle: Option<ScrollHandle>,
         reduce_motion: bool,
-    ) -> &mut gpui::VisualTestContext {
+    ) -> &mut wgpui::VisualTestContext {
         cx.update(|cx| {
             crate::theme::init(cx);
             cx.set_reduce_motion(reduce_motion);
@@ -1549,14 +1549,14 @@ mod tests {
         cx
     }
 
-    fn next_frame(cx: &mut gpui::VisualTestContext) {
+    fn next_frame(cx: &mut wgpui::VisualTestContext) {
         cx.executor()
             .advance_clock(std::time::Duration::from_millis(16));
         cx.update(|window, cx| window.simulate_next_frame(cx));
         draw(cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_clipped_tab_reveals_it_and_part_of_the_next(cx: &mut TestAppContext) {
         for group_handler in [false, true] {
             let cx = click_reveal_harness(cx, group_handler, None, true);
@@ -1574,16 +1574,16 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_the_last_tab_reveals_the_end_of_the_bar(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let cx = click_reveal_harness(cx, true, Some(scroll_handle.clone()), true);
-        scroll_handle.set_offset(gpui::point(px(-160.), px(0.)));
+        scroll_handle.set_offset(wgpui::point(px(-160.), px(0.)));
         draw(cx);
 
         let tab = cx.debug_bounds("click-tab-4").unwrap();
         cx.simulate_click(
-            tab.origin + gpui::point(px(10.), px(10.)),
+            tab.origin + wgpui::point(px(10.), px(10.)),
             Modifiers::default(),
         );
         draw(cx);
@@ -1591,7 +1591,7 @@ mod tests {
         assert_eq!(scroll_handle.offset().x, -scroll_handle.max_offset().width);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reveal_animates_and_yields_to_manual_scrolling(cx: &mut TestAppContext) {
         let scroll_handle = ScrollHandle::new();
         let cx = click_reveal_harness(cx, true, Some(scroll_handle.clone()), false);
@@ -1610,8 +1610,8 @@ mod tests {
         wheel(
             cx,
             scroll_handle.bounds().center(),
-            gpui::ScrollDelta::Lines(point(0., 1.)),
-            gpui::TouchPhase::Moved,
+            wgpui::ScrollDelta::Lines(point(0., 1.)),
+            wgpui::TouchPhase::Moved,
         );
         let manual = scroll_handle.offset().x;
         assert!(manual > moving);
@@ -1624,7 +1624,7 @@ mod tests {
 
         // A new click travels all the way.
         cx.simulate_click(
-            tab.center() - gpui::point(px(10.), px(0.)),
+            tab.center() - wgpui::point(px(10.), px(0.)),
             Modifiers::default(),
         );
         for _ in 0..60 {
@@ -1661,12 +1661,12 @@ mod tests {
     }
 
     fn wheel(
-        cx: &mut gpui::VisualTestContext,
-        position: gpui::Point<Pixels>,
-        delta: gpui::ScrollDelta,
-        touch_phase: gpui::TouchPhase,
+        cx: &mut wgpui::VisualTestContext,
+        position: wgpui::Point<Pixels>,
+        delta: wgpui::ScrollDelta,
+        touch_phase: wgpui::TouchPhase,
     ) {
-        cx.simulate_event(gpui::ScrollEvent {
+        cx.simulate_event(wgpui::ScrollEvent {
             position,
             delta,
             touch_phase,
@@ -1675,7 +1675,7 @@ mod tests {
         draw(cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mouse_wheel_scrolls_each_variant_with_and_without_a_tracked_handle(
         cx: &mut TestAppContext,
     ) {
@@ -1710,8 +1710,8 @@ mod tests {
                 wheel(
                     cx,
                     first_before.center(),
-                    gpui::ScrollDelta::Lines(point(0., -100.)),
-                    gpui::TouchPhase::Moved,
+                    wgpui::ScrollDelta::Lines(point(0., -100.)),
+                    wgpui::TouchPhase::Moved,
                 );
                 let first_after = cx.debug_bounds("wheel-tab-0").unwrap();
                 let last_after = cx.debug_bounds("wheel-tab-5").unwrap();
@@ -1728,8 +1728,8 @@ mod tests {
                 wheel(
                     cx,
                     first_before.center(),
-                    gpui::ScrollDelta::Lines(point(0., 100.)),
-                    gpui::TouchPhase::Moved,
+                    wgpui::ScrollDelta::Lines(point(0., 100.)),
+                    wgpui::TouchPhase::Moved,
                 );
                 assert_eq!(cx.debug_bounds("wheel-tab-0").unwrap(), first_before);
                 if let Some(handle) = &scroll_handle {
@@ -1742,7 +1742,7 @@ mod tests {
     #[derive(Clone)]
     enum WheelParent {
         Div(ScrollHandle),
-        List(gpui::ListState),
+        List(wgpui::ListState),
         Scrollable,
     }
 
@@ -1802,7 +1802,7 @@ mod tests {
                         .w(px(160.))
                         .h(px(100.))
                         .child(
-                            gpui::list(parent.clone(), move |ix, _, _| {
+                            wgpui::list(parent.clone(), move |ix, _, _| {
                                 if ix == 0 {
                                     div()
                                         .w_full()
@@ -1822,7 +1822,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mouse_wheel_uses_tabs_before_scrolling_ancestors(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         for parent_kind in 0..3 {
@@ -1831,7 +1831,7 @@ mod tests {
                 let parent = match parent_kind {
                     0 => WheelParent::Div(ScrollHandle::new()),
                     1 => WheelParent::List(
-                        gpui::ListState::new(10, gpui::ListAlignment::Top, px(0.)).measure_all(),
+                        wgpui::ListState::new(10, wgpui::ListAlignment::Top, px(0.)).measure_all(),
                     ),
                     _ => WheelParent::Scrollable,
                 };
@@ -1860,8 +1860,8 @@ mod tests {
                 wheel(
                     cx,
                     position,
-                    gpui::ScrollDelta::Lines(point(0., -1.)),
-                    gpui::TouchPhase::Moved,
+                    wgpui::ScrollDelta::Lines(point(0., -1.)),
+                    wgpui::TouchPhase::Moved,
                 );
                 let first_after = cx.debug_bounds("wheel-tab-0").unwrap();
                 if tabs > 1 && !at_end {
@@ -1903,7 +1903,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mouse_wheel_uses_the_scroll_viewports_inherited_line_height(
         cx: &mut TestAppContext,
     ) {
@@ -1930,8 +1930,8 @@ mod tests {
             wheel(
                 cx,
                 position,
-                gpui::ScrollDelta::Lines(point(0., -1.)),
-                gpui::TouchPhase::Moved,
+                wgpui::ScrollDelta::Lines(point(0., -1.)),
+                wgpui::TouchPhase::Moved,
             );
             assert_eq!(
                 scroll_handle.offset(),
@@ -1945,8 +1945,8 @@ mod tests {
             wheel(
                 cx,
                 position,
-                gpui::ScrollDelta::Lines(point(0., 1.)),
-                gpui::TouchPhase::Moved,
+                wgpui::ScrollDelta::Lines(point(0., 1.)),
+                wgpui::TouchPhase::Moved,
             );
             assert_eq!(scroll_handle.offset(), point(px(0.), px(0.)));
             assert_eq!(cx.debug_bounds("wheel-tab-0").unwrap(), first_before);
@@ -1993,7 +1993,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_mouse_wheel_respects_the_viewport_and_occluding_surfaces(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let scroll_handle = ScrollHandle::new();
@@ -2016,8 +2016,8 @@ mod tests {
             wheel(
                 cx,
                 position,
-                gpui::ScrollDelta::Lines(point(0., -1.)),
-                gpui::TouchPhase::Moved,
+                wgpui::ScrollDelta::Lines(point(0., -1.)),
+                wgpui::TouchPhase::Moved,
             );
             assert_eq!(scroll_handle.offset(), point(px(0.), px(0.)));
             assert_eq!(cx.debug_bounds("wheel-tab-0").unwrap(), first_before);
@@ -2035,8 +2035,8 @@ mod tests {
         wheel(
             cx,
             position,
-            gpui::ScrollDelta::Lines(point(0., -1.)),
-            gpui::TouchPhase::Moved,
+            wgpui::ScrollDelta::Lines(point(0., -1.)),
+            wgpui::TouchPhase::Moved,
         );
         assert_eq!(scroll_handle.offset(), point(px(0.), px(0.)));
         assert_eq!(cx.debug_bounds("wheel-tab-0").unwrap(), first_before);
@@ -2049,8 +2049,8 @@ mod tests {
         wheel(
             cx,
             position,
-            gpui::ScrollDelta::Lines(point(0., -1.)),
-            gpui::TouchPhase::Moved,
+            wgpui::ScrollDelta::Lines(point(0., -1.)),
+            wgpui::TouchPhase::Moved,
         );
         assert!(scroll_handle.offset().x < px(0.));
         let first_after = cx.debug_bounds("wheel-tab-0").unwrap();
@@ -2084,7 +2084,7 @@ mod tests {
 
     /// Shows a bar in a window drawn before, as a view shows one once its
     /// data came, and draws the bar's first frame.
-    fn show_late_bar(cx: &mut TestAppContext, width: Pixels) -> &mut gpui::VisualTestContext {
+    fn show_late_bar(cx: &mut TestAppContext, width: Pixels) -> &mut wgpui::VisualTestContext {
         cx.update(crate::theme::init);
         let (view, cx) = cx.add_window_view(move |_, _| LateBar {
             shown: false,
@@ -2100,7 +2100,7 @@ mod tests {
     }
 
     /// The underline indicators the frame drawn last painted.
-    fn painted_indicators(cx: &mut gpui::VisualTestContext) -> Vec<Bounds<Pixels>> {
+    fn painted_indicators(cx: &mut wgpui::VisualTestContext) -> Vec<Bounds<Pixels>> {
         cx.update(|window, cx| {
             let primary: Background = cx.theme().tokens.primary.into();
             let scale_factor = window.scale_factor();
@@ -2120,7 +2120,7 @@ mod tests {
     /// The frame after a bar's first, which measured its tabs, draws the
     /// indicator under the selected tab, though nothing the view holding
     /// the bar renders from changed. Then the bar asks for no more frames.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_bar_shown_later_draws_its_indicator_on_the_next_frame(cx: &mut TestAppContext) {
         let cx = show_late_bar(cx, px(300.));
         next_frame(cx);
@@ -2132,7 +2132,7 @@ mod tests {
     }
 
     /// A bar squeezed to no width asks for no frames to place its indicator.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_bar_with_no_width_asks_for_no_frames(cx: &mut TestAppContext) {
         let cx = show_late_bar(cx, px(0.));
         next_frame(cx);

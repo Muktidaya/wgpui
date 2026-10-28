@@ -1,6 +1,6 @@
-use gpui::{App, Global};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{App, Global};
 
 use crate::{PlotMotion, ScrollbarMode, ScrollbarMotion, ScrollbarStyles, SemanticThemeTokens};
 
@@ -132,8 +132,8 @@ impl PlotTheme {
 /// was while giving the unprojected case an answer.
 #[derive(Clone, Copy, Default)]
 pub struct ResizableTheme {
-    pub handle: Option<gpui::Hsla>,
-    pub active_handle: Option<gpui::Hsla>,
+    pub handle: Option<wgpui::Hsla>,
+    pub active_handle: Option<wgpui::Hsla>,
 }
 
 #[cfg(test)]

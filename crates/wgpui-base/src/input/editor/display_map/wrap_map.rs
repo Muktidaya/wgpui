@@ -6,8 +6,8 @@
 /// - Incremental updates when text or layout changes
 use std::ops::Range;
 
-use gpui::{App, Font, Pixels};
 use ropey::Rope;
+use wgpui::{App, Font, Pixels};
 
 use super::fold_map::FoldMap;
 use super::text_wrapper::{LineItem, TextWrapper, WrapDisplayPoint, WrappingIndent};

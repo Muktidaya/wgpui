@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use gpui::{Font, LineLayout, Pixels, ShapedGlyph, ShapedLine, ShapedRun, WindowTextSystem, px};
+use wgpui::{Font, LineLayout, Pixels, ShapedGlyph, ShapedLine, ShapedRun, WindowTextSystem, px};
 
 /// The distance between two tab stops: `tab_size` spaces of `font`.
 pub(crate) fn tab_stop_width(
@@ -97,7 +97,7 @@ fn expanded_layout(layout: &LineLayout, text: &str, stop: Pixels) -> Option<Line
                 .glyphs
                 .iter()
                 .map(|glyph| ShapedGlyph {
-                    position: gpui::point(
+                    position: wgpui::point(
                         glyph.position.x + shift_after(glyph.index),
                         glyph.position.y,
                     ),
@@ -120,7 +120,7 @@ fn expanded_layout(layout: &LineLayout, text: &str, stop: Pixels) -> Option<Line
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{FontId, GlyphId, point};
+    use wgpui::{FontId, GlyphId, point};
 
     /// A line where every byte is one glyph `advance` wide, except tabs,
     /// which are `tab_advance` wide.

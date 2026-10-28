@@ -1,6 +1,6 @@
 use std::{fmt, ops::Range};
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 use super::document::{DiffFile, DiffFileStatus, FileSide, Hunk, LinePair};
 

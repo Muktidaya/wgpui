@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use gpui::{AnyElement, App, Entity, EntityId, Global, IntoElement, WeakEntity, Window};
 use ropey::Rope;
+use wgpui::{AnyElement, App, Entity, EntityId, Global, IntoElement, WeakEntity, Window};
 
 use super::{
     InputBaseState, InputModeKind,
     popovers::{CodeActionMenu, CompletionMenu, DiagnosticPopover, HoverPopover},
     search::SearchPanel,
 };
-use gpui_base::input::CompletionHighlighter;
+use wgpui_base::input::CompletionHighlighter;
 
 struct InputOverlayRegistry<M: OverlayMode> {
     hosts: HashMap<EntityId, (WeakEntity<InputBaseState<M>>, InputOverlayHost<M>)>,
@@ -72,7 +72,7 @@ pub(crate) struct LspOverlays {
     completion_signature: OverlaySignature,
     code_action_signature: OverlaySignature,
     hover_signature: Option<std::ops::Range<usize>>,
-    diagnostic_signature: Option<std::rc::Rc<gpui_base::input::DiagnosticEntry>>,
+    diagnostic_signature: Option<std::rc::Rc<wgpui_base::input::DiagnosticEntry>>,
     /// Highlighter last copied onto the completion menu.
     ///
     /// Compared by `Rc` identity, so swapping the host's closure repaints an
@@ -90,7 +90,7 @@ pub(crate) struct LspSnapshot {
     completion_start: Option<usize>,
     code_action: OverlaySignature,
     hover: Option<std::ops::Range<usize>>,
-    diagnostic: Option<std::rc::Rc<gpui_base::input::DiagnosticEntry>>,
+    diagnostic: Option<std::rc::Rc<wgpui_base::input::DiagnosticEntry>>,
     cursor: usize,
 }
 
@@ -155,10 +155,10 @@ impl OverlayMode for crate::input::EditorMode {
                     return false;
                 };
                 match kind {
-                    gpui_base::input::InputOverlayKind::Completion => {
+                    wgpui_base::input::InputOverlayKind::Completion => {
                         completion.update(cx, |menu, cx| menu.handle_action(action, window, cx))
                     }
-                    gpui_base::input::InputOverlayKind::CodeAction => {
+                    wgpui_base::input::InputOverlayKind::CodeAction => {
                         code_actions.update(cx, |menu, cx| menu.handle_action(action, window, cx))
                     }
                 }
@@ -450,10 +450,10 @@ pub(super) fn render_overlays<M: OverlayMode>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, Render, SharedString, div};
-    use gpui_base::input::CodeActionItem;
-    use gpui_base::input::DiagnosticEntry;
     use lsp_types::{CodeAction, CompletionItem, Hover, HoverContents, MarkedString};
+    use wgpui::{AppContext as _, Render, SharedString, div};
+    use wgpui_base::input::CodeActionItem;
+    use wgpui_base::input::DiagnosticEntry;
 
     struct OverlayProbe {
         state: Entity<crate::input::EditorState>,
@@ -463,7 +463,7 @@ mod tests {
         fn render(
             &mut self,
             _window: &mut Window,
-            _cx: &mut gpui::Context<Self>,
+            _cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             div()
         }
@@ -476,8 +476,8 @@ mod tests {
     /// request: the field keeps whatever caret the user left in it and the
     /// shortcut looks dead. `activation_revision` is what carries the second
     /// request through, and the echo guard below it is what must survive that.
-    #[gpui::test]
-    fn reopening_search_reselects_the_query(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn reopening_search_reselects_the_query(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).searchable(true)),
@@ -529,8 +529,8 @@ mod tests {
     /// Closing and reopening Find keeps the previous occurrence in browsers.
     /// Neither Base reopening the session nor the styled panel echoing its
     /// retained query may reset the current match to zero.
-    #[gpui::test]
-    fn reopening_search_panel_preserves_the_previous_match(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn reopening_search_panel_preserves_the_previous_match(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).searchable(true)),
@@ -569,8 +569,8 @@ mod tests {
     /// It is keyed on a revision the engine bumps when it swaps the content;
     /// forgetting to bump, or comparing the content itself again, both show up
     /// here.
-    #[gpui::test]
-    fn unchanged_content_keeps_the_overlay_signature(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn unchanged_content_keeps_the_overlay_signature(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).language("sql")),
@@ -623,8 +623,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn facade_materializes_all_base_overlay_sessions(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn facade_materializes_all_base_overlay_sessions(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| {

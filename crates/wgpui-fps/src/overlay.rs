@@ -1,8 +1,8 @@
-use gpui::{
+use std::time::Duration;
+use wgpui::{
     Anchor, App, Entity, IntoElement, ParentElement, Pixels, RenderOnce, Styled, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use std::time::Duration;
 
 use crate::monitor::FpsMonitor;
 
@@ -20,7 +20,7 @@ const MARGIN: Pixels = px(12.);
 /// `relative()`**:
 ///
 /// ```no_run
-/// # use gpui::*;
+/// # use wgpui::*;
 /// # use wgpui_fps::{FpsMonitor, FpsOverlay};
 /// # fn example(monitor: &Entity<FpsMonitor>, content: impl IntoElement) -> impl IntoElement {
 /// div()

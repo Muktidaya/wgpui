@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, FocusHandle, IntoElement, KeyBinding, ParentElement, RenderOnce,
     StyleRefinement, Styled, Window, prelude::FluentBuilder as _,
 };
@@ -152,11 +152,11 @@ impl RenderOnce for Combobox {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use std::sync::{Arc, Mutex};
+    use wgpui::{
         Context, Focusable, InteractiveElement as _, Render, TestAppContext, VisualTestContext,
         div, px,
     };
-    use std::sync::{Arc, Mutex};
 
     struct Harness {
         open: bool,
@@ -206,7 +206,7 @@ mod tests {
         }
     }
 
-    fn harness(cx: &mut TestAppContext) -> (&mut VisualTestContext, gpui::Entity<Harness>) {
+    fn harness(cx: &mut TestAppContext) -> (&mut VisualTestContext, wgpui::Entity<Harness>) {
         cx.update(crate::init);
         let (state, cx) = cx.add_window_view(|_, cx| Harness::new(cx));
         cx.update(|window, cx| {
@@ -217,7 +217,7 @@ mod tests {
         (cx, state)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn escape_dismisses_then_closes_and_restores_trigger_focus(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx);
         cx.simulate_keystrokes("escape");
@@ -234,7 +234,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_confirms_without_dismissing_while_open(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx);
         cx.simulate_keystrokes("enter");

@@ -1,12 +1,12 @@
 //! Window roots and presentation-layer plugins.
 use crate::input::Copy;
 use crate::{StyledExt, TextSelectionLayer};
-use gpui::{
+use std::{any::TypeId, rc::Rc};
+use wgpui::{
     AnyElement, AnyView, App, AppContext, ClipboardItem, Context, Div, Entity, Global,
     InteractiveElement, IntoElement, KeyBinding, ParentElement, Render, Stateful, StyleRefinement,
     Styled, Window, actions, div,
 };
-use std::{any::TypeId, rc::Rc};
 
 actions!(root, [Tab, TabPrev]);
 const CONTEXT: &str = "Root";
@@ -279,8 +279,8 @@ impl Render for Root {
 mod tests {
     use super::*;
     use crate::FocusTrapElement as _;
-    use gpui::{FocusHandle, Subscription, TestAppContext, VisualTestContext, px};
     use std::cell::Cell;
+    use wgpui::{FocusHandle, Subscription, TestAppContext, VisualTestContext, px};
 
     struct TrapContent {
         background: Vec<FocusHandle>,
@@ -387,7 +387,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_trap_wraps_forward_past_more_than_100_background_stops(cx: &mut TestAppContext) {
         let (cx, container, controls, _, background_focuses) = trap_harness(cx, 2);
         cx.update(|window, cx| {
@@ -402,7 +402,7 @@ mod tests {
         assert_eq!(background_focuses.get(), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_trap_wraps_backward_past_more_than_100_background_stops(cx: &mut TestAppContext) {
         let (cx, container, controls, _, background_focuses) = trap_harness(cx, 2);
         cx.update(|window, cx| {
@@ -417,7 +417,7 @@ mod tests {
         assert_eq!(background_focuses.get(), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_trap_without_tab_stops_keeps_its_container_focused(cx: &mut TestAppContext) {
         let (cx, container, _, _, background_focuses) = trap_harness(cx, 0);
         cx.update(|window, cx| {
@@ -446,7 +446,7 @@ mod tests {
             .focus(window, cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_trap_search_ends_at_a_short_cycle_on_its_container(cx: &mut TestAppContext) {
         let (cx, container, controls, background, _) = trap_harness(cx, 2);
         cx.update(|window, cx| {
@@ -463,7 +463,7 @@ mod tests {
         assert!(SCRIPTED_STOPS.with(|stops| stops.borrow().is_empty()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn inactive_focus_trap_does_not_capture_background_navigation(cx: &mut TestAppContext) {
         let (cx, _, _, background, background_focuses) = trap_harness(cx, 2);
         cx.update(|window, cx| {
@@ -504,7 +504,7 @@ mod tests {
         Layer
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plugin_registration_is_idempotent_and_state_is_per_window(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -558,7 +558,7 @@ mod tests {
             }
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn nested_traps_keep_the_innermost_scope_across_close_and_reopen(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let (containers, controls) = cx.update(|cx| {

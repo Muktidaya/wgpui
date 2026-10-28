@@ -3,7 +3,7 @@ use std::{panic::Location, rc::Rc};
 use crate::{InteractiveElementExt as _, StyledExt};
 
 use super::{ScrollableMask, Scrollbar, ScrollbarAxis, ScrollbarHandle};
-use gpui::{
+use wgpui::{
     App, Div, Element, ElementId, InteractiveElement, IntoElement, Length, Overflow, ParentElement,
     PointRefinement, RenderOnce, ScrollHandle, Stateful, StatefulInteractiveElement,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
@@ -115,7 +115,7 @@ impl<E> ParentElement for Scrollable<E>
 where
     E: InteractiveElement + Styled + ParentElement + Element,
 {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.element.extend(elements)
     }
 }
@@ -124,11 +124,11 @@ impl<E> InteractiveElement for Scrollable<E>
 where
     E: InteractiveElement + Styled + ParentElement + Element,
 {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.element.interactivity()
     }
 
-    fn track_focus(mut self, focus: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, focus: &wgpui::FocusHandle) -> Self {
         self.element = self.element.track_focus(focus);
         self
     }
@@ -211,7 +211,7 @@ where
                 ScrollbarAxis::Vertical | ScrollbarAxis::Both => this.flex_col(),
             })
             .child(
-                gpui_base::ScrollBounce::new(
+                wgpui_base::ScrollBounce::new(
                     (self.id.clone(), "bounce"),
                     &scroll_handle,
                     scroll_area,
@@ -337,15 +337,15 @@ fn render_scrollbar<H: ScrollbarHandle + Clone>(
 }
 
 #[cfg(feature = "test-support")]
-impl<E> ScrollableElement for gpui_base::test_support::Observed<E> where
-    E: ScrollableElement + Element<PrepaintState = Option<gpui::Hitbox>>
+impl<E> ScrollableElement for wgpui_base::test_support::Observed<E> where
+    E: ScrollableElement + Element<PrepaintState = Option<wgpui::Hitbox>>
 {
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         Context, Render, ScrollDelta, ScrollEvent, TestAppContext, VisualTestContext, point, px,
     };
 
@@ -461,7 +461,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn auto_height_parent_gets_content_height(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| AutoHeightParentTest);
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(footer.top(), px(100.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_height_parent_clamps_and_scrolls(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| MaxHeightParentTest);
@@ -515,7 +515,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_height_scrollable_scrolls_to_its_last_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| MaxHeightScrollableTest);
@@ -567,7 +567,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_width_scrollable_scrolls_what_overflows_it(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| MaxWidthScrollableTest);
@@ -612,7 +612,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrollable_flex_item_shrinks_below_its_content(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| FlexItemScrollableTest);
@@ -658,7 +658,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scrollable_flex_item_shrinks_below_its_content(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| HorizontalFlexItemScrollableTest);
@@ -693,7 +693,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scrollable_scrolls_with_a_vertical_mouse_wheel(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| HorizontalFlexItemScrollableTest);
@@ -736,7 +736,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn explicit_min_size_survives_the_scrollable_wrapper(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| ExplicitMinHeightScrollableTest);
@@ -770,7 +770,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrollbar_overlay_ignores_content_padding(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| PaddedScrollbarOverlayTest);
@@ -779,7 +779,7 @@ mod tests {
 
         let overlay = cx.debug_bounds("scrollbar-overlay").unwrap();
         assert_eq!(overlay.origin, point(px(0.), px(0.)));
-        assert_eq!(overlay.size, gpui::size(px(100.), px(100.)));
+        assert_eq!(overlay.size, wgpui::size(px(100.), px(100.)));
     }
 
     impl Render for GapLayoutTest {
@@ -909,7 +909,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_scrollbar_scrolls_past_a_size_full_child(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| SizeFullChildTest);
@@ -922,7 +922,7 @@ mod tests {
         assert!(cx.debug_bounds("last-row").unwrap().origin.y < initial_y);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_scrollbar_preserves_source_gap(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| GapLayoutTest);
@@ -934,7 +934,7 @@ mod tests {
         assert_eq!(second.top() - first.bottom(), px(10.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_y_scrollbar_preserves_gap_for_exact_issue_chain(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| IssueGapRegressionTest);
@@ -962,7 +962,7 @@ mod tests {
         assert!(last_after_scroll_y < last_initial_y);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scrollbar_preserves_source_gap_and_scrolls(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| HorizontalGapLayoutTest);
@@ -988,7 +988,7 @@ mod tests {
         assert!(last_after_scroll_x < last_initial_x);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_scrollbar_preserves_vertical_source_gap(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| OverflowScrollbarVerticalTest);
@@ -1001,7 +1001,7 @@ mod tests {
         assert_eq!(second.top() - first.bottom(), px(10.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn overflow_scrollbar_preserves_gap_and_scrolls_horizontally(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| OverflowScrollbarHorizontalTest);
@@ -1035,7 +1035,7 @@ mod tests {
         assert!(last_after_scroll_x < last_initial_x);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn multiple_scrollables_keep_independent_scroll_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| IndependentScrollablesTest);
@@ -1054,7 +1054,7 @@ mod tests {
         assert_eq!(right_after_scroll.top(), right_initial.top());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_scrollbar_does_not_scroll_when_content_does_not_overflow(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| NoOverflowTest);
@@ -1079,7 +1079,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scrollbar_does_not_scroll_when_content_does_not_overflow(
         cx: &mut TestAppContext,
     ) {
@@ -1146,7 +1146,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dynamic_scrollables_with_unique_scroll_ids_keep_independent_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
 

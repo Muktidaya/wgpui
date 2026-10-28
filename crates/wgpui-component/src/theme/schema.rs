@@ -1,8 +1,8 @@
 use std::{rc::Rc, sync::Arc};
 
-use gpui::{Background, BoxShadow, FontWeight, Hsla, SharedString, px};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{Background, BoxShadow, FontWeight, Hsla, SharedString, px};
 
 use crate::highlighter::{HighlightTheme, HighlightThemeStyle};
 
@@ -231,7 +231,7 @@ impl SemanticThemeConfig {
     }
 }
 
-fn apply_text_style(config: &SemanticTextStyleConfig, token: &mut gpui_base::TextStyleToken) {
+fn apply_text_style(config: &SemanticTextStyleConfig, token: &mut wgpui_base::TextStyleToken) {
     if let Some(value) = config.size {
         token.size = px(value);
     }
@@ -694,7 +694,7 @@ impl ThemeColor {
             };
             // With fallback
             ($config_field:ident, fallback = $fallback:expr) => {
-                let fallback: gpui::Hsla = ($fallback).into();
+                let fallback: wgpui::Hsla = ($fallback).into();
                 if let Some(value) = &colors.$config_field {
                     self.$config_field = try_parse_color(value).unwrap_or(fallback);
                 } else {
@@ -780,7 +780,7 @@ impl ThemeColor {
         // Button colors
         let active_darken = if config.mode.is_dark() { 0.2 } else { 0.1 };
         let hover_opacity = 0.9;
-        let transparent = gpui::transparent_black();
+        let transparent = wgpui::transparent_black();
         let button_background = if config.mode.is_dark() {
             self.input.mix_oklab(transparent, 0.3)
         } else {
@@ -1105,7 +1105,7 @@ impl Theme {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{linear_color_stop, linear_gradient, px};
+    use wgpui::{linear_color_stop, linear_gradient, px};
 
     use crate::{Colorize as _, Theme, ThemeConfig, ThemeMode, ThemeSet, try_parse_color};
 

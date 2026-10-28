@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use gpui::{AsyncApp, Bounds, Context, Pixels, Point, Task, WeakEntity, px};
+use wgpui::{AsyncApp, Bounds, Context, Pixels, Point, Task, WeakEntity, px};
 
 /// Manages timer-based auto-scrolling during drag interactions.
 ///
@@ -125,7 +125,7 @@ impl AutoScroll {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Bounds, point, size};
+    use wgpui::{Bounds, point, size};
 
     use super::*;
 

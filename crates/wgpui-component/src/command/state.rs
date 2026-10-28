@@ -1,14 +1,14 @@
-use gpui_base::TestSupportExt as _;
 use std::rc::Rc;
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AbsoluteLength, AnyElement, App, AppContext as _, AvailableSpace, Context, Entity, FocusHandle,
     Focusable, FontFallbacks, FontFeatures, FontStyle, FontWeight, InteractiveElement, IntoElement,
     KeyBinding, Keystroke, ListSizingBehavior, ParentElement, Pixels, Render, Role, ScrollStrategy,
     SharedString, Size, StatefulInteractiveElement as _, StyleRefinement, Styled, Subscription,
     TextOverflow, WhiteSpace, Window, div, prelude::FluentBuilder as _, px, size,
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme as _, ElementExt as _, Icon, IconName, IndexPath, StyledExt as _,
@@ -721,7 +721,7 @@ impl CommandState {
 
     /// The frame every item row shares, so that the measured height matches the
     /// rendered one.
-    fn item_row(&self, selected: bool, window: &Window, cx: &App) -> gpui::Div {
+    fn item_row(&self, selected: bool, window: &Window, cx: &App) -> wgpui::Div {
         div()
             .flex()
             .flex_row()
@@ -738,7 +738,7 @@ impl CommandState {
             })
     }
 
-    fn heading_row(&self, heading: SharedString, cx: &App) -> gpui::Div {
+    fn heading_row(&self, heading: SharedString, cx: &App) -> wgpui::Div {
         div()
             .w_full()
             .px_2()
@@ -1031,7 +1031,7 @@ impl Render for CommandState {
                             .with_sizing_behavior(ListSizingBehavior::Infer)
                             .track_scroll(&self.scroll_handle)
                             .map(|list| {
-                                gpui_base::ScrollBounce::new(
+                                wgpui_base::ScrollBounce::new(
                                     "command-scroll-bounce",
                                     &self.scroll_handle,
                                     list,
@@ -1059,7 +1059,7 @@ mod tests {
         rc::Rc,
     };
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, AvailableSpace, Entity, InteractiveElement as _, IntoElement, KeyBinding,
         Modifiers, ParentElement as _, Pixels, Render, Styled as _, TestAppContext, Window,
         actions, div, point, prelude::FluentBuilder as _, px,
@@ -1083,7 +1083,7 @@ mod tests {
     }
 
     impl Render for CommandActionsHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             let action_events = self.events.clone();
             let propagated_cancel_events = self.events.clone();
             let query_events = self.events.clone();
@@ -1141,7 +1141,7 @@ mod tests {
     }
 
     impl Render for ReentrantCallbackHarness {
-        fn render(&mut self, _: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, cx: &mut wgpui::Context<Self>) -> impl IntoElement {
             let select_owner = cx.weak_entity();
             let query_owner = cx.weak_entity();
             let confirm_owner = cx.weak_entity();
@@ -1174,7 +1174,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn query_and_selection_callbacks_run_after_the_state_lease_in_defined_order(
         cx: &mut TestAppContext,
     ) {
@@ -1200,7 +1200,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn actionless_confirm_callback_runs_after_the_state_lease(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| ReentrantCallbackHarness {
@@ -1231,7 +1231,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             let width = self.width.clone();
             let item = self.state.update(cx, |state, cx| {
@@ -1244,7 +1244,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn action_that_removes_command_state_still_confirms_after_dispatch(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1290,7 +1290,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), ["action", "confirm:0:0"]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn command_actions_and_callbacks_follow_defined_order(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1413,7 +1413,7 @@ mod tests {
     }
 
     impl Render for CommandOwnedEntriesHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             Command::new(&self.state)
                 .searchable(false)
                 .item(CommandItem::new().label("alpha"))
@@ -1431,7 +1431,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn command_owns_entries_and_lazy_item_content(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| CommandOwnedEntriesHarness {
@@ -1488,7 +1488,7 @@ mod tests {
 
     fn command_state(
         window: &mut Window,
-        cx: &mut gpui::Context<CommandState>,
+        cx: &mut wgpui::Context<CommandState>,
         entries: impl IntoIterator<Item = CommandEntry>,
     ) -> CommandState {
         let mut state = CommandState::new(window, cx);
@@ -1504,7 +1504,7 @@ mod tests {
 
     fn command_state_with_options(
         window: &mut Window,
-        cx: &mut gpui::Context<CommandState>,
+        cx: &mut wgpui::Context<CommandState>,
         entries: impl IntoIterator<Item = CommandEntry>,
         searchable: bool,
     ) -> CommandState {
@@ -1537,7 +1537,7 @@ mod tests {
         ]
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn query_hides_the_groups_that_have_no_match(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1591,7 +1591,7 @@ mod tests {
         )]
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reinstalling_an_unchanged_model_keeps_the_measured_rows(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1664,7 +1664,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_query_that_matches_nothing_leaves_no_rows(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1683,7 +1683,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn filterable_off_keeps_every_item_and_resets_the_highlight(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1716,7 +1716,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn keywords_match_when_the_label_does_not(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1741,7 +1741,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_keeps_every_item(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1764,7 +1764,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_uses_frame_focus(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let confirmed = Rc::new(RefCell::new(None));
@@ -1796,7 +1796,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(1).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn filtered_ungrouped_item_keeps_its_input_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let confirmed = Rc::new(RefCell::new(None));
@@ -1830,7 +1830,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(2).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn initially_rendered_disabled_first_item_selects_and_confirms_the_first_enabled_item(
         cx: &mut TestAppContext,
     ) {
@@ -1865,7 +1865,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(1).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn initially_rendered_all_disabled_items_have_no_selected_index_and_ignore_enter(
         cx: &mut TestAppContext,
     ) {
@@ -1897,7 +1897,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), None);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_cancels_without_clearing_a_hidden_query(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cancelled = Rc::new(Cell::new(false));
@@ -1936,7 +1936,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_the_highlight_skips_disabled_items_and_wraps(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1968,7 +1968,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn owner_can_set_and_clear_selection_by_original_index_path(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -2013,7 +2013,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn confirming_a_disabled_item_does_nothing(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -2042,7 +2042,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_checked_item_uses_an_xsmall_trailing_check_icon(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -2080,14 +2080,14 @@ mod tests {
         });
 
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| unchecked.into_any_element(),
         );
 
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| checked.into_any_element(),
         );
 
@@ -2099,14 +2099,14 @@ mod tests {
 
     struct CheckIconWidthHarness {
         state: Entity<CommandState>,
-        width: Rc<Cell<Option<gpui::Pixels>>>,
+        width: Rc<Cell<Option<wgpui::Pixels>>>,
     }
 
     impl Render for CheckIconWidthHarness {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             let width = self.width.clone();
             let item = self.state.update(cx, |state, cx| {
@@ -2126,14 +2126,14 @@ mod tests {
     }
 
     impl Render for Harness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div()
                 .size_full()
                 .child((self.command)(&self.state).max_h(px(200.)))
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn header_and_footer_render_with_current_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let header_calls = Rc::new(Cell::new(0));
@@ -2168,7 +2168,7 @@ mod tests {
         assert_eq!(footer_matched_count, Some(2));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn custom_empty_slot_renders_with_current_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let empty_calls = Rc::new(Cell::new(0));
@@ -2181,7 +2181,7 @@ mod tests {
                 let calls = calls.clone();
                 let matched_count = matched_count.clone();
                 Command::new(state).empty(
-                    move |state: &CommandState, _: &mut Window, _: &mut gpui::App| {
+                    move |state: &CommandState, _: &mut Window, _: &mut wgpui::App| {
                         calls.set(calls.get() + 1);
                         matched_count.set(Some(state.matched_count()));
                         div().child("Custom empty")
@@ -2234,7 +2234,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn first_enabled_selection_resets_scroll_to_its_late_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| Harness {
@@ -2273,7 +2273,7 @@ mod tests {
     }
 
     impl Render for HeaderFooterHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             let header_calls = self.header_calls.clone();
             let header_matched_count = self.header_matched_count.clone();
             let footer_calls = self.footer_calls.clone();
@@ -2305,7 +2305,7 @@ mod tests {
     }
 
     impl Render for PaddedHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div().size_full().child(
                 Command::new(&self.state)
                     .item(
@@ -2326,7 +2326,7 @@ mod tests {
     }
 
     impl Render for WrappingHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div().size_full().child(
                 div().w(self.width).child(
                     Command::new(&self.state)
@@ -2342,7 +2342,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_for_the_list_content_width(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2377,7 +2377,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_when_rem_size_changes(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2410,7 +2410,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_when_inherited_typography_changes(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2442,7 +2442,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn outer_command_padding_does_not_inflate_measured_row_heights(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2459,7 +2459,7 @@ mod tests {
         assert_eq!(height, px(44.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn custom_rows_keep_independent_heights(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2497,7 +2497,7 @@ mod tests {
         assert_eq!(row_sizes[4].height, px(84.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reinstalling_a_model_preserves_selection_by_index_path_and_remeasures_rows(
         cx: &mut TestAppContext,
     ) {
@@ -2566,7 +2566,7 @@ mod tests {
         assert_eq!(row_sizes[1].height, px(44.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_state_redraw_reuses_the_installed_custom_row_measurement(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let renders = Rc::new(Cell::new(0));
@@ -2589,27 +2589,27 @@ mod tests {
 
         let first_state = state.clone();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| first_state.into_any_element(),
         );
         let settled_state = state.clone();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| settled_state.into_any_element(),
         );
         let after_first_draw = renders.get();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| state.into_any_element(),
         );
 
         assert_eq!(renders.get() - after_first_draw, 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_past_the_visible_rows_scrolls_the_list(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2651,7 +2651,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_reinstalled_model_does_not_scroll_a_preserved_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
 

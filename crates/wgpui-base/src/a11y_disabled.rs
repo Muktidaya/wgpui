@@ -4,7 +4,7 @@
 //! assistive technology as one that accepts input. [`A11yDisabledExt`] wraps the
 //! control's root element without adding a layout node, a focus stop or an
 //! accessibility node, and only marks the node it writes disabled.
-use gpui::{
+use wgpui::{
     App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, InteractiveElement,
     Interactivity, IntoElement, LayoutId, Pixels, Window, accesskit,
 };
@@ -41,7 +41,7 @@ impl<E: Element + InteractiveElement> A11yDisabledExt for E {
 }
 
 #[cfg(feature = "test-support")]
-impl<E: Element + InteractiveElement> A11yDisabledExt for gpui::Stateful<E> {
+impl<E: Element + InteractiveElement> A11yDisabledExt for wgpui::Stateful<E> {
     type Output = A11yDisabled<Self>;
 
     fn a11y_disabled(self, disabled: bool) -> Self::Output {
@@ -50,7 +50,7 @@ impl<E: Element + InteractiveElement> A11yDisabledExt for gpui::Stateful<E> {
 }
 
 #[cfg(feature = "test-support")]
-impl<E: Element<PrepaintState = Option<gpui::Hitbox>> + InteractiveElement> A11yDisabledExt
+impl<E: Element<PrepaintState = Option<wgpui::Hitbox>> + InteractiveElement> A11yDisabledExt
     for crate::test_support::Observed<E>
 {
     type Output = crate::test_support::Observed<A11yDisabled<E>>;
@@ -123,15 +123,15 @@ impl<E: Element> Element for A11yDisabled<E> {
             .paint(id, inspector, bounds, layout, prepaint, window, cx)
     }
 
-    fn a11y_role(&self) -> Option<gpui::Role> {
+    fn a11y_role(&self) -> Option<wgpui::Role> {
         self.inner.a11y_role()
     }
 
-    fn take_a11y_actions(&mut self) -> Vec<(accesskit::Action, gpui::A11yActionListener)> {
+    fn take_a11y_actions(&mut self) -> Vec<(accesskit::Action, wgpui::A11yActionListener)> {
         self.inner.take_a11y_actions()
     }
 
-    fn a11y_focus_handle(&self) -> Option<gpui::FocusHandle> {
+    fn a11y_focus_handle(&self) -> Option<wgpui::FocusHandle> {
         self.inner.a11y_focus_handle()
     }
 
@@ -149,7 +149,7 @@ impl<E: Element> Element for A11yDisabled<E> {
     fn a11y_synthetic_children(
         &mut self,
         prepaint: &mut Self::PrepaintState,
-        builder: &mut gpui::A11ySubtreeBuilder,
+        builder: &mut wgpui::A11ySubtreeBuilder,
     ) {
         self.inner.a11y_synthetic_children(prepaint, builder);
     }
@@ -160,7 +160,9 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::{cell::RefCell, rc::Rc};
 
-    use gpui::{AppContext as _, Context, IntoElement, Render, RenderOnce, TestAppContext, canvas};
+    use wgpui::{
+        AppContext as _, Context, IntoElement, Render, RenderOnce, TestAppContext, canvas,
+    };
 
     use super::*;
     use crate::{
@@ -169,7 +171,7 @@ mod tests {
     };
 
     struct SemanticProbe {
-        focus: gpui::FocusHandle,
+        focus: wgpui::FocusHandle,
         values: Rc<RefCell<Vec<String>>>,
         disabled: bool,
     }
@@ -177,7 +179,7 @@ mod tests {
     impl Render for SemanticProbe {
         fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
             use crate::{FocusTrapElement as _, TestSupportExt as _};
-            use gpui::{StatefulInteractiveElement as _, Styled as _, div};
+            use wgpui::{StatefulInteractiveElement as _, Styled as _, div};
 
             let values = self.values.clone();
             let field = div()
@@ -202,7 +204,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapped_semantics_deliver_native_actions_and_respect_disabled_ancestors(
         cx: &mut TestAppContext,
     ) {
@@ -266,7 +268,7 @@ mod tests {
     /// The accessibility node a rendered control writes.
     fn node_of(element: impl IntoElement) -> accesskit::Node {
         let element = element.into_element();
-        let mut node = accesskit::Node::new(element.a11y_role().unwrap_or(gpui::Role::Unknown));
+        let mut node = accesskit::Node::new(element.a11y_role().unwrap_or(wgpui::Role::Unknown));
         element.write_a11y_info(&mut node);
         node
     }
@@ -362,7 +364,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_disabled_control_marks_its_node_disabled(cx: &mut TestAppContext) {
         let captured: Captured = Arc::default();
         let (_, cx) = cx.add_window_view({
@@ -374,7 +376,7 @@ mod tests {
         let nodes = captured.lock().unwrap();
         assert_eq!(nodes.len(), 22);
         for (name, disabled, node) in nodes.iter() {
-            assert_ne!(node.role(), gpui::Role::Unknown, "{name} wrote no node");
+            assert_ne!(node.role(), wgpui::Role::Unknown, "{name} wrote no node");
             assert_eq!(node.is_disabled(), *disabled, "{name}, disabled {disabled}");
             if *name == "slider" {
                 // Nor does assistive technology move a disabled slider.
@@ -397,7 +399,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_test_support_snapshot_sees_the_flag(cx: &mut TestAppContext) {
         for disabled in [false, true] {
             let (_, cx) = cx.add_window_view(move |_, _| Observed { disabled });

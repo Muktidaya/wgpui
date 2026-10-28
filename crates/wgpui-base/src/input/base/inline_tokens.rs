@@ -1,8 +1,8 @@
 //! Document annotations for atomic inline objects. Coordinates are always source bytes.
 use std::ops::Range;
 
-use gpui::{Context, EntityInputHandler as _, SharedString, Window};
 use unicode_segmentation::UnicodeSegmentation as _;
+use wgpui::{Context, EntityInputHandler as _, SharedString, Window};
 
 use super::{InputBaseState, InputModeKind, undo_manager::EditIntent};
 

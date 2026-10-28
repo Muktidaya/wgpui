@@ -1,12 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{AppContext, ParentElement as _, TestAppContext, div};
+use wgpui::{AppContext, ParentElement as _, TestAppContext, div};
 
 use super::{
     Diff, DiffAnnotation, DiffFile, DiffLinePosition, DiffSide, DiffState, document::fixture,
 };
 
-#[gpui::test]
+#[wgpui::test]
 fn test_diff_builder(cx: &mut TestAppContext) {
     cx.update(crate::init);
     let document = fixture::document(

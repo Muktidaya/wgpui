@@ -9,17 +9,17 @@ use crate::{
     touch_selection::WindowTouchSelectionOverlay,
     window_border,
 };
-use gpui::{
+use std::{any::TypeId, cell::Cell, rc::Rc};
+use wgpui::{
     App, AppContext, Bounds, Context, DefiniteLength, DispatchPhase, ElementId, Entity,
     FocusHandle, GlobalElementId, InteractiveElement, IntoElement, MouseMoveEvent,
     ParentElement as _, Pixels, Render, RenderOnce, Styled, WeakFocusHandle, Window, canvas, div,
     prelude::FluentBuilder as _,
 };
-use gpui_base::{TextSelection, TextSelectionScopeId, motion::Presence};
-use std::{any::TypeId, cell::Cell, rc::Rc};
+use wgpui_base::{TextSelection, TextSelectionScopeId, motion::Presence};
 
 pub(crate) fn init(cx: &mut App) {
-    gpui_base::Root::register_plugin::<WindowState>(cx, WindowState::new);
+    wgpui_base::Root::register_plugin::<WindowState>(cx, WindowState::new);
 }
 
 /// Component-owned window state and presentation; Base owns the actual root.
@@ -28,7 +28,7 @@ pub(crate) struct WindowState {
     pub(crate) active_dialogs: Vec<ActiveDialog>,
     pub(super) focused_input: Option<AnyInputState>,
     pub notification: Entity<NotificationList>,
-    pub(crate) tooltip_overlay: Entity<gpui_base::TooltipOverlay>,
+    pub(crate) tooltip_overlay: Entity<wgpui_base::TooltipOverlay>,
     tooltip_hovered_trigger: Option<GlobalElementId>,
     tooltip_trigger_lifetime: std::rc::Weak<()>,
     /// Bounds of the tooltip trigger last pressed, whose tooltip stays
@@ -108,7 +108,7 @@ impl WindowState {
             focused_input: None,
             notification: cx.new(|cx| NotificationList::new(window, cx)),
             tooltip_overlay: cx
-                .new(|_| gpui_base::TooltipOverlay::new().render_with(render_tooltip)),
+                .new(|_| wgpui_base::TooltipOverlay::new().render_with(render_tooltip)),
             tooltip_hovered_trigger: None,
             tooltip_trigger_lifetime: std::rc::Weak::new(),
             tooltip_pressed_trigger: None,
@@ -121,7 +121,10 @@ impl WindowState {
     }
 
     fn entity(window: &Window, cx: &App) -> Option<Entity<Self>> {
-        window.root::<gpui_base::Root>()??.read(cx).plugin::<Self>()
+        window
+            .root::<wgpui_base::Root>()??
+            .read(cx)
+            .plugin::<Self>()
     }
 
     fn allocate_text_selection_scope(&mut self) -> TextSelectionScopeId {
@@ -403,7 +406,7 @@ impl WindowState {
         ));
         // Opening a modal confines selection to it; drop any background
         // selection so it cannot linger (or be copied) under the modal.
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -448,7 +451,7 @@ impl WindowState {
         if let Some(handle) = self.close_dialog_internal(window, cx) {
             window.focus(&handle, cx);
         }
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -486,7 +489,7 @@ impl WindowState {
             })
             .detach();
         }
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -507,7 +510,7 @@ impl WindowState {
         if let Some(handle) = previous_focused_handle.and_then(|h| h.upgrade()) {
             window.focus(&handle, cx);
         }
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -538,7 +541,7 @@ impl WindowState {
         });
         // Opening a modal confines selection to it; drop any background
         // selection so it cannot linger (or be copied) under the modal.
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -553,7 +556,7 @@ impl WindowState {
             window.focus(&previous_handle, cx);
         }
         self.active_sheet = None;
-        gpui_base::TextSelection::clear(window, cx);
+        wgpui_base::TextSelection::clear(window, cx);
         cx.notify();
     }
 
@@ -605,7 +608,7 @@ impl WindowState {
     pub(crate) fn tooltip_overlay(
         window: &Window,
         cx: &App,
-    ) -> Option<Entity<gpui_base::TooltipOverlay>> {
+    ) -> Option<Entity<wgpui_base::TooltipOverlay>> {
         let root = Self::entity(window, cx)?;
         Some(root.read(cx).tooltip_overlay.clone())
     }
@@ -618,7 +621,7 @@ impl WindowState {
         hovered: bool,
         window: &Window,
         cx: &mut App,
-    ) -> Option<Entity<gpui_base::TooltipOverlay>> {
+    ) -> Option<Entity<wgpui_base::TooltipOverlay>> {
         Self::entity(window, cx)?.update(cx, |state, _| {
             if hovered {
                 state.tooltip_hovered_trigger = Some(trigger.clone());
@@ -708,17 +711,17 @@ impl WindowState {
     }
 }
 
-impl gpui_base::RootPlugin for WindowState {
+impl wgpui_base::RootPlugin for WindowState {
     fn prepare(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.dismiss_removed_tooltip(window, cx);
         window.set_rem_size(cx.theme().font_size);
         TextSelection::activate_scope(self.active_text_selection_scope(), window, cx);
     }
 
-    fn style(&self, surface: &mut gpui::Stateful<gpui::Div>, _window: &mut Window, cx: &mut App) {
-        use gpui::Refineable as _;
+    fn style(&self, surface: &mut wgpui::Stateful<wgpui::Div>, _window: &mut Window, cx: &mut App) {
+        use wgpui::Refineable as _;
         surface.style().refine(
-            &gpui::StyleRefinement::default()
+            &wgpui::StyleRefinement::default()
                 .font_family(cx.theme().font_family.clone())
                 .bg(cx.theme().tokens.background)
                 .text_color(cx.theme().foreground),
@@ -727,8 +730,8 @@ impl gpui_base::RootPlugin for WindowState {
 
     fn decorate(
         &self,
-        surface: gpui::AnyElement,
-        _root: &gpui_base::Root,
+        surface: wgpui::AnyElement,
+        _root: &wgpui_base::Root,
         _window: &mut Window,
         _cx: &mut App,
     ) -> impl IntoElement {
@@ -750,7 +753,7 @@ impl Render for WindowState {
 }
 
 const ROOT_MISSING: &str =
-    "component window state is missing; call gpui_component::init before gpui_kit::open_window";
+    "component window state is missing; call wgpui_component::init before wgpui_kit::open_window";
 
 /// Window-level layers, always mounted once after the application content.
 /// Child view caching does not affect their ownership or rendering.

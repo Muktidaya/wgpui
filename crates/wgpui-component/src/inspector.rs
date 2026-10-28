@@ -1,17 +1,17 @@
 use std::{collections::HashMap, fmt::Write as _, rc::Rc, sync::OnceLock};
 
 use anyhow::Result;
-use gpui::{
-    AnyElement, App, AppContext, Context, DivInspectorState, Entity, Inspector, InspectorElementId,
-    InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Refineable as _, Render,
-    SharedString, StyleRefinement, Styled, Subscription, Task, Window, actions, div,
-    inspector_reflection::FunctionReflection, prelude::FluentBuilder, px,
-};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionResponse, CompletionTextEdit, Diagnostic,
     DiagnosticSeverity, Position, TextEdit,
 };
 use ropey::Rope;
+use wgpui::{
+    AnyElement, App, AppContext, Context, DivInspectorState, Entity, Inspector, InspectorElementId,
+    InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Refineable as _, Render,
+    SharedString, StyleRefinement, Styled, Subscription, Task, Window, actions, div,
+    inspector_reflection::FunctionReflection, prelude::FluentBuilder, px,
+};
 
 use crate::{
     ActiveTheme, IconName, Selectable, Sizable, TITLE_BAR_HEIGHT,
@@ -281,13 +281,13 @@ fn style_to_json(style: &StyleRefinement) -> String {
 }
 
 /// Tailwind spacing/layout helpers live in `wgpui_derive` macros. WGPUI's
-/// inspector reflection expander only inlines `wgpui_macros::…` / unprefixed
+/// inspector reflection expander only inlines `wgpui_derive::…` / unprefixed
 /// names, so `wgpui_derive::p_1` never enters `styled_reflection`. Re-expand
 /// them here under those names so the inspector can parse `.p_1()` / `.mx_2()`.
 mod token_styled {
-    use gpui::*;
+    use wgpui::*;
 
-    #[gpui_macros::derive_inspector_reflection]
+    #[wgpui_derive::derive_inspector_reflection]
     pub trait TokenStyled: Sized {
         fn style(&mut self) -> &mut StyleRefinement;
 
@@ -319,8 +319,8 @@ impl StyleMethods {
         static STYLE_METHODS: OnceLock<StyleMethods> = OnceLock::new();
         STYLE_METHODS.get_or_init(|| {
             let table: Vec<_> = [
-                gpui_base::styled_ext_reflection_methods::<StyleRefinement>(),
-                gpui::styled_reflection::methods::<StyleRefinement>(),
+                wgpui_base::styled_ext_reflection_methods::<StyleRefinement>(),
+                wgpui::styled_reflection::methods::<StyleRefinement>(),
                 token_styled::token_styled_reflection::methods::<StyleRefinement>(),
             ]
             .into_iter()
@@ -471,7 +471,7 @@ impl Render for DivInspector {
                                 .gap_y_1()
                                 .font_family(cx.theme().mono_font_family.clone())
                                 .text_size(cx.theme().mono_font_size)
-                                .child(Editor::new(&self.rust_state.state).h(gpui::relative(1.)))
+                                .child(Editor::new(&self.rust_state.state).h(wgpui::relative(1.)))
                                 .when_some(self.rust_state.error.clone(), |this, err| {
                                     this.child(Alert::error("rust-error", err).text_xs())
                                 }),
@@ -499,7 +499,7 @@ impl Render for DivInspector {
                                 .gap_y_1()
                                 .font_family(cx.theme().mono_font_family.clone())
                                 .text_size(cx.theme().mono_font_size)
-                                .child(Editor::new(&self.json_state.state).h(gpui::relative(1.)))
+                                .child(Editor::new(&self.json_state.state).h(wgpui::relative(1.)))
                                 .when_some(self.json_state.error.clone(), |this, err| {
                                     this.child(Alert::error("json-error", err).text_xs())
                                 }),
@@ -668,9 +668,9 @@ impl CompletionProvider for LspProvider {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AbsoluteLength, DefiniteLength, Length, rems};
     use indoc::indoc;
     use lsp_types::Position;
+    use wgpui::{AbsoluteLength, DefiniteLength, Length, rems};
 
     #[test]
     fn test_rust_to_style() {

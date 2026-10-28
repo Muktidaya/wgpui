@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, AvailableSpace, Bounds, Element, ElementId, Entity,
     InteractiveElement, IntoElement, MouseDownEvent, MouseMoveEvent, ParentElement as _, Pixels,
     Render, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, deferred, div, point,
@@ -37,7 +37,7 @@ impl HoverPopover {
 }
 
 impl Render for HoverPopover {
-    fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
         let contents = match self.hover.contents.clone() {
             lsp_types::HoverContents::Scalar(scalar) => match scalar {
                 lsp_types::MarkedString::String(s) => s,
@@ -134,11 +134,11 @@ impl Element for Popover {
 
     fn request_layout(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (wgpui::LayoutId, Self::RequestLayoutState) {
         let trigger_bounds = match self.trigger_bounds(cx) {
             Some(bounds) => bounds,
             None => {
@@ -208,8 +208,8 @@ impl Element for Popover {
 
     fn prepaint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         window: &mut Window,
@@ -227,8 +227,8 @@ impl Element for Popover {
 
     fn paint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         _: &mut Self::PrepaintState,

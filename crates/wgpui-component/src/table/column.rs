@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     Bounds, Context, Edges, Empty, EntityId, IntoElement, ParentElement as _, Pixels, Render,
     SharedString, Styled as _, TextAlign, Window, div, prelude::FluentBuilder, px,
 };

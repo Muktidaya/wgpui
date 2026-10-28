@@ -1,5 +1,5 @@
 use crate::{Icon, Sizable, Size, progress::ProgressCircle, spinner::Spinner};
-use gpui::{App, IntoElement, RenderOnce, Window, prelude::FluentBuilder};
+use wgpui::{App, IntoElement, RenderOnce, Window, prelude::FluentBuilder};
 
 /// Button icon which can be an Icon, Spinner, or Progress use for `icon` method of Button.
 #[doc(hidden)]
@@ -135,8 +135,8 @@ mod tests {
     use super::*;
     use crate::IconName;
 
-    #[gpui::test]
-    fn test_button_icon_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_icon_builder(_cx: &mut wgpui::TestAppContext) {
         let custom_icon = Icon::new(IconName::Loader);
         let icon = ButtonIcon::new(IconName::Plus)
             .loading(true)
@@ -148,8 +148,8 @@ mod tests {
         assert_eq!(icon.size, Size::Large);
     }
 
-    #[gpui::test]
-    fn test_button_icon_variant_types(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_icon_variant_types(_cx: &mut wgpui::TestAppContext) {
         // Test Icon variant
         let icon_variant = ButtonIconVariant::Icon(Icon::new(IconName::Plus));
         assert!(!icon_variant.is_spinner());

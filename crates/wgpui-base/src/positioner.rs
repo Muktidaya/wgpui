@@ -4,7 +4,7 @@
 //! alignment, and viewport clamping cannot drift apart between popups,
 //! tooltips, and menus.
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Bounds, Decorations, Display, Edges, Element, GlobalElementId,
     Half as _, HitboxBehavior, InspectorElementId, IntoElement, LayoutId, ParentElement, Pixels,
     Point, Position, Size, Style, Window, point, px,
@@ -334,7 +334,7 @@ impl Element for Positioner {
     type RequestLayoutState = PositionerState;
     type PrepaintState = ();
 
-    fn id(&self) -> Option<gpui::ElementId> {
+    fn id(&self) -> Option<wgpui::ElementId> {
         None
     }
 
@@ -451,7 +451,7 @@ impl IntoElement for Positioner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::Tiling;
+    use wgpui::Tiling;
 
     const MARGIN: Pixels = px(4.);
 

@@ -1,6 +1,6 @@
 use std::{fmt, rc::Rc, sync::Arc};
 
-use gpui::{App, Context, SharedString, Subscription, WeakEntity};
+use wgpui::{App, Context, SharedString, Subscription, WeakEntity};
 
 use super::{SpeechState, state::defer_session_update};
 

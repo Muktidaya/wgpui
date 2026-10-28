@@ -2,8 +2,8 @@ use crate::input::InputModeKind;
 use std::rc::Rc;
 use std::{cell::RefCell, ops::Range};
 
-use gpui::{Context, Window};
 use ropey::Rope;
+use wgpui::{Context, Window};
 
 use super::DisplayMap;
 use crate::input::{

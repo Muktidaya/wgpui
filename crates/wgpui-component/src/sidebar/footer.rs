@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     Div, InteractiveElement, IntoElement, ParentElement, RenderOnce, Styled,
     prelude::FluentBuilder as _,
 };
@@ -47,19 +47,19 @@ impl Collapsible for SidebarFooter {
 }
 
 impl ParentElement for SidebarFooter {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.base.extend(elements);
     }
 }
 
 impl Styled for SidebarFooter {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         self.base.style()
     }
 }
 
 impl InteractiveElement for SidebarFooter {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -67,7 +67,7 @@ impl InteractiveElement for SidebarFooter {
 impl DropdownMenu for SidebarFooter {}
 
 impl RenderOnce for SidebarFooter {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl wgpui::IntoElement {
         h_flex()
             .id("sidebar-footer")
             .gap_2()

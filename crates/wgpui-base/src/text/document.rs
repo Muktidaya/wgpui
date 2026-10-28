@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, IntoElement, ListState, ParentElement as _, SharedString, Styled as _, Window, div,
 };
 
@@ -275,7 +275,7 @@ impl ParsedDocument {
         }
 
         div().size_full().child(
-            gpui::list(list_state, {
+            wgpui::list(list_state, {
                 let node_cx = node_cx.clone();
                 let blocks = blocks.clone();
                 move |ix, window, cx| {

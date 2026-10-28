@@ -1,9 +1,9 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, InteractiveElement as _, IntoElement, ParentElement, Pixels, RenderOnce,
     SharedString, StyleRefinement, Styled, TextAlign, Window, div, prelude::FluentBuilder as _, px,
     relative,
 };
-use gpui_base::{
+use wgpui_base::{
     Table as BaseTable, TableBody as BaseTableBody, TableCaption as BaseTableCaption,
     TableCell as BaseTableCell, TableHead as BaseTableHead, TableHeader as BaseTableHeader,
     TableRow as BaseTableRow,

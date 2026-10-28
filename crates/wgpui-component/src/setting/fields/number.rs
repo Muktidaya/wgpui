@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, Entity, IntoElement, SharedString, StyleRefinement, Styled,
     Subscription, Window, prelude::FluentBuilder as _,
 };

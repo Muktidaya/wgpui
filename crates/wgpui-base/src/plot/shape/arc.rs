@@ -2,7 +2,7 @@
 
 use std::{f32::consts::PI, fmt::Debug};
 
-use gpui::{Background, Bounds, Path, PathBuilder, Pixels, Point, Window, point, px};
+use wgpui::{Background, Bounds, Path, PathBuilder, Pixels, Point, Window, point, px};
 
 use crate::plot::{PathCache, ShapeKey};
 
@@ -295,7 +295,7 @@ mod tests {
 
     #[test]
     fn test_arc_contains() {
-        use gpui::{point, px, size};
+        use wgpui::{point, px, size};
 
         // A 100x100 plot: center (50, 50). The right half, 12 to 6 o'clock.
         let arc = Arc::new().inner_radius(10.).outer_radius(40.);

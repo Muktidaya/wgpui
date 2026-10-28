@@ -1,10 +1,10 @@
 use std::{hash::Hash, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Background, Bounds, ElementId, Hsla, IntoElement, Pixels, Point, SharedString,
     Size, Window, point, px,
 };
-use gpui_component_macros::IntoPlot;
+use wgpui_kit_macros::IntoPlot;
 
 use crate::{
     ActiveTheme,
@@ -605,12 +605,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Bounds, point, px, size};
+    use wgpui::{Bounds, point, px, size};
 
     use super::AreaChart;
     use crate::plot::scale::Scale;
 
-    fn bounds() -> Bounds<gpui::Pixels> {
+    fn bounds() -> Bounds<wgpui::Pixels> {
         Bounds::new(point(px(0.), px(0.)), size(px(100.), px(50.)))
     }
 

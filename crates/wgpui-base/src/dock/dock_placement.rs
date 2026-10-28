@@ -5,7 +5,7 @@
 //! the resize-handle chrome and collapsed/expanded presentation live in
 //! `crates/component`.
 
-use gpui::{Bounds, Pixels, Point, px};
+use wgpui::{Bounds, Pixels, Point, px};
 
 use crate::PANEL_MIN_SIZE;
 
@@ -182,7 +182,7 @@ impl Dock {
 #[cfg(test)]
 mod dock_tests {
     use super::*;
-    use gpui::{point, size};
+    use wgpui::{point, size};
 
     #[test]
     fn a_left_dock_cannot_squeeze_past_the_right_dock() {

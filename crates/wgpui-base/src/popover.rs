@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Context, DismissEvent, ElementId, EventEmitter, FocusHandle,
     Focusable, InteractiveElement as _, IntoElement, KeyBinding, MouseButton, ParentElement as _,
     Render, RenderOnce, Role, StatefulInteractiveElement as _, StyleRefinement, Styled,
@@ -24,8 +24,8 @@ pub(crate) fn init(cx: &mut App) {
         // The content is still a descendant of the trigger's dispatch node.
         // Leave activation to its controls, not the trigger or an outer dialog.
         // More deeply scoped input bindings retain precedence.
-        KeyBinding::new("enter", gpui::NoAction, Some(CONTENT_CONTEXT)),
-        KeyBinding::new("space", gpui::NoAction, Some(CONTENT_CONTEXT)),
+        KeyBinding::new("enter", wgpui::NoAction, Some(CONTENT_CONTEXT)),
+        KeyBinding::new("space", wgpui::NoAction, Some(CONTENT_CONTEXT)),
     ]);
 }
 
@@ -184,8 +184,8 @@ pub struct Popover {
     id: ElementId,
     style: StyleRefinement,
     anchor: Anchor,
-    offset: gpui::Pixels,
-    on_position: Option<Box<dyn Fn(ResolvedPosition, gpui::Bounds<gpui::Pixels>)>>,
+    offset: wgpui::Pixels,
+    on_position: Option<Box<dyn Fn(ResolvedPosition, wgpui::Bounds<wgpui::Pixels>)>>,
     default_open: bool,
     open: Option<bool>,
     tracked_focus_handle: Option<FocusHandle>,
@@ -202,7 +202,7 @@ impl Popover {
             id: id.into(),
             style: StyleRefinement::default(),
             anchor: Anchor::TopLeft,
-            offset: gpui::px(0.),
+            offset: wgpui::px(0.),
             on_position: None,
             default_open: false,
             open: None,
@@ -221,7 +221,7 @@ impl Popover {
     }
 
     /// Gap from the trigger along the anchor's outward direction, zero by default.
-    pub fn offset(mut self, offset: gpui::Pixels) -> Self {
+    pub fn offset(mut self, offset: wgpui::Pixels) -> Self {
         self.offset = offset;
         self
     }
@@ -229,7 +229,7 @@ impl Popover {
     /// Observe geometry to supply presentation such as a pointer arrow.
     pub fn on_position(
         mut self,
-        callback: impl Fn(ResolvedPosition, gpui::Bounds<gpui::Pixels>) + 'static,
+        callback: impl Fn(ResolvedPosition, wgpui::Bounds<wgpui::Pixels>) + 'static,
     ) -> Self {
         self.on_position = Some(Box::new(callback));
         self
@@ -389,15 +389,15 @@ impl RenderOnce for Popover {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, Context, Render, point, px};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{AppContext as _, Context, Render, point, px};
 
     /// Popover state lives in element state, which is collected as soon as it
     /// stops being rendered — a trigger scrolled out of a virtual list, a panel
     /// closed with its menu open. A registration that outlived it would leave
     /// the application believing a popup is open for the rest of the session.
-    #[gpui::test]
-    fn a_state_dropped_while_open_closes_the_deferred_context(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn a_state_dropped_while_open_closes_the_deferred_context(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| {
             GlobalState::init(cx);
             let state = cx.new(|cx| PopoverState::new(false, cx));
@@ -410,8 +410,8 @@ mod tests {
         cx.update(|cx| assert!(!GlobalState::is_in_deferred_context(cx)));
     }
 
-    #[gpui::test]
-    fn open_state_registers_and_unregisters_deferred_context(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn open_state_registers_and_unregisters_deferred_context(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
             GlobalState::init(cx);
             let state = cx.new(|cx| PopoverState::new(false, cx));
@@ -466,8 +466,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn unstyled_popover_owns_pointer_open_and_outside_dismiss(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn unstyled_popover_owns_pointer_open_and_outside_dismiss(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let changes = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({
@@ -489,8 +489,8 @@ mod tests {
         assert_eq!(&*changes.borrow(), &[true, false]);
     }
 
-    #[gpui::test]
-    fn default_open_renders_content_without_activation(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn default_open_renders_content_without_activation(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|_, _| PopoverHarness {
             changes: Rc::new(RefCell::new(Vec::new())),
@@ -555,8 +555,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn an_open_popover_tells_its_trigger_it_is_open_not_selected(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn an_open_popover_tells_its_trigger_it_is_open_not_selected(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let calls = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({
@@ -580,8 +580,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn keyboard_activation_opens_the_popover(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn keyboard_activation_opens_the_popover(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|_, cx| KeyboardPopoverHarness {
             trigger_focus: cx.focus_handle(),

@@ -1,8 +1,8 @@
 use crate::TestSupportExt as _;
-use gpui::StatefulInteractiveElement as _;
 use std::{cell::RefCell, ops::Range, rc::Rc};
+use wgpui::StatefulInteractiveElement as _;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Context, ElementId, Entity, EventEmitter, FocusHandle, InteractiveElement,
     IntoElement, KeyBinding, MouseButton, ParentElement, Render, RenderOnce, SharedString,
     StyleRefinement, Styled, UniformListScrollHandle, Window, div, prelude::FluentBuilder as _,
@@ -264,7 +264,7 @@ impl TreeState {
         &self.scroll_handle
     }
 
-    pub fn scroll_to_item(&mut self, ix: usize, strategy: gpui::ScrollStrategy) {
+    pub fn scroll_to_item(&mut self, ix: usize, strategy: wgpui::ScrollStrategy) {
         self.scroll_handle.scroll_to_item(ix, strategy);
     }
 
@@ -275,7 +275,7 @@ impl TreeState {
     pub fn reveal_item(
         &mut self,
         id: &SharedString,
-        strategy: gpui::ScrollStrategy,
+        strategy: wgpui::ScrollStrategy,
         cx: &mut Context<Self>,
     ) {
         self.expand_ancestors(id.clone(), cx);
@@ -421,7 +421,7 @@ impl TreeState {
             .unwrap_or_else(|| self.entries.len().saturating_sub(1));
         self.selected_ix = Some(ix);
         self.scroll_handle
-            .scroll_to_item(ix, gpui::ScrollStrategy::Top);
+            .scroll_to_item(ix, wgpui::ScrollStrategy::Top);
         cx.notify();
     }
 
@@ -434,7 +434,7 @@ impl TreeState {
         };
         self.selected_ix = Some(ix);
         self.scroll_handle
-            .scroll_to_item(ix, gpui::ScrollStrategy::Bottom);
+            .scroll_to_item(ix, wgpui::ScrollStrategy::Bottom);
         cx.notify();
     }
 
@@ -460,7 +460,7 @@ impl Render for TreeState {
                         div()
                             .id(ix)
                             .test_support()
-                            .role(gpui::Role::TreeItem)
+                            .role(wgpui::Role::TreeItem)
                             .aria_label(entry.item().label.clone())
                             .aria_selected(entry_state.selected)
                             .when(entry.is_folder(), |this| {
@@ -550,7 +550,7 @@ impl RenderOnce for Tree {
         div()
             .id(self.id)
             .test_support()
-            .role(gpui::Role::Tree)
+            .role(wgpui::Role::Tree)
             .key_context(CONTEXT)
             .track_focus(&focus_handle)
             .on_action(window.listener_for(&self.state, TreeState::on_action_confirm))
@@ -566,7 +566,7 @@ impl RenderOnce for Tree {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Modifiers, MouseUpEvent, Pixels, Point, Subscription, TestAppContext,
         VisualTestContext, point, px,
     };
@@ -616,8 +616,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn state_flattens_expanded_items_and_resets_selection(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn state_flattens_expanded_items_and_resets_selection(cx: &mut wgpui::TestAppContext) {
         let items = vec![
             TreeItem::new("src", "src")
                 .expanded(true)
@@ -636,8 +636,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn selecting_hidden_item_expands_its_ancestors(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn selecting_hidden_item_expands_its_ancestors(cx: &mut wgpui::TestAppContext) {
         let target = TreeItem::new("src/ui/tree.rs", "tree.rs");
         let root =
             TreeItem::new("src", "src").child(TreeItem::new("src/ui", "ui").child(target.clone()));
@@ -653,8 +653,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn revealing_item_under_later_root_keeps_other_subtrees(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn revealing_item_under_later_root_keeps_other_subtrees(cx: &mut wgpui::TestAppContext) {
         let guide = TreeItem::new("docs/guide", "guide").child(TreeItem::new("docs/guide/a", "a"));
         let docs = TreeItem::new("docs", "docs").expanded(true).child(guide);
         let ui = TreeItem::new("src/ui", "ui").child(TreeItem::new("src/ui/tree.rs", "tree.rs"));
@@ -663,7 +663,7 @@ mod tests {
 
         state.update(cx, |state, cx| {
             assert_eq!(state.entries.len(), 3);
-            state.reveal_item(&"src/ui/tree.rs".into(), gpui::ScrollStrategy::Top, cx);
+            state.reveal_item(&"src/ui/tree.rs".into(), wgpui::ScrollStrategy::Top, cx);
             assert_eq!(
                 state
                     .entries
@@ -745,7 +745,7 @@ mod tests {
         TreeItem::new("src", "src").child(TreeItem::new("src/lib.rs", "lib.rs"))
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn entries_select_and_toggle_on_click_not_mouse_down(cx: &mut TestAppContext) {
         let (state, cx, entry) = open_tree(cx, vec![folder()], false);
 
@@ -772,7 +772,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_an_entry_with_on_drag_does_not_select_or_toggle_it(cx: &mut TestAppContext) {
         let (state, cx, entry) = open_tree(cx, vec![folder()], true);
 
@@ -792,7 +792,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn right_click_neither_selects_nor_toggles(cx: &mut TestAppContext) {
         let (state, cx, entry) = open_tree(cx, vec![folder()], false);
 
@@ -806,7 +806,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_disabled_entry_does_nothing(cx: &mut TestAppContext) {
         let (state, cx, entry) = open_tree(cx, vec![folder().disabled(true)], false);
 
@@ -818,8 +818,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn toggling_folder_rebuilds_visible_entries(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn toggling_folder_rebuilds_visible_entries(cx: &mut wgpui::TestAppContext) {
         let root = TreeItem::new("src", "src").child(TreeItem::new("src/lib.rs", "lib.rs"));
         let state = cx.new(|cx| TreeState::new(cx).items(vec![root]));
 
@@ -831,8 +831,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn expansion_events_preserve_ids_and_set_items_stays_silent(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn expansion_events_preserve_ids_and_set_items_stays_silent(cx: &mut wgpui::TestAppContext) {
         let root = TreeItem::new("src", "src").child(TreeItem::new("src/lib.rs", "lib.rs"));
         let state = cx.new(|cx| TreeState::new(cx).items(vec![root]));
         let collector = cx.new(|cx| EventCollector::new(&state, cx));

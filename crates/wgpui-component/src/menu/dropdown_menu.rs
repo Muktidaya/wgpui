@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Context, DismissEvent, Element, ElementId, Entity, FocusHandle,
     Focusable, GlobalElementId, InspectorElementId, InteractiveElement, IntoElement, LayoutId,
     RenderOnce, SharedString, Styled, Window, prelude::FluentBuilder,
@@ -260,7 +260,7 @@ impl Element for TriggerFocus {
         &mut self,
         _: Option<&GlobalElementId>,
         _: Option<&InspectorElementId>,
-        _: gpui::Bounds<gpui::Pixels>,
+        _: wgpui::Bounds<wgpui::Pixels>,
         frame: &mut Self::RequestLayoutState,
         window: &mut Window,
         cx: &mut App,
@@ -273,7 +273,7 @@ impl Element for TriggerFocus {
         &mut self,
         _: Option<&GlobalElementId>,
         _: Option<&InspectorElementId>,
-        _: gpui::Bounds<gpui::Pixels>,
+        _: wgpui::Bounds<wgpui::Pixels>,
         frame: &mut Self::RequestLayoutState,
         _: &mut Self::PrepaintState,
         window: &mut Window,
@@ -286,11 +286,11 @@ impl Element for TriggerFocus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use std::cell::{Cell, RefCell};
+    use wgpui::{
         KeyBinding, MouseButton, ParentElement as _, Render, TestAppContext, WeakEntity, actions,
         div, point, px,
     };
-    use std::cell::{Cell, RefCell};
 
     actions!(dropdown_menu_test, [CopyText]);
 
@@ -356,7 +356,7 @@ mod tests {
     /// The popover must go too: it holds the deferred-popover registration
     /// while open, and a leaked one keeps every later right-click menu
     /// stepping aside as if a popup were still showing.
-    #[gpui::test]
+    #[wgpui::test]
     fn open_without_dismiss_releases_the_menu(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let menu = Rc::new(RefCell::new(None::<WeakEntity<PopupMenu>>));
@@ -394,13 +394,13 @@ mod tests {
         );
         cx.update(|cx| {
             assert!(
-                !gpui_base::GlobalState::is_in_deferred_context(cx),
+                !wgpui_base::GlobalState::is_in_deferred_context(cx),
                 "the popover's deferred registration must be released with the window"
             )
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortcut_hint_is_painted_on_the_frame_the_menu_opens(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);

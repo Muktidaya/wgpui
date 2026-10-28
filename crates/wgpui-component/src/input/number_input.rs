@@ -1,9 +1,9 @@
 use crate::theme::ActiveTheme;
-use gpui::{
+use wgpui::{
     AnyElement, App, Entity, FocusHandle, Focusable, InteractiveElement as _,
     StatefulInteractiveElement as _, Window, div, px,
 };
-use gpui::{
+use wgpui::{
     IntoElement, ParentElement, RenderOnce, SharedString, StyleRefinement, Styled, TextAlign,
     prelude::FluentBuilder as _,
 };
@@ -12,9 +12,9 @@ use crate::{Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledE
 
 use super::{Input, InputState, input::input_style};
 use crate::ThemeStyled as _;
-use gpui_base::NumberInput as BaseNumberInput;
-pub use gpui_base::{NumberInputEvent, NumberStep, StepAction};
 use rust_i18n::t;
+use wgpui_base::NumberInput as BaseNumberInput;
+pub use wgpui_base::{NumberInputEvent, NumberStep, StepAction};
 
 /// A number input element with increment and decrement buttons.
 #[derive(IntoElement)]
@@ -228,7 +228,7 @@ impl RenderOnce for NumberInput {
 #[cfg(test)]
 mod tests {
     use super::StepAction;
-    use gpui_base::step_value;
+    use wgpui_base::step_value;
 
     // `test_number_step` lives in `state::tests` because `NumberStep::value`
     // now needs a `Context<InputState>` to invoke the `by_value` closure.

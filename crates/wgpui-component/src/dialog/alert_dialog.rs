@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, ClickEvent, IntoElement, ParentElement, Pixels, RenderOnce, SharedString,
     StyleRefinement, Styled, Window, prelude::FluentBuilder as _,
 };
@@ -80,7 +80,7 @@ impl AlertDialog {
     pub fn new(cx: &mut App) -> Self {
         Self {
             base: Dialog::new(cx)
-                .with_base_alert_dialog(gpui_base::AlertDialog::new(cx))
+                .with_base_alert_dialog(wgpui_base::AlertDialog::new(cx))
                 .close_button(false),
             trigger: None,
             icon: None,
@@ -382,7 +382,7 @@ impl AlertDialog {
         let props = self.base.props.clone();
         let button_props = self.base.button_props.clone();
 
-        gpui_base::AlertDialogTrigger::new(trigger)
+        wgpui_base::AlertDialogTrigger::new(trigger)
             .on_open(move |window, cx| {
                 let content_builder = content_builder.clone();
                 let style = style.clone();
@@ -390,7 +390,7 @@ impl AlertDialog {
                 let button_props = button_props.clone();
                 window.open_dialog(cx, move |dialog, _, cx| {
                     dialog
-                        .with_base_alert_dialog(gpui_base::AlertDialog::new(cx))
+                        .with_base_alert_dialog(wgpui_base::AlertDialog::new(cx))
                         .refine_style(&style)
                         .button_props(button_props.clone())
                         .with_props(props.clone())
@@ -421,14 +421,14 @@ impl RenderOnce for AlertDialog {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{ClickEvent, TestAppContext, px, size};
+    use wgpui::{ClickEvent, TestAppContext, px, size};
 
     use super::*;
     use crate::dialog::dialog::tests::window;
 
     /// `button_props` overrides only the fields it sets, so the Cancel button
     /// `confirm` asked for survives a later props value that never mentions it.
-    #[gpui::test]
+    #[wgpui::test]
     fn button_props_after_confirm_keeps_the_cancel_button(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         cx.update(|_, cx| {
@@ -442,7 +442,7 @@ mod tests {
     }
 
     /// The call order does not matter either way round.
-    #[gpui::test]
+    #[wgpui::test]
     fn confirm_after_button_props_keeps_the_ok_text(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         cx.update(|_, cx| {
@@ -457,7 +457,7 @@ mod tests {
 
     /// A callback installed with `on_ok` survives a later props value that
     /// carries no callback of its own.
-    #[gpui::test]
+    #[wgpui::test]
     fn button_props_after_on_ok_keeps_the_callback(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         let confirmed = Rc::new(Cell::new(0));
@@ -481,7 +481,7 @@ mod tests {
     }
 
     /// The direct builders resolve to the same buttons as a props value.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_direct_builders_match_button_props(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         cx.update(|_, cx| {
@@ -512,7 +512,7 @@ mod tests {
 
     /// `margin_top` overrides the tenth-of-the-viewport default offset, which
     /// seats a short alert near the top of a tall window.
-    #[gpui::test]
+    #[wgpui::test]
     fn margin_top_moves_the_alert_surface_off_the_default_offset(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         cx.update(|window, cx| {
@@ -544,7 +544,7 @@ mod tests {
 
     /// `centered` seats the surface in the vertical middle of the window,
     /// whatever its height.
-    #[gpui::test]
+    #[wgpui::test]
     fn centered_seats_the_alert_surface_in_the_middle(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(800.), px(600.)));
         cx.update(|window, cx| {

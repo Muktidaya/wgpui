@@ -1,8 +1,8 @@
-use gpui::{
+use wgpui::{
     App, Hsla, ImageSource, InteractiveElement, Interactivity, IntoElement, ParentElement as _,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
 };
-use gpui_base::{Avatar as BaseAvatar, AvatarFallback, AvatarImage};
+use wgpui_base::{Avatar as BaseAvatar, AvatarFallback, AvatarImage};
 
 use crate::{
     ActiveTheme, Icon, IconName, Sizable, Size, StyledExt, ThemeStyled as _,
@@ -155,7 +155,7 @@ impl IdentityColor {
     const HUE_STEP: f32 = 360. / Self::HUES as f32;
 
     fn new(short_name: &SharedString, cx: &App) -> Self {
-        let hue = (gpui::hash(short_name) % Self::HUES) as f32 * Self::HUE_STEP;
+        let hue = (wgpui::hash(short_name) % Self::HUES) as f32 * Self::HUE_STEP;
         Self::from_hue(hue, cx.theme().is_dark())
     }
 
@@ -203,7 +203,7 @@ fn extract_text_initials(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::Rgba;
+    use wgpui::Rgba;
 
     /// WCAG 2.1 relative luminance.
     fn luminance(color: Hsla) -> f32 {
@@ -269,8 +269,8 @@ mod tests {
         assert_eq!(extract_text_initials(&"huacnlee"), "HU".to_string());
     }
 
-    #[gpui::test]
-    fn test_avatar_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_avatar_builder(_cx: &mut wgpui::TestAppContext) {
         let avatar = Avatar::new()
             .name("Jason Lee")
             .placeholder(Icon::new(IconName::User))

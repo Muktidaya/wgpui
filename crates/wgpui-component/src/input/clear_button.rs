@@ -1,5 +1,5 @@
-use gpui::App;
 use rust_i18n::t;
+use wgpui::App;
 
 use crate::{
     Icon, IconName, Sizable as _,

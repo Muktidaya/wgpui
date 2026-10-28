@@ -2,8 +2,8 @@ use std::{rc::Rc, time::Duration};
 
 use crate::animation::{Lerp, ease_in_out_cubic};
 use crate::{ActiveTheme, Icon, IconName, Selectable, Sizable, Size, StyledExt, h_flex};
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
+use wgpui::prelude::FluentBuilder as _;
+use wgpui::{
     Animation, AnimationExt as _, AnyElement, App, Background, ClickEvent, Edges, ElementId,
     FillOptions, Hsla, InteractiveElement, IntoElement, ParentElement, PathBuilder, PathStyle,
     Pixels, Point, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, canvas,
@@ -522,11 +522,11 @@ impl Default for TabStyle {
     fn default() -> Self {
         TabStyle {
             borders: Edges::all(px(0.)),
-            border_color: gpui::transparent_white(),
-            bg: gpui::transparent_white().into(),
-            fg: gpui::transparent_white(),
+            border_color: wgpui::transparent_white(),
+            bg: wgpui::transparent_white().into(),
+            fg: wgpui::transparent_white(),
             shadow: false,
-            inner_bg: gpui::transparent_white().into(),
+            inner_bg: wgpui::transparent_white().into(),
         }
     }
 }
@@ -535,7 +535,7 @@ impl Default for TabStyle {
 #[derive(IntoElement)]
 pub struct Tab {
     ix: usize,
-    base: gpui_base::Tab,
+    base: wgpui_base::Tab,
     pub(super) label: Option<SharedString>,
     aria_label: Option<SharedString>,
     pub(super) icon: Option<Icon>,
@@ -596,7 +596,7 @@ impl Default for Tab {
     fn default() -> Self {
         Self {
             ix: 0,
-            base: gpui_base::Tab::new(0usize),
+            base: wgpui_base::Tab::new(0usize),
             label: None,
             aria_label: None,
             icon: None,
@@ -748,7 +748,7 @@ impl Selectable for Tab {
 }
 
 impl InteractiveElement for Tab {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -756,7 +756,7 @@ impl InteractiveElement for Tab {
 impl StatefulInteractiveElement for Tab {}
 
 impl Styled for Tab {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         self.base.style()
     }
 }
@@ -1072,7 +1072,7 @@ impl RenderOnce for Tab {
 mod tests {
     use super::*;
     use crate::tab::TabBar;
-    use gpui::{Context, Render, TestAppContext, VisualTestContext};
+    use wgpui::{Context, Render, TestAppContext, VisualTestContext};
 
     const VARIANTS: [TabVariant; 6] = [
         TabVariant::Tab,
@@ -1138,21 +1138,21 @@ mod tests {
             .collect()
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a11y_label_defaults_to_visible_label(_cx: &mut TestAppContext) {
         let tab = Tab::new().label("Account");
 
         assert_eq!(tab.a11y_label(), Some("Account".into()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn explicit_a11y_label_overrides_visible_label(_cx: &mut TestAppContext) {
         let tab = Tab::new().label("Acct").aria_label("Account settings");
 
         assert_eq!(tab.a11y_label(), Some("Account settings".into()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_width_leaves_short_tabs_untouched(cx: &mut TestAppContext) {
         // The box the cap wraps the label in must not report a different
         // intrinsic width than the bare label it replaces.
@@ -1164,7 +1164,7 @@ mod tests {
         assert_eq!(uncapped, capped, "a tab under the cap must not be resized");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_width_caps_long_tabs(cx: &mut TestAppContext) {
         let build: fn(Tab) -> Tab = |tab| tab.label(LONG_LABEL);
 
@@ -1185,7 +1185,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn max_width_keeps_prefix_and_suffix_intact(cx: &mut TestAppContext) {
         let cx = show(cx, TabVariant::Segmented, Some(px(140.)), |tab| {
             tab.prefix(Icon::new(IconName::BookOpen))
@@ -1217,7 +1217,7 @@ mod tests {
 
     /// Icon-only tabs are sized to a square by construction, so the cap has to
     /// leave them alone however narrow it is.
-    #[gpui::test]
+    #[wgpui::test]
     fn max_width_exempts_icon_only_tabs(cx: &mut TestAppContext) {
         let build: fn(Tab) -> Tab = |tab| tab.icon(Icon::new(IconName::BookOpen));
         let width = |cx: &mut TestAppContext, max_width| {

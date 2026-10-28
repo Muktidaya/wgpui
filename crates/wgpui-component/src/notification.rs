@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use gpui::{
+use wgpui::{
     Anchor, Animation, AnimationExt, AnyElement, AnyWindowHandle, App, AppContext, ClickEvent,
     Context, DismissEvent, ElementId, Entity, EventEmitter, FocusHandle, Global,
     InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, SharedString,
@@ -14,7 +14,7 @@ use gpui::{
     SystemNotificationResponse, WeakEntity, Window, WindowId, div, prelude::FluentBuilder, px,
     relative,
 };
-use gpui_base::{
+use wgpui_base::{
     Toast as BaseToast, ToastManager, ToastMotion, ToastOptions, ToastStack, ToastStackState,
     ToastTransitionStatus,
 };
@@ -291,7 +291,7 @@ impl Notification {
     /// `.app` in a location the system trusts, such as `/Applications` (posts
     /// are silently dropped under plain `cargo run`, and the first post
     /// triggers the authorization prompt); on Windows the application must
-    /// call [`gpui::App::set_app_identity`] early in startup; on Linux a
+    /// call [`wgpui::App::set_app_identity`] early in startup; on Linux a
     /// notification daemon must be present and retraction is unsupported
     /// (dismissed notifications age out).
     pub fn delivery(mut self, delivery: NotificationDelivery) -> Self {
@@ -573,7 +573,7 @@ impl Default for NotificationSettings {
 ///
 /// gpui keeps a single such handler (later registrations replace earlier
 /// ones), so gpui-component owns it: applications must not call
-/// [`gpui::App::on_system_notification_response`] after `gpui_component::init`.
+/// [`wgpui::App::on_system_notification_response`] after `wgpui_component::init`.
 /// Responses to notifications the application posts itself are ignored here.
 pub(crate) fn init(cx: &mut App) {
     cx.on_system_notification_response(SystemNotificationRegistry::handle_response);
@@ -1008,8 +1008,8 @@ impl NotificationList {
 impl Render for NotificationList {
     fn render(
         &mut self,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<Self>,
+        window: &mut wgpui::Window,
+        cx: &mut wgpui::Context<Self>,
     ) -> impl IntoElement {
         let size = window.fully_visible_bounds().size;
         let settings = &cx.theme().notification;
@@ -1077,7 +1077,7 @@ impl Render for NotificationList {
 mod tests {
     use super::*;
     use crate::theme::Theme;
-    use gpui::{TestAppContext, VisualTestContext};
+    use wgpui::{TestAppContext, VisualTestContext};
 
     struct FooKind;
     struct BarKind;
@@ -1170,7 +1170,7 @@ mod tests {
     /// A stack's element id must not depend on how many other placements are
     /// mounted: a changing id drops the element state of the whole subtree,
     /// which replays each notification's enter animation.
-    #[gpui::test]
+    #[wgpui::test]
     fn stack_element_id_survives_other_placements_disappearing(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1216,7 +1216,7 @@ mod tests {
         assert_eq!(right_id(cx), before);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn per_notification_placement_stacks_by_anchor(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1264,7 +1264,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_toast_stays_mounted_until_its_transition_finishes(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1296,7 +1296,7 @@ mod tests {
         assert!(ids(&list, cx).is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn lifecycle_clock_runs_only_while_a_notification_is_mounted(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1337,7 +1337,7 @@ mod tests {
         assert!(!list.read_with(cx, |list, _| list.is_advancing));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn lifecycle_clock_rests_while_only_persistent_notifications_are_shown(
         cx: &mut TestAppContext,
     ) {
@@ -1392,7 +1392,7 @@ mod tests {
         assert!(!list.read_with(cx, |list, _| list.is_advancing));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn inactive_window_does_not_pause_autohide(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1428,7 +1428,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focus_pauses_autohide_and_present_phase_is_projected(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1481,7 +1481,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_by_type_removes_id_and_all_id1_of_same_type(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1528,7 +1528,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_with_id_and_element_id_removes_only_matching_key(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1573,7 +1573,7 @@ mod tests {
         assert!(remaining.contains(&NotificationId::Id(TypeId::of::<FooKind>())));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_with_only_type_id_does_not_match_id1_entries(cx: &mut TestAppContext) {
         // The plain `close(TypeId)` form (used by the legacy code path) must keep
         // its narrow semantics: it only matches `NotificationId::Id`, not
@@ -1601,7 +1601,7 @@ mod tests {
         assert_eq!(ids(&list, cx).len(), 1, "id1 entry should remain untouched");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_by_type_with_no_match_is_noop(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
         let (root, cx) = cx.add_window_view(|window, cx| TestRoot {
@@ -1628,7 +1628,7 @@ mod tests {
 
     /// Applications may post their own system notifications; a response for
     /// one of those must not be retracted or dispatched by the library.
-    #[gpui::test]
+    #[wgpui::test]
     fn response_for_a_foreign_tag_is_ignored(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -1642,7 +1642,7 @@ mod tests {
         assert!(cx.dismissed_system_notifications().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn system_delivery_posts_to_center_without_in_app_toast(cx: &mut TestAppContext) {
         cx.update(|cx| {
             cx.set_global(Theme::default());
@@ -1700,7 +1700,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn system_click_activates_window_closes_toast_and_fires_on_click(cx: &mut TestAppContext) {
         cx.update(|cx| {
             cx.set_global(Theme::default());
@@ -1745,7 +1745,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn explicit_close_retracts_system_notification_but_autohide_does_not(cx: &mut TestAppContext) {
         cx.update(|cx| {
             cx.set_global(Theme::default());

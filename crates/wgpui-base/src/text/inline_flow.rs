@@ -6,7 +6,7 @@ use std::{
 };
 use unicode_segmentation::UnicodeSegmentation as _;
 
-use gpui::{
+use wgpui::{
     AbsoluteLength, AnyElement, App, AvailableSpace, Bounds, DefiniteLength, Element, ElementId,
     GlobalElementId, Hsla, ImageSource, InspectorElementId, InteractiveElement as _, IntoElement,
     LayoutId, LineFragment as WrapLineFragment, ObjectFit, Pixels, Refineable as _, ShapedLine,
@@ -51,7 +51,7 @@ pub(super) enum InlineFlowItem {
         renderer: Arc<InlineRenderer>,
         accessibility_label: SharedString,
         selected: Arc<Mutex<bool>>,
-        style: gpui::HighlightStyle,
+        style: wgpui::HighlightStyle,
         link: Option<LinkMark>,
     },
     Text {
@@ -187,13 +187,13 @@ struct InlineFlowLayout {
 enum PositionedFragment {
     Object {
         item_ix: usize,
-        origin: gpui::Point<Pixels>,
+        origin: wgpui::Point<Pixels>,
         object: Box<MeasuredInlineObject>,
         selection_bounds: Bounds<Pixels>,
     },
     Text {
         item_ix: usize,
-        origin: gpui::Point<Pixels>,
+        origin: wgpui::Point<Pixels>,
         size: Size<Pixels>,
         source_range: Range<usize>,
         font_size: Pixels,
@@ -206,7 +206,7 @@ enum PositionedFragment {
     },
     Image {
         item_ix: usize,
-        origin: gpui::Point<Pixels>,
+        origin: wgpui::Point<Pixels>,
         size: Size<Pixels>,
     },
 }
@@ -216,7 +216,7 @@ enum MeasureItem {
         text: SharedString,
         id: usize,
         renderer: Arc<InlineRenderer>,
-        style: gpui::HighlightStyle,
+        style: wgpui::HighlightStyle,
     },
     Text {
         text: SharedString,
@@ -259,7 +259,7 @@ struct CodeBox {
 }
 
 impl CodeBox {
-    fn offset(self, by: gpui::Point<Pixels>) -> Self {
+    fn offset(self, by: wgpui::Point<Pixels>) -> Self {
         Self {
             bounds: Bounds::new(by + self.bounds.origin, self.bounds.size),
             ..self
@@ -808,8 +808,8 @@ impl Element for InlineFlow {
         } in prepaint
         {
             if let Some(code) = background {
-                let mut style = gpui::Style::default();
-                style.corner_radii = gpui::Corners {
+                let mut style = wgpui::Style::default();
+                style.corner_radii = wgpui::Corners {
                     top_left: radius.into(),
                     top_right: radius.into(),
                     bottom_left: radius.into(),
@@ -820,7 +820,7 @@ impl Element for InlineFlow {
             }
             element.paint(window, cx);
             for (bounds, color) in overlays {
-                window.paint_quad(gpui::fill(*bounds, *color));
+                window.paint_quad(wgpui::fill(*bounds, *color));
             }
         }
     }
@@ -1451,14 +1451,14 @@ fn line_ranges(
 /// Where the first line of `fragments` (which start at byte `start`) wraps at
 /// `wrap_width`; `end` when it all fits.
 fn next_wrap(
-    wrapper: &mut gpui::LineWrapperHandle,
+    wrapper: &mut wgpui::LineWrapperHandle,
     fragments: &[WrapLineFragment],
     wrap_width: Pixels,
     start: usize,
     end: usize,
 ) -> usize {
     wrapper
-        .wrap_line(fragments, wrap_width, gpui::IndentAdjustment::SameIndent)
+        .wrap_line(fragments, wrap_width, wgpui::IndentAdjustment::SameIndent)
         .next()
         .map_or(end, |boundary| (start + boundary.ix).min(end))
 }
@@ -1819,12 +1819,12 @@ pub(super) fn slice_ranges<T, U>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::SharedUri;
+    use wgpui::SharedUri;
 
     mod frames {
         use super::super::FLOW_LAYOUTS;
         use crate::text::{TextView, TextViewState};
-        use gpui::{
+        use wgpui::{
             AppContext as _, Context, Entity, IntoElement, ParentElement as _, Pixels, Render,
             Styled as _, TestAppContext, VisualTestContext, Window, div, px,
         };
@@ -1850,7 +1850,7 @@ mod tests {
 
         /// Scrolling redraws every visible paragraph each frame; a flow whose
         /// text, style and width are unchanged has nothing to wrap or shape.
-        #[gpui::test]
+        #[wgpui::test]
         fn an_unchanged_flow_is_not_laid_out_again(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let (_, cx) = cx.add_window_view(|_, cx| Answer {
@@ -1869,7 +1869,7 @@ mod tests {
             assert_eq!(layouts(), after_first_frame, "a frame that changes nothing");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_flow_is_laid_out_again_at_another_width(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let (answer, cx) = cx.add_window_view(|_, cx| Answer {
@@ -1889,7 +1889,7 @@ mod tests {
             assert!(layouts() > before, "a narrower flow wraps differently");
         }
 
-        #[gpui::test]
+        #[wgpui::test]
         fn a_flow_is_laid_out_again_when_its_text_changes(cx: &mut TestAppContext) {
             cx.update(crate::init);
             let (answer, cx) = cx.add_window_view(|_, cx| Answer {
@@ -1916,7 +1916,7 @@ mod tests {
     fn atomic_objects_wrap_and_share_a_baseline_at_multiple_font_sizes() {
         use super::super::inline::test_draw::in_prepaint;
         use super::super::inline::test_fonts::{BODY, WideMonoTextSystem};
-        use gpui::TestApp;
+        use wgpui::TestApp;
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         in_prepaint(&mut app, |window, cx| {
             for scale in [1., 1.5, 2.] {
@@ -2009,7 +2009,7 @@ mod tests {
     #[test]
     fn inline_code_near_the_wrap_width_does_not_overflow_the_flow() {
         use super::super::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{AbsoluteLength, Empty, HighlightStyle, TestApp};
+        use wgpui::{AbsoluteLength, Empty, HighlightStyle, TestApp};
 
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         let mut window = app.open_window(|_, _| Empty);
@@ -2113,7 +2113,7 @@ mod tests {
     #[test]
     fn long_inline_code_wraps_in_mixed_flow() {
         use super::super::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{Empty, TestApp};
+        use wgpui::{Empty, TestApp};
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         let mut window = app.open_window(|_, _| Empty);
         let style = TextStyle {
@@ -2165,7 +2165,7 @@ mod tests {
     #[test]
     fn inline_code_line_is_as_tall_as_a_plain_line_when_glyphs_overflow_it() {
         use super::super::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{Empty, TestApp};
+        use wgpui::{Empty, TestApp};
 
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         let mut window = app.open_window(|_, _| Empty);
@@ -2199,7 +2199,7 @@ mod tests {
     #[test]
     fn inline_code_style_keeps_equal_size_prose_separate_and_measures_its_box() {
         use super::super::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{Empty, HighlightStyle, TestApp, rems};
+        use wgpui::{Empty, HighlightStyle, TestApp, rems};
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         let mut window = app.open_window(|_, _| Empty);
         for rem_size in [px(14.), px(28.)] {
@@ -2214,16 +2214,16 @@ mod tests {
                     .text_size(rems(1.))
                     .px(rems(0.25))
                     .py(rems(0.125))
-                    .bg(gpui::red())
+                    .bg(wgpui::red())
                     .border_1()
-                    .border_color(gpui::blue())
+                    .border_color(wgpui::blue())
                     .rounded(rems(0.25));
                 let highlight = InlineHighlight {
                     font_family: Some(MONO.into()),
                     font_size_scale: Some(0.875),
                     code_style: Some(code_style.clone()),
                     style: HighlightStyle {
-                        background_color: Some(gpui::green()),
+                        background_color: Some(wgpui::green()),
                         ..Default::default()
                     },
                 };
@@ -2249,7 +2249,7 @@ mod tests {
                     if text.as_ref() == "code" {
                         let code = code_background.as_ref().expect("code box");
                         assert_eq!(code.style.background, code_style.background);
-                        assert_eq!(code.style.border_color, Some(gpui::blue()));
+                        assert_eq!(code.style.border_color, Some(wgpui::blue()));
                         assert_eq!(code.style.corner_radii, code_style.corner_radii);
                         assert_eq!(code.bounds.size.width, size.width);
                         assert_eq!(
@@ -2291,7 +2291,7 @@ mod tests {
     #[test]
     fn inline_code_size_is_relative_and_uses_the_native_body_baseline() {
         use super::super::inline::test_fonts::{BODY, MONO, WideMonoTextSystem};
-        use gpui::{Empty, TestApp};
+        use wgpui::{Empty, TestApp};
 
         let mut app = TestApp::with_text_system(Arc::new(WideMonoTextSystem));
         let mut window = app.open_window(|_, _| Empty);

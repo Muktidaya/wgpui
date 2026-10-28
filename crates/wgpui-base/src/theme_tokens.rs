@@ -3,9 +3,9 @@
 //! These tokens describe visual roles and scales. They intentionally do not
 //! contain component names such as `button`, `table`, or `sidebar`.
 
-use gpui::{BoxShadow, FontWeight, Hsla, Pixels, SharedString, hsla, point, px, rgb};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{BoxShadow, FontWeight, Hsla, Pixels, SharedString, hsla, point, px, rgb};
 
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct SemanticThemeTokens {

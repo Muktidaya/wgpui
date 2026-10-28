@@ -5,7 +5,7 @@ use crate::{
     TextSelectionEvent, TextSelectionHandle, TextSelectionRegistration, TextSelectionRun,
     TextSelectionSnapshot,
 };
-use gpui::{App, Bounds, EntityId, Hitbox, Pixels, Point, WeakEntity, Window};
+use wgpui::{App, Bounds, EntityId, Hitbox, Pixels, Point, WeakEntity, Window};
 
 use super::{
     TextViewState, inline::InlineSelectionProjection,
@@ -381,7 +381,7 @@ impl TextViewSelectionAdapter {
     pub(super) fn paint_touch_handles(
         &self,
         layout: &crate::TouchHandleLayout,
-        color: gpui::Hsla,
+        color: wgpui::Hsla,
         window: &mut Window,
         cx: &mut App,
     ) {
@@ -456,7 +456,7 @@ impl TextViewSelectionAdapter {
             .unwrap()
             .layout();
         layout.position_for_index(index).unwrap()
-            + gpui::point(gpui::px(1.), layout.line_height() / 2.)
+            + wgpui::point(wgpui::px(1.), layout.line_height() / 2.)
     }
 
     #[cfg(test)]
@@ -464,6 +464,6 @@ impl TextViewSelectionAdapter {
         let frame = self.frame.borrow();
         let layout = frame.text_runs.first().unwrap().layout();
         layout.position_for_index(index).unwrap()
-            + gpui::point(Pixels::ZERO, layout.line_height() / 2.)
+            + wgpui::point(Pixels::ZERO, layout.line_height() / 2.)
     }
 }

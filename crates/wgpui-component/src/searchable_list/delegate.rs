@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, IntoElement, SharedString, Task, Window};
+use wgpui::{AnyElement, App, IntoElement, SharedString, Task, Window};
 
 use crate::IndexPath;
 

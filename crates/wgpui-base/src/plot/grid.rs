@@ -1,4 +1,4 @@
-use gpui::{Background, Bounds, Pixels, Point, Window, fill, point, px, size};
+use wgpui::{Background, Bounds, Pixels, Point, Window, fill, point, px, size};
 
 use super::origin_point;
 

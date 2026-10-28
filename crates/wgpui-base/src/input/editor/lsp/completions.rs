@@ -1,6 +1,5 @@
 use crate::input::EditorMode;
 use anyhow::Result;
-use gpui::{App, Context, EntityInputHandler, Pixels, Task, Window, px};
 use lsp_types::{
     CompletionContext, CompletionItem, CompletionResponse, InlineCompletionContext,
     InlineCompletionItem, InlineCompletionResponse, InlineCompletionTriggerKind,
@@ -8,6 +7,7 @@ use lsp_types::{
 };
 use ropey::Rope;
 use std::{cell::RefCell, ops::Range, rc::Rc, time::Duration};
+use wgpui::{App, Context, EntityInputHandler, Pixels, Task, Window, px};
 
 use crate::input::{InputBaseState, RopeExt as _, ShowCompletions};
 
@@ -119,7 +119,7 @@ fn chars_eq_ignore_case(left: char, right: char) -> bool {
 /// ```
 /// use wgpui_base::input::CompletionMenuOptions;
 /// let options = CompletionMenuOptions {
-///     max_width: gpui::px(480.),
+///     max_width: wgpui::px(480.),
 /// };
 /// let _copied = options;
 /// let _again = options;
@@ -427,14 +427,14 @@ impl InputBaseState<EditorMode> {
         cx.notify();
     }
 
-    pub(crate) fn is_context_menu_open(&self, _cx: &gpui::App) -> bool {
+    pub(crate) fn is_context_menu_open(&self, _cx: &wgpui::App) -> bool {
         self.extras.context_menu_content.completion.open
             || self.extras.context_menu_content.code_action.open
     }
 
     pub(crate) fn handle_action_for_context_menu(
         &mut self,
-        action: Box<dyn gpui::Action>,
+        action: Box<dyn wgpui::Action>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {

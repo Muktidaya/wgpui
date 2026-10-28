@@ -9,7 +9,7 @@ use crate::{
     },
     switch::Switch,
 };
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement as _, SharedString, StyleRefinement, Window, div,
 };
 

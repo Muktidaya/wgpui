@@ -5,7 +5,7 @@
 //! the [`super::NativeMenu`] API working on every platform.
 
 use crate::root::WindowState;
-use gpui::{
+use wgpui::{
     App, Context, DismissEvent, Entity, FocusHandle, Focusable, IntoElement, ParentElement, Pixels,
     Point, Render, Subscription, Window, anchored, deferred, div, px,
 };
@@ -121,7 +121,7 @@ impl Render for FallbackMenuOverlay {
                         .snap_to_window_with_margin(px(8.))
                         .child(active.menu.clone()),
                 )
-                .with_priority(gpui_base::POPUP_PRIORITY),
+                .with_priority(wgpui_base::POPUP_PRIORITY),
             );
         }
         root

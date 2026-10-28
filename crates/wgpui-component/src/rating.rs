@@ -2,11 +2,11 @@ use crate::theme::ActiveTheme;
 use crate::{Disableable, Icon, IconName, Sizable, Size, StyledExt, h_flex};
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, ElementId, InteractiveElement, IntoElement, ParentElement, RenderOnce, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
 };
-use gpui::{ClickEvent, Hsla, StatefulInteractiveElement};
+use wgpui::{ClickEvent, Hsla, StatefulInteractiveElement};
 
 /// A simple star Rating element.
 #[derive(IntoElement)]
@@ -82,7 +82,7 @@ impl Rating {
 }
 
 impl Styled for Rating {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }

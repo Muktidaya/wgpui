@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     App, HighlightStyle, IntoElement, ParentElement, RenderOnce, SharedString, StyleRefinement,
     Styled, StyledText, Window, div, prelude::FluentBuilder, rems,
 };
@@ -185,12 +185,12 @@ impl Label {
             ));
         }
 
-        Some(gpui::combine_highlights(vec![], highlights).collect())
+        Some(wgpui::combine_highlights(vec![], highlights).collect())
     }
 }
 
 impl Styled for Label {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -222,8 +222,8 @@ mod tests {
 
     struct MaskedLabels;
 
-    impl gpui::Render for MaskedLabels {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+    impl wgpui::Render for MaskedLabels {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div()
                 .child(Label::new("Hello").secondary("World").masked(true))
                 .child(Label::new("Hello").highlights("ell").masked(true))
@@ -236,8 +236,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn masked_secondary_text_and_highlights_render(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn masked_secondary_text_and_highlights_render(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         cx.update(|cx| {
             let label = Label::new("é🙂")

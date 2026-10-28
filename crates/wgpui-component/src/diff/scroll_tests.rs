@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render, ScrollDelta,
     ScrollEvent, Styled as _, TestAppContext, VisualTestContext, Window, div, point, px,
 };
@@ -49,7 +49,7 @@ fn long_patch(cx: &mut TestAppContext) -> (Entity<DiffState>, &mut VisualTestCon
     (state, cx)
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn the_whole_patch_keeps_its_height_after_the_first_layout(cx: &mut TestAppContext) {
     let (state, cx) = long_patch(cx);
     let (max, viewport) = cx.update(|_, cx| {
@@ -67,7 +67,7 @@ fn the_whole_patch_keeps_its_height_after_the_first_layout(cx: &mut TestAppConte
     );
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn the_wheel_scrolls_past_the_rows_rendered_so_far(cx: &mut TestAppContext) {
     let (state, cx) = long_patch(cx);
     for _ in 0..50 {

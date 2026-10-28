@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, Entity, InteractiveElement as _, IntoElement, ListAlignment, ListOffset,
     ListState, ParentElement as _, SharedString, StyleRefinement, Styled, Window, div, list,
     prelude::FluentBuilder as _, px,
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme, Icon, IconName, Sizable, StyledExt,
@@ -230,7 +230,7 @@ impl SettingPage {
                     .relative()
                     .flex_1()
                     .w_full()
-                    .child(gpui_base::ScrollBounce::new(
+                    .child(wgpui_base::ScrollBounce::new(
                         "bounce",
                         &list_state,
                         list(list_state.clone(), {

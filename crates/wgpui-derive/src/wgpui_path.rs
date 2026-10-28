@@ -3,7 +3,7 @@ use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
 /// Resolve the actual dependency key, including applications using only Kit.
-pub fn gpui_crate() -> TokenStream {
+pub fn wgpui_crate() -> TokenStream {
     for package in ["wgpui", "wgpui-kit"] {
         match crate_name(package) {
             Ok(FoundCrate::Itself) => {

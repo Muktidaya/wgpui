@@ -1,10 +1,10 @@
-use gpui::{
+use std::{cell::Cell, rc::Rc, time::Duration};
+use wgpui::{
     Anchor, Animation, AnimationExt as _, AnyElement, App, Bounds, Context, Div, ElementId,
     FocusHandle, InteractiveElement as _, IntoElement, MouseButton, ParentElement, PathBuilder,
     Pixels, Point, RenderOnce, Stateful, StyleRefinement, Styled, Window, canvas, point,
     prelude::FluentBuilder as _, px,
 };
-use std::{cell::Cell, rc::Rc, time::Duration};
 
 use crate::{ActiveTheme as _, ThemeStyled as _};
 use crate::{
@@ -13,9 +13,9 @@ use crate::{
     styled::{popover_ring, popover_shadow},
     v_flex,
 };
-use gpui_base::Placement;
-use gpui_base::Popover as BasePopover;
-pub use gpui_base::PopoverState;
+use wgpui_base::Placement;
+use wgpui_base::Popover as BasePopover;
+pub use wgpui_base::PopoverState;
 
 pub(crate) fn init(_: &mut App) {}
 
@@ -32,10 +32,10 @@ const DROPDOWN_ENTER_DURATION: Duration = Duration::from_millis(150);
 /// `2` is `0.5rem`, which is 8px at the default root size.
 const DROPDOWN_ENTER_OFFSET: Pixels = px(-8.);
 
-fn dropdown_positioner(bounds: Bounds<Pixels>) -> gpui_base::Positioner {
-    gpui_base::Positioner::side(bounds)
-        .placement(gpui_base::Placement::Bottom)
-        .align(gpui_base::Align::Start)
+fn dropdown_positioner(bounds: Bounds<Pixels>) -> wgpui_base::Positioner {
+    wgpui_base::Positioner::side(bounds)
+        .placement(wgpui_base::Placement::Bottom)
+        .align(wgpui_base::Align::Start)
         .offset(px(6.))
         .margin(px(8.))
 }
@@ -73,7 +73,7 @@ fn dropdown_positioner(bounds: Bounds<Pixels>) -> gpui_base::Positioner {
 ///   same frame its state flips, so playing one would mean keeping the surface
 ///   mounted past the close, which is a change to how each of these components
 ///   tracks `open`.
-/// - The slide always comes from above. [`gpui_base::Positioner`] resolves the
+/// - The slide always comes from above. [`wgpui_base::Positioner`] resolves the
 ///   side the surface actually lands on during layout and does not report it
 ///   back, so a dropdown that flips above its trigger for want of room below
 ///   slides the opposite way — 8px over 150ms, in the rare case where it
@@ -86,7 +86,7 @@ pub(crate) fn dropdown_popup(
     bounds: Bounds<Pixels>,
     surface: impl IntoElement + Styled + 'static,
     cx: &App,
-) -> gpui_base::Positioner {
+) -> wgpui_base::Positioner {
     let travel: f32 = DROPDOWN_ENTER_OFFSET.into();
     // Read out here: the animation runs long after `cx` is gone.
     let ring = popover_ring(cx);
@@ -330,7 +330,7 @@ impl RenderOnce for Popover {
             .style
             .background
             .as_ref()
-            .and_then(gpui::Fill::color)
+            .and_then(wgpui::Fill::color)
             .unwrap_or_else(|| cx.theme().popover.into());
         let ring = popover_ring(cx);
         let radius = cx.theme().radius;
@@ -367,7 +367,7 @@ impl RenderOnce for Popover {
                                         return;
                                     };
                                     let (side, target) = arrow_anchor(anchor, trigger);
-                                    let trigger = Bounds::new(target, gpui::size(px(0.), px(0.)));
+                                    let trigger = Bounds::new(target, wgpui::size(px(0.), px(0.)));
                                     let points =
                                         arrow_points(bounds, trigger, side, arrow_size, radius);
                                     let mut fill = PathBuilder::fill();
@@ -381,7 +381,7 @@ impl RenderOnce for Popover {
                                     // The triangle ends exactly at the surface edge.
                                     // Cover the ring and the antialiased base on both
                                     // sides of that edge before drawing its two slopes.
-                                    window.paint_quad(gpui::fill(
+                                    window.paint_quad(wgpui::fill(
                                         arrow_join_bounds(points, side, px(1.)),
                                         background,
                                     ));
@@ -496,9 +496,9 @@ fn arrow_join_bounds(
 mod tests {
     use super::*;
     use crate::{button::Button, h_flex, theme::Theme};
-    use gpui::{Bounds, Context, MouseButton, Point, Render, div, point, px, size};
-    use gpui_base::Popup as BasePopup;
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{Bounds, Context, MouseButton, Point, Render, div, point, px, size};
+    use wgpui_base::Popup as BasePopup;
 
     #[test]
     fn test_popover_builder_chaining() {
@@ -518,14 +518,14 @@ mod tests {
 
     #[test]
     fn test_resolved_corner_top_positions() {
-        use gpui::px;
+        use wgpui::px;
 
         let bounds = Bounds {
             origin: Point {
                 x: px(100.),
                 y: px(100.),
             },
-            size: gpui::Size {
+            size: wgpui::Size {
                 width: px(200.),
                 height: px(50.),
             },
@@ -592,8 +592,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn anchor_and_offset_position_the_surface_on_each_trigger_edge(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn anchor_and_offset_position_the_surface_on_each_trigger_edge(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, window) = cx.add_window_view(|_, _| AnchorHarness {
             anchor: Anchor::TopLeft,
@@ -683,8 +683,8 @@ mod tests {
     /// `trigger_style` styles the container the parent lays out and the popup
     /// is anchored to. Applied to anything nested inside it, `w_full` would
     /// resolve against a container that only wraps its content.
-    #[gpui::test]
-    fn trigger_style_is_applied_to_the_trigger_container(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_style_is_applied_to_the_trigger_container(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, window) = cx.add_window_view(|_, _| TriggerStyleHarness { styled: false });
         window.update(|window, cx| window.draw(cx).clear());
@@ -712,8 +712,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn arrow_reserves_space_without_changing_anchor_alignment(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn arrow_reserves_space_without_changing_anchor_alignment(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, window) = cx.add_window_view(|_, _| AnchorHarness {
             anchor: Anchor::TopLeft,
@@ -742,8 +742,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn anchor_does_not_flip_when_offset_or_arrow_is_enabled(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn anchor_does_not_flip_when_offset_or_arrow_is_enabled(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (_, window) = cx.add_window_view(|_, _| AnchorHarness {
             anchor: Anchor::BottomCenter,
@@ -888,10 +888,10 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn pointer_open_and_outside_dismiss_use_the_base_popup_host(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pointer_open_and_outside_dismiss_use_the_base_popup_host(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
-            gpui_base::GlobalState::init(cx);
+            wgpui_base::GlobalState::init(cx);
             cx.set_global(Theme::default());
             init(cx);
         });
@@ -930,10 +930,10 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn default_open_is_forwarded_to_the_base_popover(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn default_open_is_forwarded_to_the_base_popover(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
-            gpui_base::GlobalState::init(cx);
+            wgpui_base::GlobalState::init(cx);
             cx.set_global(Theme::default());
             init(cx);
         });
@@ -964,8 +964,8 @@ mod tests {
     /// enter motion the first time and then appear already settled on every
     /// open after that. That is invisible in any single frame and easy to
     /// reintroduce by giving the animation a constant id, so it is pinned here.
-    #[gpui::test]
-    fn the_enter_motion_starts_over_every_time_the_dropdown_opens(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn the_enter_motion_starts_over_every_time_the_dropdown_opens(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (view, window) = cx.add_window_view(|_, _| Harness { open: true });
 

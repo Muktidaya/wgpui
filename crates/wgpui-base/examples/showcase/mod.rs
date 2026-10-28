@@ -6,22 +6,27 @@ mod components;
 mod palette;
 mod syntect_highlighter;
 
-use gpui::{
+use palette::{activate as activate_palette, canvas as example_canvas, example_rgb};
+#[cfg(target_family = "wasm")]
+use std::borrow::Cow;
+use std::{rc::Rc, sync::Arc};
+use syntect_highlighter::{ShowcaseHighlightStyles, SyntectHighlighter};
+use wgpui::{
     AnyElement, App, AppContext as _, Application, Context, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, ScrollHandle, StatefulInteractiveElement as _, Styled as _, Window,
     WindowOptions, actions, div, prelude::FluentBuilder as _, px, size,
 };
 #[cfg(not(target_family = "wasm"))]
-use gpui::{KeyBinding, WindowBounds};
-use gpui_base::ResizeHandleContext;
-use gpui_base::dock::{
+use wgpui::{KeyBinding, WindowBounds};
+use wgpui_base::ResizeHandleContext;
+use wgpui_base::dock::{
     DockArea, DockAreaRenderer, DockContext, DockLayout, DockPlacement, DropIndicator, NodeId,
     Panel, PanelEvent, PanelView, TabGroupContext, TabGroupRenderer, TileContext, TilesRenderer,
 };
-use gpui_base::input::InputEditorStyle;
-use gpui_base::input::{EditorState, InputState, TextareaState};
-use gpui_base::slider::SliderState;
-use gpui_base::{
+use wgpui_base::input::InputEditorStyle;
+use wgpui_base::input::{EditorState, InputState, TextareaState};
+use wgpui_base::slider::SliderState;
+use wgpui_base::{
     Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionTrigger, AlertDialog,
     AlertDialogAction, AlertDialogBackdrop, AlertDialogCancel, AlertDialogDescription,
     AlertDialogPopup, AlertDialogTitle, AutoScroll, Avatar, AvatarFallback, Button, Calendar,
@@ -35,11 +40,6 @@ use gpui_base::{
     Toggle, ToggleGroup, Tooltip, Tree, TreeItem, TreeState, VirtualListScrollHandle,
     v_virtual_list,
 };
-use palette::{activate as activate_palette, canvas as example_canvas, example_rgb};
-#[cfg(target_family = "wasm")]
-use std::borrow::Cow;
-use std::{rc::Rc, sync::Arc};
-use syntect_highlighter::{ShowcaseHighlightStyles, SyntectHighlighter};
 
 actions!(base_showcase, [Quit]);
 
@@ -126,7 +126,7 @@ pub const COMPONENTS: &[&str] = &[
 pub struct BaseShowcase {
     /// The shell: the overview at the root, and the component opened from it
     /// above. A showcase started on one component has that page as its root.
-    pages: gpui::Entity<NavStackState>,
+    pages: wgpui::Entity<NavStackState>,
     checkbox_checked: bool,
     radio_selected: usize,
     switch_checked: bool,
@@ -142,34 +142,34 @@ pub struct BaseShowcase {
     alert_dialog_open: bool,
     collapsible_open: bool,
     combobox_open: bool,
-    combobox_query: gpui::Entity<InputState>,
+    combobox_query: wgpui::Entity<InputState>,
     combobox_selection: String,
-    color_picker: gpui::Entity<ColorPickerState>,
+    color_picker: wgpui::Entity<ColorPickerState>,
     date_open: bool,
     dialog_open: bool,
     popup_open: bool,
     page: usize,
-    slider: gpui::Entity<SliderState>,
-    stack: gpui::Entity<NavStackState>,
-    input: gpui::Entity<InputState>,
-    textarea: gpui::Entity<TextareaState>,
-    editor: gpui::Entity<EditorState>,
-    otp: gpui::Entity<OtpState>,
-    calendar: gpui::Entity<CalendarState>,
-    tree: gpui::Entity<TreeState>,
-    date_focus: gpui::FocusHandle,
+    slider: wgpui::Entity<SliderState>,
+    stack: wgpui::Entity<NavStackState>,
+    input: wgpui::Entity<InputState>,
+    textarea: wgpui::Entity<TextareaState>,
+    editor: wgpui::Entity<EditorState>,
+    otp: wgpui::Entity<OtpState>,
+    calendar: wgpui::Entity<CalendarState>,
+    tree: wgpui::Entity<TreeState>,
+    date_focus: wgpui::FocusHandle,
     scroll: ScrollHandle,
     example_scroll: ScrollHandle,
     virtual_scroll: VirtualListScrollHandle,
-    dock: gpui::Entity<DockArea>,
+    dock: wgpui::Entity<DockArea>,
     text_selection_handles: [TextSelectionHandle; 4],
     text_selection_scroll: ScrollHandle,
     text_selection_auto_scroll: AutoScroll,
     text_selection_active: bool,
     text_selection_text: String,
-    text_view: gpui::Entity<TextViewState>,
+    text_view: wgpui::Entity<TextViewState>,
     #[cfg(test)]
-    text_selection_footer_bounds: Rc<std::cell::RefCell<Option<gpui::Bounds<gpui::Pixels>>>>,
+    text_selection_footer_bounds: Rc<std::cell::RefCell<Option<wgpui::Bounds<wgpui::Pixels>>>>,
 }
 
 impl BaseShowcase {
@@ -187,7 +187,7 @@ impl BaseShowcase {
             state.set_editor_style(InputEditorStyle {
                 foreground: example_rgb(0x171717).into(),
                 muted_foreground: example_rgb(0x737373).into(),
-                selection: gpui::hsla(0.6, 0.8, 0.7, 0.45),
+                selection: wgpui::hsla(0.6, 0.8, 0.7, 0.45),
                 caret: example_rgb(0x171717).into(),
                 ..InputEditorStyle::default()
             });
@@ -204,7 +204,7 @@ impl BaseShowcase {
             state.set_editor_style(InputEditorStyle {
                 foreground: example_rgb(0x171717).into(),
                 muted_foreground: example_rgb(0x737373).into(),
-                selection: gpui::hsla(0.6, 0.8, 0.7, 0.45),
+                selection: wgpui::hsla(0.6, 0.8, 0.7, 0.45),
                 caret: example_rgb(0x171717).into(),
                 ..InputEditorStyle::default()
             });
@@ -229,7 +229,7 @@ impl BaseShowcase {
             state.set_editor_style(InputEditorStyle {
                 foreground: example_rgb(0x171717).into(),
                 muted_foreground: example_rgb(0x737373).into(),
-                selection: gpui::hsla(0.6, 0.8, 0.7, 0.45),
+                selection: wgpui::hsla(0.6, 0.8, 0.7, 0.45),
                 caret: example_rgb(0x171717).into(),
                 highlight_styles: Arc::new(ShowcaseHighlightStyles),
                 ..InputEditorStyle::default()
@@ -240,7 +240,7 @@ impl BaseShowcase {
             state.set_editor_style(InputEditorStyle {
                 foreground: example_rgb(0x171717).into(),
                 muted_foreground: example_rgb(0x737373).into(),
-                selection: gpui::hsla(0.6, 0.8, 0.7, 0.45),
+                selection: wgpui::hsla(0.6, 0.8, 0.7, 0.45),
                 caret: example_rgb(0x171717).into(),
                 ..InputEditorStyle::default()
             });
@@ -248,7 +248,7 @@ impl BaseShowcase {
         });
         cx.subscribe(
             &combobox_query,
-            |_, _, _: &gpui_base::input::InputEvent, cx| cx.notify(),
+            |_, _, _: &wgpui_base::input::InputEvent, cx| cx.notify(),
         )
         .detach();
         if matches!(component.as_str(), "input" | "number-input") {
@@ -297,7 +297,7 @@ impl BaseShowcase {
                                 .set(delta, cx, |delta, this, cx| {
                                     let offset = this.text_selection_scroll.offset();
                                     this.text_selection_scroll
-                                        .set_offset(gpui::point(offset.x, offset.y - delta));
+                                        .set_offset(wgpui::point(offset.x, offset.y - delta));
                                     cx.notify();
                                 });
                         });
@@ -389,7 +389,7 @@ impl BaseShowcase {
         let style = || InputEditorStyle {
             foreground: example_rgb(0x171717).into(),
             muted_foreground: example_rgb(0x737373).into(),
-            selection: gpui::hsla(0.6, 0.8, 0.7, 0.45),
+            selection: wgpui::hsla(0.6, 0.8, 0.7, 0.45),
             caret: example_rgb(0x171717).into(),
             ..InputEditorStyle::default()
         };
@@ -424,7 +424,7 @@ impl BaseShowcase {
                     .child(
                         div()
                             .text_lg()
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .font_weight(wgpui::FontWeight::SEMIBOLD)
                             .child("GPUI Base"),
                     )
                     .child(
@@ -525,7 +525,7 @@ impl Render for BaseShowcase {
                     .flex_1()
                     .min_h_0()
                     .overflow_hidden()
-                    .transition(gpui_base::motion::Transition::new(
+                    .transition(wgpui_base::motion::Transition::new(
                         std::time::Duration::from_millis(220),
                     ))
                     .item(|page, _, _| components::slide(page)),
@@ -633,11 +633,11 @@ impl BaseShowcase {
 /// example's state lives on the showcase, and rendering goes back there.
 struct ComponentPage {
     component: String,
-    showcase: gpui::WeakEntity<BaseShowcase>,
+    showcase: wgpui::WeakEntity<BaseShowcase>,
 }
 
 impl ComponentPage {
-    fn new(component: impl Into<String>, showcase: gpui::WeakEntity<BaseShowcase>) -> Self {
+    fn new(component: impl Into<String>, showcase: wgpui::WeakEntity<BaseShowcase>) -> Self {
         Self {
             component: component.into(),
             showcase,
@@ -659,7 +659,7 @@ impl Render for ComponentPage {
 pub fn run(app: Application, component: impl Into<String>) {
     let component = component.into();
     app.run(move |cx: &mut App| {
-        gpui_base::init(cx);
+        wgpui_base::init(cx);
         #[cfg(not(target_family = "wasm"))]
         {
             cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
@@ -691,10 +691,10 @@ pub fn run(app: Application, component: impl Into<String>) {
 }
 
 #[cfg(target_family = "wasm")]
-pub fn run_embedded(app: Application, component: impl Into<String>) -> gpui::ApplicationHandle {
+pub fn run_embedded(app: Application, component: impl Into<String>) -> wgpui::ApplicationHandle {
     let component = component.into();
     app.run_embedded(move |cx: &mut App| {
-        gpui_base::init(cx);
+        wgpui_base::init(cx);
         cx.text_system()
             .add_fonts(vec![Cow::Borrowed(
                 include_bytes!("../../../story-web/fonts/Inter-Regular.ttf").as_slice(),
@@ -711,5 +711,5 @@ pub fn run_embedded(app: Application, component: impl Into<String>) -> gpui::App
 #[cfg(not(target_family = "wasm"))]
 #[allow(dead_code)]
 pub fn run_native(component: &str) {
-    run(gpui_platform::application(), component.to_owned());
+    run(wgpui_platform::application(), component.to_owned());
 }

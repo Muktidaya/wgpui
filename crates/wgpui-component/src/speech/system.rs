@@ -2,7 +2,7 @@
 
 use std::{cell::OnceCell, rc::Rc};
 
-use gpui::{App, SharedString};
+use wgpui::{App, SharedString};
 
 use super::{AudioFormat, RecognitionSession, SpeechError, SpeechRecognizer, SpeechSink};
 

@@ -4,9 +4,9 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use gpui::{DefiniteLength, Hsla, SharedString, px, relative};
 use html5ever::tendril::TendrilSink;
 use html5ever::{LocalName, ParseOpts, local_name, parse_document};
+use wgpui::{DefiniteLength, Hsla, SharedString, px, relative};
 
 use super::html_dom::{HtmlDom, Node, NodeData};
 
@@ -142,7 +142,7 @@ fn attr_value(attrs: &RefCell<Vec<html5ever::Attribute>>, name: LocalName) -> Op
 
 /// Default `<mark>` background when the tag has no usable color.
 pub(super) fn default_mark_color() -> Hsla {
-    gpui::rgb(0xfef08a).into()
+    wgpui::rgb(0xfef08a).into()
 }
 
 /// Get the highlight background color for a `<mark>` element.
@@ -172,13 +172,13 @@ pub(super) fn mark_color_from_values(color: Option<&str>, style: Option<&str>) -
 
 fn parse_mark_color(value: &str) -> Option<Hsla> {
     if value.starts_with('#') {
-        return gpui::Rgba::try_from(value).ok().map(Into::into);
+        return wgpui::Rgba::try_from(value).ok().map(Into::into);
     }
     match value.to_ascii_lowercase().as_str() {
-        "black" => Some(gpui::rgb(0x000000).into()),
-        "white" => Some(gpui::rgb(0xffffff).into()),
-        "blue" => Some(gpui::rgb(0x3b82f6).into()),
-        "yellow" => Some(gpui::rgb(0xfacc15).into()),
+        "black" => Some(wgpui::rgb(0x000000).into()),
+        "white" => Some(wgpui::rgb(0xffffff).into()),
+        "blue" => Some(wgpui::rgb(0x3b82f6).into()),
+        "yellow" => Some(wgpui::rgb(0xfacc15).into()),
         _ => None,
     }
 }
@@ -757,8 +757,8 @@ fn trim_trailing_break(paragraph: &mut Paragraph) {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{px, relative};
     use std::sync::Arc;
+    use wgpui::{px, relative};
 
     use crate::text::{
         document::ParsedDocument,
@@ -768,7 +768,7 @@ mod tests {
     use super::trim_text;
 
     #[test]
-    fn repairs_omitted_paragraph_end_tags() -> Result<(), gpui::SharedString> {
+    fn repairs_omitted_paragraph_end_tags() -> Result<(), wgpui::SharedString> {
         let mut context = NodeContext::default();
         let document = super::parse("<div><p>first<p>second <strong>bold</div>", &mut context)?;
         assert_eq!(document.to_markdown(), "first\n\nsecond **bold**");
@@ -776,7 +776,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_decoded_link_text_and_attributes() -> Result<(), gpui::SharedString> {
+    fn preserves_decoded_link_text_and_attributes() -> Result<(), wgpui::SharedString> {
         let mut context = NodeContext::default();
         let source = r#"<p><a href="https://example.com/?q=1&amp;next=2" title="&amp;copy;">&lt;safe&gt; &amp; 🙂</a></p>"#;
         let document = super::parse(source, &mut context)?;
@@ -799,7 +799,7 @@ mod tests {
     }
 
     #[test]
-    fn keeps_template_and_script_contents_inert() -> Result<(), gpui::SharedString> {
+    fn keeps_template_and_script_contents_inert() -> Result<(), wgpui::SharedString> {
         let mut context = NodeContext::default();
         let document = super::parse(
             "<p>visible</p><template><p>inert</p></template><script>hidden()</script><style>.hidden{display:none}</style>",

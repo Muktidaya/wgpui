@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{AppContext, Empty, ListOffset, TestAppContext, px, size};
+use wgpui::{AppContext, Empty, ListOffset, TestAppContext, px, size};
 
 use super::{
     DiffEvent, DiffFile, DiffFileStatus, DiffLinePosition, DiffLineRange, DiffMode, DiffSide,
@@ -12,8 +12,8 @@ const PATCH: &str = "diff --git a/first.txt b/first.txt\n--- a/first.txt\n+++ b/
 
 fn record_events(
     cx: &mut TestAppContext,
-    state: &gpui::Entity<DiffState>,
-) -> (Rc<RefCell<Vec<DiffEvent>>>, gpui::Subscription) {
+    state: &wgpui::Entity<DiffState>,
+) -> (Rc<RefCell<Vec<DiffEvent>>>, wgpui::Subscription) {
     let events = Rc::new(RefCell::new(Vec::new()));
     let subscription = cx.update(|cx| {
         let events = events.clone();
@@ -32,7 +32,7 @@ fn code_rows(state: &DiffState, file: usize) -> usize {
         .count()
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn collapsed_files_keep_their_header_and_survive_replacement(cx: &mut TestAppContext) {
     let state = cx.new(|cx| DiffState::new(DiffFile::parse(PATCH).unwrap(), cx));
     let (events, _subscription) = record_events(cx, &state);
@@ -68,7 +68,7 @@ fn collapsed_files_keep_their_header_and_survive_replacement(cx: &mut TestAppCon
     ));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn folds_expand_by_direction_and_short_ranges_stay_visible(cx: &mut TestAppContext) {
     let original = (1..=60)
         .map(|line| format!("line {line}\n"))
@@ -118,7 +118,7 @@ fn folds_expand_by_direction_and_short_ranges_stay_visible(cx: &mut TestAppConte
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn line_selection_reports_a_gesture_lifecycle(cx: &mut TestAppContext) {
     let window = cx.open_window(size(px(640.), px(480.)), |_, _| Empty);
     let state = cx.new(|cx| DiffState::new(DiffFile::parse(PATCH).unwrap(), cx));
@@ -163,7 +163,7 @@ fn line_selection_reports_a_gesture_lifecycle(cx: &mut TestAppContext) {
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn programmatic_cross_side_ranges_clip_to_supplied_lines(cx: &mut TestAppContext) {
     let state = cx.new(|cx| DiffState::new(DiffFile::parse(PATCH).unwrap(), cx));
     state.update(cx, |state, cx| {
@@ -225,7 +225,7 @@ fn files_report_git_status_and_hidden_lines() {
 
 const MERGE: &str = "start\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> feature\nmiddle\n<<<<<<< HEAD\na\n||||||| base\nb\n=======\nc\n>>>>>>> other\nend\n";
 
-#[gpui::test]
+#[wgpui::test]
 fn conflicts_project_their_parts_and_resolve_to_working_text(cx: &mut TestAppContext) {
     let file = DiffFile::parse_conflicts("merge.txt", MERGE).unwrap();
     let state = cx.new(|cx| {
@@ -282,7 +282,7 @@ fn conflicts_project_their_parts_and_resolve_to_working_text(cx: &mut TestAppCon
     )));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn unchanged_files_show_every_line_without_folding(cx: &mut TestAppContext) {
     let text = (1..=40)
         .map(|line| format!("line {line}\n"))
@@ -306,10 +306,10 @@ fn unchanged_files_show_every_line_without_folding(cx: &mut TestAppContext) {
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn builders_after_new_shape_the_prepared_emphasis(cx: &mut TestAppContext) {
     let patch = "--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-let total = price;\n+let total = cost;\n";
-    let inline_count = |state: &gpui::Entity<DiffState>, cx: &mut TestAppContext| {
+    let inline_count = |state: &wgpui::Entity<DiffState>, cx: &mut TestAppContext| {
         state.update(cx, |state, cx| state.ensure_presentation(cx));
         cx.run_until_parked();
         state.read_with(cx, |state, _| {
@@ -342,7 +342,7 @@ fn builders_after_new_shape_the_prepared_emphasis(cx: &mut TestAppContext) {
     assert_eq!(inline_count(&words, cx), 1);
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn changing_presentation_options_keeps_selection_and_scroll(cx: &mut TestAppContext) {
     let state = cx.new(|cx| DiffState::new(DiffFile::parse(PATCH).unwrap(), cx));
     let (events, _subscription) = record_events(cx, &state);

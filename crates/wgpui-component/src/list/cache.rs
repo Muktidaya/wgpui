@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{App, Pixels, Size};
+use wgpui::{App, Pixels, Size};
 
 use crate::IndexPath;
 

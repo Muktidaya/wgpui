@@ -1,6 +1,6 @@
 use super::InlineTokenContext;
 use crate::{ActiveTheme as _, Icon, StyledExt as _};
-use gpui::{
+use wgpui::{
     App, InteractiveElement as _, IntoElement, ParentElement as _, RenderOnce, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
 };

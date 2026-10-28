@@ -1,6 +1,4 @@
-extern crate wgpui_component as gpui_component;
-
-use gpui::{Axis, InteractiveElement as _, ParentElement as _, Styled as _, blue, green, px, red};
+use wgpui::{Axis, InteractiveElement as _, ParentElement as _, Styled as _, blue, green, px, red};
 use wgpui_component::{
     Disableable as _, Icon, IconName, Selectable as _, Sizable as _, Size,
     button::{
@@ -45,7 +43,7 @@ fn legacy_button_path_and_builder_surface_remain_available() {
             let _: &bool = hovered;
         })
         .on_click(|event, _, _| {
-            let _: &gpui::ClickEvent = event;
+            let _: &wgpui::ClickEvent = event;
         })
         .child("application child")
         .bg(red())
@@ -80,7 +78,7 @@ fn legacy_button_variants_and_rounding_types_remain_public() {
         ButtonRounded::Size(px(8.)),
     ];
 
-    let _custom_constructor: fn(&gpui::App) -> ButtonCustomVariant = ButtonCustomVariant::new;
+    let _custom_constructor: fn(&wgpui::App) -> ButtonCustomVariant = ButtonCustomVariant::new;
     let _custom_builders = (
         ButtonCustomVariant::color,
         ButtonCustomVariant::foreground,
@@ -124,7 +122,7 @@ fn legacy_button_group_and_dropdown_paths_remain_available() {
     let dropdown = DropdownButton::new("legacy-dropdown-button")
         .button(Button::new("dropdown-primary").label("Export"))
         .dropdown_menu(|menu, _, _| menu)
-        .dropdown_menu_with_anchor(gpui::Anchor::BottomLeft, |menu, _, _| menu)
+        .dropdown_menu_with_anchor(wgpui::Anchor::BottomLeft, |menu, _, _| menu)
         .outline()
         .success()
         .disabled(false)
@@ -167,8 +165,8 @@ fn legacy_toggle_types_under_button_module_remain_available() {
 #[test]
 fn base_button_does_not_replace_legacy_button_module_path() {
     fn legacy(_: Button) {}
-    fn base(_: gpui_base::Button) {}
+    fn base(_: wgpui_base::Button) {}
 
     legacy(Button::new("legacy"));
-    base(gpui_base::Button::new("base"));
+    base(wgpui_base::Button::new("base"));
 }

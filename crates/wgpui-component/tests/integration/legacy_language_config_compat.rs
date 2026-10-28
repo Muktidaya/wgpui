@@ -1,4 +1,3 @@
-extern crate wgpui_component as gpui_component;
 // These imports and grammar struct literals were valid in 0.6.0.
 
 use wgpui_component::{highlighter::*, input::*};
@@ -26,7 +25,7 @@ fn grammar_config_remains_unambiguous_with_legacy_glob_imports() {
 
 #[test]
 fn base_imports_do_not_shadow_legacy_grammar_config() {
-    use gpui_base::input::*;
+    use wgpui_base::input::*;
     use wgpui_component::highlighter::*;
     let _: Option<LanguageConfig> = None;
     let _: Option<EditorState> = None;

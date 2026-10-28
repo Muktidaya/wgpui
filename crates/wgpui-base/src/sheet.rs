@@ -1,7 +1,7 @@
 use crate::TestSupportExt as _;
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, ClickEvent, FocusHandle, InteractiveElement as _, IntoElement, KeyBinding,
     MouseButton, ParentElement, Pixels, RenderOnce, StyleRefinement, Styled, Window, anchored, div,
     point, prelude::FluentBuilder as _, px,
@@ -30,7 +30,7 @@ pub fn init(cx: &mut App) {
 /// Escape handling, overlay dismissal, and close callback ordering.
 #[derive(IntoElement)]
 pub struct Sheet {
-    base: gpui::Div,
+    base: wgpui::Div,
     style: StyleRefinement,
     focus: FocusHandle,
     overlay_interactive: bool,
@@ -169,8 +169,8 @@ impl RenderOnce for Sheet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, point, px};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{Context, Render, point, px};
 
     struct Harness {
         closable: bool,
@@ -203,9 +203,12 @@ mod tests {
     }
 
     fn harness(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
         closable: bool,
-    ) -> (&mut gpui::VisualTestContext, Rc<RefCell<Vec<&'static str>>>) {
+    ) -> (
+        &mut wgpui::VisualTestContext,
+        Rc<RefCell<Vec<&'static str>>>,
+    ) {
         cx.update(crate::init);
         let focus = cx.update(|cx| cx.focus_handle());
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -224,30 +227,30 @@ mod tests {
         (cx, events)
     }
 
-    #[gpui::test]
-    fn overlay_close_requests_then_notifies(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn overlay_close_requests_then_notifies(cx: &mut wgpui::TestAppContext) {
         let (cx, events) = harness(cx, true);
         cx.simulate_click(point(px(20.), px(20.)), Default::default());
         assert_eq!(&*events.borrow(), &["request", "closed"]);
     }
 
-    #[gpui::test]
-    fn non_closable_overlay_does_not_request_close(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn non_closable_overlay_does_not_request_close(cx: &mut wgpui::TestAppContext) {
         let (cx, events) = harness(cx, false);
         cx.simulate_click(point(px(20.), px(20.)), Default::default());
         assert!(events.borrow().is_empty());
     }
 
-    #[gpui::test]
-    fn escape_uses_the_same_close_order_and_registers_focus_trap(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn escape_uses_the_same_close_order_and_registers_focus_trap(cx: &mut wgpui::TestAppContext) {
         let (cx, events) = harness(cx, true);
         assert!(cx.update(|window, cx| crate::active_focus_trap(window, cx).is_some()));
         cx.dispatch_action(Cancel);
         assert_eq!(&*events.borrow(), &["request", "closed"]);
     }
 
-    #[gpui::test]
-    fn pointer_above_the_dismiss_cutoff_is_ignored(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pointer_above_the_dismiss_cutoff_is_ignored(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let focus = cx.update(|cx| cx.focus_handle());
         let events = Rc::new(RefCell::new(Vec::new()));

@@ -1,7 +1,7 @@
 //! Presentation hook for an editor's existing viewport, without a second scroll system.
 use crate::{ScrollbarAxis, ScrollbarHandle};
-use gpui::{AnyElement, App, Bounds, Pixels, Point, ScrollHandle, Size, Window};
 use std::rc::Rc;
+use wgpui::{AnyElement, App, Bounds, Pixels, Point, ScrollHandle, Size, Window};
 
 /// Current-frame editor geometry and its retained scroll offset.
 /// The editor applies caret scrolling before invoking the presentation callback.

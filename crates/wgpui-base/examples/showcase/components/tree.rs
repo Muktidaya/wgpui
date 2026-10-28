@@ -1,6 +1,6 @@
 use super::*;
-use gpui::{Image, ImageFormat, StyleRefinement, img};
 use std::sync::Arc;
+use wgpui::{Image, ImageFormat, StyleRefinement, img};
 
 const CHEVRON_RIGHT_SVG: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="#171717" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>"##;
 const CHEVRON_DOWN_SVG: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none"><path d="m3.5 6 4.5 4.5L12.5 6" stroke="#171717" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"/></svg>"##;

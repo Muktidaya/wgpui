@@ -3,9 +3,9 @@
 //! and inline changes between paired lines.
 use std::{collections::HashMap, ops::Range, sync::Arc};
 
-use gpui::{HighlightStyle, SharedString};
-use gpui_base::input::HighlightStyleResolver;
 use similar::{ChangeTag, TextDiff};
+use wgpui::{HighlightStyle, SharedString};
+use wgpui_base::input::HighlightStyleResolver;
 
 use super::{DiffFile, DiffSide, document::SourceLine};
 use crate::{Rope, highlighter::SyntaxHighlighter};
@@ -466,7 +466,7 @@ mod tests {
         .unwrap()
         .remove(0);
         let bold = HighlightStyle {
-            font_weight: Some(gpui::FontWeight::BOLD),
+            font_weight: Some(wgpui::FontWeight::BOLD),
             ..Default::default()
         };
         let calls = Arc::new(Mutex::new(Vec::new()));

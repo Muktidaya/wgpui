@@ -1,6 +1,6 @@
 // From:
 // https://github.com/zed-industries/zed/blob/56daba28d40301ee4c05546fadb691d070b7b2b6/crates/gpui/examples/window_shadow.rs
-use gpui::{
+use wgpui::{
     AnyElement, App, CursorStyle, Decorations, Edges, Hsla, InteractiveElement as _, IntoElement,
     MouseButton, ParentElement, Pixels, Point, RenderOnce, ResizeEdge, Size, Styled as _, Tiling,
     Window, div, point, prelude::FluentBuilder as _, px,
@@ -187,7 +187,7 @@ impl RenderOnce for WindowBorder {
 
         div()
             .id("window-backdrop")
-            .bg(gpui::transparent_black())
+            .bg(wgpui::transparent_black())
             .flex()
             .flex_col()
             .overflow_hidden()
@@ -245,7 +245,7 @@ impl RenderOnce for WindowBorder {
                             // Keep the effective outer reach below SHADOW_SIZE. GPUI
                             // does not grow the paint bounds for blur, so a larger blur
                             // or offset would be visibly cut off by the window surface.
-                            gpui::BoxShadow {
+                            wgpui::BoxShadow {
                                 color: Hsla {
                                     h: 0.,
                                     s: 0.,
@@ -261,7 +261,7 @@ impl RenderOnce for WindowBorder {
                             },
                             // The contact layer adds definition without increasing the
                             // space between the content and the outer window bounds.
-                            gpui::BoxShadow {
+                            wgpui::BoxShadow {
                                 color: Hsla {
                                     h: 0.,
                                     s: 0.,
@@ -278,7 +278,7 @@ impl RenderOnce for WindowBorder {
                     .on_mouse_move(|_e, _, cx| {
                         cx.stop_propagation();
                     })
-                    .bg(gpui::transparent_black())
+                    .bg(wgpui::transparent_black())
                     .children(children),
             )
             .when(window.is_resizable(), |parent| {

@@ -3,8 +3,6 @@ use crate::highlighter::HighlightTheme;
 use crate::highlighter::LanguageRegistry;
 
 use anyhow::{Context, Result, anyhow};
-use gpui::{HighlightStyle, SharedString};
-use gpui_base::input::RopeExt as _;
 use ropey::{Rope, iter::Chunks};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -16,6 +14,8 @@ use sum_tree::Bias;
 use tree_sitter::{
     InputEdit, ParseOptions, Parser, Point, Query, QueryCursor, StreamingIterator, Tree,
 };
+use wgpui::{HighlightStyle, SharedString};
+use wgpui_base::input::RopeExt as _;
 
 const MAX_INJECTION_RANGES: usize = 4096;
 const MAX_INJECTION_BYTES: usize = 512 * 1024;
@@ -1175,7 +1175,7 @@ impl SyntaxHighlighter {
     pub fn styles(
         &self,
         range: &Range<usize>,
-        theme: &dyn gpui_base::input::HighlightStyleResolver,
+        theme: &dyn wgpui_base::input::HighlightStyleResolver,
     ) -> Vec<(Range<usize>, HighlightStyle)> {
         let mut styles = vec![];
         let start_offset = range.start;
@@ -1350,7 +1350,7 @@ fn merge_highlight_style(style: &mut HighlightStyle, other: &HighlightStyle) {
 
 #[cfg(test)]
 mod tests {
-    use gpui::Hsla;
+    use wgpui::Hsla;
 
     use super::*;
     use crate::Colorize as _;
@@ -1504,11 +1504,11 @@ mod tests {
         fn color_name(c: Option<Hsla>) -> String {
             match c {
                 Some(c) => {
-                    if c == gpui::red() {
+                    if c == wgpui::red() {
                         "red".to_string()
-                    } else if c == gpui::green() {
+                    } else if c == wgpui::green() {
                         "green".to_string()
-                    } else if c == gpui::blue() {
+                    } else if c == wgpui::blue() {
                         "blue".to_string()
                     } else {
                         c.to_hex()
@@ -1941,8 +1941,8 @@ $x = 1;
                 styles.iter().any(|(range, style)| {
                     range.start <= start
                         && range.end >= end
-                        && style.font_weight == Some(gpui::FontWeight::BOLD)
-                        && style.font_style == Some(gpui::FontStyle::Italic)
+                        && style.font_weight == Some(wgpui::FontWeight::BOLD)
+                        && style.font_style == Some(wgpui::FontStyle::Italic)
                 }),
                 "{text:?} should combine bold and italic styles"
             );
@@ -1964,9 +1964,9 @@ $x = 1;
 
     #[test]
     fn test_unique_styles() {
-        let red = color_style(gpui::red());
-        let green = color_style(gpui::green());
-        let blue = color_style(gpui::blue());
+        let red = color_style(wgpui::red());
+        let green = color_style(wgpui::green());
+        let blue = color_style(wgpui::blue());
         let clean = HighlightStyle::default();
 
         assert_unique_styles(

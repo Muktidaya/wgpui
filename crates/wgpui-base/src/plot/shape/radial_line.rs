@@ -2,7 +2,7 @@
 
 use std::f32::consts::PI;
 
-use gpui::{
+use wgpui::{
     Background, BorderStyle, Bounds, Hsla, PaintQuad, Path, PathBuilder, Pixels, Point, Window,
     point, px, quad, size,
 };
@@ -50,7 +50,7 @@ impl<T> Default for RadialLine<T> {
             stroke_width: px(1.),
             dot: false,
             dot_size: px(4.),
-            dot_fill: gpui::transparent_black().into(),
+            dot_fill: wgpui::transparent_black().into(),
             dot_stroke: None,
         }
     }
@@ -159,7 +159,7 @@ impl<T> RadialLine<T> {
     /// Paint a dot on the RadialLine.
     fn paint_dot(&self, dot: Point<Pixels>) -> PaintQuad {
         quad(
-            gpui::bounds(dot, size(self.dot_size, self.dot_size)),
+            wgpui::bounds(dot, size(self.dot_size, self.dot_size)),
             self.dot_size / 2.,
             self.dot_fill,
             px(1.),
@@ -252,7 +252,7 @@ mod tests {
 
     use super::*;
 
-    use gpui::{Bounds, point, px};
+    use wgpui::{Bounds, point, px};
 
     #[test]
     fn test_radial_line_points() {
@@ -294,7 +294,7 @@ mod tests {
             .angle(|_, i| Some(i as f32 * TAU / 3.))
             .radius(|v, _| Some(*v * 10.))
             .closed()
-            .fill(gpui::black())
+            .fill(wgpui::black())
             .dot();
 
         let (fill_path, stroke_path, dots) = line.path(&bounds);

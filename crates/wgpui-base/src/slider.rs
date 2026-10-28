@@ -1,7 +1,7 @@
 use crate::TestSupportExt as _;
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     AccessibleAction, Along, AnyElement, App, AppContext as _, Axis, Bounds, Context, Div,
     DragMoveEvent, Empty, Entity, EntityId, EventEmitter, HitboxBehavior, InteractiveElement,
     IntoElement, MouseButton, MouseDownEvent, Orientation, ParentElement, Pixels, Point, Render,
@@ -603,7 +603,7 @@ impl Styled for SliderTrack {
 }
 
 impl InteractiveElement for SliderTrack {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -620,7 +620,7 @@ impl RenderOnce for SliderTrack {
         // drags that start on the track, as the scrollbar thumb does.
         let touch_layer = (!self.disabled).then(|| {
             let slider_state = self.state.clone();
-            gpui::canvas(
+            wgpui::canvas(
                 |bounds, window, _| window.insert_hitbox(bounds, HitboxBehavior::Normal),
                 move |_, hitbox, window, _| {
                     let slider_state = slider_state.clone();
@@ -768,7 +768,7 @@ impl Styled for SliderIndicator {
 }
 
 impl InteractiveElement for SliderIndicator {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -844,7 +844,7 @@ impl Styled for SliderThumb {
 }
 
 impl InteractiveElement for SliderThumb {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }

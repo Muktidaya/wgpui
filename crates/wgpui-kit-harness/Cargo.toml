@@ -20,10 +20,10 @@ name = "theme_init"
 path = "tests/theme_init.rs"
 
 [dev-dependencies]
-gpui = { workspace = true, features = ["test-support"] }
-gpui-component = { workspace = true }
-gpui-component-assets = { workspace = true }
-gpui_platform = { workspace = true }
+wgpui = { workspace = true, features = ["test-support"] }
+wgpui-component = { workspace = true }
+wgpui-kit-assets = { workspace = true }
+wgpui-platform = { workspace = true }
 
 [lints]
 workspace = true
@@ -33,4 +33,4 @@ name = "wgpui-native-acceptance"
 path = "src/native_acceptance.rs"
 
 [dependencies]
-gpui-kit.workspace = true
+wgpui-kit.workspace = true

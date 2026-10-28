@@ -11,8 +11,8 @@
 //! forward them over a channel to a foreground task that reports to the sink.
 
 use anyhow::anyhow;
-use gpui::{App, AsyncApp, SharedString, Task};
 use smol::channel::{Receiver, Sender, unbounded};
+use wgpui::{App, AsyncApp, SharedString, Task};
 use windows::{
     Foundation::TypedEventHandler,
     Globalization::Language,

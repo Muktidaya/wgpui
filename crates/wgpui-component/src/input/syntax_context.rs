@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 #[cfg(feature = "tree-sitter")]
-use gpui_base::input::Rope;
-use gpui_base::input::SyntaxContextProvider;
+use wgpui_base::input::Rope;
+use wgpui_base::input::SyntaxContextProvider;
 
 /// A syntax-context provider for `language`, or `None` when no grammar is
 /// compiled in (unknown language, plain text, or feature disabled).
@@ -59,14 +59,14 @@ impl TreeSitterSyntaxContext {
         }
     }
 
-    fn classify(kind: &str) -> Option<gpui_base::input::SyntaxContext> {
+    fn classify(kind: &str) -> Option<wgpui_base::input::SyntaxContext> {
         let lower = kind.to_lowercase();
         if lower == "interpolation" || lower == "template_substitution" {
-            Some(gpui_base::input::SyntaxContext::Code)
+            Some(wgpui_base::input::SyntaxContext::Code)
         } else if lower.contains("comment") {
-            Some(gpui_base::input::SyntaxContext::Comment)
+            Some(wgpui_base::input::SyntaxContext::Comment)
         } else if lower.contains("string") {
-            Some(gpui_base::input::SyntaxContext::String)
+            Some(wgpui_base::input::SyntaxContext::String)
         } else {
             None
         }
@@ -75,7 +75,7 @@ impl TreeSitterSyntaxContext {
 
 #[cfg(feature = "tree-sitter")]
 impl SyntaxContextProvider for TreeSitterSyntaxContext {
-    fn context_at(&self, text: &Rope, offset: usize) -> gpui_base::input::SyntaxContext {
+    fn context_at(&self, text: &Rope, offset: usize) -> wgpui_base::input::SyntaxContext {
         use std::ops::ControlFlow;
 
         let offset = offset.min(text.len_bytes());
@@ -110,7 +110,7 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
             *cached = Some((text.clone(), tree));
         }
         let Some((_, Some(tree))) = cached.as_ref() else {
-            return gpui_base::input::SyntaxContext::Code;
+            return wgpui_base::input::SyntaxContext::Code;
         };
         let mut node = tree.root_node().descendant_for_byte_range(offset, offset);
         // At the very end the range may match nothing; try the last byte.
@@ -125,7 +125,7 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
                 if let Some(context) = Self::classify(n.kind()) {
                     // String delimiters delimit the scope: inserting at its start
                     // is outside, while inserting before its end is inside.
-                    if context == gpui_base::input::SyntaxContext::String
+                    if context == wgpui_base::input::SyntaxContext::String
                         && offset == n.start_byte()
                         && matches!(
                             n.kind(),
@@ -136,7 +136,7 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
                                 | "string_start"
                         )
                     {
-                        return gpui_base::input::SyntaxContext::Code;
+                        return wgpui_base::input::SyntaxContext::Code;
                     }
                     return context;
                 }
@@ -152,19 +152,20 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
                 .descendant_for_byte_range(offset - 1, offset);
             while let Some(node) = previous {
                 if node.end_byte() == offset
-                    && Self::classify(node.kind()) == Some(gpui_base::input::SyntaxContext::Comment)
+                    && Self::classify(node.kind())
+                        == Some(wgpui_base::input::SyntaxContext::Comment)
                 {
                     if node.kind() == "line_comment"
                         || (node.kind() == "comment"
                             && Self::starts_line_comment(text, node.start_byte()))
                     {
-                        return gpui_base::input::SyntaxContext::Comment;
+                        return wgpui_base::input::SyntaxContext::Comment;
                     }
                 }
                 previous = node.parent();
             }
         }
-        gpui_base::input::SyntaxContext::Code
+        wgpui_base::input::SyntaxContext::Code
     }
 }
 
@@ -179,7 +180,7 @@ mod tests {
     #[cfg(all(feature = "tree-sitter-python", feature = "tree-sitter-rust"))]
     #[test]
     fn comment_end_tracks_insertion_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         for (language, source, offset, expected) in [
             ("python", "# note", 6, SyntaxContext::Comment),
             ("python", "# note\n", 6, SyntaxContext::Comment),
@@ -201,7 +202,7 @@ mod tests {
     #[cfg(feature = "tree-sitter-cmake")]
     #[test]
     fn closed_bracket_comment_is_not_a_line_comment() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         let provider = syntax_context_provider("cmake").unwrap();
         let text = Rope::from_str("#[[ note ]]");
         assert_eq!(
@@ -212,7 +213,7 @@ mod tests {
 
     #[test]
     fn json_string_content_is_string_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
 
         let provider = json_provider();
         // {"key": "value"} — offset inside "value".
@@ -226,7 +227,7 @@ mod tests {
 
     #[test]
     fn json_punctuation_is_code_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
 
         let provider = json_provider();
         let text = Rope::from_str(r#"{"key": "value"}"#);
@@ -244,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_changed_source_matches_fresh_provider() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         let provider = json_provider();
         let old = Rope::from_str(r#"{"key": "value"}"#);
         assert_eq!(provider.context_at(&old, 10), SyntaxContext::String);

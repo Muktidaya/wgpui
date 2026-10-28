@@ -1,16 +1,16 @@
 use super::inline_line::InputLine;
-use gpui::Half;
 use std::borrow::Cow;
 use std::ops::Range;
 use std::rc::Rc;
+use wgpui::Half;
 
-use gpui::{
-    App, Font, LineFragment, Pixels, Point, ShapedLine, Size, TextAlign, Window, point, px, size,
-};
 use ropey::Rope;
 use smallvec::SmallVec;
 use sum_tree::{Bias, Dimensions, SumTree};
 use unicode_segmentation::UnicodeSegmentation as _;
+use wgpui::{
+    App, Font, LineFragment, Pixels, Point, ShapedLine, Size, TextAlign, Window, point, px, size,
+};
 
 use crate::input::{
     Point as TreeSitterPoint, RopeExt, TabSize,
@@ -35,12 +35,12 @@ fn measured_wrap_boundaries(
     width: Pixels,
     wrapping_indent: WrappingIndent,
     mut measure: impl FnMut(&str) -> Pixels,
-) -> Vec<gpui::Boundary> {
+) -> Vec<wgpui::Boundary> {
     let indent = if wrapping_indent == WrappingIndent::Same {
         text.chars()
             .take_while(|&c| c == ' ')
             .count()
-            .min(gpui::LineWrapper::MAX_INDENT as usize)
+            .min(wgpui::LineWrapper::MAX_INDENT as usize)
     } else {
         0
     };
@@ -93,7 +93,7 @@ fn measured_wrap_boundaries(
             .map(|ix| opportunities[ix])
             .filter(|&ix| ix > start && (start != 0 || ix > indent))
             .unwrap_or(fitting_end);
-        result.push(gpui::Boundary {
+        result.push(wgpui::Boundary {
             ix: end,
             next_indent: indent as u32,
         });
@@ -388,7 +388,7 @@ impl TextWrapper {
             .text_system()
             .line_wrapper(self.font.clone(), self.font_size);
         let metrics = self.inline_metrics.clone();
-        let text_system = gpui::WindowTextSystem::new(cx.text_system().clone());
+        let text_system = wgpui::WindowTextSystem::new(cx.text_system().clone());
         let font = self.font.clone();
         let font_size = self.font_size;
         let wrapping_indent = self.wrapping_indent;
@@ -429,10 +429,10 @@ impl TextWrapper {
                             let layout = text_system.layout_line(
                                 text,
                                 font_size,
-                                &[gpui::TextRun {
+                                &[wgpui::TextRun {
                                     len: text.len(),
                                     font: font.clone(),
-                                    color: gpui::black(),
+                                    color: wgpui::black(),
                                     background_color: None,
                                     underline: None,
                                     strikethrough: None,
@@ -447,7 +447,7 @@ impl TextWrapper {
                     fragments.push(LineFragment::text(&line_str[offset..]));
                 }
                 line_wrapper
-                    .wrap_line(&fragments, wrap_width, gpui::IndentAdjustment::SameIndent)
+                    .wrap_line(&fragments, wrap_width, wgpui::IndentAdjustment::SameIndent)
                     .collect()
             },
         );
@@ -537,7 +537,7 @@ impl TextWrapper {
         new_text: &Rope,
         wrap_line: &mut F,
     ) where
-        F: FnMut(&str, Pixels, usize) -> Vec<gpui::Boundary>,
+        F: FnMut(&str, Pixels, usize) -> Vec<wgpui::Boundary>,
     {
         // Remove the old changed lines.
         let buffer_line_count = self.lines_count();
@@ -1108,19 +1108,19 @@ mod tests {
     use std::rc::Rc;
 
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-    use gpui::TestAppContext;
-    use gpui::{Boundary, FontFeatures, FontStyle, FontWeight, px};
+    use wgpui::TestAppContext;
+    use wgpui::{Boundary, FontFeatures, FontStyle, FontWeight, px};
 
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn shaped_width(text: &str, font: &Font, font_size: Pixels, cx: &App) -> Pixels {
-        gpui::WindowTextSystem::new(cx.text_system().clone())
+        wgpui::WindowTextSystem::new(cx.text_system().clone())
             .layout_line(
                 text,
                 font_size,
-                &[gpui::TextRun {
+                &[wgpui::TextRun {
                     len: text.len(),
                     font: font.clone(),
-                    color: gpui::black(),
+                    color: wgpui::black(),
                     background_color: None,
                     underline: None,
                     strikethrough: None,
@@ -1133,9 +1133,9 @@ mod tests {
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn shaping_test_context() -> TestAppContext {
         TestAppContext::build_with_text_system(
-            gpui::TestDispatcher::new(0),
+            wgpui::TestDispatcher::new(0),
             None,
-            gpui::try_current_platform_text_system().expect("native shaping service"),
+            wgpui::try_current_platform_text_system().expect("native shaping service"),
         )
     }
 
@@ -1214,7 +1214,7 @@ mod tests {
                 .map(|c| if c.is_ascii() { 1. } else { 2. })
                 .sum())
         };
-        let mut wrapper = TextWrapper::new(gpui::font("Arial"), px(14.), Some(px(6.)));
+        let mut wrapper = TextWrapper::new(wgpui::font("Arial"), px(14.), Some(px(6.)));
         let mut previous = Rope::new();
         for value in ["abcd的", "abcd的s", "abcd的ss", "abcd的s", "abcd的"] {
             let text = Rope::from(value);
@@ -1262,7 +1262,7 @@ mod tests {
 
     #[test]
     fn test_update() {
-        let font = gpui::Font {
+        let font = wgpui::Font {
             family: "Arial".into(),
             weight: FontWeight::default(),
             style: FontStyle::Normal,
@@ -1457,8 +1457,8 @@ mod tests {
         assert_eq!(wrapper.lines_count(), 2);
     }
 
-    fn test_font() -> gpui::Font {
-        gpui::Font {
+    fn test_font() -> wgpui::Font {
+        wgpui::Font {
             family: "Arial".into(),
             weight: FontWeight::default(),
             style: FontStyle::Normal,
@@ -1730,7 +1730,7 @@ mod tests {
 
     #[test]
     fn test_offset_to_display_point() {
-        let font = gpui::Font {
+        let font = wgpui::Font {
             family: "Arial".into(),
             weight: FontWeight::default(),
             style: FontStyle::Normal,

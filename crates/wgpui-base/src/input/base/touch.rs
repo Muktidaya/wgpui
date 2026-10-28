@@ -12,7 +12,7 @@
 //! them. Only the touch gesture and the menu's own actions move the range and
 //! carry the touch selection along.
 
-use gpui::{Context, LongPressEvent, Pixels, Point, TouchPhase, Window, point};
+use wgpui::{Context, LongPressEvent, Pixels, Point, TouchPhase, Window, point};
 
 use super::{InputBaseState, InputModeKind};
 use crate::touch_selection::{
@@ -324,7 +324,7 @@ impl<M: InputModeKind> InputBaseState<M> {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Entity, IntoElement, LongPressEvent, MouseButton,
         ParentElement as _, Render, Styled as _, TestAppContext, TouchPhase, VisualTestContext,
         Window, div, point, px,
@@ -398,7 +398,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn long_press_selects_word_then_release_opens_menu(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "quick select value");
         let start = caret_at(&input, cx, 8);
@@ -427,7 +427,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn double_tap_selects_word_with_handles_and_menu(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "quick select value");
         let at = caret_at(&input, cx, 8);
@@ -436,14 +436,14 @@ mod tests {
         // tells the input they came from a finger.
         cx.update(|_, cx| crate::GlobalState::note_touch(cx));
         for click_count in [1, 2] {
-            cx.simulate_event(gpui::MouseDownEvent {
+            cx.simulate_event(wgpui::MouseDownEvent {
                 position,
                 button: MouseButton::Left,
                 modifiers: Default::default(),
                 click_count,
                 first_mouse: false,
             });
-            cx.simulate_event(gpui::MouseUpEvent {
+            cx.simulate_event(wgpui::MouseUpEvent {
                 position,
                 button: MouseButton::Left,
                 modifiers: Default::default(),
@@ -462,7 +462,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn long_press_on_empty_input_places_caret_with_menu(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "");
         let caret = caret_at(&input, cx, 0);
@@ -476,7 +476,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_a_handle_moves_that_end_only(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "quick select value");
         let start = caret_at(&input, cx, 8);
@@ -529,7 +529,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_one_handle_past_the_other_swaps_them(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "quick select value");
         let start = caret_at(&input, cx, 8);
@@ -580,7 +580,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn touch_selection_goes_away_when_something_else_moves_the_selection(cx: &mut TestAppContext) {
         let (input, cx) = open_input(cx, "quick select value");
         let start = caret_at(&input, cx, 2);
@@ -626,7 +626,7 @@ mod tests {
         input.read_with(cx, |state, _| assert!(state.touch_selection().is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrolling_closes_the_menu_and_keeps_the_handles(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (root, cx) = cx.add_window_view(|window, cx| {

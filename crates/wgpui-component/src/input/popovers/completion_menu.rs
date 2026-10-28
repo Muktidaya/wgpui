@@ -1,14 +1,14 @@
 use std::{ops::Range, rc::Rc};
 
-use gpui::{
+use lsp_types::CompletionItem;
+use wgpui::{
     Action, AnyElement, App, AppContext, Context, DismissEvent, Empty, Entity, EventEmitter,
     HighlightStyle, InteractiveElement as _, IntoElement, ParentElement, Pixels, Render,
     RenderOnce, SharedString, Styled, StyledText, Subscription, WeakEntity, Window, deferred, div,
     prelude::FluentBuilder, px, rems,
 };
-use gpui_base::TestSupportExt as _;
-use gpui_base::input::CompletionHighlighter;
-use lsp_types::CompletionItem;
+use wgpui_base::TestSupportExt as _;
+use wgpui_base::input::CompletionHighlighter;
 
 const MAX_MENU_HEIGHT: Pixels = px(240.);
 const POPOVER_GAP: Pixels = px(4.);
@@ -176,7 +176,7 @@ impl EventEmitter<DismissEvent> for ContextMenuDelegate {}
 impl ListDelegate for ContextMenuDelegate {
     type Item = CompletionMenuItem;
 
-    fn items_count(&self, _: usize, _: &gpui::App) -> usize {
+    fn items_count(&self, _: usize, _: &wgpui::App) -> usize {
         self.items.len()
     }
 
@@ -245,7 +245,7 @@ impl CompletionMenu {
                 menu: view,
                 items: vec![],
                 selected_ix: 0,
-                highlight: Rc::new(gpui_base::input::highlight_prefix),
+                highlight: Rc::new(wgpui_base::input::highlight_prefix),
             };
 
             let list = cx.new(|cx| ListState::new(menu, window, cx));
@@ -515,9 +515,9 @@ mod tests {
         assert_eq!(retained_highlight_ranges("你", [0..1, 0..3]), vec![0..3]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn hiding_an_old_menu_does_not_dismiss_a_new_completion_response(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         cx.update(crate::init);
         let window = cx.add_empty_window();

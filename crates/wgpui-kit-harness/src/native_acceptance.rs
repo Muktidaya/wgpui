@@ -1,6 +1,7 @@
-extern crate gpui_kit as gpui;
+// The binary uses Kit; framework-only development dependencies also participate in macro lookup.
+use wgpui_kit as wgpui;
 
-use gpui_kit::{
+use wgpui_kit::{
     assets::Assets,
     component::{
         ActiveTheme,
@@ -53,7 +54,7 @@ impl NativeAcceptance {
                     println!("NATIVE picker=pending foreground=responsive");
                 }
             })?;
-            Ok::<(), gpui_kit::private::anyhow::Error>(())
+            Ok::<(), wgpui_kit::private::anyhow::Error>(())
         })
         .detach_and_log_err(cx);
         let response = cx.prompt_for_paths(PathPromptOptions {
@@ -88,7 +89,7 @@ impl NativeAcceptance {
                 this.status = status.into();
                 cx.notify();
             })?;
-            Ok::<(), gpui_kit::private::anyhow::Error>(())
+            Ok::<(), wgpui_kit::private::anyhow::Error>(())
         })
         .detach_and_log_err(cx);
     }
@@ -118,7 +119,7 @@ impl NativeAcceptance {
                 this.status = status.into();
                 cx.notify();
             })?;
-            Ok::<(), gpui_kit::private::anyhow::Error>(())
+            Ok::<(), wgpui_kit::private::anyhow::Error>(())
         })
         .detach_and_log_err(cx);
     }
@@ -145,7 +146,7 @@ impl NativeAcceptance {
                 this.status = status.into();
                 cx.notify();
             })?;
-            Ok::<(), gpui_kit::private::anyhow::Error>(())
+            Ok::<(), wgpui_kit::private::anyhow::Error>(())
         })
         .detach_and_log_err(cx);
     }
@@ -252,14 +253,14 @@ fn open_window(cx: &mut App, title: &'static str) {
             },
         )?;
         println!("NATIVE window=opened title={title:?}");
-        Ok::<(), gpui_kit::private::anyhow::Error>(())
+        Ok::<(), wgpui_kit::private::anyhow::Error>(())
     })
     .detach_and_log_err(cx);
 }
 
 fn main() {
-    gpui_kit::application().with_assets(Assets).run(|cx| {
-        gpui_kit::init(cx);
+    wgpui_kit::application().with_assets(Assets).run(|cx| {
+        wgpui_kit::init(cx);
         cx.on_action(|_: &Quit, cx| cx.quit());
         let (increment_binding, quit_binding) = if cx.platform_info().is_mac() {
             ("cmd-i", "cmd-q")

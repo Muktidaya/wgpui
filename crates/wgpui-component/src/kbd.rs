@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     Action, AsKeystroke, FocusHandle, Half, InteractiveElement as _, IntoElement, KeyBinding,
     KeyContext, Keystroke, ParentElement as _, RenderOnce, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, relative,
@@ -230,7 +230,7 @@ impl Styled for Kbd {
 }
 
 impl RenderOnce for Kbd {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl wgpui::IntoElement {
         if !self.appearance {
             return Self::format(&self.stroke).into_any_element();
         }
@@ -266,7 +266,7 @@ mod tests {
     #[test]
     fn test_format() {
         use super::Kbd;
-        use gpui::Keystroke;
+        use wgpui::Keystroke;
 
         if cfg!(target_os = "macos") {
             assert_eq!(Kbd::format(&Keystroke::parse("cmd-a").unwrap()), "⌘A");

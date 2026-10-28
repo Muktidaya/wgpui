@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
     StatefulInteractiveElement as _, StyleRefinement, Styled, Window, prelude::FluentBuilder as _,
     relative, rems,
@@ -110,7 +110,7 @@ impl Message {
     /// Set the accessibility role announced for this message.
     ///
     /// A message is presentational by default. Give the rows of a transcript
-    /// a role such as [`gpui::Role::ListItem`] so assistive technology can
+    /// a role such as [`wgpui::Role::ListItem`] so assistive technology can
     /// move between them. Accessibility nodes need a stable identity, so the
     /// role takes effect only together with [`Self::id`].
     pub fn role(mut self, role: impl Into<RoleOverride>) -> Self {
@@ -516,7 +516,7 @@ mod tests {
         let message = Message::new()
             .alignment(MessageAlignment::End)
             .with_stack_style(stack_style.clone())
-            .avatar_slot(MessageAvatar::new().child(gpui::div()))
+            .avatar_slot(MessageAvatar::new().child(wgpui::div()))
             .header(MessageHeader::new().content_inset(false).child("Alice"))
             .content(MessageContent::new().child("Hello"))
             .footer(MessageFooter::new().content_inset(false).child("Delivered"));
@@ -532,9 +532,9 @@ mod tests {
         assert!(message.id.is_none());
         assert_eq!(message.role, RoleOverride::default());
 
-        let row = Message::new().id("message-1").role(gpui::Role::ListItem);
+        let row = Message::new().id("message-1").role(wgpui::Role::ListItem);
         assert_eq!(row.id, Some("message-1".into()));
-        assert_eq!(row.role, RoleOverride::Role(gpui::Role::ListItem));
+        assert_eq!(row.role, RoleOverride::Role(wgpui::Role::ListItem));
 
         let group = MessageGroup::new().child("First").child("Second");
         assert_eq!(group.children.len(), 2);

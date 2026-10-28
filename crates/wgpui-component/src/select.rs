@@ -1,11 +1,11 @@
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, ClickEvent, Context, DismissEvent, Edges, ElementId, Entity, EventEmitter,
     FocusHandle, Focusable, Hsla, InteractiveElement, IntoElement, Length, ParentElement, Render,
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     deferred, div, prelude::FluentBuilder, px, rems,
 };
-use gpui_base::TestSupportExt as _;
-use rust_i18n::t;
+use wgpui_base::TestSupportExt as _;
 
 use crate::ThemeStyled as _;
 use crate::{
@@ -21,7 +21,7 @@ use crate::{
     sizing::DROPDOWN_LIST_PADDING,
     v_flex,
 };
-use gpui_base::{GlobalState, Select as BaseSelect};
+use wgpui_base::{GlobalState, Select as BaseSelect};
 
 // MARK: Public re-exports for back-compat
 
@@ -664,7 +664,7 @@ where
                                 })),
                             cx,
                         ))
-                        .with_priority(gpui_base::POPUP_PRIORITY),
+                        .with_priority(wgpui_base::POPUP_PRIORITY),
                     )
                 }),
         )
@@ -902,7 +902,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, RenderOnce as _, TestAppContext};
+    use wgpui::{AppContext as _, RenderOnce as _, TestAppContext};
 
     use crate::{
         IndexPath,
@@ -910,7 +910,7 @@ mod tests {
         select::{Select, SelectGroup, SelectState},
     };
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_explicit_accessibility_label_does_not_replace_the_placeholder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -940,7 +940,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_select_initial_selection_seeds_cursor(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -957,7 +957,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_select_initial_grouped_selection_seeds_cursor(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -974,7 +974,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_select_set_selected_value_clears_search_query(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -996,7 +996,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_select_set_selected_value_clears_grouped_search_query(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1021,7 +1021,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_select_accessibility_value_tracks_placeholder_and_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
@@ -1063,7 +1063,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn replacing_items_reconciles_the_cursor_and_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1118,7 +1118,7 @@ mod tests {
         fn value(&self) -> &&'static str {
             &self.value
         }
-        fn title(&self) -> gpui::SharedString {
+        fn title(&self) -> wgpui::SharedString {
             self.title.into()
         }
         fn disabled(&self) -> bool {
@@ -1126,7 +1126,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_items_cannot_be_confirmed(cx: &mut TestAppContext) {
         use crate::list::ListDelegate as _;
         cx.update(crate::init);

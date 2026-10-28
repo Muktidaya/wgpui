@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, DefiniteLength, Entity, IntoElement, RenderOnce, SharedString, StyleRefinement, Styled,
     Window, prelude::FluentBuilder as _,
 };
@@ -12,9 +12,9 @@ use crate::{RoleOverride, Sizable, Size, StyledExt as _};
 /// A styled ordinary multi-line text field.
 #[derive(IntoElement)]
 pub struct Textarea {
-    token_renderer: Option<gpui_base::input::InlineTokenRenderer>,
-    token_click_listener: Option<gpui_base::input::InlineTokenClickListener>,
-    token_hover_listener: Option<gpui_base::input::InlineTokenHoverListener>,
+    token_renderer: Option<wgpui_base::input::InlineTokenRenderer>,
+    token_click_listener: Option<wgpui_base::input::InlineTokenClickListener>,
+    token_hover_listener: Option<wgpui_base::input::InlineTokenHoverListener>,
     state: Entity<TextareaState>,
     style: StyleRefinement,
     size: Size,
@@ -33,7 +33,7 @@ pub struct Textarea {
     /// If set, this overrides the built-in context menu.
     context_menu_builder: Option<Rc<dyn Fn(NativeMenu, &mut Window, &mut App) -> NativeMenu>>,
 
-    paste_handler: Option<Rc<dyn Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
+    paste_handler: Option<Rc<dyn Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
 }
 
 impl Textarea {
@@ -162,7 +162,7 @@ impl Textarea {
     /// async clipboard access and is out of scope.
     pub fn on_paste(
         mut self,
-        handler: impl Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
+        handler: impl Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
     ) -> Self {
         self.paste_handler = Some(Rc::new(handler));
         self
@@ -226,18 +226,18 @@ impl RenderOnce for Textarea {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn test_on_paste_builder(cx: &mut gpui::TestAppContext) {
-        use gpui::{AppContext as _, Render};
+    #[wgpui::test]
+    fn test_on_paste_builder(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{AppContext as _, Render};
 
         struct Probe;
         impl Render for Probe {
             fn render(
                 &mut self,
                 _: &mut Window,
-                _: &mut gpui::Context<Self>,
-            ) -> impl gpui::IntoElement {
-                gpui::div()
+                _: &mut wgpui::Context<Self>,
+            ) -> impl wgpui::IntoElement {
+                wgpui::div()
             }
         }
 
@@ -251,18 +251,18 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_on_token_hover_builder(cx: &mut gpui::TestAppContext) {
-        use gpui::{AppContext as _, Render};
+    #[wgpui::test]
+    fn test_on_token_hover_builder(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{AppContext as _, Render};
 
         struct Probe;
         impl Render for Probe {
             fn render(
                 &mut self,
                 _: &mut Window,
-                _: &mut gpui::Context<Self>,
-            ) -> impl gpui::IntoElement {
-                gpui::div()
+                _: &mut wgpui::Context<Self>,
+            ) -> impl wgpui::IntoElement {
+                wgpui::div()
             }
         }
 

@@ -12,16 +12,16 @@ use crate::{
 };
 use crate::{Icon, IndexPath, Selectable, Sizable, StyledExt};
 use crate::{VirtualListScrollHandle, list::ListDelegate, v_virtual_list};
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, AvailableSpace, ClickEvent, Context, DefiniteLength, EdgesRefinement, EventEmitter,
     ListSizingBehavior, RenderOnce, Role, ScrollStrategy, SharedString, StatefulInteractiveElement,
     StyleRefinement, Subscription, px, size,
 };
-use gpui::{
+use wgpui::{
     AppContext, Entity, FocusHandle, Focusable, InteractiveElement, IntoElement, KeyBinding,
     Length, MouseButton, ParentElement, Render, Styled, Task, Window, div, prelude::FluentBuilder,
 };
-use rust_i18n::t;
 
 pub(crate) fn init(cx: &mut App) {
     let context: Option<&str> = Some("List");
@@ -608,10 +608,12 @@ where
                         })
                         .track_scroll(&scroll_handle)
                         .map(|list| {
-                            gpui_base::ScrollBounce::new("list-scroll-bounce", &scroll_handle, list)
-                                .when_some(self.options.scroll_bounce, |bounce, on| {
-                                    bounce.enabled(on)
-                                })
+                            wgpui_base::ScrollBounce::new(
+                                "list-scroll-bounce",
+                                &scroll_handle,
+                                list,
+                            )
+                            .when_some(self.options.scroll_bounce, |bounce, on| bounce.enabled(on))
                         })
                         .into_any_element(),
                     )
@@ -823,7 +825,7 @@ where
 mod measurement_tests {
     use super::*;
     use crate::list::ListItem;
-    use gpui::{Element, TestAppContext};
+    use wgpui::{Element, TestAppContext};
 
     struct Delegate {
         counts: Vec<usize>,
@@ -866,7 +868,7 @@ mod measurement_tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scroll_bounce_list_accepts_a_reverse_wheel_during_return(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (view, cx) = cx.add_window_view(|window, cx| {
@@ -874,20 +876,20 @@ mod measurement_tests {
         });
         cx.update(|window, cx| window.draw(cx).clear());
         let state = view.read_with(cx, |view, _| view.0.clone());
-        let wheel = |cx: &mut gpui::VisualTestContext, dy| {
-            cx.simulate_event(gpui::ScrollEvent {
-                position: gpui::point(px(100.), px(100.)),
-                delta: gpui::ScrollDelta::Lines(gpui::point(0., dy)),
+        let wheel = |cx: &mut wgpui::VisualTestContext, dy| {
+            cx.simulate_event(wgpui::ScrollEvent {
+                position: wgpui::point(px(100.), px(100.)),
+                delta: wgpui::ScrollDelta::Lines(wgpui::point(0., dy)),
                 ..Default::default()
             });
         };
         for (dy, phase) in [
-            (-10000., gpui::TouchPhase::Started),
-            (0., gpui::TouchPhase::Ended),
+            (-10000., wgpui::TouchPhase::Started),
+            (0., wgpui::TouchPhase::Ended),
         ] {
-            cx.simulate_event(gpui::ScrollEvent {
-                position: gpui::point(px(100.), px(100.)),
-                delta: gpui::ScrollDelta::Pixels(gpui::point(px(0.), px(dy))),
+            cx.simulate_event(wgpui::ScrollEvent {
+                position: wgpui::point(px(100.), px(100.)),
+                delta: wgpui::ScrollDelta::Pixels(wgpui::point(px(0.), px(dy))),
                 touch_phase: phase,
                 ..Default::default()
             });
@@ -902,12 +904,12 @@ mod measurement_tests {
         assert!(state.read_with(cx, |state, _| state.scroll_handle.offset().y) > end);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn measures_an_existing_row_when_the_requested_item_is_absent(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.draw(
-            gpui::point(px(0.), px(0.)),
+            wgpui::point(px(0.), px(0.)),
             size(px(300.), px(300.)),
             |window, cx| {
                 let list = cx.new(|cx| ListState::new(Delegate { counts: vec![0, 2] }, window, cx));
@@ -959,12 +961,12 @@ mod measurement_tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn list_state_has_list_role(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let window = cx.add_empty_window();
         window.draw(
-            gpui::point(px(0.), px(0.)),
+            wgpui::point(px(0.), px(0.)),
             size(px(300.), px(300.)),
             |window, cx| {
                 let list = cx.new(|cx| ListState::new(Delegate { counts: vec![2] }, window, cx));

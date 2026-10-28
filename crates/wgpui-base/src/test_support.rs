@@ -2,16 +2,16 @@
 //!
 //! Native accessibility properties are read automatically. Applications register
 //! identified GPUI elements with `.test_support()`, without supplying test-only state.
-use gpui::{
-    App, Bounds, Element, ElementId, FocusHandle, GlobalElementId, Hitbox, InspectorElementId,
-    InteractiveElement, IntoElement, LayoutId, Pixels, SharedString, Visibility, Window, px,
-};
 use smallvec::SmallVec;
 use std::{
     cell::RefCell,
     collections::HashMap,
     fmt,
     rc::{Rc, Weak},
+};
+use wgpui::{
+    App, Bounds, Element, ElementId, FocusHandle, GlobalElementId, Hitbox, InspectorElementId,
+    InteractiveElement, IntoElement, LayoutId, Pixels, SharedString, Visibility, Window, px,
 };
 
 /// Owned facts from the last paint of an observed element.
@@ -20,7 +20,7 @@ use std::{
 /// owner, while keeping the component frame's path, bounds and visibility.
 #[derive(Clone)]
 pub struct ElementSnapshot {
-    role: Option<gpui::Role>,
+    role: Option<wgpui::Role>,
     path: Vec<ElementId>,
     checked: Option<bool>,
     indeterminate: Option<bool>,
@@ -70,7 +70,7 @@ impl fmt::Debug for ElementSnapshot {
 }
 
 impl ElementSnapshot {
-    pub fn role(&self) -> Option<gpui::Role> {
+    pub fn role(&self) -> Option<wgpui::Role> {
         self.role
     }
     pub fn path(&self) -> &[ElementId] {
@@ -323,7 +323,7 @@ impl<E: Element> Observed<E> {
 
     /// Changes the native identity while keeping observation outside GPUI's
     /// stateful wrapper, so later focus bindings still reach this element.
-    pub fn id(self, id: impl Into<ElementId>) -> Observed<gpui::Stateful<E>>
+    pub fn id(self, id: impl Into<ElementId>) -> Observed<wgpui::Stateful<E>>
     where
         E: InteractiveElement,
     {
@@ -400,26 +400,26 @@ impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> Element fo
     ) -> Self::PrepaintState {
         let global_id = id.expect("observed elements have an ID");
         let role = self.inner.a11y_role();
-        let mut node = gpui::accesskit::Node::new(role.unwrap_or(gpui::Role::Unknown));
+        let mut node = wgpui::accesskit::Node::new(role.unwrap_or(wgpui::Role::Unknown));
         self.inner.write_a11y_info(&mut node);
         // Hidden nodes stay outside the native tree, while observation retains their declarations.
         let role = match node.role() {
-            gpui::Role::Unknown => role,
+            wgpui::Role::Unknown => role,
             role => Some(role),
         };
         let toggled = node.toggled();
         let facts = ElementSnapshot {
             role,
             path: global_id.to_vec(),
-            checked: toggled.map(|value| value == gpui::accesskit::Toggled::True),
-            indeterminate: toggled.map(|value| value == gpui::accesskit::Toggled::Mixed),
+            checked: toggled.map(|value| value == wgpui::accesskit::Toggled::True),
+            indeterminate: toggled.map(|value| value == wgpui::accesskit::Toggled::Mixed),
             selected: node.is_selected(),
             expanded: node.is_expanded(),
             value: node.value().map(|value| value.to_owned().into()),
             bounds,
             visible: false,
             focused: None,
-            focus_action: node.supports_action(gpui::accesskit::Action::Focus),
+            focus_action: node.supports_action(wgpui::accesskit::Action::Focus),
             disabled: node.is_disabled().then_some(true),
             label: node.label().map(|label| label.to_owned().into()),
             description: node.description().map(|text| text.to_owned().into()),
@@ -494,44 +494,44 @@ impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> Element fo
         self.inner
             .paint(id, inspector, bounds, layout, &mut paint.0, window, cx);
     }
-    fn a11y_role(&self) -> Option<gpui::Role> {
+    fn a11y_role(&self) -> Option<wgpui::Role> {
         self.inner.a11y_role()
     }
 
-    fn take_a11y_actions(&mut self) -> Vec<(gpui::accesskit::Action, gpui::A11yActionListener)> {
+    fn take_a11y_actions(&mut self) -> Vec<(wgpui::accesskit::Action, wgpui::A11yActionListener)> {
         self.inner.take_a11y_actions()
     }
 
-    fn a11y_focus_handle(&self) -> Option<gpui::FocusHandle> {
+    fn a11y_focus_handle(&self) -> Option<wgpui::FocusHandle> {
         self.inner.a11y_focus_handle()
     }
 
     fn a11y_reports_active_descendant(&self) -> bool {
         self.inner.a11y_reports_active_descendant()
     }
-    fn write_a11y_info(&self, node: &mut gpui::accesskit::Node) {
+    fn write_a11y_info(&self, node: &mut wgpui::accesskit::Node) {
         self.inner.write_a11y_info(node);
     }
     fn a11y_synthetic_children(
         &mut self,
         paint: &mut Self::PrepaintState,
-        builder: &mut gpui::A11ySubtreeBuilder,
+        builder: &mut wgpui::A11ySubtreeBuilder,
     ) {
         self.inner.a11y_synthetic_children(&mut paint.0, builder);
     }
 }
 
-impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement + gpui::Styled> gpui::Styled
+impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement + wgpui::Styled> wgpui::Styled
     for Observed<E>
 {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         self.inner.style()
     }
 }
 impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> InteractiveElement
     for Observed<E>
 {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.inner.interactivity()
     }
     fn track_focus(mut self, focus: &FocusHandle) -> Self {
@@ -540,15 +540,15 @@ impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> Interactiv
         self
     }
 }
-impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement + gpui::ParentElement>
-    gpui::ParentElement for Observed<E>
+impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement + wgpui::ParentElement>
+    wgpui::ParentElement for Observed<E>
 {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.inner.extend(elements);
     }
 }
 
-impl<E: Element<PrepaintState = Option<Hitbox>> + gpui::StatefulInteractiveElement>
-    gpui::StatefulInteractiveElement for Observed<E>
+impl<E: Element<PrepaintState = Option<Hitbox>> + wgpui::StatefulInteractiveElement>
+    wgpui::StatefulInteractiveElement for Observed<E>
 {
 }

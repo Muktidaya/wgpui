@@ -28,7 +28,7 @@ use std::{
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{Bounds, EntityId, Hsla, Pixels, SharedString};
+use wgpui::{Bounds, EntityId, Hsla, Pixels, SharedString};
 
 use super::{
     document::ParsedDocument,
@@ -820,7 +820,7 @@ impl<'a> LeafRemap<'a> {
 mod tests {
     use std::{ops::Range, sync::Arc};
 
-    use gpui::{EntityId, hsla};
+    use wgpui::{EntityId, hsla};
 
     use super::{LeafRemap, RangeHighlight, RangeHighlightFrame, RenderedText, TextLeafKey};
     use crate::text::{

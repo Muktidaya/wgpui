@@ -1,10 +1,10 @@
 use std::{hash::Hash, ops::RangeInclusive, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Background, Bounds, Corners, ElementId, Hsla, IntoElement, LinearColorStop,
     Pixels, Point, SharedString, Size, TextAlign, Window, linear_gradient, point, px,
 };
-use gpui_component_macros::IntoPlot;
+use wgpui_kit_macros::IntoPlot;
 
 use crate::{
     ActiveTheme,
@@ -1386,7 +1386,7 @@ mod tests {
 
     #[test]
     fn a_band_count_keeps_each_bar_in_its_band() {
-        use gpui::{Bounds, point, px, size};
+        use wgpui::{Bounds, point, px, size};
 
         use super::BarChart;
         use crate::plot::{AxisLabelPlacement, scale::Scale};
@@ -1421,8 +1421,8 @@ mod tests {
 
     /// A tooltip row shows its bar's color: a solid fill as is, a
     /// `fill_gradient` by its first stop, and the default fill otherwise.
-    #[gpui::test]
-    fn the_tooltip_swatch_follows_the_bar_color(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn the_tooltip_swatch_follows_the_bar_color(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let bars = || {
             BarChart::new([1., -2.])
@@ -1430,10 +1430,10 @@ mod tests {
                 .value(|d: &f64| *d)
         };
         let frame = Bounds::default();
-        let bounds = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(100.)));
+        let bounds = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(100.)));
         let (default, solid, gradient, stops) = cx.update(|cx| {
-            let gain = gpui::green();
-            let loss = gpui::red();
+            let gain = wgpui::green();
+            let loss = wgpui::red();
             let default = bars().bar_color(&1., frame, bounds, cx);
             let solid = bars()
                 .fill(move |d: &f64, _, _, _| if *d >= 0. { gain } else { loss })
@@ -1442,16 +1442,16 @@ mod tests {
                 .fill(move |_: &f64, _, _, _| {
                     linear_gradient(
                         0.,
-                        gpui::linear_color_stop(gain, 0.),
-                        gpui::linear_color_stop(loss, 1.),
+                        wgpui::linear_color_stop(gain, 0.),
+                        wgpui::linear_color_stop(loss, 1.),
                     )
                 })
                 .bar_color(&1., frame, bounds, cx);
             let stops = bars()
                 .fill_gradient(move |_: &f64, _, _| {
                     [
-                        gpui::linear_color_stop(gain, 0.),
-                        gpui::linear_color_stop(loss, 1.),
+                        wgpui::linear_color_stop(gain, 0.),
+                        wgpui::linear_color_stop(loss, 1.),
                     ]
                 })
                 .bar_color(&1., frame, bounds, cx);
@@ -1460,9 +1460,9 @@ mod tests {
         let chart_2 = cx.update(|cx| cx.theme().chart_2);
 
         assert_eq!(default, chart_2);
-        assert_eq!(solid, gpui::red());
+        assert_eq!(solid, wgpui::red());
         assert_eq!(gradient, chart_2);
-        assert_eq!(stops, gpui::green());
+        assert_eq!(stops, wgpui::green());
     }
 
     /// The tooltip reads each bar's frame as `paint` lays it out, so a `fill`
@@ -1472,7 +1472,7 @@ mod tests {
         let bars = BarChart::new([1., -2.])
             .band(|d: &f64| SharedString::from(format!("{d}")))
             .value(|d: &f64| *d);
-        let bounds = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(100.)));
+        let bounds = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(100.)));
         let band_scale = bars.band_scale(bounds).expect("bars have a band scale");
         let up = bars.bar_frame(&1., &band_scale, bounds).expect("a frame");
         let down = bars.bar_frame(&-2., &band_scale, bounds).expect("a frame");

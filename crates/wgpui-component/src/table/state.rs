@@ -1,5 +1,5 @@
-use gpui_base::TestSupportExt as _;
 use std::{ops::Range, rc::Rc, time::Duration};
+use wgpui_base::TestSupportExt as _;
 
 use crate::{
     ActiveTheme, ElementExt, Icon, IconName, StyleSized as _, StyledExt, VirtualListScrollHandle,
@@ -12,14 +12,14 @@ use crate::{
     scroll::{ScrollableMask, Scrollbar},
     v_flex,
 };
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AppContext, Axis, Bounds, ClickEvent, Context, Div, DragMoveEvent, ElementId, EventEmitter,
     FocusHandle, Focusable, InteractiveElement, IntoElement, ListSizingBehavior, MouseButton,
     MouseDownEvent, ParentElement, Pixels, Point, Render, ScrollStrategy, SharedString, Stateful,
     StatefulInteractiveElement as _, Styled, Task, TextAlign, UniformListScrollHandle, Window, div,
     prelude::FluentBuilder, px, uniform_list,
 };
-use rust_i18n::t;
 
 use super::*;
 
@@ -1548,13 +1548,13 @@ where
     /// is selected; otherwise it is a plain `Cell`.
     fn a11y_cell<E>(&self, cell: E, row_ix: usize, col_ix: usize, window: &Window, cx: &App) -> E
     where
-        E: gpui::StatefulInteractiveElement + FluentBuilder,
+        E: wgpui::StatefulInteractiveElement + FluentBuilder,
     {
         let cell = if self.cell_selectable {
-            cell.role(gpui::Role::GridCell)
+            cell.role(wgpui::Role::GridCell)
                 .aria_selected(self.selected_cell() == Some((row_ix, col_ix)))
         } else {
-            cell.role(gpui::Role::Cell)
+            cell.role(wgpui::Role::Cell)
         };
         // Labels are only read through the accessibility tree, so skip
         // building them when no assistive technology is connected (tests
@@ -1822,7 +1822,7 @@ where
             div()
                 .id(("icon-sort", col_ix))
                 .test_support()
-                .role(gpui::Role::Button)
+                .role(wgpui::Role::Button)
                 .aria_label(t!("Table.SortBy", column = col_group.column.name).to_string())
                 .p(px(2.))
                 .rounded(cx.theme().radius / 2.)
@@ -1860,7 +1860,7 @@ where
             .child(
                 self.render_cell(None, col_ix, window, cx)
                     .id(("col-header", col_ix))
-                    .role(gpui::Role::ColumnHeader)
+                    .role(wgpui::Role::ColumnHeader)
                     .aria_label(name.clone())
                     .aria_column_index(col_ix)
                     .test_support()
@@ -2031,7 +2031,7 @@ where
         header
             // One header row holds every column header, including the pinned
             // ones, which are laid out in a separate container.
-            .role(gpui::Role::Row)
+            .role(wgpui::Role::Row)
             .aria_row_index(0)
             .h_flex()
             .w_full()
@@ -2209,12 +2209,12 @@ where
         row_ix: usize,
         rows_count: usize,
         left_columns_count: usize,
-        col_sizes: Rc<Vec<gpui::Size<Pixels>>>,
+        col_sizes: Rc<Vec<wgpui::Size<Pixels>>>,
         columns_count: usize,
         is_filled: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
-    ) -> gpui::AnyElement {
+    ) -> wgpui::AnyElement {
         let is_stripe_row = self.options.stripe && row_ix % 2 != 0;
         // `selected_row()` is `None` outside row mode, so a selected cell or
         // column never highlights its row.
@@ -2230,7 +2230,7 @@ where
             let style = tr.style().clone();
 
             tr.test_support()
-                .role(gpui::Role::Row)
+                .role(wgpui::Role::Row)
                 // Row 0 is the header row.
                 .aria_row_index(row_ix + 1)
                 .aria_selected(is_selected)
@@ -2470,7 +2470,7 @@ where
                 })
                 // Row right click row style
                 .when(self.right_clicked_row == Some(row_ix), |this| {
-                    this.border_color(gpui::transparent_white()).child(
+                    this.border_color(wgpui::transparent_white()).child(
                         div()
                             .top(if row_ix == 0 { px(0.) } else { px(-1.) })
                             .left(px(0.))
@@ -2626,7 +2626,7 @@ impl<D> Focusable for TableState<D>
 where
     D: TableDelegate,
 {
-    fn focus_handle(&self, _cx: &gpui::App) -> FocusHandle {
+    fn focus_handle(&self, _cx: &wgpui::App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
@@ -2697,9 +2697,9 @@ where
             // A table that selects rows or cells is a grid. The counts cover
             // every row, not just the rendered ones, plus the header row.
             .role(if self.row_selectable || self.cell_selectable {
-                gpui::Role::Grid
+                wgpui::Role::Grid
             } else {
-                gpui::Role::Table
+                wgpui::Role::Table
             })
             .aria_row_count(rows_count + 1)
             .aria_column_count(columns_count)
@@ -2732,12 +2732,12 @@ where
                                         // Use `col.width` (always up-to-date) rather than
                                         // `col.bounds.size.width`, which is only set after
                                         // prepaint and is therefore zero on the first frame.
-                                        let col_sizes: Rc<Vec<gpui::Size<Pixels>>> = Rc::new(
+                                        let col_sizes: Rc<Vec<wgpui::Size<Pixels>>> = Rc::new(
                                             table
                                                 .col_groups
                                                 .iter()
                                                 .skip(left_columns_count)
-                                                .map(|col| gpui::Size {
+                                                .map(|col| wgpui::Size {
                                                     width: col.width,
                                                     height: px(0.),
                                                 })
@@ -2796,7 +2796,7 @@ where
                             .with_sizing_behavior(ListSizingBehavior::Auto)
                             .track_scroll(&self.vertical_scroll_handle)
                             .map(|rows| {
-                                gpui_base::ScrollBounce::new(
+                                wgpui_base::ScrollBounce::new(
                                     "table-scroll-bounce",
                                     &self.vertical_scroll_handle,
                                     rows,
@@ -2861,7 +2861,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{App, Entity, TestAppContext};
+    use wgpui::{App, Entity, TestAppContext};
 
     use super::*;
 
@@ -2901,7 +2901,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scroll_bounce_table_keeps_headers_fixed_and_accepts_new_wheel_input(
         cx: &mut TestAppContext,
     ) {
@@ -2912,20 +2912,20 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
         let state = view.read_with(cx, |view, _| view.0.clone());
         let header = state.read_with(cx, |state, _| state.col_groups[0].bounds);
-        let wheel = |cx: &mut gpui::VisualTestContext, dy| {
-            cx.simulate_event(gpui::ScrollEvent {
-                position: gpui::point(px(100.), px(100.)),
-                delta: gpui::ScrollDelta::Lines(gpui::point(0., dy)),
+        let wheel = |cx: &mut wgpui::VisualTestContext, dy| {
+            cx.simulate_event(wgpui::ScrollEvent {
+                position: wgpui::point(px(100.), px(100.)),
+                delta: wgpui::ScrollDelta::Lines(wgpui::point(0., dy)),
                 ..Default::default()
             });
         };
         for (dy, phase) in [
-            (-10000., gpui::TouchPhase::Started),
-            (0., gpui::TouchPhase::Ended),
+            (-10000., wgpui::TouchPhase::Started),
+            (0., wgpui::TouchPhase::Ended),
         ] {
-            cx.simulate_event(gpui::ScrollEvent {
-                position: gpui::point(px(100.), px(100.)),
-                delta: gpui::ScrollDelta::Pixels(gpui::point(px(0.), px(dy))),
+            cx.simulate_event(wgpui::ScrollEvent {
+                position: wgpui::point(px(100.), px(100.)),
+                delta: wgpui::ScrollDelta::Pixels(wgpui::point(px(0.), px(dy))),
                 touch_phase: phase,
                 ..Default::default()
             });
@@ -3003,7 +3003,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn column_resize_bounds_preserve_initial_widths(cx: &mut TestAppContext) {
         cx.skip_drawing();
         let window = cx.add_window(|window, cx| TableState::new(WidthsDelegate, window, cx));

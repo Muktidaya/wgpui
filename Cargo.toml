@@ -47,7 +47,7 @@ test-support = [
     "http_client/test-support",
 ]
 font-kit = []
-inspector = ["wgpui-derive/inspector"]
+inspector = ["wgpui_derive/inspector"]
 leak-detection = ["backtrace"]
 windows-manifest = []
 profiler = ["dep:hdrhistogram"]
@@ -76,7 +76,7 @@ etagere = "0.3.0"
 flume = "0.12.0"
 futures = "0.3.34"
 futures-concurrency = "7.7.1"
-wgpui-derive = { package = "wgpui_derive", path = "crates/wgpui-derive", version = "0.4.0", features = ["inspector"] }
+wgpui_derive = { path = "crates/wgpui-derive", version = "0.4.0", features = ["inspector"] }
 http_client = { package = "wgpui-http-client", path = "crates/wgpui-http-client", version = "0.1.0" }
 hdrhistogram = { version = "7.6.0", default-features = false, optional = true }
 image = "0.25.10"
@@ -381,26 +381,17 @@ edition = "2024"
 rust-version = "1.95"
 
 [workspace.dependencies]
-collections = { package = "gpui_collections", version = "0.2.2" }
-gpui-kit = { package = "wgpui-kit", path = "crates/wgpui-kit", version = "0.8.1" }
+# Canonical WGPUI package keys; external upstream crates keep their actual names.
 wgpui = { version = "0.4.0", path = "." }
 wgpui_derive = { version = "0.4.0", path = "crates/wgpui-derive" }
 wgpui-platform = { path = "crates/wgpui-platform", version = "0.8.1" }
-
-# Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
-gpui = { package = "wgpui", version = "0.4.0", path = "." }
-gpui_macros = { package = "wgpui_derive", version = "0.4.0", path = "crates/wgpui-derive" }
-gpui_platform = { package = "wgpui-platform", path = "crates/wgpui-platform", version = "0.8.1" }
-sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
-
-gpui-component = { package = "wgpui-component", path = "crates/wgpui-component", version = "0.8.1" }
-# Same package under the published name so examples can `use wgpui_component`.
+wgpui-base = { path = "crates/wgpui-base", version = "0.8.1" }
 wgpui-component = { path = "crates/wgpui-component", version = "0.8.1" }
-gpui-base = { package = "wgpui-base", path = "crates/wgpui-base", version = "0.8.1" }
-gpui-component-macros = { package = "wgpui-kit-macros", path = "crates/wgpui-kit-macros", version = "0.8.1" }
-gpui-component-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.8.1" }
-# Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
-gpui-kit-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.8.1" }
+wgpui-kit = { path = "crates/wgpui-kit", version = "0.8.1" }
+wgpui-kit-macros = { path = "crates/wgpui-kit-macros", version = "0.8.1" }
+wgpui-kit-assets = { path = "crates/wgpui-kit-assets", version = "0.8.1" }
+collections = { package = "gpui_collections", version = "0.2.2" }
+sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
 reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.25.3" }
 
 anyhow = "1.0.104"

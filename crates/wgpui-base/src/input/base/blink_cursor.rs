@@ -1,5 +1,5 @@
-use gpui::{Context, Pixels, Task, px};
 use instant::Duration;
+use wgpui::{Context, Pixels, Task, px};
 
 static INTERVAL: Duration = Duration::from_millis(500);
 static PAUSE_DELAY: Duration = Duration::from_millis(300);
@@ -129,10 +129,10 @@ impl BlinkCursor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, TestAppContext};
     use std::{cell::Cell, rc::Rc};
+    use wgpui::{AppContext as _, TestAppContext};
 
-    #[gpui::test]
+    #[wgpui::test]
     fn repeated_pauses_keep_cursor_visible_until_idle(cx: &mut TestAppContext) {
         let cursor = cx.new(|_| BlinkCursor::new());
         assert!(!cursor.read_with(cx, |cursor, _| cursor.visible()));
@@ -154,7 +154,7 @@ mod tests {
         assert!(cursor.read_with(cx, |cursor, _| cursor.visible()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn starting_a_blinking_cursor_keeps_it_visible(cx: &mut TestAppContext) {
         let cursor = cx.new(|_| BlinkCursor::new());
 
@@ -176,7 +176,7 @@ mod tests {
         assert!(!cursor.read_with(cx, |cursor, _| cursor.visible()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pausing_a_cursor_that_is_not_blinking_does_not_start_it(cx: &mut TestAppContext) {
         // Never focused, so `start` was never called: the epoch is still zero.
         let cursor = cx.new(|_| BlinkCursor::new());
@@ -204,7 +204,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn blurring_a_paused_cursor_leaves_the_next_focus_blinking(cx: &mut TestAppContext) {
         let cursor = cx.new(|_| BlinkCursor::new());
         cursor.update(cx, |cursor, cx| cursor.start(cx));
@@ -228,7 +228,7 @@ mod tests {
         assert!(!cursor.read_with(cx, |cursor, _| cursor.visible()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stopping_a_paused_cursor_ends_the_blink_loop(cx: &mut TestAppContext) {
         let cursor = cx.new(|_| BlinkCursor::new());
         cursor.update(cx, |cursor, cx| cursor.start(cx));
@@ -254,7 +254,7 @@ mod tests {
         assert!(cursor.read_with(cx, |cursor, _| cursor.visible()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stopping_a_blinking_cursor_ends_the_blink_loop(cx: &mut TestAppContext) {
         let cursor = cx.new(|_| BlinkCursor::new());
         cursor.update(cx, |cursor, cx| cursor.start(cx));

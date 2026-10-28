@@ -1,6 +1,6 @@
 //! Native platform entry for wgpui-component.
 //!
-//! Upstream gpui-component examples call `gpui_platform::application()`. This
+//! Upstream gpui-component examples call `wgpui_platform::application()`. This
 //! crate is aliased as `gpui_platform` in the workspace so vendored source
 //! keeps compiling while routing through wgpui.
 

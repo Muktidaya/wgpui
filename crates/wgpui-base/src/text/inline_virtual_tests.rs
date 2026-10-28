@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-use gpui::{
+use wgpui::{
     AppContext as _, Context, Entity, IntoElement, Modifiers, MouseButton, ParentElement as _,
     Pixels, Render, Styled as _, TestAppContext, VisualTestContext, Window, div, point, px, rems,
 };
@@ -32,9 +32,9 @@ impl Render for VirtualInlineRoot {
                     Some(MarkdownNode::new("math", ()).text(format!("{}²", math.value)))
                 }).render_with(move |_, context, _, _| {
                     let extent = context.font_size() * (prepared.load(Ordering::Relaxed) as f32 / 16.);
-                    let image = Arc::new(gpui::Image::from_bytes(gpui::ImageFormat::Svg,
+                    let image = Arc::new(wgpui::Image::from_bytes(wgpui::ImageFormat::Svg,
                         b"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><path d=\"M0 0L40 40\" stroke=\"black\"/></svg>".to_vec()));
-                    Some(InlineElement::new(gpui::img(image).w(extent).h(extent)).with_baseline(extent * 0.75))
+                    Some(InlineElement::new(wgpui::img(image).w(extent).h(extent)).with_baseline(extent * 0.75))
                 })))
     }
 }
@@ -60,7 +60,7 @@ fn total_height(root: &Entity<VirtualInlineRoot>, cx: &mut VisualTestContext) ->
     })
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn inline_virtual_resource_growth_remeasures_all_blocks_and_preserves_copy(
     cx: &mut TestAppContext,
 ) {
@@ -132,7 +132,7 @@ fn inline_virtual_resource_growth_remeasures_all_blocks_and_preserves_copy(
     assert!(source.contains("第12段 $x$ $y$ English"));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn inline_virtual_font_and_rem_zoom_remeasure_offscreen_blocks(cx: &mut TestAppContext) {
     cx.update(crate::init);
     let (root, cx) = cx.add_window_view(|_, cx| VirtualInlineRoot {

@@ -1,6 +1,6 @@
 use std::{rc::Rc, time::Duration};
 
-use gpui::{
+use wgpui::{
     AnyElement, AnyView, App, Bounds, Context, Div, ElementId, Global, InteractiveElement,
     IntoElement, ParentElement, Pixels, Render, RenderOnce, Role, Stateful,
     StatefulInteractiveElement, Styled, Task, Window, deferred, div, prelude::FluentBuilder as _,
@@ -33,7 +33,7 @@ impl Tooltip {
 }
 
 impl Styled for Tooltip {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         self.base.style()
     }
 }
@@ -361,14 +361,14 @@ impl IntoElement for TooltipPositioner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, point, size};
+    use wgpui::{AppContext as _, point, size};
 
     fn bounds(x: f32, y: f32, width: f32, height: f32) -> Bounds<Pixels> {
         Bounds::new(point(px(x), px(y)), size(px(width), px(height)))
     }
 
-    #[gpui::test]
-    fn provider_owns_grace_switch_and_dismiss(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn provider_owns_grace_switch_and_dismiss(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| TooltipOverlay::new()));
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {
@@ -391,8 +391,8 @@ mod tests {
         cx.update(|_, cx| assert!(state.read(cx).content.is_none()));
     }
 
-    #[gpui::test]
-    fn show_delay_follows_defaults_and_request_override(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn show_delay_follows_defaults_and_request_override(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| {
             TooltipDefaults::new()
                 .with_show_delay(Duration::from_millis(100))
@@ -403,7 +403,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
         let request = || {
             TooltipRequest::new(bounds(0., 0., 20., 20.), |_, cx| {
-                cx.new(|_| gpui::Empty).into()
+                cx.new(|_| wgpui::Empty).into()
             })
         };
 
@@ -434,8 +434,8 @@ mod tests {
         assert!(TOOLTIP_PRIORITY > crate::POPUP_PRIORITY);
     }
 
-    #[gpui::test]
-    fn disabled_provider_ignores_delayed_and_immediate_requests(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn disabled_provider_ignores_delayed_and_immediate_requests(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| {
             cx.new(|_| TooltipOverlay {
                 enabled: false,

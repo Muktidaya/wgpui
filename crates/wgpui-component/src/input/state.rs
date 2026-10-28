@@ -1,7 +1,7 @@
 use crate::root::WindowState;
-use gpui::{App, Bounds, Entity, FocusHandle, Focusable as _, Pixels, SharedString, Window};
-use gpui_base::OtpState;
 use ropey::Rope;
+use wgpui::{App, Bounds, Entity, FocusHandle, Focusable as _, Pixels, SharedString, Window};
+use wgpui_base::OtpState;
 
 use super::{EditorState, InputState, TextareaState};
 
@@ -58,8 +58,8 @@ impl TextInputState {
 
     pub(crate) fn install_token_presentation(
         &self,
-        renderer: Option<gpui_base::input::InlineTokenRenderer>,
-        listener: Option<gpui_base::input::InlineTokenClickListener>,
+        renderer: Option<wgpui_base::input::InlineTokenRenderer>,
+        listener: Option<wgpui_base::input::InlineTokenClickListener>,
         secret: bool,
         cx: &mut App,
     ) {
@@ -69,18 +69,18 @@ impl TextInputState {
 
     pub(crate) fn install_token_hover_presentation(
         &self,
-        hover_listener: Option<gpui_base::input::InlineTokenHoverListener>,
+        hover_listener: Option<wgpui_base::input::InlineTokenHoverListener>,
         cx: &mut App,
     ) {
         dispatch!(self, |state| state.update(cx, |state, _| state
             .install_token_hover_presentation(hover_listener)))
     }
 
-    pub(crate) fn entity_id(&self) -> gpui::EntityId {
+    pub(crate) fn entity_id(&self) -> wgpui::EntityId {
         dispatch!(self, |state| state.entity_id())
     }
 
-    pub(crate) fn presentation(&self, cx: &App) -> gpui_base::input::InputPresentation {
+    pub(crate) fn presentation(&self, cx: &App) -> wgpui_base::input::InputPresentation {
         dispatch!(self, |state| state.read(cx).presentation())
     }
 
@@ -106,7 +106,7 @@ impl TextInputState {
             .update(cx, |state, cx| state.toggle_masked(window, cx)))
     }
 
-    pub(crate) fn set_text_align(&self, align: gpui::TextAlign, cx: &mut App) {
+    pub(crate) fn set_text_align(&self, align: wgpui::TextAlign, cx: &mut App) {
         dispatch!(self, |state| state
             .update(cx, |state, cx| state.set_text_align(align, cx)))
     }
@@ -121,27 +121,31 @@ impl TextInputState {
             .update(cx, |state, cx| state.set_readonly(readonly, cx)))
     }
 
-    pub(crate) fn set_editor_style(&self, style: gpui_base::input::InputEditorStyle, cx: &mut App) {
+    pub(crate) fn set_editor_style(
+        &self,
+        style: wgpui_base::input::InputEditorStyle,
+        cx: &mut App,
+    ) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.set_editor_style(style)))
     }
 
     pub(crate) fn set_accessibility(
         &self,
-        accessibility: gpui_base::input::InputAccessibility,
+        accessibility: wgpui_base::input::InputAccessibility,
         cx: &mut App,
     ) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.set_accessibility(accessibility)))
     }
-    pub(crate) fn set_editor_paddings(&self, paddings: gpui::Edges<gpui::Pixels>, cx: &mut App) {
+    pub(crate) fn set_editor_paddings(&self, paddings: wgpui::Edges<wgpui::Pixels>, cx: &mut App) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.set_editor_paddings(paddings)))
     }
 
     pub(crate) fn ensure_highlighter_factory(
         &self,
-        factory: gpui_base::input::InputHighlighterFactory,
+        factory: wgpui_base::input::InputHighlighterFactory,
         cx: &mut App,
     ) {
         dispatch!(self, |state| state
@@ -152,9 +156,9 @@ impl TextInputState {
         &self,
         handler: std::rc::Rc<
             dyn Fn(
-                gpui_base::input::NativeMenu,
-                gpui_base::input::InputContextMenuCapabilities,
-                gpui::Point<gpui::Pixels>,
+                wgpui_base::input::NativeMenu,
+                wgpui_base::input::InputContextMenuCapabilities,
+                wgpui::Point<wgpui::Pixels>,
                 &mut Window,
                 &mut App,
             ),
@@ -166,14 +170,14 @@ impl TextInputState {
     }
 
     /// The selection a long press made, laid out for its handles and menu.
-    pub(crate) fn touch_selection(&self, cx: &App) -> Option<gpui_base::TouchSelectionSnapshot> {
+    pub(crate) fn touch_selection(&self, cx: &App) -> Option<wgpui_base::TouchSelectionSnapshot> {
         dispatch!(self, |state| state.read(cx).touch_selection())
     }
 
     pub(crate) fn context_menu_capabilities(
         &self,
         cx: &App,
-    ) -> gpui_base::input::InputContextMenuCapabilities {
+    ) -> wgpui_base::input::InputContextMenuCapabilities {
         dispatch!(self, |state| state.read(cx).context_menu_capabilities())
     }
 
@@ -188,15 +192,15 @@ impl TextInputState {
 
     pub(crate) fn begin_edge_drag(
         &self,
-        edge: gpui_base::SelectionEdge,
-        finger: gpui::Point<gpui::Pixels>,
+        edge: wgpui_base::SelectionEdge,
+        finger: wgpui::Point<wgpui::Pixels>,
         cx: &mut App,
     ) {
         dispatch!(self, |state| state
             .update(cx, |state, cx| state.begin_edge_drag(edge, finger, cx)))
     }
 
-    pub(crate) fn update_edge_drag(&self, finger: gpui::Point<gpui::Pixels>, cx: &mut App) {
+    pub(crate) fn update_edge_drag(&self, finger: wgpui::Point<wgpui::Pixels>, cx: &mut App) {
         dispatch!(self, |state| state
             .update(cx, |state, cx| state.update_edge_drag(finger, cx)))
     }
@@ -228,8 +232,8 @@ impl TextInputState {
     }
 
     /// The text element itself, as a child to place in the frame.
-    pub(crate) fn into_any_element(self) -> gpui::AnyElement {
-        use gpui::IntoElement as _;
+    pub(crate) fn into_any_element(self) -> wgpui::AnyElement {
+        use wgpui::IntoElement as _;
         dispatch!(self, |state| state.into_any_element())
     }
 }

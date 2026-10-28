@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{AppContext, Empty, ListOffset, TestAppContext, px, size};
+use wgpui::{AppContext, Empty, ListOffset, TestAppContext, px, size};
 
 use super::{
     DiffEvent, DiffFile, DiffLinePosition, DiffLineRange, DiffMode, DiffSide, DiffState,
@@ -19,7 +19,7 @@ fn context_document() -> DiffFile {
     document(&original, &modified)
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn unified_changes_keep_deletions_before_additions_and_source_selection(cx: &mut TestAppContext) {
     let state = cx.new(|cx| {
         DiffState::new(
@@ -96,7 +96,7 @@ fn unified_changes_keep_deletions_before_additions_and_source_selection(cx: &mut
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn context_disclosures_reveal_source_ranges_without_retargeting_selection(cx: &mut TestAppContext) {
     let state = cx.new(|cx| DiffState::new([context_document()], cx));
     state.update(cx, |state, cx| {
@@ -212,7 +212,7 @@ fn context_disclosures_reveal_source_ranges_without_retargeting_selection(cx: &m
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn source_selection_clamps_ranges_and_preserves_original_bytes(cx: &mut TestAppContext) {
     let state = cx.new(|cx| {
         DiffState::new(
@@ -276,7 +276,7 @@ fn source_selection_clamps_ranges_and_preserves_original_bytes(cx: &mut TestAppC
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn change_navigation_wraps_groups_and_unchanged_documents_stay_in_place(cx: &mut TestAppContext) {
     let state = cx.new(|cx| {
         DiffState::new(
@@ -317,7 +317,7 @@ fn change_navigation_wraps_groups_and_unchanged_documents_stay_in_place(cx: &mut
     });
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn controlled_selection_stays_silent_and_coherent_changes_notify(cx: &mut TestAppContext) {
     let state = cx.new(|cx| DiffState::new([document("old\n", "new\n")], cx));
     let events = Rc::new(RefCell::new(Vec::new()));
@@ -352,7 +352,7 @@ fn controlled_selection_stays_silent_and_coherent_changes_notify(cx: &mut TestAp
     assert_eq!(*notifications.borrow(), 3);
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn user_line_selection_extends_on_one_side_and_replacement_resets_silently(
     cx: &mut TestAppContext,
 ) {
@@ -488,7 +488,7 @@ fn user_line_selection_extends_on_one_side_and_replacement_resets_silently(
     assert_eq!(events.borrow().len(), 8);
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn patch_navigation_and_selection_use_supplied_source_coordinates(cx: &mut TestAppContext) {
     let document = DiffFile::parse(
         "--- a/review.txt\n+++ b/review.txt\n@@ -100,2 +100,2 @@ first\n context 100\n-old 101\n+new 101\n@@ -200,2 +200,2 @@ second\n context 200\n-old 201\n+new 201\n",
@@ -555,11 +555,11 @@ fn patch_navigation_and_selection_use_supplied_source_coordinates(cx: &mut TestA
     .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn setting_or_clearing_a_syntax_highlighter_prepares_the_files_again(cx: &mut TestAppContext) {
-    use gpui::{FontStyle, FontWeight, HighlightStyle};
-    use gpui_base::input::HighlightStyleResolver;
     use std::ops::Range;
+    use wgpui::{FontStyle, FontWeight, HighlightStyle};
+    use wgpui_base::input::HighlightStyleResolver;
 
     /// Paints GPUI Kit's `keyword` captures italic and nothing else.
     struct KeywordTheme;

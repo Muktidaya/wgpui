@@ -2,13 +2,13 @@ use std::time::Duration;
 
 use web_time::Instant;
 
-use gpui::{
+use wgpui::{
     App, Bounds, Context, DisplayId, Div, Hsla, InteractiveElement as _, IntoElement, MouseButton,
     ParentElement, PathBuilder, Pixels, Point, Render, StatefulInteractiveElement as _, Styled,
     Window, canvas, div, point, prelude::FluentBuilder as _, px, relative,
 };
 
-use gpui::Task;
+use wgpui::Task;
 
 use crate::{
     FrameTraceGuard,
@@ -103,7 +103,7 @@ const DEFAULT_FONT: &str = ".SystemMonospaceFont";
 /// readings, unless the application asked for that frame as well.
 ///
 /// ```no_run
-/// # use gpui::*;
+/// # use wgpui::*;
 /// # use wgpui_fps::FpsMonitor;
 /// # fn example(window: &mut Window, cx: &mut App) {
 /// let monitor = cx.new(|cx| FpsMonitor::new(window, cx).capacity(240));
@@ -866,7 +866,7 @@ fn format_bytes(bytes: u64) -> String {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AppContext as _, TestAppContext};
+    use wgpui::{AppContext as _, TestAppContext};
 
     use super::*;
 
@@ -886,7 +886,7 @@ mod tests {
         assert_eq!(sustainable_rate(Duration::ZERO, Some(sixty)), 0.);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_fps_monitor_builder(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {
@@ -910,7 +910,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_budget_follows_the_display_unless_the_caller_chose_one(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {
@@ -936,7 +936,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn repeating_the_budget_leaves_the_axis_where_it_grew(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {
@@ -978,7 +978,7 @@ mod tests {
         assert!(watch.tick(9));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_hidden_hud_lets_go_of_the_trace_and_takes_it_back_when_shown(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {

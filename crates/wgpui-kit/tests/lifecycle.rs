@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AppContext, Context, Entity, SharedString, TestAppContext, Window, div, prelude::*, px,
 };
 use wgpui_kit::test::{TestSupportExt, TestWindowExt};
@@ -32,7 +32,7 @@ impl Render for Host {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn cached_child_hides_and_reappears_after_refresh(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, cx| Host {
         child: cx.new(|_| Child {
@@ -57,7 +57,7 @@ fn cached_child_hides_and_reappears_after_refresh(cx: &mut TestAppContext) {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn unmount_and_remount_do_not_retain_old_metadata(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, cx| Host {
         child: cx.new(|_| Child {
@@ -127,7 +127,7 @@ impl Render for Rows {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn composite_ids_follow_reordered_rows(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| Rows { reversed: false });
     for reversed in [false, true, false] {
@@ -150,7 +150,7 @@ fn composite_ids_follow_reordered_rows(cx: &mut TestAppContext) {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn closing_one_window_preserves_other_window_and_owned_snapshot(cx: &mut TestAppContext) {
     let first = cx.add_window(|_, _| Child {
         label: "first".into(),
@@ -178,7 +178,7 @@ fn closing_one_window_preserves_other_window_and_owned_snapshot(cx: &mut TestApp
 
 #[test]
 fn observation_preserves_accessibility_role_and_properties() {
-    use gpui::{Element, Role};
+    use wgpui::{Element, Role};
     let native = div()
         .id("control")
         .role(Role::Button)
@@ -192,8 +192,8 @@ fn observation_preserves_accessibility_role_and_properties() {
         .test_support();
     assert_eq!(Element::id(&native), Element::id(&observed));
     assert_eq!(native.a11y_role(), observed.a11y_role());
-    let mut expected = gpui::accesskit::Node::new(Role::Button);
-    let mut actual = gpui::accesskit::Node::new(Role::Button);
+    let mut expected = wgpui::accesskit::Node::new(Role::Button);
+    let mut actual = wgpui::accesskit::Node::new(Role::Button);
     native.write_a11y_info(&mut expected);
     observed.write_a11y_info(&mut actual);
     assert_eq!(actual.label(), expected.label());
@@ -224,7 +224,7 @@ impl Render for Clipped {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn clipped_center_does_not_bypass_native_hit_testing(cx: &mut TestAppContext) {
     let clicks = std::rc::Rc::new(std::cell::Cell::new(0));
     let handle = cx.add_window(|_, _| Clipped {
@@ -238,7 +238,7 @@ fn clipped_center_does_not_bypass_native_hit_testing(cx: &mut TestAppContext) {
         assert_eq!(target.bounds().size.width, px(100.));
         window.click("partly-visible", cx);
         assert_eq!(clicks.get(), 0);
-        window.click_at("partly-visible", gpui::point(px(10.), px(20.)), cx);
+        window.click_at("partly-visible", wgpui::point(px(10.), px(20.)), cx);
     })
     .unwrap();
     assert_eq!(clicks.get(), 1);
@@ -263,7 +263,7 @@ impl Render for ManyRows {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn large_frame_removes_stale_records_when_list_shrinks(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| ManyRows { count: 1000 });
     cx.update_window(handle.into(), |_, window, cx| {

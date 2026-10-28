@@ -15,7 +15,7 @@ mod history;
 mod lifecycle;
 #[path = "input/textarea.rs"]
 mod textarea;
-use gpui_component::input::{Input, InputState};
+use wgpui_component::input::{Input, InputState};
 use wgpui_kit::test::TestWindowExt;
 use wgpui_kit::{
     AppContext, Context, Entity, TestAppContext, Window, WindowHandle, div, prelude::*, px,
@@ -54,7 +54,7 @@ impl Render for Inputs {
     }
 }
 fn inputs(cx: &mut TestAppContext) -> (WindowHandle<wgpui_kit::base::Root>, Entity<Inputs>) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     common::open_window(cx, None, |window, cx| {
         cx.new(|cx| Inputs {
             first: cx.new(|cx| InputState::new(window, cx)),
@@ -148,7 +148,7 @@ impl Render for Cleanable {
 
 #[wgpui_kit::test]
 fn clear_button_is_named(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |window, cx| {
         cx.new(|cx| Cleanable {
             query: cx.new(|cx| InputState::new(window, cx).default_value("query")),
@@ -177,7 +177,7 @@ impl Render for Prompted {
 
 #[wgpui_kit::test]
 fn placeholder_is_read_from_the_editor_and_is_not_a_value(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |window, cx| {
         cx.new(|cx| Prompted {
             name: cx.new(|cx| InputState::new(window, cx).placeholder("Untitled")),
@@ -281,7 +281,7 @@ impl Render for ScopedInputs {
 fn scoped_inputs(
     cx: &mut TestAppContext,
 ) -> (WindowHandle<wgpui_kit::base::Root>, Entity<ScopedInputs>) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     common::open_window(cx, None, |window, cx| {
         cx.new(|cx| ScopedInputs {
             left: cx.new(|cx| InputState::new(window, cx)),

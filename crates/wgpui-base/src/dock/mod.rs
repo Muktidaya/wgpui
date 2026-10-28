@@ -69,7 +69,7 @@
 //! It simply draws nothing but the panels themselves.
 //!
 //! [`Panel`] splits at the same seam: this trait covers behavior, and a
-//! presentation layer — `gpui_component::dock::Panel` — extends it with
+//! presentation layer — `wgpui_component::dock::Panel` — extends it with
 //! titles, toolbars, and menus. A panel type implements both.
 //!
 //! Every hook is optional in the same way: a renderer that declines one gets
@@ -138,7 +138,7 @@
 //!
 //! ```ignore
 //! use std::rc::Rc;
-//! use gpui::{px, Context, Window};
+//! use wgpui::{px, Context, Window};
 //! use wgpui_base::dock::{DockArea, DockLayout, DockPlacement};
 //!
 //! let area = cx.new(|cx| {

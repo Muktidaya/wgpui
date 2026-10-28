@@ -7,13 +7,13 @@ use crate::{
     tooltip::{ManagedTooltipExt as _, Tooltip},
     v_flex,
 };
-use gpui::{
+use std::rc::Rc;
+use wgpui::{
     AnyElement, App, ClickEvent, ElementId, InteractiveElement as _, IntoElement,
     ParentElement as _, Role, SharedString, StatefulInteractiveElement as _, StyleRefinement,
     Styled, Window, div, percentage, prelude::FluentBuilder,
 };
-use gpui_base::TestSupportExt as _;
-use std::rc::Rc;
+use wgpui_base::TestSupportExt as _;
 
 /// Menu for the [`super::Sidebar`]
 #[derive(Clone)]

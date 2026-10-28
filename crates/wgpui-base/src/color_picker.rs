@@ -1,14 +1,14 @@
 use crate::input::InputState;
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, AppContext as _, ClickEvent, Context, Div, ElementId, Entity, EventEmitter,
     FocusHandle, Focusable, Hsla, InteractiveElement, Interactivity, IntoElement, KeyBinding,
     ParentElement, Render, RenderOnce, Rgba, Role, SharedString, Stateful,
     StatefulInteractiveElement, StyleRefinement, Styled, Subscription, Toggled, Window, div, hsla,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
 use crate::{
     RoleOverride, StyledExt as _,
@@ -777,8 +777,8 @@ impl RenderOnce for ColorSwatch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{TestAppContext, hsla, px};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{TestAppContext, hsla, px};
 
     #[test]
     fn parses_every_supported_hex_width() {
@@ -804,13 +804,13 @@ mod tests {
         assert_eq!(hex_string(hsla(0., 1., 0.5, 0.5)), "#FF000080");
     }
 
-    fn state(cx: &mut TestAppContext) -> (Entity<ColorPickerState>, &mut gpui::VisualTestContext) {
+    fn state(cx: &mut TestAppContext) -> (Entity<ColorPickerState>, &mut wgpui::VisualTestContext) {
         let (state, cx) = cx.add_window_view(ColorPickerState::new);
         cx.update(|window, cx| window.draw(cx).clear());
         (state, cx)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn default_value_reaches_the_hex_field_and_sliders(cx: &mut TestAppContext) {
         let (state, cx) = cx.add_window_view(|window, cx| {
             ColorPickerState::new(window, cx).default_value(hsla(0., 1., 0.5, 1.))
@@ -825,7 +825,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn preview_does_not_change_the_committed_value(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
         let committed = hsla(0.1, 0.2, 0.3, 1.);
@@ -851,7 +851,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn first_hex_edit_after_set_value_previews(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
         cx.update(|window, cx| {
@@ -871,7 +871,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn invalid_hex_leaves_preview_and_value_alone(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
         let color = hsla(0.1, 0.2, 0.3, 1.);
@@ -890,7 +890,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn palette_selection_closes_but_a_slider_update_stays_open(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
         let changes = Rc::new(RefCell::new(Vec::new()));
@@ -919,7 +919,7 @@ mod tests {
         assert_eq!(changes.borrow().len(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn committing_hex_updates_the_value_and_closes(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
 
@@ -937,7 +937,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn open_and_active_panel_are_controlled(cx: &mut TestAppContext) {
         let (state, cx) = state(cx);
 
@@ -978,7 +978,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn confirm_toggles_and_cancel_dismisses(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let changes = Rc::new(RefCell::new(Vec::new()));

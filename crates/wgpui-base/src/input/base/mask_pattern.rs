@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum MaskToken {

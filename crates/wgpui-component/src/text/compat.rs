@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ClickEvent, Element, ElementId, Entity, GlobalElementId,
     HighlightStyle, InspectorElementId, IntoElement, LayoutId, Pixels, RenderOnce, SharedString,
     StyleRefinement, Styled, Window,
@@ -10,7 +10,7 @@ use super::{
     MarkdownExtensions, MarkdownNode, MarkdownParseContext, MarkdownPlugin, SelectionFormat,
     TableData, TextViewMotion, TextViewState, TextViewStyle,
 };
-use gpui_base::{Easing, text::CodeBlock};
+use wgpui_base::{Easing, text::CodeBlock};
 
 /// How long a word of streamed text takes to reach full color, and how much later each further
 /// word of the same chunk starts. Measured frame by frame from claude.ai: a chunk lands as
@@ -32,14 +32,14 @@ const STREAM_FADE_STAGGER: Duration = Duration::from_millis(10);
 
 /// The component-level rich text element.
 ///
-/// The rendering, parsing and selection all live in [`gpui_base::TextView`];
+/// The rendering, parsing and selection all live in [`wgpui_base::TextView`];
 /// this wrapper exists so that the component API -- `TextViewStyle`, the
 /// component `HighlightTheme`, and the element's associated types -- keeps
 /// working unchanged.
 #[derive(Clone)]
 pub struct TextView {
     id: ElementId,
-    inner: gpui_base::TextView,
+    inner: wgpui_base::TextView,
     text_style: Option<TextViewStyle>,
     motion: Option<TextViewMotion>,
     /// `None` leaves the state's own policy alone; `Some(false)` turns a
@@ -49,7 +49,7 @@ pub struct TextView {
 
 impl Styled for TextView {
     fn style(&mut self) -> &mut StyleRefinement {
-        gpui::Styled::style(&mut self.inner)
+        wgpui::Styled::style(&mut self.inner)
     }
 }
 
@@ -58,7 +58,7 @@ impl TextView {
     pub fn new(state: &Entity<TextViewState>) -> Self {
         Self {
             id: ElementId::Name(state.entity_id().to_string().into()),
-            inner: gpui_base::TextView::new(state),
+            inner: wgpui_base::TextView::new(state),
             text_style: None,
             motion: None,
             stream_fade: None,
@@ -69,7 +69,7 @@ impl TextView {
         let id = id.into();
         Self {
             id: id.clone(),
-            inner: gpui_base::TextView::markdown(id, text),
+            inner: wgpui_base::TextView::markdown(id, text),
             text_style: None,
             motion: None,
             stream_fade: None,
@@ -80,7 +80,7 @@ impl TextView {
         let id = id.into();
         Self {
             id: id.clone(),
-            inner: gpui_base::TextView::html(id, text),
+            inner: wgpui_base::TextView::html(id, text),
             text_style: None,
             motion: None,
             stream_fade: None,
@@ -93,7 +93,7 @@ impl TextView {
     /// Without this override, images use Base's default URI and data URL handling.
     pub fn image_source<F>(mut self, resolver: F) -> Self
     where
-        F: Fn(&gpui::SharedUri) -> gpui::ImageSource + Send + Sync + 'static,
+        F: Fn(&wgpui::SharedUri) -> wgpui::ImageSource + Send + Sync + 'static,
     {
         self.inner = self.inner.image_source(resolver);
         self
@@ -348,11 +348,11 @@ impl Element for TextView {
 pub(super) fn resolve_component_style(
     theme: &crate::Theme,
     legacy: TextViewStyle,
-) -> gpui_base::TextViewStyle {
+) -> wgpui_base::TextViewStyle {
     let themed = super::base_text_view_style(theme);
 
-    let refined = |mut base: gpui::StyleRefinement, overlay: &StyleRefinement| {
-        gpui_base::refine_style_refinement(&mut base, overlay);
+    let refined = |mut base: wgpui::StyleRefinement, overlay: &StyleRefinement| {
+        wgpui_base::refine_style_refinement(&mut base, overlay);
         base
     };
     let code_block = refined(themed.code_block().clone(), &legacy.code_block);
@@ -382,11 +382,11 @@ pub(super) fn resolve_component_style(
                 return StyleRefinement::default();
             }
             let default_size = match level {
-                1 => gpui::rems(2.),
-                2 => gpui::rems(1.5),
-                3 => gpui::rems(1.25),
-                4 => gpui::rems(1.125),
-                _ => gpui::rems(1.),
+                1 => wgpui::rems(2.),
+                2 => wgpui::rems(1.5),
+                3 => wgpui::rems(1.25),
+                4 => wgpui::rems(1.125),
+                _ => wgpui::rems(1.),
             }
             .to_pixels(heading_base_font_size);
             let text_size = heading_font_size.as_ref().map_or(default_size, |resolve| {
@@ -479,7 +479,7 @@ impl Text {
     pub(crate) fn get_text(&self, cx: &App) -> SharedString {
         match self {
             Self::String(value) => value.clone(),
-            Self::TextView(view) => gpui_base::Text::from(view.inner.clone()).get_text(cx),
+            Self::TextView(view) => wgpui_base::Text::from(view.inner.clone()).get_text(cx),
         }
     }
 }
@@ -516,7 +516,7 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, IntoElement, ParentElement as _, Render, TestAppContext, VisualTestContext, div,
     };
 
@@ -525,7 +525,7 @@ mod tests {
     }
 
     impl Render for StatelessMarkdown {
-        fn render(&mut self, _: &mut gpui::Window, _: &mut Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut wgpui::Window, _: &mut Context<Self>) -> impl IntoElement {
             self.renders.fetch_add(1, Ordering::Relaxed);
             div().child(
                 super::markdown(include_str!("../../tests/fixtures/test.md"))
@@ -534,7 +534,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stateless_markdown_facade_settles_after_parsing(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let renders = Arc::new(AtomicUsize::new(0));

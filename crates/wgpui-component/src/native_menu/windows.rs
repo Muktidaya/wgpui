@@ -5,8 +5,8 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use gpui::{Action, App, AssetSource, ImageFormat, Pixels, Point, Window};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+use wgpui::{Action, App, AssetSource, ImageFormat, Pixels, Point, Window};
 use windows::Win32::Foundation::{GlobalFree, HWND, POINT};
 use windows::Win32::Graphics::Gdi::{
     BI_RGB, BITMAPINFO, BITMAPINFOHEADER, ClientToScreen, CreateDIBSection, DIB_RGB_COLORS,

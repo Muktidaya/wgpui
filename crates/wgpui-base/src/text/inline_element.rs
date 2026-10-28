@@ -1,4 +1,4 @@
-use gpui::{AnyElement, IntoElement, Pixels, TextStyle};
+use wgpui::{AnyElement, IntoElement, Pixels, TextStyle};
 
 /// A GPUI element participating as one atomic object in a text line.
 ///

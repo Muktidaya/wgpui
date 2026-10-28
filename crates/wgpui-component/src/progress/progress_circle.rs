@@ -1,14 +1,14 @@
 use crate::{ActiveTheme, Sizable, Size, StyledExt};
-use gpui::Bounds;
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
+use instant::Duration;
+use std::f32::consts::TAU;
+use wgpui::Bounds;
+use wgpui::prelude::FluentBuilder as _;
+use wgpui::{
     Animation, AnimationExt as _, AnyElement, App, ElementId, Hsla, IntoElement, ParentElement,
     Pixels, RenderOnce, SharedString, StyleRefinement, Styled, Window, canvas, ease_in_out, px,
     relative,
 };
-use gpui_base::{Progress as BaseProgress, Transition, transition};
-use instant::Duration;
-use std::f32::consts::TAU;
+use wgpui_base::{Progress as BaseProgress, Transition, transition};
 
 use crate::plot::shape::{Arc, ArcData};
 

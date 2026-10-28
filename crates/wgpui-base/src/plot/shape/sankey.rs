@@ -1,6 +1,6 @@
 // @reference: https://github.com/d3/d3-sankey
 
-use gpui::{Path, PathBuilder, Pixels, Point, px};
+use wgpui::{Path, PathBuilder, Pixels, Point, px};
 
 use crate::plot::origin_point;
 

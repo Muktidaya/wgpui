@@ -1,13 +1,13 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc, sync::Arc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
     SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
     percentage, prelude::FluentBuilder as _, rems,
 };
 
 use crate::{ActiveTheme as _, Icon, IconName, Sizable, Size, StyledExt as _, h_flex};
-use gpui_base::{
+use wgpui_base::{
     Accordion as BaseAccordion, AccordionHeader as BaseAccordionHeader,
     AccordionItem as BaseAccordionItem, AccordionPanel as BaseAccordionPanel, AccordionTrigger,
     MotionReveal, spring,
@@ -390,7 +390,7 @@ impl RenderOnce for AccordionItem {
 mod tests {
     use std::time::Duration;
 
-    use gpui::{Context, Render, TestAppContext, div, px};
+    use wgpui::{Context, Render, TestAppContext, div, px};
 
     use super::*;
 
@@ -416,7 +416,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn expanded_panel_keeps_content_between_its_header_and_the_next_item(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let (_, cx) = cx.add_window_view(|_, _| Harness);
@@ -444,13 +444,13 @@ mod tests {
         }
     }
 
-    fn content_height(cx: &mut gpui::VisualTestContext) -> Option<gpui::Pixels> {
+    fn content_height(cx: &mut wgpui::VisualTestContext) -> Option<wgpui::Pixels> {
         cx.update(|window, cx| window.draw(cx).clear());
         cx.debug_bounds("toggle-content")
             .map(|bounds| bounds.size.height)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn settled_closed_panel_unmounts_its_content(cx: &mut TestAppContext) {
         cx.update(crate::theme::init);
         let (view, cx) = cx.add_window_view(|_, _| Toggle(false));

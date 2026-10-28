@@ -19,7 +19,7 @@ doctest = false
 [dependencies]
 # The HUD requires frame events; keep the framework's instrumentation opt-in
 # for applications that do not depend on this package.
-gpui = { workspace = true, features = ["profiler"] }
+wgpui = { workspace = true, features = ["profiler"] }
 web-time = "1.1.0"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
@@ -54,7 +54,7 @@ windows = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
-gpui = { workspace = true, features = ["test-support"] }
+wgpui = { workspace = true, features = ["test-support"] }
 
 [lints]
 workspace = true

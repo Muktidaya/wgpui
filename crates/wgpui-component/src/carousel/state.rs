@@ -1,6 +1,6 @@
 use std::{cell::OnceCell, time::Duration};
 
-use gpui::{
+use wgpui::{
     Along, App, Axis, Bounds, Context, EventEmitter, FocusHandle, Focusable, Pixels, Point,
     ScrollHandle, TouchPhase, px,
 };
@@ -356,7 +356,7 @@ impl CarouselState {
 
     /// Returns the size of the clipped content frame that controls and the
     /// focus ring are positioned around.
-    pub(super) fn frame_size(&self) -> Option<gpui::Size<Pixels>> {
+    pub(super) fn frame_size(&self) -> Option<wgpui::Size<Pixels>> {
         self.geometry.frame.map(|frame| frame.size)
     }
 
@@ -1280,7 +1280,7 @@ impl Focusable for CarouselState {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use gpui::{AppContext as _, TestAppContext, point, px};
+    use wgpui::{AppContext as _, TestAppContext, point, px};
 
     use super::*;
 
@@ -1307,31 +1307,31 @@ mod tests {
     fn geometry_produces_axis_specific_snap_points() {
         let mut state = CarouselState::new(2).with_axis(Axis::Horizontal);
         state.set_geometry(
-            Bounds::new(point(px(10.), px(20.)), gpui::size(px(100.), px(40.))),
+            Bounds::new(point(px(10.), px(20.)), wgpui::size(px(100.), px(40.))),
             vec![
-                Bounds::new(point(px(10.), px(20.)), gpui::size(px(100.), px(40.))),
-                Bounds::new(point(px(110.), px(20.)), gpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(10.), px(20.)), wgpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(110.), px(20.)), wgpui::size(px(100.), px(40.))),
             ],
         );
         assert_eq!(state.snap_target_for(0), Some(point(px(0.), px(0.))));
         assert_eq!(state.snap_target_for(1), Some(point(px(-100.), px(0.))));
         let mut vertical = CarouselState::new(2).with_axis(Axis::Vertical);
         vertical.set_geometry(
-            Bounds::new(point(px(10.), px(20.)), gpui::size(px(40.), px(100.))),
+            Bounds::new(point(px(10.), px(20.)), wgpui::size(px(40.), px(100.))),
             vec![
-                Bounds::new(point(px(10.), px(20.)), gpui::size(px(40.), px(100.))),
-                Bounds::new(point(px(10.), px(120.)), gpui::size(px(40.), px(100.))),
+                Bounds::new(point(px(10.), px(20.)), wgpui::size(px(40.), px(100.))),
+                Bounds::new(point(px(10.), px(120.)), wgpui::size(px(40.), px(100.))),
             ],
         );
         assert_eq!(vertical.snap_target_for(1), Some(point(px(0.), px(-100.))));
 
         let mut narrow = CarouselState::new(3);
         narrow.set_geometry(
-            Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+            Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
             vec![
-                Bounds::new(point(px(0.), px(0.)), gpui::size(px(50.), px(40.))),
-                Bounds::new(point(px(50.), px(0.)), gpui::size(px(50.), px(40.))),
-                Bounds::new(point(px(100.), px(0.)), gpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(0.), px(0.)), wgpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(50.), px(0.)), wgpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(100.), px(0.)), wgpui::size(px(50.), px(40.))),
             ],
         );
         assert_eq!(narrow.snap_target_for(2), Some(point(px(-50.), px(0.))));
@@ -1341,11 +1341,11 @@ mod tests {
     fn nearest_index_keeps_the_first_trailing_duplicate_as_canonical() {
         let mut state = CarouselState::new(3);
         state.set_geometry(
-            Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+            Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
             vec![
-                Bounds::new(point(px(0.), px(0.)), gpui::size(px(50.), px(40.))),
-                Bounds::new(point(px(50.), px(0.)), gpui::size(px(50.), px(40.))),
-                Bounds::new(point(px(100.), px(0.)), gpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(0.), px(0.)), wgpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(50.), px(0.)), wgpui::size(px(50.), px(40.))),
+                Bounds::new(point(px(100.), px(0.)), wgpui::size(px(50.), px(40.))),
             ],
         );
 
@@ -1354,18 +1354,18 @@ mod tests {
         assert_eq!(state.nearest_index(point(px(-50.), px(0.))), Some(1));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometry_navigation_skips_duplicate_snap_points(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
                 state.set_geometry(
-                    Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+                    Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(50.), px(40.))),
-                        Bounds::new(point(px(50.), px(0.)), gpui::size(px(50.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(50.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(50.), px(40.))),
+                        Bounds::new(point(px(50.), px(0.)), wgpui::size(px(50.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(50.), px(40.))),
                     ],
                 );
                 state.set_selected_index(1, cx);
@@ -1385,7 +1385,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_looping_navigation_stops_at_both_boundaries(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1410,7 +1410,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), &[2]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn user_navigation_emits_once_and_programmatic_changes_stay_silent(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1454,7 +1454,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_drag_locks_to_the_primary_axis(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
 
@@ -1480,17 +1480,17 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn finishing_a_drag_keeps_the_offset_as_the_snap_animation_origin(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
                 state.set_geometry(
-                    Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+                    Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 assert!(state.begin_drag(point(px(0.), px(0.)), cx));
@@ -1502,7 +1502,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn user_navigation_invalidates_an_active_trackpad_gesture(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1563,7 +1563,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), &[1]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moved_only_trackpad_gesture_settles_after_the_quiet_period(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1578,10 +1578,10 @@ mod tests {
         cx.update(|cx| {
             state.update(cx, |state, cx| {
                 state.set_geometry(
-                    Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+                    Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 state.handle_scroll_delta(Axis::Horizontal, px(-60.), TouchPhase::Moved, cx);
@@ -1602,7 +1602,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), &[1]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn invalid_boundary_navigation_still_cancels_the_active_gesture(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
 
@@ -1630,7 +1630,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn looping_boundaries_emit_one_event_and_advance_motion_revision(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1655,7 +1655,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), &[1, 0]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn looping_uses_adjacent_cycle_targets_and_rebases_without_an_extra_event(
         cx: &mut TestAppContext,
     ) {
@@ -1671,12 +1671,12 @@ mod tests {
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 assert_eq!(state.loop_runway(), Some(px(200.)));
@@ -1684,8 +1684,8 @@ mod tests {
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 assert_eq!(state.scroll_handle.offset(), point(px(-200.), px(0.)));
@@ -1715,7 +1715,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), &[1, 0]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn programmatic_loop_wrap_uses_the_adjacent_cycle_without_emitting(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1729,19 +1729,19 @@ mod tests {
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
 
@@ -1763,7 +1763,7 @@ mod tests {
         assert!(events.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_loop_wrap_uses_the_adjacent_cycle(cx: &mut TestAppContext) {
         let state = cx.update(|cx| {
             cx.new(|_| {
@@ -1775,19 +1775,19 @@ mod tests {
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(40.), px(100.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(40.), px(100.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(40.), px(100.))),
-                        Bounds::new(point(px(0.), px(100.)), gpui::size(px(40.), px(100.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(40.), px(100.))),
+                        Bounds::new(point(px(0.), px(100.)), wgpui::size(px(40.), px(100.))),
                     ],
                 );
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(200.)), gpui::size(px(40.), px(100.))),
-                        Bounds::new(point(px(0.), px(300.)), gpui::size(px(40.), px(100.))),
+                        Bounds::new(point(px(0.), px(200.)), wgpui::size(px(40.), px(100.))),
+                        Bounds::new(point(px(0.), px(300.)), wgpui::size(px(40.), px(100.))),
                     ],
                 );
 
@@ -1801,25 +1801,25 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn unequal_items_keep_the_requested_direction_across_a_loop_boundary(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(80.), px(40.))),
-                        Bounds::new(point(px(96.), px(0.)), gpui::size(px(200.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(80.), px(40.))),
+                        Bounds::new(point(px(96.), px(0.)), wgpui::size(px(200.), px(40.))),
                     ],
                 );
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(328.), px(0.)), gpui::size(px(80.), px(40.))),
-                        Bounds::new(point(px(424.), px(0.)), gpui::size(px(200.), px(40.))),
+                        Bounds::new(point(px(328.), px(0.)), wgpui::size(px(80.), px(40.))),
+                        Bounds::new(point(px(424.), px(0.)), wgpui::size(px(200.), px(40.))),
                     ],
                 );
 
@@ -1838,25 +1838,25 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_loop_gesture_rebases_before_reaching_a_runway_edge(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
 
@@ -1879,10 +1879,10 @@ mod tests {
     fn looping_falls_back_when_one_cycle_cannot_cover_the_viewport() {
         let mut state = CarouselState::new(2).with_looping(true);
         state.set_geometry(
-            Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
+            Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
             vec![
-                Bounds::new(point(px(0.), px(0.)), gpui::size(px(40.), px(40.))),
-                Bounds::new(point(px(40.), px(0.)), gpui::size(px(40.), px(40.))),
+                Bounds::new(point(px(0.), px(0.)), wgpui::size(px(40.), px(40.))),
+                Bounds::new(point(px(40.), px(0.)), wgpui::size(px(40.), px(40.))),
             ],
         );
 
@@ -1899,12 +1899,12 @@ mod tests {
     #[test]
     fn loop_runway_accounts_for_the_track_gap_and_content_inset() {
         let mut state = CarouselState::new(2).with_looping(true);
-        let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+        let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
         state.set_geometry(
             viewport,
             vec![
-                Bounds::new(point(px(16.), px(0.)), gpui::size(px(100.), px(40.))),
-                Bounds::new(point(px(132.), px(0.)), gpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(16.), px(0.)), wgpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(132.), px(0.)), wgpui::size(px(100.), px(40.))),
             ],
         );
 
@@ -1912,8 +1912,8 @@ mod tests {
         state.set_geometry(
             viewport,
             vec![
-                Bounds::new(point(px(264.), px(0.)), gpui::size(px(100.), px(40.))),
-                Bounds::new(point(px(380.), px(0.)), gpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(264.), px(0.)), wgpui::size(px(100.), px(40.))),
+                Bounds::new(point(px(380.), px(0.)), wgpui::size(px(100.), px(40.))),
             ],
         );
         assert_eq!(state.scroll_handle.offset(), point(px(-248.), px(0.)));
@@ -1921,33 +1921,33 @@ mod tests {
         assert_eq!(state.snap_target_for(1), Some(point(px(-364.), px(0.))));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn loop_runway_resize_and_removal_preserve_the_visible_coordinate(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
 
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(150.), px(40.))),
-                        Bounds::new(point(px(350.), px(0.)), gpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(350.), px(0.)), wgpui::size(px(150.), px(40.))),
                     ],
                 );
                 assert_eq!(state.loop_runway(), Some(px(300.)));
@@ -1957,8 +1957,8 @@ mod tests {
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(150.), px(40.))),
-                        Bounds::new(point(px(450.), px(0.)), gpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(450.), px(0.)), wgpui::size(px(150.), px(40.))),
                     ],
                 );
                 assert!(!state.is_loop_layout_transitioning());
@@ -1971,8 +1971,8 @@ mod tests {
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(150.), px(40.))),
-                        Bounds::new(point(px(150.), px(0.)), gpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(150.), px(40.))),
+                        Bounds::new(point(px(150.), px(0.)), wgpui::size(px(150.), px(40.))),
                     ],
                 );
                 assert!(!state.is_loop_layout_transitioning());
@@ -1980,26 +1980,26 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn laying_out_the_runway_normalizes_an_active_drag_snapshot(cx: &mut TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2).with_looping(true)));
 
         cx.update(|cx| {
             state.update(cx, |state, cx| {
-                let viewport = Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.)));
+                let viewport = Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.)));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(0.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(100.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(100.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
                 assert!(state.begin_drag(point(px(0.), px(0.)), cx));
                 state.set_geometry(
                     viewport,
                     vec![
-                        Bounds::new(point(px(200.), px(0.)), gpui::size(px(100.), px(40.))),
-                        Bounds::new(point(px(300.), px(0.)), gpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(200.), px(0.)), wgpui::size(px(100.), px(40.))),
+                        Bounds::new(point(px(300.), px(0.)), wgpui::size(px(100.), px(40.))),
                     ],
                 );
 

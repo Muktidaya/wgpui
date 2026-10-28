@@ -5,12 +5,12 @@
 //! `ScrollBounce` can own a list or scroll area's vertical wheel handling.
 
 use crate::scroll_bounce::Physics;
-use gpui::TouchPhase;
 use std::time::Duration;
 #[cfg(not(target_family = "wasm"))]
 use std::time::Instant;
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
+use wgpui::TouchPhase;
 
 /// A pause without packets that ends a gesture.
 ///

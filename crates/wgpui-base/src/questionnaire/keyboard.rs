@@ -1,4 +1,4 @@
-use gpui::{App, Entity, KeyDownEvent, Window};
+use wgpui::{App, Entity, KeyDownEvent, Window};
 
 use super::QuestionnaireState;
 

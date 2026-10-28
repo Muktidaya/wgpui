@@ -1,16 +1,16 @@
 use super::entrance::{DialogEntrance, EntranceSurface};
 use crate::root::WindowState;
-use gpui_base::TestSupportExt as _;
 use std::{rc::Rc, sync::LazyLock, time::Duration};
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     Action, Anchor, AnyElement, App, BoxShadow, ClickEvent, Edges, FocusHandle, Hsla,
     InteractiveElement, IntoElement, ParentElement, Pixels, RenderOnce, SharedString,
     StyleRefinement, Styled, Window, WindowControlArea, anchored, div, hsla, point,
     prelude::FluentBuilder, px,
 };
-use gpui_base::{TextSelectionScopeExt as _, TextSelectionScopeId, motion::Transition};
-use rust_i18n::t;
+use wgpui_base::{TextSelectionScopeExt as _, TextSelectionScopeId, motion::Transition};
 
 use crate::{
     ActiveTheme as _, IconName, Sizable as _, StyledExt, TITLE_BAR_HEIGHT, WindowExt as _,
@@ -22,7 +22,7 @@ use crate::{
 };
 
 pub static ANIMATION_DURATION: LazyLock<Duration> = LazyLock::new(|| Duration::from_secs_f64(0.25));
-pub use gpui_base::actions::{Cancel, Confirm};
+pub use wgpui_base::actions::{Cancel, Confirm};
 
 type OkHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) -> bool + 'static>;
 type CancelHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) -> bool + 'static>;
@@ -233,8 +233,8 @@ impl Default for DialogProps {
 }
 
 enum BaseDialogRoot {
-    Dialog(gpui_base::Dialog),
-    AlertDialog(gpui_base::AlertDialog),
+    Dialog(wgpui_base::Dialog),
+    AlertDialog(wgpui_base::AlertDialog),
 }
 
 macro_rules! map_base_root {
@@ -291,7 +291,7 @@ impl BaseDialogRoot {
 }
 
 impl IntoElement for BaseDialogRoot {
-    type Element = <gpui_base::Dialog as IntoElement>::Element;
+    type Element = <wgpui_base::Dialog as IntoElement>::Element;
     fn into_element(self) -> Self::Element {
         match self {
             Self::Dialog(root) => root.into_element(),
@@ -363,7 +363,7 @@ impl Dialog {
     /// Create a new dialog.
     pub fn new(cx: &mut App) -> Self {
         Self {
-            base: Some(BaseDialogRoot::Dialog(gpui_base::Dialog::new(cx))),
+            base: Some(BaseDialogRoot::Dialog(wgpui_base::Dialog::new(cx))),
             focus_handle: cx.focus_handle(),
             style: StyleRefinement::default(),
             trigger: None,
@@ -439,7 +439,7 @@ impl Dialog {
         self
     }
 
-    pub(crate) fn with_base_alert_dialog(mut self, base: gpui_base::AlertDialog) -> Self {
+    pub(crate) fn with_base_alert_dialog(mut self, base: wgpui_base::AlertDialog) -> Self {
         self.base = Some(BaseDialogRoot::AlertDialog(base));
         self.props.overlay_closable = false;
         self
@@ -602,7 +602,7 @@ impl ParentElement for Dialog {
 }
 
 impl Styled for Dialog {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -614,7 +614,7 @@ impl Dialog {
         let props = self.props.clone();
         let button_props = self.button_props.clone();
 
-        gpui_base::DialogTrigger::new(trigger)
+        wgpui_base::DialogTrigger::new(trigger)
             .on_open(move |window, cx| {
                 let content_builder = content_builder.clone();
                 let style = style.clone();
@@ -655,7 +655,7 @@ impl RenderOnce for Dialog {
 
         let window_paddings = crate::window_border::window_paddings(window);
         let view_size = window.viewport_size()
-            - gpui::size(
+            - wgpui::size(
                 window_paddings.left + window_paddings.right,
                 window_paddings.top + window_paddings.bottom,
             );
@@ -687,7 +687,7 @@ impl RenderOnce for Dialog {
             .min((view_size.width - margin * 2.).max(px(0.)));
         let x = (view_size.width - width) / 2.;
         let mut max_height = (view_size.height - margin * 2. - layer_offset).max(px(0.));
-        if let Some(gpui::Length::Definite(limit)) = self.style.max_size.height {
+        if let Some(wgpui::Length::Definite(limit)) = self.style.max_size.height {
             max_height =
                 max_height.min(limit.to_pixels(view_size.height.into(), window.rem_size()));
         }
@@ -770,7 +770,7 @@ impl RenderOnce for Dialog {
                                 }
                             })
                             .popup(
-                                gpui_base::Positioner::corner(
+                                wgpui_base::Positioner::corner(
                                     anchor,
                                     point(window_paddings.left + x, window_paddings.top + y),
                                 )
@@ -851,7 +851,7 @@ impl RenderOnce for Dialog {
                                             let top = (paddings.top - px(10.)).max(px(8.));
                                             let right = (paddings.right - px(10.)).max(px(8.));
 
-                                            gpui_base::DialogClose::new()
+                                            wgpui_base::DialogClose::new()
                                                 .absolute()
                                                 .top(top)
                                                 .right(right)
@@ -930,11 +930,11 @@ impl RenderOnce for Dialog {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use gpui::{
+    use std::{cell::Cell, rc::Rc};
+    use wgpui::{
         AppContext as _, Bounds, Context, Render, StatefulInteractiveElement as _, TestAppContext,
         VisualTestContext, size,
     };
-    use std::{cell::Cell, rc::Rc};
 
     struct DialogHost {
         clicks: Rc<Cell<usize>>,
@@ -962,7 +962,7 @@ pub(crate) mod tests {
     /// motion reduced so the entrance animation settles on its first frame.
     pub(crate) fn window(
         cx: &mut TestAppContext,
-        window_size: gpui::Size<Pixels>,
+        window_size: wgpui::Size<Pixels>,
     ) -> &mut VisualTestContext {
         let (cx, _) = window_with_click_count(cx, window_size);
         cx
@@ -972,7 +972,7 @@ pub(crate) mod tests {
     /// dialog was pressed.
     fn window_with_click_count(
         cx: &mut TestAppContext,
-        window_size: gpui::Size<Pixels>,
+        window_size: wgpui::Size<Pixels>,
     ) -> (&mut VisualTestContext, Rc<Cell<usize>>) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1015,7 +1015,7 @@ pub(crate) mod tests {
 
     /// The clamp must not touch a dialog that already fits: the default width
     /// and the tenth-of-the-viewport top offset are the documented contract.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dialog_that_fits_keeps_its_default_width_and_top_offset(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         open(cx, |dialog, _, _| dialog.title("Fits").child("body"));
@@ -1030,7 +1030,7 @@ pub(crate) mod tests {
     /// instead of running off both edges. It also gives up the usual top
     /// offset so that space is available to its content, while its footer
     /// remains inside the surface rather than clipped below it.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dialog_larger_than_the_window_stays_inside_it(cx: &mut TestAppContext) {
         let viewport = size(px(400.), px(300.));
         let cx = window(cx, viewport);
@@ -1061,7 +1061,7 @@ pub(crate) mod tests {
     }
 
     /// `Dialog::button_props` overrides only the fields it sets.
-    #[gpui::test]
+    #[wgpui::test]
     fn dialog_button_props_merge_with_what_the_dialog_already_carries(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(400.), px(300.)));
         cx.update(|_, cx| {
@@ -1078,7 +1078,7 @@ pub(crate) mod tests {
 
     /// Each stacked dialog steps down 16px; the deepest one must still end
     /// above the bottom margin.
-    #[gpui::test]
+    #[wgpui::test]
     fn stacked_dialogs_each_fit_the_window(cx: &mut TestAppContext) {
         let viewport = size(px(400.), px(300.));
         let cx = window(cx, viewport);
@@ -1097,7 +1097,7 @@ pub(crate) mod tests {
         assert!(second.size.height < first.size.height);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_dialog_entrance_builder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         cx.update(|cx| {
@@ -1113,7 +1113,7 @@ pub(crate) mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_displays_every_entrance_at_rest(cx: &mut TestAppContext) {
         for entrance in [
             DialogEntrance::SlideDown,
@@ -1133,7 +1133,7 @@ pub(crate) mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn no_entrance_displays_immediately_and_keeps_keyboard_dismissal(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1151,7 +1151,7 @@ pub(crate) mod tests {
 
     /// Closing keeps the dialog mounted until the entrance plays back out, and
     /// the dialog stops counting as active before it leaves the screen.
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_plays_the_entrance_backwards_before_the_dialog_unmounts(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1193,7 +1193,7 @@ pub(crate) mod tests {
         assert!(cx.debug_bounds("dialog-0").is_none());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_closes_in_a_single_frame(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         open(cx, |dialog, _, _| dialog.title("Reduced").child("body"));
@@ -1204,7 +1204,7 @@ pub(crate) mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn zero_theme_duration_closes_fade_entrances_immediately(cx: &mut TestAppContext) {
         for entrance in [DialogEntrance::Fade, DialogEntrance::FadeSlide] {
             let cx = window(cx, size(px(1000.), px(800.)));
@@ -1225,7 +1225,7 @@ pub(crate) mod tests {
 
     /// Opening a new dialog while the previous one is leaving keeps both
     /// mounted for the exit: the new dialog owns focus and survives it.
-    #[gpui::test]
+    #[wgpui::test]
     fn reopening_during_the_exit_keeps_the_new_dialog(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1265,7 +1265,7 @@ pub(crate) mod tests {
 
     /// Closing the top of a stack only removes that dialog: the one below stays
     /// mounted and becomes the active dialog for the duration of the exit.
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_the_top_dialog_leaves_the_one_below_mounted(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1302,7 +1302,7 @@ pub(crate) mod tests {
 
     /// A leaving dialog releases input: a press that the open backdrop used to
     /// swallow now reaches the application beneath it.
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_dialog_does_not_block_input_beneath_it(cx: &mut TestAppContext) {
         let (cx, clicks) = window_with_click_count(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1317,14 +1317,14 @@ pub(crate) mod tests {
         // The open dialog covers the window: the backdrop stops the press
         // before it can reach the target underneath.
         let backdrop_point = point(px(100.), px(60.));
-        cx.simulate_click(backdrop_point, gpui::Modifiers::default());
+        cx.simulate_click(backdrop_point, wgpui::Modifiers::default());
         assert_eq!(clicks.get(), 0, "an open dialog blocked the application");
 
         cx.background_executor.advance_clock(*ANIMATION_DURATION);
         frame(cx);
         cx.update(|window, cx| window.close_dialog(cx));
         frame(cx);
-        cx.simulate_click(backdrop_point, gpui::Modifiers::default());
+        cx.simulate_click(backdrop_point, wgpui::Modifiers::default());
         assert_eq!(
             clicks.get(),
             1,
@@ -1332,7 +1332,7 @@ pub(crate) mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn zero_theme_duration_displays_fade_entrances_immediately(cx: &mut TestAppContext) {
         for entrance in [DialogEntrance::Fade, DialogEntrance::FadeSlide] {
             let cx = window(cx, size(px(1000.), px(800.)));
@@ -1351,7 +1351,7 @@ pub(crate) mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn alert_dialog_uses_the_same_entrance(cx: &mut TestAppContext) {
         for entrance in [
             DialogEntrance::SlideDown,
@@ -1378,7 +1378,7 @@ pub(crate) mod tests {
 
     /// Closing fades the surface itself, not only the layer: the base host
     /// paints in a deferred pass, where ancestor opacity no longer applies.
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_fades_the_dialog_surface(cx: &mut TestAppContext) {
         let cx = window(cx, size(px(1000.), px(800.)));
         cx.update(|_, cx| cx.set_reduce_motion(false));
@@ -1409,7 +1409,7 @@ pub(crate) mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_during_entrance_reverses_from_the_current_sample(cx: &mut TestAppContext) {
         for entrance in [
             DialogEntrance::SlideDown,
@@ -1443,10 +1443,10 @@ pub(crate) mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn exiting_content_rejects_clicks_focus_and_text_input(cx: &mut TestAppContext) {
         use crate::input::{Input, InputState};
-        use gpui::Focusable as _;
+        use wgpui::Focusable as _;
 
         for deferred in [false, true] {
             let cx = window(cx, size(px(1000.), px(800.)));
@@ -1476,7 +1476,7 @@ pub(crate) mod tests {
             cx.background_executor.advance_clock(*ANIMATION_DURATION);
             frame(cx);
             let button = cx.debug_bounds("exit-button").unwrap().center();
-            cx.simulate_click(button, gpui::Modifiers::default());
+            cx.simulate_click(button, wgpui::Modifiers::default());
             assert_eq!(clicks.get(), 1);
             cx.update(|window, cx| input.focus_handle(cx).focus(window, cx));
             cx.simulate_input("before");
@@ -1490,10 +1490,10 @@ pub(crate) mod tests {
             });
             frame(cx);
             let button = cx.debug_bounds("exit-button").unwrap().center();
-            cx.simulate_click(button, gpui::Modifiers::default());
+            cx.simulate_click(button, wgpui::Modifiers::default());
             assert_eq!(clicks.get(), 1, "a closing footer button ran its callback");
             let field = cx.debug_bounds("exit-input").unwrap().center();
-            cx.simulate_click(field, gpui::Modifiers::default());
+            cx.simulate_click(field, wgpui::Modifiers::default());
             cx.simulate_input("after");
             assert_eq!(input.read_with(cx, |input, _| input.value()), "before");
             for key in ["tab", "shift-tab"] {
@@ -1537,7 +1537,7 @@ pub(crate) mod tests {
 #[cfg(test)]
 mod taffy_regression_tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Render, ScrollDelta, ScrollWheelEvent, TestAppContext,
         VisualTestContext,
     };
@@ -1557,7 +1557,7 @@ mod taffy_regression_tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dialog_body_grows_then_scrolls_at_max_height(cx: &mut TestAppContext) {
         cx.update(crate::init);
         for maximum_height in [100.0, 200.0] {

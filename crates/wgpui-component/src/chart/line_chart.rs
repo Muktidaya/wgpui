@@ -1,10 +1,10 @@
 use std::{hash::Hash, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ElementId, Hsla, IntoElement, Pixels, Point, SharedString, Size,
     Window, point, px,
 };
-use gpui_component_macros::IntoPlot;
+use wgpui_kit_macros::IntoPlot;
 
 use crate::{
     ActiveTheme,
@@ -567,7 +567,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Bounds, point, px, size};
+    use wgpui::{Bounds, point, px, size};
 
     use super::LineChart;
     use crate::plot::scale::Scale;

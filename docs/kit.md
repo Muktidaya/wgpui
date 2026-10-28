@@ -31,7 +31,7 @@ use wgpui_kit::component::{button::Button, Root};
 | wgpui-perf | `crates/wgpui-perf/` (unpublished) |
 | wgpui-kit-harness | `crates/wgpui-kit-harness/` (unpublished) |
 
-The styled component package remains available for existing consumers. New applications should normally use Kit. The assets and macro package names now follow Kit; upstream dependency aliases such as `gpui` are internal source compatibility choices. The assets package uses the distinct Cargo `links` identity `wgpui-kit-default-icons` so it does not conflict with the old assets package.
+The styled component package remains available for existing consumers. New applications should normally use Kit. The assets and macro package names now follow Kit; workspace dependency keys and Rust imports use the canonical WGPUI names. The assets package uses the distinct Cargo `links` identity `wgpui-kit-default-icons` so it does not conflict with the old assets package.
 
 The derive package retains its existing crates.io name `wgpui_derive`: hyphens and underscores share a registry namespace. Its directory and framework dependency key use `wgpui-derive`, with `package = "wgpui_derive"`.
 

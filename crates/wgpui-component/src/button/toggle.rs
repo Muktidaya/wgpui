@@ -1,12 +1,12 @@
 use std::{cell::Cell, rc::Rc, time::Duration};
 
-use gpui::{
+use smallvec::{SmallVec, smallvec};
+use wgpui::{
     AnyElement, App, Axis, Corners, Edges, ElementId, InteractiveElement, IntoElement,
     ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled,
     Window, prelude::FluentBuilder as _, relative,
 };
-use gpui_base::{Toggle as BaseToggle, ToggleGroup as BaseToggleGroup};
-use smallvec::{SmallVec, smallvec};
+use wgpui_base::{Toggle as BaseToggle, ToggleGroup as BaseToggleGroup};
 
 use crate::{ActiveTheme, Disableable, Icon, Sizable, Size, StyledExt, tooltip::ComponentTooltip};
 
@@ -76,7 +76,7 @@ impl Toggle {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip.show_delay = Some(delay);
         self
@@ -411,11 +411,11 @@ impl RenderOnce for ToggleGroup {
 mod tests {
     use super::*;
     use crate::{IconName, h_flex};
-    use gpui::{
+    use std::cell::{Cell, RefCell};
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         StatefulInteractiveElement, TestAppContext, VisualTestContext, point, px,
     };
-    use std::cell::{Cell, RefCell};
 
     struct ToggleHarness {
         disabled: bool,
@@ -477,7 +477,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_pointer_activation_fires_once_and_focuses(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -485,7 +485,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_toggle_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -495,7 +495,7 @@ mod tests {
         assert_eq!(changes.borrow().as_slice(), &[true, true]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_disabled_toggle_is_inert_and_blocks_parent(cx: &mut TestAppContext) {
         let (cx, changes, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -553,7 +553,7 @@ mod tests {
         (cx, child_clicks, group_changes)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_overrides_child_callback_even_without_group_callback(
         cx: &mut TestAppContext,
     ) {
@@ -563,7 +563,7 @@ mod tests {
         assert!(changes.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_pointer_flips_only_the_clicked_rendered_value(cx: &mut TestAppContext) {
         let (cx, child_clicks, changes) = toggle_group_harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -571,7 +571,7 @@ mod tests {
         assert_eq!(changes.borrow().as_slice(), &[vec![false, false]]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_keyboard_click_does_not_reach_the_group_callback(
         cx: &mut TestAppContext,
     ) {
@@ -588,8 +588,8 @@ mod tests {
         assert_eq!(toggle.style.opacity, Some(0.37));
     }
 
-    #[gpui::test]
-    fn test_toggle_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_toggle_builder(_cx: &mut wgpui::TestAppContext) {
         let toggle = Toggle::new("complex-toggle")
             .label("Enable Feature")
             .icon(IconName::Check)
@@ -607,8 +607,8 @@ mod tests {
         assert!(toggle.on_click.is_some());
     }
 
-    #[gpui::test]
-    fn test_toggle_group_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_toggle_group_builder(_cx: &mut wgpui::TestAppContext) {
         let group = ToggleGroup::new("complex-group")
             .child(Toggle::new("toggle1").label("Option 1"))
             .child(Toggle::new("toggle2").label("Option 2").checked(true))

@@ -1,4 +1,4 @@
-use gpui::relative;
+use wgpui::relative;
 
 use super::*;
 
@@ -20,8 +20,8 @@ impl BaseShowcase {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .bg(gpui::black())
-                    .text_color(gpui::white())
+                    .bg(wgpui::black())
+                    .text_color(wgpui::white())
                     .on_click(move |_, _, cx| {
                         _ = open_entity.update(cx, |this, cx| {
                             this.alert_dialog_open = true;

@@ -18,15 +18,15 @@ pub use state::{DiffEvent, DiffState};
 
 use std::{collections::HashMap, rc::Rc, sync::Arc};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, Axis, ClickEvent, ClipboardItem, Context, ElementId, Entity, Focusable as _,
     HighlightStyle, Hsla, InteractiveElement as _, IntoElement, KeyBinding, ListOffset,
     MouseButton, ParentElement as _, Pixels, RenderOnce, SharedString,
     StatefulInteractiveElement as _, StyleRefinement, Styled, TextRun, Window, div, list, point,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::TestSupportExt as _;
-use rust_i18n::t;
+use wgpui_base::TestSupportExt as _;
 
 use crate::{
     ActiveTheme as _, Icon, IconName, Sizable as _, StyledExt as _,
@@ -44,7 +44,7 @@ use state::{DisplayRow, FoldExpansion, LayoutKey, SelectedLines};
 
 // Private: bindings serve the focused code body only.
 mod actions {
-    gpui::actions!(
+    wgpui::actions!(
         diff,
         [
             ScrollUp,
@@ -570,7 +570,7 @@ fn render_diff(
                 // single-axis wheel remapping. The sibling mask owns X input.
                 .when(!soft_wrap, |this| this.overflow_x_hidden())
                 .track_scroll(&horizontal)
-                .child(gpui_base::ScrollBounce::new(
+                .child(wgpui_base::ScrollBounce::new(
                     "diff-bounce",
                     &scrollbar,
                     list(scrollbar.clone(), move |ix, window, cx| {
@@ -699,7 +699,7 @@ fn render_diff(
             }
         }))
         .child(
-            gpui::canvas(
+            wgpui::canvas(
                 {
                     let state = cx.entity();
                     move |bounds, _, cx| {
@@ -729,7 +729,7 @@ fn render_diff(
         .test_support()
         .track_focus(&state.focus_handle(cx))
         .key_context("Diff")
-        .role(gpui::accesskit::Role::Document)
+        .role(wgpui::accesskit::Role::Document)
         .aria_label(label);
     v_flex()
         .id(("diff", cx.entity_id()))
@@ -780,7 +780,7 @@ struct CodePresentation {
     on_add_annotation: Option<RangeHandler>,
     on_line_click: Option<ClickHandler>,
     on_line_hover: Option<HoverHandler>,
-    selection: gpui_base::TextSelectionHandle,
+    selection: wgpui_base::TextSelectionHandle,
     selected_lines: Option<DiffLineRange>,
     selected: Option<SelectedLines>,
     geometry: Rc<std::cell::RefCell<selection::SelectionGeometry>>,
@@ -845,7 +845,7 @@ fn measure_code_width(
             }
         }
     }
-    let font = gpui::Font {
+    let font = wgpui::Font {
         family: family.clone(),
         ..Default::default()
     };
@@ -1321,7 +1321,7 @@ fn render_gutter(
                     .text_size(code.font_size)
                     .text_color(cx.theme().muted_foreground)
                     .hover(|this| this.text_color(cx.theme().foreground))
-                    .role(gpui::accesskit::Role::Button)
+                    .role(wgpui::accesskit::Role::Button)
                     .aria_label(
                         t!(
                             "Diff.SelectLine",
@@ -1562,7 +1562,7 @@ fn add_annotation_button(
                 this.opacity(0.)
                     .group_hover("diff-line", |this| this.opacity(1.))
             })
-            .role(gpui::accesskit::Role::Button)
+            .role(wgpui::accesskit::Role::Button)
             .aria_label(t!("Diff.AddAnnotation", line = position.line()).to_string())
             .child(Icon::new(IconName::Plus).xsmall())
             .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
@@ -1732,7 +1732,7 @@ fn code_line(
                         this.flex_shrink_0()
                     }
                 })
-                .role(gpui::accesskit::Role::Label)
+                .role(wgpui::accesskit::Role::Label)
                 .aria_label(source_line.text().clone())
                 .aria_description(
                     t!(

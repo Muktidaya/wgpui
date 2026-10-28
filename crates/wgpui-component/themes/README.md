@@ -32,3 +32,7 @@ to current roles. Retired panel, action-bar, tiles and accordion-hover roles hav
 no current equivalent and use current semantic defaults; their original values
 remain recoverable at the source pin. Every remaining role and color expression
 is checked, so serde's unknown-field fallback cannot hide an incompatible key.
+
+The repository also retains a source-only dock-export boundary test that reads
+both Base and Component source modules. It is excluded from Cargo archives;
+standalone package tests do not require sibling workspace source directories.

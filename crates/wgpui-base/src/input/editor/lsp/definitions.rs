@@ -1,9 +1,9 @@
 use anyhow::Result;
-use gpui::{
-    App, Context, HighlightStyle, Hitbox, MouseDownEvent, Task, UnderlineStyle, Window, px,
-};
 use ropey::Rope;
 use std::{ops::Range, rc::Rc};
+use wgpui::{
+    App, Context, HighlightStyle, Hitbox, MouseDownEvent, Task, UnderlineStyle, Window, px,
+};
 
 use crate::input::{EditorMode, GoToDefinition, InputBaseState, RopeExt};
 
@@ -238,6 +238,6 @@ impl InputBaseState<EditorMode> {
             return None;
         };
 
-        Some(window.insert_hitbox(bounds, gpui::HitboxBehavior::Normal))
+        Some(window.insert_hitbox(bounds, wgpui::HitboxBehavior::Normal))
     }
 }

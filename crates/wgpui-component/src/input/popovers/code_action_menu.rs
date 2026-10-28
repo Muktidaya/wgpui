@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     Action, AnyElement, App, AppContext, Context, DismissEvent, Empty, Entity, EventEmitter,
     Half as _, InteractiveElement as _, IntoElement, ParentElement, Pixels, Render, RenderOnce,
     Styled, StyledText, Subscription, WeakEntity, Window, deferred, div, prelude::FluentBuilder,
     px, relative,
 };
-use gpui_base::TestSupportExt as _;
-pub(crate) use gpui_base::input::CodeActionItem;
+use wgpui_base::TestSupportExt as _;
+pub(crate) use wgpui_base::input::CodeActionItem;
 
 const MAX_MENU_WIDTH: Pixels = px(320.);
 const MAX_MENU_HEIGHT: Pixels = px(480.);
@@ -102,7 +102,7 @@ impl EventEmitter<DismissEvent> for MenuDelegate {}
 impl ListDelegate for MenuDelegate {
     type Item = MenuItem;
 
-    fn items_count(&self, _: usize, _: &gpui::App) -> usize {
+    fn items_count(&self, _: usize, _: &wgpui::App) -> usize {
         self.items.len()
     }
 

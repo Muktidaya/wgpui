@@ -1,6 +1,6 @@
 //! The gpui-component appearance for a tab group.
 //!
-//! `gpui_base::dock::TabGroup` owns the behavior — membership, the displayed
+//! `wgpui_base::dock::TabGroup` owns the behavior — membership, the displayed
 //! tab, drag hit-testing, the zoom flag — and draws none of it. Everything
 //! visible is here: the tab bar, the toolbar, the ellipsis menu, the dock
 //! collapse affordances, the drop placeholder, and the styled drag preview.
@@ -12,20 +12,20 @@ use std::{
     sync::Arc,
 };
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     Anchor, AnyElement, AnyView, App, AppContext as _, Context, Div, Empty,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
     Stateful, StatefulInteractiveElement as _, StyleRefinement, Styled as _, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::{
+use wgpui_base::{
     dock::{
         AnyDrag, DockPlacement, DragPanel, DropIndicator, NodeId, PaneNode, PaneRef, PanelId,
         TabGroupContext, TabGroupRenderer,
     },
     spring,
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme as _, IconName, Selectable as _, Sizable as _,
@@ -58,14 +58,14 @@ const DOCK_TOGGLE_SELECTOR: &str = "dock-toggle";
 
 /// The size the styled drag preview occupies, reported to base so a drop
 /// placeholder knows where to fly in from.
-const DRAG_PREVIEW_SIZE: gpui::Size<gpui::Pixels> = gpui::size(px(96.), px(30.));
+const DRAG_PREVIEW_SIZE: wgpui::Size<wgpui::Pixels> = wgpui::size(px(96.), px(30.));
 
 /// The preview that follows the cursor while a panel is dragged.
 ///
-/// `gpui_base::dock::DragPanel` is the payload and draws nothing; this is the
+/// `wgpui_base::dock::DragPanel` is the payload and draws nothing; this is the
 /// appearance half, reintroduced here.
 pub struct DragPanelPreview {
-    panel: Arc<dyn gpui_base::dock::PanelView>,
+    panel: Arc<dyn wgpui_base::dock::PanelView>,
 }
 
 impl Render for DragPanelPreview {
@@ -91,7 +91,7 @@ impl Render for DragPanelPreview {
 /// A panel's title, or its registered name when it reached base without this
 /// crate's handle and so carries no presentation. See [`PanelHandle::of`].
 pub(crate) fn panel_title(
-    panel: &Arc<dyn gpui_base::dock::PanelView>,
+    panel: &Arc<dyn wgpui_base::dock::PanelView>,
     window: &mut Window,
     cx: &mut App,
 ) -> AnyElement {
@@ -121,7 +121,7 @@ thread_local! {
 /// presentation handle. Silent otherwise, and visual-only: the panel docks,
 /// drags and persists, it just has no title. The shorter method is the wrong
 /// one — `DockLayout::panel` and `DockArea::add_panel` accept a
-/// `gpui_component::dock::Panel` and store the bare entity — so this says
+/// `wgpui_component::dock::Panel` and store the bare entity — so this says
 /// which panel and what to call instead.
 fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
     if !WARNED_UNWRAPPED.with(|warned| warned.borrow_mut().insert(panel)) {
@@ -131,7 +131,7 @@ fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
         panel = name,
         "dock panel reached the skin without its presentation handle, so it \
          draws its panel name instead of its title; install it with \
-         `gpui_component::dock::panel_handle(..)` and `DockLayout::panel_view` \
+         `wgpui_component::dock::panel_handle(..)` and `DockLayout::panel_view` \
          / `DockArea::add_panel_view` rather than `DockLayout::panel` / \
          `DockArea::add_panel`"
     );
@@ -141,7 +141,7 @@ fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
 /// when there is none to offer.
 ///
 /// Two questions, and both have to be asked. [`Panel::zoom_control`] says
-/// *where* the control appears; [`gpui_base::dock::Panel::zoomable`] says
+/// *where* the control appears; [`wgpui_base::dock::Panel::zoomable`] says
 /// whether zooming happens at all, and base refuses a zoom that fails it. The
 /// old dock had a single `zoomable() -> Option<PanelControl>` that could not
 /// disagree with itself; split across the seam it can, and a panel answering
@@ -186,8 +186,8 @@ fn right_top_group(node: &PaneNode) -> Option<NodeId> {
     match node.kind() {
         PaneRef::Tabs { .. } => Some(node.id()),
         PaneRef::Split { axis, children, .. } => match axis {
-            gpui::Axis::Vertical => children.first(),
-            gpui::Axis::Horizontal => children.last(),
+            wgpui::Axis::Vertical => children.first(),
+            wgpui::Axis::Horizontal => children.last(),
         }
         .and_then(right_top_group),
     }
@@ -866,11 +866,11 @@ mod tests {
         sync::Arc,
     };
 
-    use gpui::{
+    use wgpui::{
         Entity, EventEmitter, FocusHandle, Focusable, Modifiers, MouseButton, Pixels,
         TestAppContext, VisualTestContext,
     };
-    use gpui_base::dock::{DockArea, DockAreaRenderer, DockLayout, DockPlacement, PanelEvent};
+    use wgpui_base::dock::{DockArea, DockAreaRenderer, DockLayout, DockPlacement, PanelEvent};
 
     use super::*;
     use crate::{
@@ -886,7 +886,7 @@ mod tests {
         handles: RefCell<Vec<(NodeId, ScrollHandle)>>,
     }
 
-    impl gpui::Global for DockTabScrollDiagnostics {}
+    impl wgpui::Global for DockTabScrollDiagnostics {}
 
     impl DockTabScrollDiagnostics {
         pub(super) fn record(&self, node: NodeId, handle: &ScrollHandle) {
@@ -948,7 +948,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for Probe {
+    impl wgpui_base::dock::Panel for Probe {
         fn panel_name(&self) -> &'static str {
             "Probe"
         }
@@ -1029,7 +1029,7 @@ mod tests {
     /// The gate carried forward from the old `TabPanel::render`, which wrapped
     /// `on_drag` in `.when(state.draggable, ..)`. Base does not enforce it:
     /// `TabGroupContext::drag_panel` answers for any tab in range.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_last_group_in_a_dock_offers_no_drag(cx: &mut TestAppContext) {
         let (area, log, cx) = recording_area(cx);
 
@@ -1049,7 +1049,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_beside_another_offers_a_drag(cx: &mut TestAppContext) {
         let (area, log, cx) = recording_area(cx);
 
@@ -1090,7 +1090,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for ToolbarZoomProbe {
+    impl wgpui_base::dock::Panel for ToolbarZoomProbe {
         fn panel_name(&self) -> &'static str {
             "ToolbarZoomProbe"
         }
@@ -1130,7 +1130,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for NoControlProbe {
+    impl wgpui_base::dock::Panel for NoControlProbe {
         fn panel_name(&self) -> &'static str {
             "NoControlProbe"
         }
@@ -1162,7 +1162,7 @@ mod tests {
         focus_handle: FocusHandle,
     }
 
-    impl gpui_base::dock::Panel for UnzoomableProbe {
+    impl wgpui_base::dock::Panel for UnzoomableProbe {
         fn panel_name(&self) -> &'static str {
             "UnzoomableProbe"
         }
@@ -1200,7 +1200,7 @@ mod tests {
     /// itself would pass with the bug in place.
     fn drew_zoom_control(
         cx: &mut TestAppContext,
-        panel: impl FnOnce(&mut App) -> Arc<dyn gpui_base::dock::PanelView>,
+        panel: impl FnOnce(&mut App) -> Arc<dyn wgpui_base::dock::PanelView>,
     ) -> bool {
         cx.update(|cx| {
             crate::init(cx);
@@ -1222,7 +1222,7 @@ mod tests {
     /// The two halves of the old `zoomable()` can now disagree, and base is
     /// the one that decides. A control drawn against base's refusal is dead:
     /// pressing it does nothing.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_base_will_not_zoom_gets_no_zoom_control(cx: &mut TestAppContext) {
         let drew = drew_zoom_control(cx, |cx| {
             panel_handle(cx.new(|cx| UnzoomableProbe {
@@ -1239,7 +1239,7 @@ mod tests {
     /// The other half: a panel that allows zoom and asks for a toolbar control
     /// gets one drawn. Without this the test above would also pass a skin that
     /// never draws a zoom control at all.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zoomable_panel_gets_its_zoom_control(cx: &mut TestAppContext) {
         let drew = drew_zoom_control(cx, |cx| panel_handle(ToolbarZoomProbe::new(cx)));
 
@@ -1258,7 +1258,7 @@ mod tests {
     /// `split_frame` of both `size_full` and `flex_1` and every panel here
     /// measures zero. It does not pin *which* of the two does the work —
     /// either alone passes.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_centre_and_the_bottom_dock_share_the_column(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1334,7 +1334,7 @@ mod tests {
     /// Every subset is covered because the defect is positional: only the
     /// cases that hide the trailing slot fail, and a test that hid one fixed
     /// slot would pass against a fix that only special-cased that slot.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_split_fills_its_container_whichever_slots_are_hidden(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1431,7 +1431,7 @@ mod tests {
     /// The old dock installed `ToggleZoom` and `ClosePanel` on the tab panel
     /// itself; base installs neither, so the skin's `frame` is the only place
     /// the keybindings reach.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_zoom_action_reaches_the_group_through_the_skin(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1472,7 +1472,7 @@ mod tests {
     /// the skin's `frame` — so a doc claiming the action gets through anyway
     /// would send a panel author looking for a second switch that does not
     /// exist.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_zoom_action_refuses_a_panel_that_offers_no_control(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1517,7 +1517,7 @@ mod tests {
     /// difference: it is the panel not rendering at all, and no behavioral
     /// test in this crate can see it. `set_active` still fires, the layout
     /// still round-trips, and the window still opens.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_panel_content_region_gets_the_height_below_the_tab_bar(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1558,7 +1558,7 @@ mod tests {
     ///
     /// The bottom dock, not a side one: a closed left or right dock draws
     /// nothing at all, so it would pass this whether or not the gate exists.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_collapsed_dock_ignores_the_zoom_action(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1594,14 +1594,14 @@ mod tests {
 
     /// A panel that carries its own chrome declines the one-panel title bar
     /// and gets the whole group.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_without_a_title_bar_gets_the_whole_group(cx: &mut TestAppContext) {
         struct Chromeless {
             focus_handle: FocusHandle,
             height: Rc<Cell<Pixels>>,
         }
 
-        impl gpui_base::dock::Panel for Chromeless {
+        impl wgpui_base::dock::Panel for Chromeless {
             fn panel_name(&self) -> &'static str {
                 "Chromeless"
             }
@@ -1640,7 +1640,7 @@ mod tests {
             });
             let measured = height.clone();
             cx.update(|window, cx| {
-                let panel: Arc<dyn gpui_base::dock::PanelView> = if chromeless {
+                let panel: Arc<dyn wgpui_base::dock::PanelView> = if chromeless {
                     panel_handle(cx.new(|cx| Chromeless {
                         focus_handle: cx.focus_handle(),
                         height: measured,
@@ -1683,7 +1683,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for TabProbe {
+    impl wgpui_base::dock::Panel for TabProbe {
         fn panel_name(&self) -> &'static str {
             "TabProbe"
         }
@@ -1753,7 +1753,7 @@ mod tests {
     }
 
     /// A closable panel's tab carries a close (X) button.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_closable_panel_gets_a_close_button(cx: &mut TestAppContext) {
         assert!(
             drew_close_button(cx, true, true),
@@ -1762,7 +1762,7 @@ mod tests {
     }
 
     /// A non-closable panel draws no close button (the gate is real).
-    #[gpui::test]
+    #[wgpui::test]
     fn a_non_closable_panel_gets_no_close_button(cx: &mut TestAppContext) {
         assert!(
             !drew_close_button(cx, false, true),
@@ -1770,12 +1770,12 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_buttons_are_off_by_default(cx: &mut TestAppContext) {
         assert!(!drew_close_button(cx, true, false));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn close_button_visibility_updates_after_the_skin_setting_changes(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let mut skin = None;
@@ -1810,7 +1810,7 @@ mod tests {
     /// Clicking a non-active tab's close button removes that panel by id and
     /// does not select it (`stop_propagation`). The displayed tab is a
     /// non-closable filler, so the only close button is the one under test.
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_close_button_removes_only_that_tab(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let mut skin = None;
@@ -1868,7 +1868,7 @@ mod tests {
     /// A click is left to the tab bar's animated reveal: the skin's own snap
     /// for a changed tab would land the strip on the first frame and cut the
     /// animation short.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_clicked_tab_is_revealed_by_the_tab_bar_not_snapped(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1878,7 +1878,7 @@ mod tests {
         let (area, cx) = cx.add_window_view(|window, cx| {
             DockArea::new("skin", None, window, cx).with_renderer(DockSkin::new(cx))
         });
-        cx.simulate_resize(gpui::size(px(300.), px(300.)));
+        cx.simulate_resize(wgpui::size(px(300.), px(300.)));
         cx.update(|window, cx| {
             let layout = (0..8).fold(DockLayout::tabs(), |layout, _| {
                 layout.panel_view(panel_handle(Probe::new(cx)), cx)
@@ -1910,7 +1910,7 @@ mod tests {
         // viewport edge inside that tab while retaining the toolbar's width.
         let window_size = cx.update(|window, _| window.viewport_size());
         let adjustment = viewport.right() - boundary_tab.center().x;
-        cx.simulate_resize(gpui::size(
+        cx.simulate_resize(wgpui::size(
             window_size.width - adjustment,
             window_size.height,
         ));
@@ -1936,7 +1936,7 @@ mod tests {
             });
 
         cx.simulate_click(
-            gpui::point((clipped.left() + viewport.right()) / 2., clipped.center().y),
+            wgpui::point((clipped.left() + viewport.right()) / 2., clipped.center().y),
             Modifiers::none(),
         );
         let selected_index = cx.update(|_, cx| {
@@ -1994,13 +1994,13 @@ mod tests {
 
     /// The collapse button reports the user's toggle; a toggle made by code
     /// does not.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_collapse_button_reports_the_toggle(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let (area, cx) = cx.add_window_view(|window, cx| {
             DockArea::new("toggle", None, window, cx).with_renderer(DockSkin::new(cx))
         });
-        cx.simulate_resize(gpui::size(px(800.), px(600.)));
+        cx.simulate_resize(wgpui::size(px(800.), px(600.)));
         let events = Rc::new(RefCell::new(Vec::new()));
         cx.update(|window, cx| {
             let center = DockLayout::tabs().panel_view(panel_handle(Probe::new(cx)), cx);
@@ -2044,13 +2044,13 @@ mod tests {
 
     /// Clicking a tab on a collapsed bottom dock's strip opens the dock and
     /// reports it.
-    #[gpui::test]
+    #[wgpui::test]
     fn opening_the_bottom_strip_reports_the_toggle(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let (area, cx) = cx.add_window_view(|window, cx| {
             DockArea::new("strip", None, window, cx).with_renderer(DockSkin::new(cx))
         });
-        cx.simulate_resize(gpui::size(px(800.), px(600.)));
+        cx.simulate_resize(wgpui::size(px(800.), px(600.)));
         let events = Rc::new(RefCell::new(Vec::new()));
         cx.update(|window, cx| {
             // Two panels: a group with one panel draws its title, not a tab bar.
@@ -2082,7 +2082,7 @@ mod tests {
     }
 
     /// A dock that refuses to close is not reported as toggled.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_refused_toggle_is_not_reported(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let (area, cx) = cx.add_window_view(|window, cx| {
@@ -2116,7 +2116,7 @@ mod tests {
     /// A collapsed group offers no close button, though the same group does
     /// while open. Before/after collapse isolates `!collapsed`; nothing else
     /// changes.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_collapsed_group_draws_no_close_button(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let mut skin = None;

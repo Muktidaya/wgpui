@@ -17,7 +17,7 @@ Base owns reusable interaction, focus, editing, selection, positioning,
 virtualization, pane reconciliation and the geometry needed for those behaviors.
 Applications and Component own product colors, typography, density, variants,
 icons and final composition. Base must not depend on Component themes or facade
-classes. Internal `gpui` Cargo aliases do not change these public package names.
+classes. Workspace Cargo keys and Rust imports use these canonical WGPUI package names.
 
 Domain values belong to the narrowest feature/model owner. Rendered elements
 request semantic changes through callbacks; owners update their values and

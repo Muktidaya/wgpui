@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, DefiniteLength, Entity, IntoElement, RenderOnce, SharedString, StyleRefinement, Styled,
     Window, prelude::FluentBuilder as _, relative,
 };
@@ -33,7 +33,7 @@ pub struct Editor {
     /// If set, this overrides the built-in context menu.
     context_menu_builder: Option<Rc<dyn Fn(NativeMenu, &mut Window, &mut App) -> NativeMenu>>,
 
-    paste_handler: Option<Rc<dyn Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
+    paste_handler: Option<Rc<dyn Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
 }
 
 impl Editor {
@@ -122,7 +122,7 @@ impl Editor {
     /// async clipboard access and is out of scope.
     pub fn on_paste(
         mut self,
-        handler: impl Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
+        handler: impl Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
     ) -> Self {
         self.paste_handler = Some(Rc::new(handler));
         self
@@ -179,7 +179,7 @@ impl RenderOnce for Editor {
 mod tests {
     use super::*;
     use crate::input::EditorState;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, InteractiveElement as _, ParentElement as _, Pixels, Render,
         TestAppContext, VisualTestContext, div, px,
     };
@@ -222,7 +222,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_rows_follow_the_font_size(cx: &mut TestAppContext) {
         // With nothing set, the theme's monospace size, not the ambient one.
         assert_eq!(line_height(cx, None), px(20.));
@@ -270,7 +270,7 @@ mod tests {
         (text.top() - frame.top(), line_height)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_insets_follow_the_size(cx: &mut TestAppContext) {
         let (medium, rows) = top_inset(cx, Some(Size::Medium));
         // With no size set, the editor keeps the medium insets it always had.
@@ -287,10 +287,10 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn language_config_works_without_render_sync(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, language_config::LanguageConfig, set_language_config};
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(crate::init);
         let mut state = None;
         let (_, cx) = cx.add_window_view(|window, cx| {
@@ -336,10 +336,10 @@ mod tests {
         cx.read(|cx| assert_eq!(state.read(cx).text().to_string(), "if enabled:\n  "));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn aliases_share_config_even_when_registered_before_init(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, language_config::LanguageConfig, set_language_config};
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(|cx| {
             set_language_config(
                 "py",
@@ -369,9 +369,9 @@ mod tests {
     }
 
     #[cfg(all(feature = "tree-sitter-python", feature = "tree-sitter-rust"))]
-    #[gpui::test]
+    #[wgpui::test]
     fn syntax_follows_language_before_first_render_and_after_switch(cx: &mut TestAppContext) {
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(crate::init);
         cx.add_window_view(|window, cx| {
             let editor = cx.new(|cx| {
@@ -401,9 +401,9 @@ mod tests {
     }
 
     #[cfg(feature = "tree-sitter-python")]
-    #[gpui::test]
+    #[wgpui::test]
     fn python_pairing_uses_pre_edit_context(cx: &mut TestAppContext) {
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(crate::init);
         for (before, cursor, typed, expected) in [
             ("x = ", 4, "\"", "x = \"\""),
@@ -433,10 +433,10 @@ mod tests {
         }
     }
     #[cfg(feature = "tree-sitter-rust")]
-    #[gpui::test]
+    #[wgpui::test]
     fn generated_comment_closer_survives_syntax_changes(cx: &mut TestAppContext) {
         use crate::input::{AutoClosingPair, SyntaxContext, language_config::LanguageConfig};
-        use gpui::EntityInputHandler as _;
+        use wgpui::EntityInputHandler as _;
         cx.update(crate::init);
         cx.update(|cx| {
             crate::input::set_language_config(
@@ -470,9 +470,9 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_on_paste_builder(cx: &mut TestAppContext) {
-        use gpui::{AppContext as _, Render};
+        use wgpui::{AppContext as _, Render};
 
         struct PasteProbe;
         impl Render for PasteProbe {

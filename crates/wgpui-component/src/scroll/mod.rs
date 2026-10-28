@@ -1,12 +1,12 @@
 mod scrollable;
 
-pub use gpui_base::AutoScroll;
-pub use gpui_base::ScrollableMask;
-pub use gpui_base::{
+pub use scrollable::*;
+pub use wgpui_base::AutoScroll;
+pub use wgpui_base::ScrollableMask;
+pub use wgpui_base::{
     Scrollbar, ScrollbarAxis, ScrollbarEntrance, ScrollbarHandle, ScrollbarMode, ScrollbarMotion,
     ScrollbarStyles, ScrollbarThumbStyle, ScrollbarTrackStyle,
 };
-pub use scrollable::*;
 
 #[cfg(test)]
 mod tests {
@@ -14,16 +14,16 @@ mod tests {
 
     #[test]
     fn ui_scrollbar_is_the_base_type() {
-        fn accepts_base(_: gpui_base::Scrollbar) {}
-        fn accepts_handle(_: impl gpui_base::ScrollbarHandle) {}
+        fn accepts_base(_: wgpui_base::Scrollbar) {}
+        fn accepts_handle(_: impl wgpui_base::ScrollbarHandle) {}
 
-        let handle = gpui::ScrollHandle::default();
+        let handle = wgpui::ScrollHandle::default();
         let scrollbar: crate::scroll::Scrollbar = Scrollbar::vertical(&handle).styles(|styles| {
             styles
-                .track(|style| style.bg(gpui::transparent_black()))
-                .thumb(|style| style.bg(gpui::transparent_black()))
-                .thumb_hover(|style| style.bg(gpui::transparent_black()))
-                .thumb_active(|style| style.bg(gpui::transparent_black()))
+                .track(|style| style.bg(wgpui::transparent_black()))
+                .thumb(|style| style.bg(wgpui::transparent_black()))
+                .thumb_hover(|style| style.bg(wgpui::transparent_black()))
+                .thumb_active(|style| style.bg(wgpui::transparent_black()))
         });
         accepts_base(scrollbar);
         accepts_handle(handle);

@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Hsla, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
     div, prelude::FluentBuilder, px, relative,
 };

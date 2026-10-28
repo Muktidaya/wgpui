@@ -9,8 +9,8 @@ use std::{
     },
 };
 
-use gpui::{AnyElement, App, IntoElement, SharedString, Window};
 use markdown::{ParseOptions, mdast};
+use wgpui::{AnyElement, App, IntoElement, SharedString, Window};
 
 use super::{InlineElement, InlineRenderContext};
 use crate::text::node::Span;

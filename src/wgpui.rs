@@ -5,7 +5,6 @@
 #![allow(unused_mut)] // False positives in platform specific code
 
 extern crate self as wgpui;
-extern crate wgpui_derive as wgpui_macros;
 
 #[macro_use]
 mod action;

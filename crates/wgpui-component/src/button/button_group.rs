@@ -1,12 +1,12 @@
-use gpui::Corners;
-use gpui::InteractiveElement;
-use gpui::ParentElement;
-use gpui::{App, Axis, Edges, ElementId, IntoElement, Window};
-use gpui::{
+use std::{cell::Cell, rc::Rc};
+use wgpui::Corners;
+use wgpui::InteractiveElement;
+use wgpui::ParentElement;
+use wgpui::{App, Axis, Edges, ElementId, IntoElement, Window};
+use wgpui::{
     RenderOnce, StatefulInteractiveElement as _, StyleRefinement, Styled, div,
     prelude::FluentBuilder as _,
 };
-use std::{cell::Cell, rc::Rc};
 
 use crate::{
     Disableable, Sizable, Size, StyledExt,
@@ -137,7 +137,7 @@ impl Sizable for ButtonGroup {
 }
 
 impl Styled for ButtonGroup {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -269,11 +269,11 @@ impl RenderOnce for ButtonGroup {
 mod tests {
     use super::*;
     use crate::Selectable as _;
-    use gpui::{
+    use std::{cell::Cell, rc::Rc};
+    use wgpui::{
         Axis, Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, TestAppContext,
         VisualTestContext, point, px,
     };
-    use std::{cell::Cell, rc::Rc};
 
     struct GroupHarness {
         multiple: bool,
@@ -343,7 +343,7 @@ mod tests {
         cx.simulate_click(point(px(10.), px(60.)), Modifiers::default());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_group_callback_overrides_the_child_callback(cx: &mut TestAppContext) {
         let (cx, child_clicks, changes) = group_harness(cx, false, true);
         click_first(cx);
@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(changes.borrow().as_slice(), &[vec![0]]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_child_callback_survives_without_a_group_callback(cx: &mut TestAppContext) {
         let (cx, child_clicks, changes) = group_harness(cx, false, false);
         click_first(cx);
@@ -359,7 +359,7 @@ mod tests {
         assert!(changes.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_single_and_multiple_results_use_the_rendered_selection(cx: &mut TestAppContext) {
         let (cx, _, single) = group_harness(cx, false, true);
         click_first(cx);
@@ -370,7 +370,7 @@ mod tests {
         assert_eq!(multiple.borrow().as_slice(), &[vec![1, 0]]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_keyboard_click_does_not_reach_the_group_callback(cx: &mut TestAppContext) {
         let (cx, _, changes) = group_harness(cx, false, true);
         cx.update(|window, cx| window.focus_next(cx));
@@ -378,7 +378,7 @@ mod tests {
         assert!(changes.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_disabled_state_depends_on_builder_order(cx: &mut TestAppContext) {
         struct DisabledOrderHarness(Rc<Cell<usize>>);
 
@@ -423,8 +423,8 @@ mod tests {
         assert_eq!(clicks.get(), 1);
     }
 
-    #[gpui::test]
-    fn test_button_group_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_button_group_builder(_cx: &mut wgpui::TestAppContext) {
         let group = ButtonGroup::new("complex-group")
             .child(Button::new("btn1").label("One"))
             .child(Button::new("btn2").label("Two"))

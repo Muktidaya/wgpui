@@ -3,11 +3,11 @@ use crate::input::{
     Indent, IndentInline, InputBaseState, Outdent, OutdentInline, RopeExt, cursor::CursorSelection,
     element::TextElement, layout::LastLayout, mode::LayoutMode,
 };
-use gpui::{
+use ropey::RopeSlice;
+use wgpui::{
     Bounds, Context, Hsla, Path, PathBuilder, Pixels, SharedString, TextRun, TextStyle, Window,
     point, px,
 };
-use ropey::RopeSlice;
 
 #[derive(Debug, Copy, Clone)]
 pub struct TabSize {

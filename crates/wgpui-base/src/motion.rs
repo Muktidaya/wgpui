@@ -4,7 +4,7 @@ use std::{rc::Rc, time::Duration};
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
 
-use gpui::{
+use wgpui::{
     App, Bounds, ElementId, Pixels, SharedString, Size, SpringConfig, SpringState, SpringTarget,
     Window,
 };
@@ -64,8 +64,8 @@ impl Interpolate for Bounds<Pixels> {
 /// A presentation-neutral bundle for coordinated paint transforms.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MotionTransform {
-    pub translation: gpui::Point<Pixels>,
-    pub scale: gpui::Point<f32>,
+    pub translation: wgpui::Point<Pixels>,
+    pub scale: wgpui::Point<f32>,
     pub rotation_radians: f32,
     pub opacity: f32,
 }
@@ -73,8 +73,8 @@ pub struct MotionTransform {
 impl MotionTransform {
     pub fn identity() -> Self {
         Self {
-            translation: gpui::point(gpui::px(0.0), gpui::px(0.0)),
-            scale: gpui::point(1.0, 1.0),
+            translation: wgpui::point(wgpui::px(0.0), wgpui::px(0.0)),
+            scale: wgpui::point(1.0, 1.0),
             rotation_radians: 0.0,
             opacity: 1.0,
         }
@@ -91,7 +91,7 @@ impl Interpolate for MotionTransform {
     fn interpolate(&self, target: &Self, progress: f32) -> Self {
         Self {
             translation: self.translation.lerp(&target.translation, progress),
-            scale: gpui::point(
+            scale: wgpui::point(
                 self.scale.x.lerp(&target.scale.x, progress),
                 self.scale.y.lerp(&target.scale.y, progress),
             ),
@@ -771,8 +771,8 @@ mod motion_track_tests {
         Discrete, Easing, Interpolate as _, Keyframe, KeyframeError, Keyframes, MotionTransform,
         Stagger, StaggerOrigin,
     };
-    use gpui::{Bounds, Point, Size, point, px, size};
     use std::time::Duration;
+    use wgpui::{Bounds, Point, Size, point, px, size};
 
     #[test]
     fn keyframes_validate_offsets_and_sample_each_segments_easing() {
@@ -842,8 +842,8 @@ mod motion_track_tests {
             Bounds::new(point(px(20.0), px(30.0)), size(px(20.0), px(40.0)))
         );
 
-        let _: Point<gpui::Pixels> = from.origin;
-        let _: Size<gpui::Pixels> = from.size;
+        let _: Point<wgpui::Pixels> = from.origin;
+        let _: Size<wgpui::Pixels> = from.size;
 
         let transform = MotionTransform::identity().interpolate(
             &MotionTransform {
@@ -869,7 +869,7 @@ mod tests {
         time::Duration,
     };
 
-    use gpui::{Empty, IntoElement, Render, TestAppContext, WindowHandle, px, size};
+    use wgpui::{Empty, IntoElement, Render, TestAppContext, WindowHandle, px, size};
 
     use super::*;
 
@@ -883,7 +883,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(transition_with_status(
                 ("status-test", "value"),
@@ -933,7 +933,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn status_transition_reports_delay_running_and_finished(cx: &mut TestAppContext) {
         let fixture = StatusFixture::open(
             cx,
@@ -947,7 +947,7 @@ mod tests {
         assert_eq!(fixture.render(cx, 1.0).status, MotionStatus::Finished);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn negative_delay_samples_a_target_change_inside_its_interval(cx: &mut TestAppContext) {
         let fixture = StatusFixture::open(
             cx,
@@ -960,7 +960,7 @@ mod tests {
         assert_eq!(sample.value, 0.25);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_direct_reversal_shortens_the_return_transition(cx: &mut TestAppContext) {
         let fixture =
             StatusFixture::open(cx, Transition::new(Duration::from_millis(100)).ease(|t| t));
@@ -981,7 +981,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(animate_keyframes(
                 "keyframe-test",
@@ -994,7 +994,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn keyed_keyframes_follow_timing_and_stop_after_completion(cx: &mut TestAppContext) {
         let samples = Rc::new(RefCell::new(Vec::new()));
         let window = cx.open_window(size(px(100.), px(100.)), {
@@ -1051,7 +1051,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(
                 Presence::new("presence-test", self.present.get())
@@ -1095,7 +1095,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn presence_enters_exits_and_only_unmounts_after_exit(cx: &mut TestAppContext) {
         let fixture = PresenceFixture::open(cx, true);
         let entering = *fixture.samples.borrow().last().unwrap();
@@ -1120,7 +1120,7 @@ mod tests {
         assert!(!absent.should_render());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn presence_reentry_reverses_from_the_exit_sample(cx: &mut TestAppContext) {
         let fixture = PresenceFixture::open(cx, true);
         cx.executor().advance_clock(Duration::from_millis(100));
@@ -1133,7 +1133,7 @@ mod tests {
         assert_eq!(reentering.progress, 0.6);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_resolves_presence_without_a_pending_frame(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let fixture = PresenceFixture::open(cx, true);
@@ -1160,7 +1160,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(
                 Sequence::new("sequence-test", 0.0)
@@ -1229,7 +1229,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn sequence_steps_advance_in_order_at_their_boundaries(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(
             cx,
@@ -1252,7 +1252,7 @@ mod tests {
         assert_sample(fixture.advance(cx, 50), 20.0, 1, MotionStatus::Finished);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_sequence_starts_its_next_step_where_the_previous_ended_not_at_the_frame(
         cx: &mut TestAppContext,
     ) {
@@ -1269,7 +1269,7 @@ mod tests {
         assert_sample(fixture.advance(cx, 125), 17.5, 1, MotionStatus::Running);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn zero_duration_steps_complete_within_the_frame_that_reaches_them(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(
             cx,
@@ -1283,7 +1283,7 @@ mod tests {
         assert_sample(fixture.advance(cx, 50), 8.0, 2, MotionStatus::Running);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_sequence_reports_finished_once_and_then_stops_requesting_frames(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(
             cx,
@@ -1315,7 +1315,7 @@ mod tests {
         assert_sample(fixture.advance(cx, 1_000), 20.0, 1, MotionStatus::Finished);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_adopts_a_sequences_last_target_without_requesting_a_frame(
         cx: &mut TestAppContext,
     ) {
@@ -1331,7 +1331,7 @@ mod tests {
         assert_eq!(fixture.pending_frame(cx), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_changed_step_target_restarts_the_sequence_from_the_sampled_value(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(
             cx,
@@ -1357,7 +1357,7 @@ mod tests {
         assert_sample(fixture.advance(cx, 100), 0.0, 0, MotionStatus::Finished);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_change_to_a_step_not_being_played_does_not_restart_the_sequence(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(
             cx,
@@ -1384,7 +1384,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             let policy = Transition::new(Duration::from_millis(100))
                 .delay(Duration::from_millis(20))
@@ -1405,7 +1405,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_single_step_sequence_matches_a_plain_transition(cx: &mut TestAppContext) {
         let armed = Rc::new(Cell::new(false));
         let samples = Rc::new(RefCell::new(Vec::new()));
@@ -1427,7 +1427,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_empty_sequence_idles_at_its_starting_value(cx: &mut TestAppContext) {
         let fixture = SequenceFixture::open(cx, Vec::new());
         assert_sample(fixture.last(), 0.0, 0, MotionStatus::Idle);
@@ -1458,7 +1458,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(transition(
                 ("test", "value"),
@@ -1480,7 +1480,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(transition(
                 ("delayed-test", "value"),
@@ -1538,13 +1538,13 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zero_duration_target_change_is_immediate(cx: &mut TestAppContext) {
         let fixture = Fixture::open(cx, Duration::ZERO);
         assert_eq!(fixture.render(cx, 1.0), 1.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_changed_target_transitions_over_time(cx: &mut TestAppContext) {
         let duration = Duration::from_millis(100);
         let fixture = Fixture::open(cx, duration);
@@ -1554,7 +1554,7 @@ mod tests {
         assert_eq!(fixture.render(cx, 10.0), 5.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn requested_animation_frames_resample_without_manual_refresh(cx: &mut TestAppContext) {
         let duration = Duration::from_millis(100);
         let fixture = Fixture::open(cx, duration);
@@ -1567,7 +1567,7 @@ mod tests {
         assert_eq!(*fixture.samples.borrow().last().unwrap(), 5.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reversing_uses_the_current_sample_and_shortens_the_return(cx: &mut TestAppContext) {
         let duration = Duration::from_millis(100);
         let fixture = Fixture::open(cx, duration);
@@ -1579,7 +1579,7 @@ mod tests {
         assert_eq!(fixture.render(cx, 0.0), 2.5);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn delay_holds_the_previous_value_before_interpolation(cx: &mut TestAppContext) {
         let target = Rc::new(Cell::new(0.0));
         let samples = Rc::new(RefCell::new(Vec::new()));
@@ -1606,7 +1606,7 @@ mod tests {
         assert_eq!(*samples.borrow().last().unwrap(), 5.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_completed_transition_stops_requesting_frames(cx: &mut TestAppContext) {
         let duration = Duration::from_millis(100);
         let fixture = Fixture::open(cx, duration);
@@ -1620,7 +1620,7 @@ mod tests {
         assert_eq!(fixture.pending_frame(cx), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_adopts_the_target_without_requesting_a_frame(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let duration = Duration::from_millis(100);
@@ -1639,7 +1639,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             self.samples.borrow_mut().push(spring(
                 ("spring-test", "value"),
@@ -1704,13 +1704,13 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_spring_adopts_its_first_target_immediately(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(cx, Spring::new(Duration::from_millis(300)));
         assert_eq!(*fixture.samples.borrow().first().unwrap(), 0.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_spring_travels_toward_its_target_over_time(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(cx, Spring::new(Duration::from_millis(300)));
         assert_eq!(fixture.render(cx, 1.0), 0.0);
@@ -1723,7 +1723,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_reversed_spring_keeps_its_momentum_before_turning_around(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(cx, Spring::new(Duration::from_millis(300)));
         fixture.render(cx, 1.0);
@@ -1742,7 +1742,7 @@ mod tests {
         assert_eq!(fixture.advance(cx, 1_000, 0.0), 0.0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_bouncy_spring_overshoots_its_target(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(
             cx,
@@ -1762,7 +1762,7 @@ mod tests {
         assert!(peak > 1.0, "expected an overshoot past 1.0, got {peak}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_settled_spring_stops_requesting_frames(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(cx, Spring::new(Duration::from_millis(300)));
         fixture.render(cx, 1.0);
@@ -1774,7 +1774,7 @@ mod tests {
         assert_eq!(fixture.pending_frame(cx), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_spring_that_is_not_travelling_adopts_its_target_on_the_spot(cx: &mut TestAppContext) {
         let travelling = Spring::new(Duration::from_millis(300));
         let fixture = SpringFixture::open(cx, travelling.with_travel(false));
@@ -1794,7 +1794,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zero_response_spring_resolves_instead_of_dividing_by_its_period(cx: &mut TestAppContext) {
         let fixture = SpringFixture::open(cx, Spring::new(Duration::ZERO));
         assert_eq!(fixture.render(cx, 1.0), 1.0);
@@ -1832,7 +1832,7 @@ mod tests {
         assert_eq!(pixels.epsilon(), 0.1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_adopts_the_spring_target_without_requesting_a_frame(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let fixture = SpringFixture::open(

@@ -1,19 +1,19 @@
 use crate::input::{InputExtras as _, InputModeKind};
-use gpui::Corners;
-use gpui::Half;
-use gpui::{
+use ropey::Rope;
+use smallvec::SmallVec;
+use std::{ops::Range, rc::Rc};
+use wgpui::Corners;
+use wgpui::Half;
+use wgpui::{
     AnyElement, App, Bounds, Edges, Element, ElementId, ElementInputHandler, Entity,
     GlobalElementId,
 };
-use gpui::{
+use wgpui::{
     HighlightStyle, Hitbox, HitboxBehavior, Hsla, InteractiveElement, IntoElement, LayoutId,
     LongPressEvent, MouseButton, MouseMoveEvent, MouseUpEvent, ParentElement as _, Path, Pixels,
     Point, Position, ShapedLine, SharedString, Size, Style, Styled as _, TextAlign, TextRun,
     TextStyle, TouchDragEvent, TouchPhase, UnderlineStyle, Window, fill, point, px, relative, size,
 };
-use ropey::Rope;
-use smallvec::SmallVec;
-use std::{ops::Range, rc::Rc};
 
 use crate::{
     Scrollbar,
@@ -90,7 +90,7 @@ fn compose_decorations(
 
     // Decorations are application-authored overrides and must win over syntax
     // and semantic highlighting when both set the same style property.
-    Some(gpui::combine_highlights(styles, visible_decorations).collect())
+    Some(wgpui::combine_highlights(styles, visible_decorations).collect())
 }
 
 fn compose_decoration_collections<'a>(
@@ -131,7 +131,7 @@ pub(super) struct LongestLineKey {
     document_revision: u64,
     row: usize,
     len: usize,
-    font: gpui::Font,
+    font: wgpui::Font,
     text_size: Pixels,
     wrap_width: Option<Pixels>,
     tab_size: usize,
@@ -233,7 +233,7 @@ impl<M: InputModeKind> Element for EditorScrollbar<M> {
     fn request_layout(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
@@ -248,7 +248,7 @@ impl<M: InputModeKind> Element for EditorScrollbar<M> {
     fn prepaint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         window: &mut Window,
@@ -302,7 +302,7 @@ impl<M: InputModeKind> Element for EditorScrollbar<M> {
     fn paint(
         &mut self,
         _: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         _: Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         prepaint: &mut Self::PrepaintState,
@@ -471,7 +471,7 @@ struct FoldIconLayout {
     /// Hitbox for the line number area (used for hover detection)
     line_number_hitbox: Hitbox,
     /// List of (display_row, is_folded, icon_element) pairs for each fold candidate
-    icons: Vec<(usize, bool, gpui::AnyElement)>,
+    icons: Vec<(usize, bool, wgpui::AnyElement)>,
 }
 
 pub(super) struct TextElement<M: InputModeKind> {
@@ -499,7 +499,7 @@ impl<M: InputModeKind> TextElement<M> {
         window.on_mouse_event({
             let state = self.state.clone();
             let hitbox = hitbox.id;
-            move |event: &gpui::ScrollEvent, phase, window, cx| {
+            move |event: &wgpui::ScrollEvent, phase, window, cx| {
                 if phase.capture()
                     && hitbox.should_handle_scroll(window)
                     && state
@@ -818,7 +818,7 @@ impl<M: InputModeKind> TextElement<M> {
         let corners = Self::layout_range_corners(&range, last_layout)?;
         let points = frame_outline_points(&corners);
         let origin = bounds.origin + point(last_layout.line_number_width, px(0.));
-        let mut builder = gpui::PathBuilder::fill();
+        let mut builder = wgpui::PathBuilder::fill();
         builder.move_to(origin + *points.first()?);
         for point in points.iter().skip(1) {
             builder.line_to(origin + *point);
@@ -937,7 +937,7 @@ impl<M: InputModeKind> TextElement<M> {
                     let Some(first) = points.first().copied() else {
                         continue;
                     };
-                    let mut builder = gpui::PathBuilder::stroke(stroke_width);
+                    let mut builder = wgpui::PathBuilder::stroke(stroke_width);
                     builder.move_to(first);
                     for point in points.iter().skip(1) {
                         builder.line_to(*point);
@@ -1195,7 +1195,7 @@ impl<M: InputModeKind> TextElement<M> {
                 &[TextRun {
                     len: line_number_len,
                     font: style.font(),
-                    color: gpui::black(),
+                    color: wgpui::black(),
                     background_color: None,
                     underline: None,
                     strikethrough: None,
@@ -1456,7 +1456,7 @@ impl<M: InputModeKind> TextElement<M> {
                     } else {
                         ("input-fold-chevron-down", FOLD_CHEVRON_DOWN_SVG)
                     };
-                    gpui::canvas(
+                    wgpui::canvas(
                         |_, _, _| {},
                         move |bounds, _, window, cx| {
                             let color = window.text_style().color;
@@ -1464,7 +1464,7 @@ impl<M: InputModeKind> TextElement<M> {
                                 bounds,
                                 path.into(),
                                 Some(svg),
-                                gpui::TransformationMatrix::default(),
+                                wgpui::TransformationMatrix::default(),
                                 color,
                                 cx,
                             );
@@ -1473,7 +1473,7 @@ impl<M: InputModeKind> TextElement<M> {
                     .size(FOLD_ICON_WIDTH)
                     .into_any_element()
                 });
-            let mut icon = gpui::div()
+            let mut icon = wgpui::div()
                 .id(("fold", ix))
                 .size(FOLD_ICON_WIDTH)
                 .child(child)
@@ -1549,7 +1549,7 @@ impl<M: InputModeKind> TextElement<M> {
         window: &mut Window,
         cx: &mut App,
     ) -> AnyElement {
-        use gpui::{
+        use wgpui::{
             InteractiveElement as _, StatefulInteractiveElement as _, prelude::FluentBuilder as _,
         };
         let presentation = self.state.read(cx).token_presentation.clone();
@@ -1564,13 +1564,13 @@ impl<M: InputModeKind> TextElement<M> {
         let hover_token = token.token().clone();
         let disabled = token.is_disabled();
         let hover_enabled = presentation.has_hover_listener() && !disabled;
-        let id = gpui::ElementId::from(("inline-token", start));
-        let id = gpui::ElementId::from((id, token.token().id().clone()));
-        let id = gpui::ElementId::from((id, token.token().text().clone()));
-        let id = gpui::ElementId::from((id, token.token().label().clone()));
-        let id = gpui::ElementId::from((
+        let id = wgpui::ElementId::from(("inline-token", start));
+        let id = wgpui::ElementId::from((id, token.token().id().clone()));
+        let id = wgpui::ElementId::from((id, token.token().text().clone()));
+        let id = wgpui::ElementId::from((id, token.token().label().clone()));
+        let id = wgpui::ElementId::from((
             id,
-            gpui::SharedString::from(if hover_enabled {
+            wgpui::SharedString::from(if hover_enabled {
                 "hover-enabled"
             } else {
                 "hover-disabled"
@@ -1578,7 +1578,7 @@ impl<M: InputModeKind> TextElement<M> {
         ));
         let accessible = presentation.has_listener() && !disabled;
         let accessible_state = self.state.clone();
-        gpui::div()
+        wgpui::div()
             .id(id)
             .flex()
             .items_center()
@@ -1588,9 +1588,9 @@ impl<M: InputModeKind> TextElement<M> {
             // A token is an object, not text: the arrow, never the I-beam.
             .cursor_default()
             .when(accessible, |this| {
-                this.role(gpui::Role::Button)
+                this.role(wgpui::Role::Button)
                     .aria_label(token.token().label().clone())
-                    .on_a11y_action(gpui::AccessibleAction::Click, move |_, window, cx| {
+                    .on_a11y_action(wgpui::AccessibleAction::Click, move |_, window, cx| {
                         let state = accessible_state.read(cx);
                         let activation = state
                             .token_spans()
@@ -1601,7 +1601,7 @@ impl<M: InputModeKind> TextElement<M> {
                                     state.token_activation(
                                         start,
                                         bounds,
-                                        gpui::ClickEvent::Keyboard(gpui::KeyboardClickEvent {
+                                        wgpui::ClickEvent::Keyboard(wgpui::KeyboardClickEvent {
                                             bounds,
                                             ..Default::default()
                                         }),
@@ -1797,8 +1797,8 @@ impl<M: InputModeKind> TextElement<M> {
             let mut element = self.token_element(&token, window, cx);
             let size = element.layout_as_root(
                 size(
-                    gpui::AvailableSpace::MaxContent,
-                    gpui::AvailableSpace::Definite(line_height),
+                    wgpui::AvailableSpace::MaxContent,
+                    wgpui::AvailableSpace::Definite(line_height),
                 ),
                 window,
                 cx,
@@ -2112,8 +2112,8 @@ impl<M: InputModeKind> TextElement<M> {
                     let mut element = self.token_element(&token, window, cx);
                     let element_size = element.layout_as_root(
                         size(
-                            gpui::AvailableSpace::MaxContent,
-                            gpui::AvailableSpace::Definite(layout.line_height),
+                            wgpui::AvailableSpace::MaxContent,
+                            wgpui::AvailableSpace::Definite(layout.line_height),
                         ),
                         window,
                         cx,
@@ -2401,7 +2401,7 @@ impl<M: InputModeKind> TextElement<M> {
         }
 
         // Compose tree-sitter, semantic, application, then diagnostic styles.
-        styles = gpui::combine_highlights(custom_styles, styles).collect();
+        styles = wgpui::combine_highlights(custom_styles, styles).collect();
         if !state.masked {
             styles = compose_decoration_collections(
                 styles,
@@ -2410,7 +2410,7 @@ impl<M: InputModeKind> TextElement<M> {
             )
             .unwrap_or_default();
         }
-        styles = gpui::combine_highlights(diagnostic_styles, styles).collect();
+        styles = wgpui::combine_highlights(diagnostic_styles, styles).collect();
 
         // Some sources reach outside the flushed groups — a diagnostic
         // straddling the viewport edge, or any range inside a folded region —
@@ -2505,7 +2505,7 @@ impl<M: InputModeKind> IntoElement for TextElement<M> {
 /// A debug function to print points as SVG path.
 #[allow(unused)]
 fn print_points_as_svg_path(
-    line_corners: &Vec<gpui::Corners<Pixels>>,
+    line_corners: &Vec<wgpui::Corners<Pixels>>,
     points: &Vec<Point<Pixels>>,
 ) {
     for corners in line_corners {
@@ -2646,7 +2646,7 @@ impl<M: InputModeKind> Element for TextElement<M> {
     fn request_layout(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
@@ -2673,7 +2673,7 @@ impl<M: InputModeKind> Element for TextElement<M> {
     fn prepaint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         _request_layout: &mut Self::RequestLayoutState,
         window: &mut Window,
@@ -2945,7 +2945,7 @@ impl<M: InputModeKind> Element for TextElement<M> {
                         &[TextRun {
                             len: longest_line.len(),
                             font: key.font.clone(),
-                            color: gpui::black(),
+                            color: wgpui::black(),
                             background_color: None,
                             underline: None,
                             strikethrough: None,
@@ -3216,7 +3216,7 @@ impl<M: InputModeKind> Element for TextElement<M> {
     fn paint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         input_bounds: Bounds<Pixels>,
         _request_layout: &mut Self::RequestLayoutState,
         prepaint: &mut Self::PrepaintState,
@@ -3542,7 +3542,7 @@ impl<M: InputModeKind> Element for TextElement<M> {
         if let Some(hitbox) = prepaint.hover_definition_hitbox.as_ref()
             && !window.modifiers().alt
         {
-            window.set_cursor_style(gpui::CursorStyle::PointingHand, &hitbox);
+            window.set_cursor_style(wgpui::CursorStyle::PointingHand, &hitbox);
         }
 
         // Paint inline completion first line suffix (after cursor on same line)
@@ -3773,9 +3773,9 @@ fn split_runs_by_bg_segments(
             let overlap_start = run_start.max(bg_range.start);
             let overlap_end = run_end.min(bg_range.end);
             let text_color = if bg_color.l >= 0.5 {
-                gpui::black()
+                wgpui::black()
             } else {
-                gpui::white()
+                wgpui::white()
             };
 
             let run_len = overlap_end.saturating_sub(overlap_start);
@@ -3809,7 +3809,7 @@ fn split_runs_by_bg_segments(
 mod tests {
     use super::*;
     use crate::input::{EditorMode, EditorState, FoldRange, RangeDecoration, Redo, Undo};
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, EntityInputHandler as _, ListAlignment, ListOffset, ListState,
         Render, TestAppContext, VisualTestContext, div, list, prelude::FluentBuilder as _,
     };
@@ -3845,7 +3845,7 @@ mod tests {
         cx: &mut TestAppContext,
         text: &str,
         wrap: bool,
-    ) -> (Entity<EditorState>, gpui::WindowHandle<DecorationHarness>) {
+    ) -> (Entity<EditorState>, wgpui::WindowHandle<DecorationHarness>) {
         cx.update(crate::init);
         let mut editor = None;
         let window = cx.open_window(size(px(240.), px(140.)), |window, cx| {
@@ -3886,7 +3886,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn focused_input_asks_its_scroll_container_to_reveal_it(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let list_state = ListState::new(2, ListAlignment::Top, px(0.));
@@ -3977,7 +3977,7 @@ mod tests {
 
     struct TextareaHarness(Entity<crate::input::TextareaState>);
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scroll_bounce_keeps_the_scrollbar_viewport_fixed(cx: &mut TestAppContext) {
         let text = (0..60)
             .map(|line| format!("line {line}"))
@@ -3998,9 +3998,9 @@ mod tests {
             editor.update(cx, |state, cx| {
                 state.set_scroll_bounce(true, cx);
                 state.on_scroll_wheel(
-                    &gpui::ScrollEvent {
-                        delta: gpui::ScrollDelta::Pixels(point(px(0.), px(60.))),
-                        touch_phase: gpui::TouchPhase::Started,
+                    &wgpui::ScrollEvent {
+                        delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(60.))),
+                        touch_phase: wgpui::TouchPhase::Started,
                         ..Default::default()
                     },
                     window,
@@ -4025,7 +4025,7 @@ mod tests {
     /// A scrollbar supplied through `set_scrollbar_renderer` gets the editor's own
     /// scroll range through the standard ScrollbarHandle contract, so a
     /// scrollbar can drag to the same end as wheel scrolling.
-    #[gpui::test]
+    #[wgpui::test]
     fn scrollbar_renderer_receives_the_editors_scroll_range(cx: &mut TestAppContext) {
         use crate::ScrollbarHandle as _;
 
@@ -4055,9 +4055,9 @@ mod tests {
             window.draw(cx).clear();
             editor.update(cx, |state, cx| {
                 state.on_scroll_wheel(
-                    &gpui::ScrollEvent {
-                        delta: gpui::ScrollDelta::Pixels(point(px(0.), px(-10_000.))),
-                        touch_phase: gpui::TouchPhase::Moved,
+                    &wgpui::ScrollEvent {
+                        delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(-10_000.))),
+                        touch_phase: wgpui::TouchPhase::Moved,
                         ..Default::default()
                     },
                     window,
@@ -4083,15 +4083,15 @@ mod tests {
 
         let grab = point(track.right() - px(5.), track.top() + px(10.));
         let end = point(grab.x, track.bottom() - px(1.));
-        cx.simulate_mouse_down(grab, gpui::MouseButton::Left, gpui::Modifiers::default());
+        cx.simulate_mouse_down(grab, wgpui::MouseButton::Left, wgpui::Modifiers::default());
         cx.update(|window, cx| window.draw(cx).clear());
         cx.simulate_mouse_move(
             end,
-            Some(gpui::MouseButton::Left),
-            gpui::Modifiers::default(),
+            Some(wgpui::MouseButton::Left),
+            wgpui::Modifiers::default(),
         );
         cx.update(|window, cx| window.draw(cx).clear());
-        cx.simulate_mouse_up(end, gpui::MouseButton::Left, gpui::Modifiers::default());
+        cx.simulate_mouse_up(end, wgpui::MouseButton::Left, wgpui::Modifiers::default());
 
         assert_eq!(
             editor.read_with(&cx, |state, _| state.scroll_offset()),
@@ -4110,8 +4110,8 @@ mod tests {
     }
 
     /// A textarea 100 px down a taller bouncing scroll area.
-    struct NestedTextarea(Entity<crate::input::TextareaState>, gpui::ScrollHandle);
-    use gpui::StatefulInteractiveElement as _;
+    struct NestedTextarea(Entity<crate::input::TextareaState>, wgpui::ScrollHandle);
+    use wgpui::StatefulInteractiveElement as _;
 
     impl Render for NestedTextarea {
         fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
@@ -4132,14 +4132,14 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_textarea_keeps_its_scroll_from_the_area_around_it(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let text = (1..=40)
             .map(|line| format!("line {line}"))
             .collect::<Vec<_>>()
             .join("\n");
-        let outer = gpui::ScrollHandle::new();
+        let outer = wgpui::ScrollHandle::new();
         let mut textarea = None;
         let window = cx.open_window(size(px(240.), px(400.)), |window, cx| {
             let state = cx.new(|cx| {
@@ -4152,10 +4152,10 @@ mod tests {
         let mut cx = VisualTestContext::from_window(window.into(), cx);
         cx.update(|window, cx| window.draw(cx).clear());
         let swipe = |cx: &mut VisualTestContext, y: f32| {
-            cx.simulate_event(gpui::ScrollEvent {
+            cx.simulate_event(wgpui::ScrollEvent {
                 position: point(px(100.), px(y)),
-                delta: gpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
-                touch_phase: gpui::TouchPhase::Moved,
+                delta: wgpui::ScrollDelta::Pixels(point(px(0.), px(-40.))),
+                touch_phase: wgpui::TouchPhase::Moved,
                 ..Default::default()
             });
             cx.update(|window, cx| window.draw(cx).clear());
@@ -4168,7 +4168,7 @@ mod tests {
         assert_eq!(outer.offset().y, px(-40.), "outside the textarea it does");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_scroll_offset_past_the_end_is_clamped(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let text = (1..=40)
@@ -4208,7 +4208,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn set_scroll_offset_past_the_end_is_clamped_in_a_code_editor(cx: &mut TestAppContext) {
         let text = (1..=40)
             .map(|line| format!("line {line}"))
@@ -4236,7 +4236,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_paths_follow_the_input_and_its_menu_focus(cx: &mut TestAppContext) {
         let (editor, window) = decoration_editor(cx, "alpha beta", false);
         let mut cx = VisualTestContext::from_window(window.into(), cx);
@@ -4290,7 +4290,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_is_clamped_before_text_and_caret_layout(cx: &mut TestAppContext) {
         let (editor, window) = decoration_editor(cx, "short text", false);
         let mut cx = VisualTestContext::from_window(window.into(), cx);
@@ -4364,7 +4364,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_extent_excludes_placeholder(cx: &mut TestAppContext) {
         let (editor, window) = decoration_editor(cx, "", false);
         let mut cx = VisualTestContext::from_window(window.into(), cx);
@@ -4386,7 +4386,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_scroll_extent_covers_the_widest_laid_out_line(cx: &mut TestAppContext) {
         // The first line is longest by bytes, but the second renders wider.
         let narrow = format!("e{}", "\u{301}".repeat(200));
@@ -4419,7 +4419,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn aligned_horizontal_scroll_clamps_deferred_targets(cx: &mut TestAppContext) {
         let (editor, window) = decoration_editor(cx, &"wide text ".repeat(80), false);
         let mut cx = VisualTestContext::from_window(window.into(), cx);
@@ -4475,7 +4475,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn deferred_horizontal_scroll_moves_every_caret(cx: &mut TestAppContext) {
         use super::super::{cursor::CursorSelection, selection::CursorId};
 
@@ -4521,7 +4521,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn editor_line_number_gutter_resizes_with_document_lines(cx: &mut TestAppContext) {
         let (editor, window) = decoration_editor(cx, &"x\n".repeat(8), false);
         let mut cx = VisualTestContext::from_window(window.into(), cx);
@@ -4566,7 +4566,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometric_decorations_clip_scrolled_viewport_and_cull_offscreen_ranges(
         cx: &mut TestAppContext,
     ) {
@@ -4620,7 +4620,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometric_decorations_use_shaped_wrap_boundaries_and_newline_cells(cx: &mut TestAppContext) {
         let text = "    héllo world héllo world héllo world héllo world\n\nlast";
         let (editor, window) = decoration_editor(cx, text, true);
@@ -4677,7 +4677,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometric_decorations_include_crlf_boundaries(cx: &mut TestAppContext) {
         let text = "one\r\ntwo\r\nthree";
         let (editor, window) = decoration_editor(cx, text, false);
@@ -4722,7 +4722,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometric_decorations_project_folds_without_changing_tracked_ranges(
         cx: &mut TestAppContext,
     ) {
@@ -4774,7 +4774,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn geometric_decorations_track_edits_history_replacement_and_owner_lifetime(
         cx: &mut TestAppContext,
     ) {
@@ -4929,7 +4929,7 @@ mod tests {
     #[test]
     fn test_plain_text_decorations_include_unstyled_gaps() {
         let decoration = HighlightStyle {
-            background_color: Some(gpui::red()),
+            background_color: Some(wgpui::red()),
             ..Default::default()
         };
         let styles = compose_decorations(Vec::new(), [(2..5, decoration)], 0..10).unwrap();
@@ -4942,7 +4942,7 @@ mod tests {
             vec![0..2, 2..5, 5..10]
         );
         assert_eq!(styles[0].1, HighlightStyle::default());
-        assert_eq!(styles[1].1.background_color, Some(gpui::red()));
+        assert_eq!(styles[1].1.background_color, Some(wgpui::red()));
         assert_eq!(styles[2].1, HighlightStyle::default());
     }
 
@@ -4951,14 +4951,14 @@ mod tests {
         let first = [TextDecoration::new(
             0..4,
             HighlightStyle {
-                background_color: Some(gpui::red()),
+                background_color: Some(wgpui::red()),
                 ..Default::default()
             },
         )];
         let second = [TextDecoration::new(
             0..4,
             HighlightStyle {
-                background_color: Some(gpui::blue()),
+                background_color: Some(wgpui::blue()),
                 ..Default::default()
             },
         )];
@@ -4967,7 +4967,7 @@ mod tests {
             compose_decoration_collections(Vec::new(), [&first[..], &second[..]], 0..4).unwrap();
 
         assert_eq!(styles.len(), 1);
-        assert_eq!(styles[0].1.background_color, Some(gpui::red()));
+        assert_eq!(styles[0].1.background_color, Some(wgpui::red()));
     }
 
     #[test]
@@ -4975,21 +4975,21 @@ mod tests {
         let syntax = vec![(
             0..8,
             HighlightStyle {
-                color: Some(gpui::blue()),
+                color: Some(wgpui::blue()),
                 ..Default::default()
             },
         )];
         let decoration = HighlightStyle {
-            color: Some(gpui::red()),
-            font_style: Some(gpui::FontStyle::Italic),
+            color: Some(wgpui::red()),
+            font_style: Some(wgpui::FontStyle::Italic),
             ..Default::default()
         };
 
         let styles = compose_decorations(syntax, [(2..6, decoration)], 0..8).unwrap();
 
         assert_eq!(styles[1].0, 2..6);
-        assert_eq!(styles[1].1.color, Some(gpui::red()));
-        assert_eq!(styles[1].1.font_style, Some(gpui::FontStyle::Italic));
+        assert_eq!(styles[1].1.color, Some(wgpui::red()));
+        assert_eq!(styles[1].1.font_style, Some(wgpui::FontStyle::Italic));
     }
 
     #[test]
@@ -5070,8 +5070,8 @@ mod tests {
     fn test_runs_for_range() {
         let run = TextRun {
             len: 0,
-            font: gpui::font(".SystemUIFont"),
-            color: gpui::black(),
+            font: wgpui::font(".SystemUIFont"),
+            color: wgpui::black(),
             background_color: None,
             underline: None,
             strikethrough: None,
@@ -5128,7 +5128,7 @@ mod tests {
     fn test_split_runs_preserve_ime_underline_across_highlight_boundaries() {
         let underline = UnderlineStyle {
             thickness: px(1.),
-            color: Some(gpui::black()),
+            color: Some(wgpui::black()),
             wavy: false,
         };
 
@@ -5156,7 +5156,7 @@ mod tests {
     fn test_split_run_applies_ime_underline_without_highlighting() {
         let underline = UnderlineStyle {
             thickness: px(1.),
-            color: Some(gpui::black()),
+            color: Some(wgpui::black()),
             wavy: false,
         };
 
@@ -5183,7 +5183,7 @@ mod tests {
     fn test_masked_ime_underline_splits_on_mask_char_boundaries() {
         let underline = UnderlineStyle {
             thickness: px(1.),
-            color: Some(gpui::black()),
+            color: Some(wgpui::black()),
             wavy: false,
         };
         let text = Rope::from("abcdef");
@@ -5219,8 +5219,8 @@ mod tests {
     fn test_placeholder_line_runs() {
         let run = TextRun {
             len: 0,
-            font: gpui::font(".SystemUIFont"),
-            color: gpui::black(),
+            font: wgpui::font(".SystemUIFont"),
+            color: wgpui::black(),
             background_color: None,
             underline: None,
             strikethrough: None,
@@ -5257,8 +5257,8 @@ mod tests {
     fn test_align_runs_to_char_boundaries() {
         let run = TextRun {
             len: 0,
-            font: gpui::font(".SystemUIFont"),
-            color: gpui::blue(),
+            font: wgpui::font(".SystemUIFont"),
+            color: wgpui::blue(),
             background_color: None,
             underline: None,
             strikethrough: None,
@@ -5336,8 +5336,8 @@ mod tests {
     fn test_split_runs_by_bg_segments() {
         let run = TextRun {
             len: 0,
-            font: gpui::font(".SystemUIFont"),
-            color: gpui::blue(),
+            font: wgpui::font(".SystemUIFont"),
+            color: wgpui::blue(),
             background_color: None,
             underline: None,
             strikethrough: None,
@@ -5358,18 +5358,18 @@ mod tests {
             },
         ];
 
-        let bg_segments = vec![(8..12, gpui::red()), (12..18, gpui::blue())];
+        let bg_segments = vec![(8..12, wgpui::red()), (12..18, wgpui::blue())];
         let result = split_runs_by_bg_segments(5, &runs, &bg_segments);
         assert_eq!(
             result.iter().map(|run| run.len).collect::<Vec<_>>(),
             vec![3, 2, 2, 5, 1, 23]
         );
-        assert_eq!(result[0].color, gpui::blue());
-        assert_eq!(result[1].color, gpui::black());
-        assert_eq!(result[2].color, gpui::black());
-        assert_eq!(result[3].color, gpui::black());
-        assert_eq!(result[4].color, gpui::black());
-        assert_eq!(result[5].color, gpui::blue());
+        assert_eq!(result[0].color, wgpui::blue());
+        assert_eq!(result[1].color, wgpui::black());
+        assert_eq!(result[2].color, wgpui::black());
+        assert_eq!(result[3].color, wgpui::black());
+        assert_eq!(result[4].color, wgpui::black());
+        assert_eq!(result[5].color, wgpui::blue());
     }
 
     #[test]

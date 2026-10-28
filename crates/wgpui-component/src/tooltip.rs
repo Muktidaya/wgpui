@@ -5,13 +5,13 @@ use std::{
     time::Duration,
 };
 
-use gpui::{
+use wgpui::{
     Action, AnyElement, AnyView, App, AppContext, Bounds, Context, ElementId, GlobalElementId,
     IntoElement, MouseButton, ParentElement, Pixels, Render, SharedString,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, prelude::FluentBuilder, px,
 };
-pub use gpui_base::TooltipDefaults;
-use gpui_base::{
+pub use wgpui_base::TooltipDefaults;
+use wgpui_base::{
     Tooltip as BaseTooltip, TooltipOverlay as BaseTooltipOverlay,
     TooltipRequest as BaseTooltipRequest, TooltipTransition as BaseTooltipTransition,
 };
@@ -348,7 +348,7 @@ impl<E: StatefulInteractiveElement + crate::ElementExt> ManagedTooltipExt for E 
 mod tests {
     use std::{cell::Cell, rc::Rc, time::Duration};
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Entity, InputEvent as _, InteractiveElement as _, IntoElement,
         MouseButton, MouseMoveEvent, MouseUpEvent, ParentElement as _, Render,
         StatefulInteractiveElement as _, Styled as _, TestAppContext, VisualTestContext, Window,
@@ -365,7 +365,7 @@ mod tests {
     fn assert_tooltip_painted(cx: &mut VisualTestContext, index: usize, shown: bool) {
         draw(cx);
         let painted = cx.update(|window, _| {
-            let marker: gpui::Background = gpui::rgb(TOOLTIP_COLORS[index]).into();
+            let marker: wgpui::Background = wgpui::rgb(TOOLTIP_COLORS[index]).into();
             window
                 .painted_quads()
                 .iter()
@@ -399,7 +399,7 @@ mod tests {
                         .h(px(30.))
                         .managed_tooltip(move |_, cx| {
                             builds.set(builds.get() + 1);
-                            cx.new(|_| super::Tooltip::new("tip").bg(gpui::rgb(TOOLTIP_COLORS[0])))
+                            cx.new(|_| super::Tooltip::new("tip").bg(wgpui::rgb(TOOLTIP_COLORS[0])))
                                 .into()
                         })
                         .on_click(cx.listener(|this, _, _, cx| {
@@ -440,7 +440,7 @@ mod tests {
     }
 
     /// Presses at `at` and releases a pixel away, as most real clicks do.
-    fn click_with_drift(cx: &mut VisualTestContext, at: gpui::Point<gpui::Pixels>) {
+    fn click_with_drift(cx: &mut VisualTestContext, at: wgpui::Point<wgpui::Pixels>) {
         let drift = point(at.x + px(1.), at.y);
         cx.simulate_mouse_down(at, MouseButton::Left, Default::default());
         cx.simulate_mouse_move(drift, Some(MouseButton::Left), Default::default());
@@ -473,7 +473,7 @@ mod tests {
                     .w(px(100.))
                     .h(px(30.))
                     .managed_tooltip(move |_, cx| {
-                        cx.new(|_| super::Tooltip::new("tip").bg(gpui::rgb(TOOLTIP_COLORS[index])))
+                        cx.new(|_| super::Tooltip::new("tip").bg(wgpui::rgb(TOOLTIP_COLORS[index])))
                             .into()
                     })
             }))
@@ -505,7 +505,7 @@ mod tests {
         assert_tooltip_painted(cx, 1 - index, false);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn tooltips_switch_in_both_directions(cx: &mut TestAppContext) {
         let (mut cx, probe) = open_adjacent_triggers(cx);
         for (step, index) in [0, 1, 0].into_iter().enumerate() {
@@ -527,7 +527,7 @@ mod tests {
         assert_tooltip_painted(&mut cx, 1, false);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn leaving_a_trigger_does_not_cancel_the_next_tooltip_delay(cx: &mut TestAppContext) {
         for (source, destination) in [(0, 1), (1, 0)] {
             let (mut cx, _) = open_adjacent_triggers(cx);
@@ -550,7 +550,7 @@ mod tests {
 
     /// A press dismisses the tooltip, and it stays dismissed while the
     /// pointer stays on the trigger; leaving and coming back shows it again.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_press_dismisses_the_tooltip_until_the_pointer_leaves(cx: &mut TestAppContext) {
         let builds = Rc::new(Cell::new(0));
         let (mut cx, _) = open(cx, false, builds.clone());
@@ -578,7 +578,7 @@ mod tests {
     /// used to request the tooltip again. The trigger is gone from the next
     /// frame, nothing ever sent the hover-leave, and the tooltip appeared
     /// after the show delay and stayed.
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_trigger_away_does_not_leave_its_tooltip(cx: &mut TestAppContext) {
         let builds = Rc::new(Cell::new(0));
         let (mut cx, _) = open(cx, true, builds.clone());
@@ -633,7 +633,7 @@ mod tests {
     /// A trigger that a click removed never reports a hover-leave, so the
     /// press must end when the pointer moves away, or a trigger later shown
     /// at the same bounds would lose its tooltip.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_press_on_a_removed_trigger_ends_when_the_pointer_moves_away(cx: &mut TestAppContext) {
         let builds = Rc::new(Cell::new(0));
         let (mut cx, probe) = open(cx, true, builds.clone());
@@ -693,7 +693,7 @@ mod tests {
             div().size_full().child(
                 self.0
                     .clone()
-                    .cached(gpui::StyleRefinement::default().size_full()),
+                    .cached(wgpui::StyleRefinement::default().size_full()),
             )
         }
     }
@@ -730,7 +730,7 @@ mod tests {
                         std::mem::take(overlay).render_with(move |view, transition, window, cx| {
                             builds.set(builds.get() + 1);
                             div()
-                                .bg(gpui::rgb(TOOLTIP_COLORS[0]))
+                                .bg(wgpui::rgb(TOOLTIP_COLORS[0]))
                                 .child(super::render_tooltip(view, transition, window, cx))
                                 .into_any_element()
                         });
@@ -739,7 +739,7 @@ mod tests {
         (cx, buttons, builds)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_button_hides_visible_tooltip(cx: &mut TestAppContext) {
         let (mut cx, buttons, _) = open_buttons(cx, [true, false], Duration::ZERO);
         cx.simulate_mouse_move(point(px(50.), px(25.)), None, Default::default());
@@ -759,7 +759,7 @@ mod tests {
         assert_tooltip_painted(&mut cx, 0, false);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_button_cancels_pending_tooltip(cx: &mut TestAppContext) {
         let (mut cx, buttons, builds) = open_buttons(cx, [true, false], Duration::from_millis(500));
         cx.simulate_mouse_move(point(px(50.), px(25.)), None, Default::default());
@@ -785,7 +785,7 @@ mod tests {
         assert_tooltip_painted(&mut cx, 0, false);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pending_button_shows_after_deferred_work_drains(cx: &mut TestAppContext) {
         let (mut cx, _, builds) = open_buttons(cx, [true, false], Duration::from_millis(500));
         cx.simulate_mouse_move(point(px(50.), px(25.)), None, Default::default());
@@ -800,7 +800,7 @@ mod tests {
         assert_tooltip_painted(&mut cx, 0, true);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_old_button_preserves_new_tooltip(cx: &mut TestAppContext) {
         let (mut cx, buttons, _) = open_buttons(cx, [true, true], Duration::ZERO);
         cx.simulate_mouse_move(point(px(50.), px(25.)), None, Default::default());

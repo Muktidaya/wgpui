@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Entity, Focusable, InteractiveElement as _, IntoElement, MouseButton,
     ParentElement as _, RenderOnce, Styled as _, Window, div, prelude::FluentBuilder,
 };
@@ -7,8 +7,8 @@ use super::input::input_style;
 use super::state::sync_focused_input_registry;
 use crate::{ActiveTheme, Disableable, Icon, IconName, Sizable, Size, h_flex, v_flex};
 use crate::{StyleSized as _, ThemeStyled as _};
-use gpui_base::OtpInput as BaseOtpInput;
-pub use gpui_base::{OtpEvent, OtpState};
+use wgpui_base::OtpInput as BaseOtpInput;
+pub use wgpui_base::{OtpEvent, OtpState};
 
 /// A One Time Password (OTP) input element.
 ///

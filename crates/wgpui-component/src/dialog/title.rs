@@ -1,8 +1,8 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
     relative,
 };
-use gpui_base::DialogTitle as BaseDialogTitle;
+use wgpui_base::DialogTitle as BaseDialogTitle;
 
 use crate::StyledExt as _;
 

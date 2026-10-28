@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, Bounds, ClickEvent, Corners, ElementId, InteractiveElement as _, IntoElement,
     ParentElement as _, Pixels, RenderOnce, SharedString, Styled as _, Window, canvas, deferred,
     div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::{Placement, Positioner};
+use wgpui_base::{Placement, Positioner};
 
 use super::handle::SurfaceHandler;
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
     h_flex,
     separator::Separator,
 };
-use gpui_base::TestSupportExt as _;
+use wgpui_base::TestSupportExt as _;
 
 /// The height of a menu row.
 const ROW_HEIGHT: Pixels = px(32.);
@@ -151,6 +151,6 @@ impl RenderOnce for EditMenu {
                         }),
                 ),
         )
-        .with_priority(gpui_base::POPUP_PRIORITY)
+        .with_priority(wgpui_base::POPUP_PRIORITY)
     }
 }

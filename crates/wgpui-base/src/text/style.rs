@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{HighlightStyle, Hsla, Rems, StyleRefinement, rems};
+use wgpui::{HighlightStyle, Hsla, Rems, StyleRefinement, rems};
 
 use crate::ColorTokens;
 
@@ -391,7 +391,7 @@ impl TextViewStyle {
             })
             .with_table_head(table_head)
             .with_dark(!self.is_dark);
-        style.table_background = Some(gpui::transparent_black());
+        style.table_background = Some(wgpui::transparent_black());
         style
     }
 
@@ -431,7 +431,7 @@ pub(super) fn normalize_inline_code_style(mut style: StyleRefinement) -> StyleRe
         .as_ref()
         .and_then(|text| text.font_size)
         .is_some_and(|size| {
-            let size = size.to_pixels(gpui::px(1.)).as_f32();
+            let size = size.to_pixels(wgpui::px(1.)).as_f32();
             !size.is_finite() || size <= 0.
         })
     {
@@ -444,7 +444,7 @@ pub(super) fn normalize_inline_code_style(mut style: StyleRefinement) -> StyleRe
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Styled as _, px};
+    use wgpui::{Styled as _, px};
 
     use super::*;
 
@@ -469,24 +469,24 @@ mod tests {
 
         let mut table = StyleRefinement::default();
         table.text.get_or_insert_with(Default::default).white_space =
-            Some(gpui::WhiteSpace::Nowrap);
+            Some(wgpui::WhiteSpace::Nowrap);
         assert!(base != base.clone().with_table_cell(table));
 
         assert!(base != base.clone().with_dark(true));
         assert!(
             base != base
                 .clone()
-                .with_inline_code_style(StyleRefinement::default().border_color(gpui::red()))
+                .with_inline_code_style(StyleRefinement::default().border_color(wgpui::red()))
         );
         assert!(
             base != base
                 .clone()
-                .with_list_style(StyleRefinement::default().text_color(gpui::red()))
+                .with_list_style(StyleRefinement::default().text_color(wgpui::red()))
         );
         assert!(
             base != base
                 .clone()
-                .with_blockquote_style(StyleRefinement::default().border_color(gpui::red()))
+                .with_blockquote_style(StyleRefinement::default().border_color(wgpui::red()))
         );
     }
 
@@ -558,12 +558,12 @@ mod tests {
     #[test]
     fn inline_code_falls_back_to_the_code_background() {
         let style = TextViewStyle::default()
-            .with_code_background(gpui::rgb(0x123456).into())
+            .with_code_background(wgpui::rgb(0x123456).into())
             .with_inline_code(HighlightStyle::default());
 
         assert_eq!(
             style.inline_code_highlight().background_color,
-            Some(gpui::rgb(0x123456).into())
+            Some(wgpui::rgb(0x123456).into())
         );
     }
 
@@ -585,10 +585,10 @@ mod tests {
             );
         }
         let refinement = StyleRefinement::default()
-            .text_size(gpui::rems(1.))
-            .bg(gpui::red())
+            .text_size(wgpui::rems(1.))
+            .bg(wgpui::red())
             .border_1()
-            .border_color(gpui::blue());
+            .border_color(wgpui::blue());
         let style = plain.with_inline_code_style(refinement.clone());
         assert_eq!(style.inline_code_style(), &refinement);
         assert_eq!(
@@ -607,12 +607,12 @@ mod tests {
         assert_eq!(plain.blockquote_style(), &StyleRefinement::default());
 
         let marker = StyleRefinement::default()
-            .text_color(gpui::red())
-            .font_weight(gpui::FontWeight::BOLD);
+            .text_color(wgpui::red())
+            .font_weight(wgpui::FontWeight::BOLD);
         let quote = StyleRefinement::default()
             .border_l_4()
-            .border_color(gpui::blue())
-            .bg(gpui::green());
+            .border_color(wgpui::blue())
+            .bg(wgpui::green());
         let style = plain
             .with_list_style(marker.clone())
             .with_blockquote_style(quote.clone());
@@ -655,7 +655,7 @@ mod tests {
             );
             assert_eq!(adapted.border(), text.opacity(0.2));
             assert_eq!(adapted.selection(), text.opacity(0.25));
-            assert_eq!(adapted.table_background(), Some(gpui::transparent_black()));
+            assert_eq!(adapted.table_background(), Some(wgpui::transparent_black()));
             assert_eq!(
                 adapted
                     .table_head()
@@ -671,12 +671,12 @@ mod tests {
     #[test]
     fn from_theme_maps_base_semantic_tokens() {
         let mut theme = crate::Theme::default();
-        theme.tokens.colors.foreground = gpui::rgb(0x112233).into();
-        theme.tokens.colors.muted_foreground = gpui::rgb(0x445566).into();
-        theme.tokens.colors.primary = gpui::rgb(0x3366ff).into();
-        theme.tokens.colors.accent = gpui::rgb(0xddeeff).into();
-        theme.tokens.colors.border = gpui::rgb(0x778899).into();
-        theme.tokens.colors.selection = gpui::rgb(0x55a0fc).into();
+        theme.tokens.colors.foreground = wgpui::rgb(0x112233).into();
+        theme.tokens.colors.muted_foreground = wgpui::rgb(0x445566).into();
+        theme.tokens.colors.primary = wgpui::rgb(0x3366ff).into();
+        theme.tokens.colors.accent = wgpui::rgb(0xddeeff).into();
+        theme.tokens.colors.border = wgpui::rgb(0x778899).into();
+        theme.tokens.colors.selection = wgpui::rgb(0x55a0fc).into();
 
         let style = TextViewStyle::from_theme(&theme);
         assert_eq!(style.foreground(), theme.tokens.colors.foreground);

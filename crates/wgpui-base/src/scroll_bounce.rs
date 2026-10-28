@@ -2,16 +2,16 @@
 
 use crate::overscroll::Overscroll;
 use crate::{OngoingScrollExt as _, ScrollbarHandle};
-use gpui::{
-    AnyElement, App, Bounds, ContentMask, DispatchPhase, Element, ElementId, Global,
-    GlobalElementId, Hitbox, HitboxBehavior, HitboxId, InspectorElementId, IntoElement, LayoutId,
-    OngoingScroll, Pixels, ScrollDelta, ScrollEvent, TouchPhase, Window, point, px,
-};
 #[cfg(not(target_family = "wasm"))]
 use std::time::Instant;
 use std::{cell::RefCell, rc::Rc, time::Duration};
 #[cfg(target_family = "wasm")]
 use web_time::Instant;
+use wgpui::{
+    AnyElement, App, Bounds, ContentMask, DispatchPhase, Element, ElementId, Global,
+    GlobalElementId, Hitbox, HitboxBehavior, HitboxId, InspectorElementId, IntoElement, LayoutId,
+    OngoingScroll, Pixels, ScrollDelta, ScrollEvent, TouchPhase, Window, point, px,
+};
 
 /// Motion tokens for [`ScrollBounce`]: how far a drag stretches the viewport
 /// past an edge, and how quickly a released edge returns.
@@ -789,7 +789,7 @@ impl Physics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         Context, InteractiveElement as _, ParentElement as _, Render, ScrollHandle,
         StatefulInteractiveElement as _, Styled as _, TestAppContext, VisualTestContext, div,
     };
@@ -852,7 +852,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn fractional_wheel_input_keeps_scrolling_deep_in_a_long_list(cx: &mut TestAppContext) {
         for delta in [-0.09_f32, 0.09] {
             let mut app = cx.new_app();
@@ -881,7 +881,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn ordinary_mouse_wheel_keeps_the_shared_viewport_undisplaced(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -902,7 +902,7 @@ mod tests {
         assert_eq!(handle.bounds().origin, origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wheel_scrolling_interrupts_the_shared_return(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1002,7 +1002,7 @@ mod tests {
         draw(cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_innermost_area_takes_the_whole_gesture(cx: &mut TestAppContext) {
         let (areas, cx) = nested(cx, true);
         let inner_origin = areas.inner.bounds().origin.y;
@@ -1021,7 +1021,7 @@ mod tests {
         assert_eq!(areas.outer.offset().y, px(-50.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_disabled_inner_area_still_keeps_its_scroll(cx: &mut TestAppContext) {
         let (areas, cx) = nested(cx, false);
         let inner_origin = areas.inner.bounds().origin.y;
@@ -1035,14 +1035,14 @@ mod tests {
         assert_eq!(areas.outer.offset().y, px(0.));
     }
 
-    struct ListTest(gpui::ListState);
+    struct ListTest(wgpui::ListState);
 
     impl Render for ListTest {
         fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
             ScrollBounce::new(
                 "bounce-list",
                 &self.0,
-                gpui::list(self.0.clone(), |_, _, _| {
+                wgpui::list(self.0.clone(), |_, _, _| {
                     div().h(px(40.)).into_any_element()
                 })
                 .w(px(200.))
@@ -1053,9 +1053,9 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn list_reverse_drag_preserves_events_before_the_next_frame(cx: &mut TestAppContext) {
-        let handle = gpui::ListState::new(30, gpui::ListAlignment::Top, px(0.)).measure_all();
+        let handle = wgpui::ListState::new(30, wgpui::ListAlignment::Top, px(0.)).measure_all();
         let (_, cx) = cx.add_window_view({
             let handle = handle.clone();
             move |_, _| ListTest(handle)
@@ -1069,9 +1069,9 @@ mod tests {
         assert_eq!(handle.offset().y, px(-50.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn trackpad_release_between_frames_does_not_bounce_in_the_middle(cx: &mut TestAppContext) {
-        let handle = gpui::ListState::new(30, gpui::ListAlignment::Top, px(0.)).measure_all();
+        let handle = wgpui::ListState::new(30, wgpui::ListAlignment::Top, px(0.)).measure_all();
         let (_, cx) = cx.add_window_view({
             let handle = handle.clone();
             move |_, _| ListTest(handle)
@@ -1085,7 +1085,7 @@ mod tests {
         cx.update(|window, cx| {
             for (delta, phase) in [(-30., TouchPhase::Started), (0., TouchPhase::Ended)] {
                 window.dispatch_event(
-                    gpui::PlatformInput::Scroll(ScrollEvent {
+                    wgpui::PlatformInput::Scroll(ScrollEvent {
                         position: point(px(100.), px(100.)),
                         delta: ScrollDelta::Pixels(point(px(0.), px(delta))),
                         touch_phase: phase,
@@ -1100,11 +1100,11 @@ mod tests {
         assert!(handle.offset().y < px(-300.) && handle.offset().y > px(-500.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn trackpad_direction_change_between_frames_does_not_bounce_in_the_middle(
         cx: &mut TestAppContext,
     ) {
-        let handle = gpui::ListState::new(30, gpui::ListAlignment::Top, px(0.)).measure_all();
+        let handle = wgpui::ListState::new(30, wgpui::ListAlignment::Top, px(0.)).measure_all();
         let (_, cx) = cx.add_window_view({
             let handle = handle.clone();
             move |_, _| ListTest(handle)
@@ -1116,7 +1116,7 @@ mod tests {
         cx.update(|window, cx| {
             for (delta, phase) in [(-30., TouchPhase::Started), (5., TouchPhase::Moved)] {
                 window.dispatch_event(
-                    gpui::PlatformInput::Scroll(ScrollEvent {
+                    wgpui::PlatformInput::Scroll(ScrollEvent {
                         position: point(px(100.), px(100.)),
                         delta: ScrollDelta::Pixels(point(px(0.), px(delta))),
                         touch_phase: phase,
@@ -1131,11 +1131,11 @@ mod tests {
         assert_eq!(handle.viewport_bounds().origin.y, origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn list_stretches_only_the_distance_past_either_edge(cx: &mut TestAppContext) {
         for (start, delta, end) in [(-30., 50., 0.), (-970., -50., -1000.)] {
             let mut app = cx.new_app();
-            let handle = gpui::ListState::new(30, gpui::ListAlignment::Top, px(0.)).measure_all();
+            let handle = wgpui::ListState::new(30, wgpui::ListAlignment::Top, px(0.)).measure_all();
             let (_, cx) = app.add_window_view({
                 let handle = handle.clone();
                 move |_, _| ListTest(handle)
@@ -1155,7 +1155,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reverse_drag_consumes_stretch_before_scrolling_content(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1178,7 +1178,7 @@ mod tests {
         assert_eq!(handle.bounds().origin.y, origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn touch_release_ignores_momentum_until_a_new_touch_takes_over(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1211,9 +1211,9 @@ mod tests {
         assert_eq!(handle.bounds().origin.y, origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn phaseless_wheel_scrolls_back_right_after_bouncing(cx: &mut TestAppContext) {
-        let handle = gpui::ListState::new(30, gpui::ListAlignment::Top, px(0.)).measure_all();
+        let handle = wgpui::ListState::new(30, wgpui::ListAlignment::Top, px(0.)).measure_all();
         let (_, cx) = cx.add_window_view({
             let handle = handle.clone();
             move |_, _| ListTest(handle)
@@ -1232,7 +1232,7 @@ mod tests {
         assert_eq!(handle.viewport_bounds().origin.y, origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn phaseless_wheel_bounces_again_only_after_a_pause(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1258,7 +1258,7 @@ mod tests {
         assert_eq!(handle.offset().y, px(0.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn tiny_drag_catching_momentum_does_not_start_a_reverse_fling(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1304,7 +1304,7 @@ mod tests {
         assert_eq!(handle.offset().y, stopped - px(30.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn deliberate_drag_after_catching_momentum_can_fling(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1328,7 +1328,7 @@ mod tests {
         assert_eq!(handle.offset().y, px(-136.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn short_catch_release_still_stretches_past_the_edge(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1350,7 +1350,7 @@ mod tests {
         assert!(handle.bounds().origin.y > origin);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_and_reduced_motion_leave_the_viewport_fixed(cx: &mut TestAppContext) {
         for enabled in [false, true] {
             let mut app = cx.new_app();
@@ -1383,7 +1383,7 @@ mod tests {
         assert_eq!(scroll.offset(), 0.);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn diagonal_wobble_stays_with_the_stretch(cx: &mut TestAppContext) {
         let handle = ScrollHandle::new();
         let (_, cx) = cx.add_window_view({
@@ -1405,7 +1405,7 @@ mod tests {
         cx.update(|window, cx| {
             for delta in [point(px(30.), px(-20.)), point(px(0.), px(-20.))] {
                 window.dispatch_event(
-                    gpui::PlatformInput::Scroll(ScrollEvent {
+                    wgpui::PlatformInput::Scroll(ScrollEvent {
                         position: point(px(100.), px(100.)),
                         delta: ScrollDelta::Pixels(delta),
                         touch_phase: TouchPhase::Moved,

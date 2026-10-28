@@ -1,4 +1,4 @@
-use gpui::SharedString;
+use wgpui::SharedString;
 
 /// Built-in aliases for editing defaults when no exact grammar name is registered.
 /// Availability of a parser does not change what a language name means.

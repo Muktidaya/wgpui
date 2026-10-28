@@ -4,7 +4,7 @@ use crate::{
     group_box::GroupBoxVariant,
     setting::{SettingGroup, SettingItem},
 };
-use gpui::{
+use wgpui::{
     Context, InteractiveElement as _, Render, TestAppContext, VisualTestContext, point, size,
 };
 
@@ -116,7 +116,7 @@ fn click_nav(y: f32, cx: &mut VisualTestContext) {
     draw(cx);
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn search_preserves_the_page_and_clicks_use_original_indices(cx: &mut TestAppContext) {
     let (host, cx) = setup(cx);
     // The old numeric index is still in range, but would point to Editor.
@@ -149,7 +149,7 @@ fn search_preserves_the_page_and_clicks_use_original_indices(cx: &mut TestAppCon
     assert_eq!(selection(&host, cx), (1, None));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn search_preserves_group_and_item_identity(cx: &mut TestAppContext) {
     let (host, cx) = setup(cx);
     // Make the target group require scrolling, with an unnamed group before it.
@@ -180,7 +180,7 @@ fn search_preserves_group_and_item_identity(cx: &mut TestAppContext) {
     assert!(cx.debug_bounds("setting-1-1-0").is_some());
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn footer_follows_group_search_visibility(cx: &mut TestAppContext) {
     let (host, cx) = setup(cx);
     cx.update(|_, cx| {
@@ -207,7 +207,7 @@ fn footer_follows_group_search_visibility(cx: &mut TestAppContext) {
     assert_eq!(selection(&host, cx), (1, None));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn resetting_search_results_leaves_hidden_settings_unchanged(cx: &mut TestAppContext) {
     use std::{cell::Cell, rc::Rc};
 
@@ -262,7 +262,7 @@ fn variant_pages(override_first_group: bool) -> Vec<SettingPage> {
     ])]
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn group_variant_overrides_the_settings_default(cx: &mut TestAppContext) {
     cx.update(|cx| {
         crate::init(cx);
@@ -302,7 +302,7 @@ fn group_variant_overrides_the_settings_default(cx: &mut TestAppContext) {
     );
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn selecting_a_group_from_another_page_scrolls_to_it(cx: &mut TestAppContext) {
     let (host, cx) = setup(cx);
     // Push Fonts below the viewport.

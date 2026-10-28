@@ -1,13 +1,13 @@
 use crate::{Theme, ThemeColor, ThemeConfig, ThemeMode, ThemeSet, highlighter::HighlightTheme};
 #[allow(unused)]
 use anyhow::Result;
-use gpui::{App, Global, SharedString};
 use std::{
     collections::HashMap,
     path::PathBuf,
     rc::Rc,
     sync::{Arc, LazyLock},
 };
+use wgpui::{App, Global, SharedString};
 
 const DEFAULT_THEME: &str = include_str!("./default-theme.json");
 pub(crate) static DEFAULT_THEME_COLORS: LazyLock<
@@ -332,7 +332,7 @@ mod tests {
         let directory = TestDirectory::new()?;
         let blocker = directory.0.join("file");
         std::fs::write(&blocker, b"not a directory")?;
-        let cx = gpui::TestAppContext::single();
+        let cx = wgpui::TestAppContext::single();
         cx.update(|cx| {
             cx.set_global(ThemeRegistry::default());
             let previous = ThemeRegistry::global(cx).themes_dir.clone();

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{Action, AnyElement, App, IntoElement, SharedString, Window};
+use wgpui::{Action, AnyElement, App, IntoElement, SharedString, Window};
 
 use crate::{Disableable, Icon};
 
@@ -285,13 +285,13 @@ impl From<CommandGroup> for CommandEntry {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{TestAppContext, actions, div};
+    use wgpui::{TestAppContext, actions, div};
 
     use super::*;
 
     actions!(command_item_test, [CloneAction]);
 
-    #[gpui::test]
+    #[wgpui::test]
     fn cloned_entries_keep_actions_and_lazy_children_usable(cx: &mut TestAppContext) {
         let action_count = Rc::new(Cell::new(0));
         let child_count = Rc::new(Cell::new(0));

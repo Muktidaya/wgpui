@@ -1,9 +1,9 @@
-use gpui::Corners;
-use gpui::{
+use rust_i18n::t;
+use wgpui::Corners;
+use wgpui::{
     Anchor, App, Context, Edges, ElementId, InteractiveElement as _, IntoElement, ParentElement,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
 };
-use rust_i18n::t;
 
 use crate::{
     Disableable, Selectable, Sizable, Size, StyledExt as _,
@@ -128,7 +128,7 @@ impl Disableable for DropdownButton {
 }
 
 impl Styled for DropdownButton {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -244,8 +244,8 @@ impl RenderOnce for DropdownButton {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn test_dropdown_button_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_dropdown_button_builder(_cx: &mut wgpui::TestAppContext) {
         let button = Button::new("inner").label("Action");
         let dropdown = DropdownButton::new("complex-dropdown")
             .button(button)
@@ -268,8 +268,8 @@ mod tests {
 
     /// An unset variant or size leaves the inner button's own to survive, so a
     /// caller can style the halves from either level.
-    #[gpui::test]
-    fn inner_button_keeps_its_own_variant_and_size(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_button_keeps_its_own_variant_and_size(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").danger().small())
             .dropdown_menu(|menu, _, _| menu);
@@ -278,8 +278,8 @@ mod tests {
         assert_eq!(dropdown.size, None);
     }
 
-    #[gpui::test]
-    fn inner_ghost_becomes_the_split_variant(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_ghost_becomes_the_split_variant(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").ghost())
             .dropdown_menu(|menu, _, _| menu);
@@ -287,8 +287,8 @@ mod tests {
         assert_eq!(dropdown.effective_variant(), ButtonVariant::Ghost);
     }
 
-    #[gpui::test]
-    fn inner_size_becomes_the_split_size(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_size_becomes_the_split_size(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").small())
             .dropdown_menu(|menu, _, _| menu);

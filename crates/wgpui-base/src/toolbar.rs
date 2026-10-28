@@ -1,10 +1,10 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Div, ElementId, FocusHandle, InteractiveElement, Interactivity, IntoElement,
     KeyDownEvent, ParentElement, RenderOnce, Role, SharedString, Stateful,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, accesskit, div,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
 use crate::StyledExt as _;
 
@@ -306,11 +306,11 @@ mod tests {
     #[cfg(test)]
     mod behavior {
         use super::*;
-        use gpui::{
+        use std::sync::{Arc, Mutex};
+        use wgpui::{
             Context, Element as _, FocusHandle, Modifiers, Render, TestAppContext,
             VisualTestContext, canvas, point, px,
         };
-        use std::sync::{Arc, Mutex};
 
         struct NavHarness {
             items: [FocusHandle; 3],
@@ -352,8 +352,8 @@ mod tests {
             });
         }
 
-        #[gpui::test]
-        fn arrow_keys_rove_focus_across_items(cx: &mut gpui::TestAppContext) {
+        #[wgpui::test]
+        fn arrow_keys_rove_focus_across_items(cx: &mut wgpui::TestAppContext) {
             let ([first, second, third], cx) = harness(cx);
 
             cx.simulate_keystrokes("right");
@@ -369,8 +369,8 @@ mod tests {
             assert_focused(cx, &third, "third (wrapped back)");
         }
 
-        #[gpui::test]
-        fn toolbar_with_a_single_item_keeps_focus_on_it(cx: &mut gpui::TestAppContext) {
+        #[wgpui::test]
+        fn toolbar_with_a_single_item_keeps_focus_on_it(cx: &mut wgpui::TestAppContext) {
             struct SingleHarness {
                 item: FocusHandle,
             }
@@ -397,8 +397,8 @@ mod tests {
             assert_focused(cx, &item, "the only item");
         }
 
-        #[gpui::test]
-        fn group_exposes_group_role_and_accessible_name(cx: &mut gpui::TestAppContext) {
+        #[wgpui::test]
+        fn group_exposes_group_role_and_accessible_name(cx: &mut wgpui::TestAppContext) {
             type Captured = Arc<Mutex<Option<accesskit::Node>>>;
 
             struct Probe(Captured);
@@ -432,8 +432,8 @@ mod tests {
             assert_eq!(node.label(), Some("History"));
         }
 
-        #[gpui::test]
-        fn disabled_toolbar_ignores_arrow_keys(cx: &mut gpui::TestAppContext) {
+        #[wgpui::test]
+        fn disabled_toolbar_ignores_arrow_keys(cx: &mut wgpui::TestAppContext) {
             struct DisabledHarness {
                 items: [FocusHandle; 2],
             }
@@ -465,8 +465,8 @@ mod tests {
             assert_focused(cx, &items[0], "first (disabled toolbar)");
         }
 
-        #[gpui::test]
-        fn clicking_blank_toolbar_space_keeps_focus_outside(cx: &mut gpui::TestAppContext) {
+        #[wgpui::test]
+        fn clicking_blank_toolbar_space_keeps_focus_outside(cx: &mut wgpui::TestAppContext) {
             struct ClickHarness {
                 outside: FocusHandle,
                 item: FocusHandle,

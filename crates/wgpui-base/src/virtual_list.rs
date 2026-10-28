@@ -4,7 +4,7 @@
 //!
 //! Only visible range are rendered for performance reasons.
 //!
-//! Inspired by `gpui::uniform_list`.
+//! Inspired by `wgpui::uniform_list`.
 //! <https://github.com/zed-industries/zed/blob/0ae1603610ab6b265bdfbee7b8dbc23c5ab06edc/crates/gpui/src/elements/uniform_list.rs>
 //!
 //! Unlike the `uniform_list`, the each item can have different size.
@@ -16,14 +16,14 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     Along, AnyElement, App, AvailableSpace, Axis, Bounds, ContentMask, Context,
     DeferredScrollToItem, Div, Element, ElementId, Entity, GlobalElementId, Half, Hitbox,
     InteractiveElement, IntoElement, IsZero as _, ListSizingBehavior, Pixels, Point, Render,
     ScrollHandle, ScrollStrategy, Size, Stateful, StatefulInteractiveElement, StyleRefinement,
     Styled, Window, div, point, px, size,
 };
-use smallvec::SmallVec;
 
 use crate::{AxisExt, InteractiveElementExt as _};
 
@@ -434,10 +434,10 @@ impl Element for VirtualList {
     fn request_layout(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        inspector_id: Option<&gpui::InspectorElementId>,
+        inspector_id: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (wgpui::LayoutId, Self::RequestLayoutState) {
         let rem_size = window.rem_size();
         let font_size = window.text_style().font_size.to_pixels(rem_size);
         let mut size_layout = ItemSizeLayout::default();
@@ -597,7 +597,7 @@ impl Element for VirtualList {
     fn prepaint(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        inspector_id: Option<&gpui::InspectorElementId>,
+        inspector_id: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         layout: &mut Self::RequestLayoutState,
         window: &mut Window,
@@ -741,7 +741,7 @@ impl Element for VirtualList {
     fn paint(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        inspector_id: Option<&gpui::InspectorElementId>,
+        inspector_id: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         layout: &mut Self::RequestLayoutState,
         hitbox: &mut Self::PrepaintState,
@@ -768,7 +768,7 @@ impl Element for VirtualList {
 mod tests {
     use super::*;
 
-    use gpui::{Context, TestAppContext};
+    use wgpui::{Context, TestAppContext};
 
     struct VirtualListHarness {
         axis: Axis,
@@ -876,17 +876,17 @@ mod tests {
         assert!(visible_range(&origins, &sizes, px(300.)..px(360.)).is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn vertical_visible_range_and_deferred_scroll_are_preserved(cx: &mut TestAppContext) {
         exercise_axis(cx, Axis::Vertical);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn horizontal_visible_range_and_deferred_scroll_are_preserved(cx: &mut TestAppContext) {
         exercise_axis(cx, Axis::Horizontal);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn empty_list_draws_without_requesting_items(cx: &mut TestAppContext) {
         let visible_ranges = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({

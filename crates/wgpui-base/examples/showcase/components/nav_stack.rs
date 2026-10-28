@@ -1,8 +1,8 @@
 use super::*;
-use gpui::{AnyElement, WeakEntity, relative};
-use gpui_base::NavPage;
-use gpui_base::motion::{PresencePhase, Transition};
 use std::time::Duration;
+use wgpui::{AnyElement, WeakEntity, relative};
+use wgpui_base::NavPage;
+use wgpui_base::motion::{PresencePhase, Transition};
 
 /// One page of the stack. A page knows its depth and holds the stack it lives
 /// in, so its own buttons can push over it, replace it, or pop it.
@@ -21,9 +21,9 @@ impl ShowcasePage {
     fn navigate(
         &self,
         depth: usize,
-        apply: impl Fn(&mut NavStackState, gpui::Entity<ShowcasePage>, &mut Context<NavStackState>)
+        apply: impl Fn(&mut NavStackState, wgpui::Entity<ShowcasePage>, &mut Context<NavStackState>)
         + 'static,
-    ) -> impl Fn(&gpui::ClickEvent, &mut Window, &mut App) + 'static {
+    ) -> impl Fn(&wgpui::ClickEvent, &mut Window, &mut App) + 'static {
         let stack = self.stack.clone();
         move |_, _, cx| {
             _ = stack.update(cx, |state, cx| {
@@ -71,7 +71,7 @@ impl Render for ShowcasePage {
             }))
             .child(
                 div()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .child(format!("Page {depth}")),
             )
             .child(
@@ -84,7 +84,7 @@ impl Render for ShowcasePage {
                             .px_1()
                             .when(page == depth, |this| {
                                 this.text_color(example_rgb(0x171717))
-                                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                             })
                             .when(page > behind, |this| this.text_color(example_rgb(0xd4d4d4)))
                             .child(page.to_string())

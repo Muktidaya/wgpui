@@ -5,7 +5,7 @@
 //! that flag: it stays `false` until something sets it. [`init`] reads the
 //! setting when Base initializes and writes it into the flag, so an
 //! application inherits the user's choice by calling `wgpui_base::init` or
-//! `gpui_component::init`.
+//! `wgpui_component::init`.
 //!
 //! The setting is read on the platforms below; everywhere else the flag is
 //! left alone.
@@ -32,7 +32,7 @@
 //! break the scheduler's determinism, and a test wanting reduced motion sets
 //! the flag itself.
 
-use gpui::{App, Global};
+use wgpui::{App, Global};
 
 /// What Base last wrote into [`App::set_reduce_motion`], and whether it is
 /// already listening for the platform to change its mind.
@@ -101,8 +101,8 @@ fn apply_preference(preference: Option<bool>, cx: &mut App) {
 
 #[cfg(target_os = "macos")]
 mod platform {
-    use gpui::App;
     use objc2_app_kit::NSWorkspace;
+    use wgpui::App;
 
     pub(super) fn read() -> Option<bool> {
         Some(NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion())
@@ -113,7 +113,7 @@ mod platform {
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use gpui::App;
+    use wgpui::App;
     use windows::{
         Win32::UI::WindowsAndMessaging::{
             SPI_GETCLIENTAREAANIMATION, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS, SystemParametersInfoW,
@@ -144,7 +144,7 @@ mod platform {
 mod platform {
     use ashpd::desktop::settings::{ReducedMotion, Settings};
     use futures::StreamExt as _;
-    use gpui::App;
+    use wgpui::App;
 
     /// The portal answers asynchronously; [`follow`] applies the first reading.
     pub(super) fn read() -> Option<bool> {
@@ -185,7 +185,7 @@ mod platform {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
 mod platform {
-    use gpui::App;
+    use wgpui::App;
 
     pub(super) fn read() -> Option<bool> {
         None
@@ -196,11 +196,11 @@ mod platform {
 
 #[cfg(test)]
 mod tests {
-    use gpui::TestAppContext;
+    use wgpui::TestAppContext;
 
     use super::{apply_preference, apply_system_reduce_motion};
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_system_preference_for_reduced_motion_sets_the_flag(cx: &mut TestAppContext) {
         cx.update(|cx| {
             apply_preference(Some(true), cx);
@@ -208,7 +208,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn an_unknown_system_preference_leaves_the_flag_alone(cx: &mut TestAppContext) {
         cx.update(|cx| {
             apply_preference(None, cx);
@@ -220,7 +220,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_system_drives_the_flag_until_the_application_sets_it(cx: &mut TestAppContext) {
         cx.update(|cx| {
             apply_preference(Some(true), cx);
@@ -235,7 +235,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_test_scheduler_is_never_asked_for_the_platform_preference(cx: &mut TestAppContext) {
         cx.update(|cx| {
             assert!(super::is_test_scheduler(cx));
@@ -246,7 +246,7 @@ mod tests {
         cx.update(|cx| assert!(!cx.reduce_motion()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_flag_the_application_set_before_the_first_reading_is_kept(cx: &mut TestAppContext) {
         cx.update(|cx| {
             cx.set_reduce_motion(true);

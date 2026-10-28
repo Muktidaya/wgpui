@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use data_url::DataUrl;
-use gpui::{Image, ImageFormat};
+use wgpui::{Image, ImageFormat};
 
 const NUMBERED_PREFIXES_1: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const NUMBERED_PREFIXES_2: &str = "abcdefghijklmnopqrstuvwxyz";
@@ -67,7 +67,7 @@ pub(super) fn data_url_image(url: &str) -> Option<Arc<Image>> {
 
 #[cfg(test)]
 mod tests {
-    use gpui::ImageFormat;
+    use wgpui::ImageFormat;
 
     use crate::text::utils::{data_url_image, list_item_prefix};
 

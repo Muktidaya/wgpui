@@ -1,7 +1,7 @@
 use anyhow::Result;
-use gpui::{App, Context, Hsla, SharedString, Task, Window};
 use ropey::Rope;
 use std::rc::Rc;
+use wgpui::{App, Context, Hsla, SharedString, Task, Window};
 
 use crate::input::{EditorMode, InputBaseState, RopeExt};
 

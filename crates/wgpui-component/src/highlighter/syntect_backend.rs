@@ -15,15 +15,15 @@ use std::{
     cell::RefCell, collections::HashMap, ops::Range, rc::Rc, sync::LazyLock, time::Duration,
 };
 
-use gpui::{HighlightStyle, SharedString, Task};
-use gpui_base::input::{
-    EditorState, FoldRange, HighlightStyleResolver, InputEdit, InputHighlighter,
-    InputHighlighterFactory,
-};
 use ropey::Rope;
 use syntect::{
     parsing::{ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
+};
+use wgpui::{HighlightStyle, SharedString, Task};
+use wgpui_base::input::{
+    EditorState, FoldRange, HighlightStyleResolver, InputEdit, InputHighlighter,
+    InputHighlighterFactory,
 };
 
 /// Deserializing the syntax set takes tens of milliseconds, so it happens once,
@@ -354,8 +354,8 @@ impl InputHighlighter for SyntectInputHighlighter {
         edit: Option<InputEdit>,
         text: &Rope,
         folding: bool,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<EditorState>,
+        window: &mut wgpui::Window,
+        cx: &mut wgpui::Context<EditorState>,
     ) {
         if let Some(edit) = edit {
             shift(&mut self.highlights.borrow_mut(), &edit);
@@ -571,9 +571,9 @@ mod tests {
                 start_byte: 5,
                 old_end_byte: 5,
                 new_end_byte: 8,
-                start_position: gpui_base::input::Point::new(0, 0),
-                old_end_position: gpui_base::input::Point::new(0, 0),
-                new_end_position: gpui_base::input::Point::new(0, 0),
+                start_position: wgpui_base::input::Point::new(0, 0),
+                old_end_position: wgpui_base::input::Point::new(0, 0),
+                new_end_position: wgpui_base::input::Point::new(0, 0),
             },
         );
         assert_eq!(highlights, vec![(0..2, "keyword"), (11..13, "number")]);

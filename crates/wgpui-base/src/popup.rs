@@ -1,6 +1,6 @@
 use std::{cell::Cell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Bounds, Div, ElementId, InteractiveElement, Interactivity,
     IntoElement, ParentElement, Pixels, Point, RenderOnce, StatefulInteractiveElement,
     StyleRefinement, Styled, Window, canvas, deferred, div, point, px,
@@ -28,7 +28,7 @@ struct PopupAnchorState {
 #[derive(IntoElement)]
 pub struct Popup {
     id: ElementId,
-    base: gpui::Stateful<Div>,
+    base: wgpui::Stateful<Div>,
     style: StyleRefinement,
     anchor: Anchor,
     offset: Pixels,
@@ -206,13 +206,13 @@ impl RenderOnce for Popup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, px};
+    use wgpui::{Context, Render, px};
 
     #[test]
     fn resolved_corner_preserves_existing_anchor_math() {
         let bounds = Bounds {
             origin: Point::new(px(100.), px(100.)),
-            size: gpui::Size::new(px(200.), px(50.)),
+            size: wgpui::Size::new(px(200.), px(50.)),
         };
         assert_eq!(
             Popup::resolved_corner(Anchor::TopCenter, bounds),
@@ -275,8 +275,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn the_popup_surface_blocks_the_panel_it_covers(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn the_popup_surface_blocks_the_panel_it_covers(cx: &mut wgpui::TestAppContext) {
         let background_hovered = Rc::new(Cell::new(false));
         let content_hovered = Rc::new(Cell::new(false));
         let (_, window) = cx.add_window_view({
@@ -291,9 +291,9 @@ mod tests {
         window.update(|window, cx| window.draw(cx).clear());
 
         window.simulate_mouse_move(
-            gpui::point(px(20.), px(110.)),
+            wgpui::point(px(20.), px(110.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         assert!(!background_hovered.get());
         // The surface blocks what is behind it, not its own content: the
@@ -303,9 +303,9 @@ mod tests {
         // The same pointer outside the surface still reaches the panel, so the
         // assertion above is about occlusion and not a dead listener.
         window.simulate_mouse_move(
-            gpui::point(px(150.), px(180.)),
+            wgpui::point(px(150.), px(180.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         assert!(background_hovered.get());
     }
@@ -338,8 +338,8 @@ mod tests {
     /// A closed popup notes its trigger's bounds without asking for another
     /// frame: a list of rows holding closed popups is not drawn again for
     /// each row that shows. Opened, it places its content at once.
-    #[gpui::test]
-    fn a_closed_popup_asks_for_no_frame_and_opens_at_once(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn a_closed_popup_asks_for_no_frame_and_opens_at_once(cx: &mut wgpui::TestAppContext) {
         let (view, window) = cx.add_window_view(|_, _| ClosedHarness { open: false });
         window.update(|window, cx| {
             window.draw(cx).clear();
@@ -353,23 +353,23 @@ mod tests {
         window.update(|window, cx| window.draw(cx).clear());
         assert_eq!(
             window.debug_bounds("popup-content").unwrap().size,
-            gpui::Size::new(px(20.), px(20.))
+            wgpui::Size::new(px(20.), px(20.))
         );
     }
 
-    #[gpui::test]
-    fn trigger_capture_enables_deferred_content_on_the_next_frame(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_capture_enables_deferred_content_on_the_next_frame(cx: &mut wgpui::TestAppContext) {
         let (_, window) = cx.add_window_view(|_, _| Harness);
         window.update(|window, cx| window.draw(cx).clear());
         window.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             window.debug_bounds("popup-trigger").unwrap().size,
-            gpui::Size::new(px(100.), px(100.))
+            wgpui::Size::new(px(100.), px(100.))
         );
         assert_eq!(
             window.debug_bounds("popup-content").unwrap().size,
-            gpui::Size::new(px(20.), px(20.))
+            wgpui::Size::new(px(20.), px(20.))
         );
     }
 }

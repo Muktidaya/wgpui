@@ -9,13 +9,13 @@ use std::{
     time::Duration,
 };
 
-use gpui::{HighlightStyle, SharedString, Task};
-use gpui_base::input::{
+use ropey::Rope;
+use tree_sitter::{InputEdit, ParseOptions, Point};
+use wgpui::{HighlightStyle, SharedString, Task};
+use wgpui_base::input::{
     EditorState, FoldRange, HighlightStyleResolver, InputEdit as BaseInputEdit, InputHighlighter,
     InputHighlighterFactory,
 };
-use ropey::Rope;
-use tree_sitter::{InputEdit, ParseOptions, Point};
 
 use super::{LanguageRegistry, SyntaxHighlighter, highlighter::parse_input_bytes};
 
@@ -51,8 +51,8 @@ impl TreeSitterInputHighlighter {
         completed: bool,
         text: &Rope,
         folding: bool,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<EditorState>,
+        window: &mut wgpui::Window,
+        cx: &mut wgpui::Context<EditorState>,
     ) {
         if completed {
             self.parse_task.borrow_mut().take();
@@ -149,8 +149,8 @@ impl InputHighlighter for TreeSitterInputHighlighter {
         edit: Option<BaseInputEdit>,
         text: &Rope,
         folding: bool,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<EditorState>,
+        window: &mut wgpui::Window,
+        cx: &mut wgpui::Context<EditorState>,
     ) {
         let edit = edit.map(to_tree_sitter_edit);
         let completed = {
@@ -169,8 +169,8 @@ impl InputHighlighter for TreeSitterInputHighlighter {
         &mut self,
         edits: &[(BaseInputEdit, Rope)],
         folding: bool,
-        window: &mut gpui::Window,
-        cx: &mut gpui::Context<EditorState>,
+        window: &mut wgpui::Window,
+        cx: &mut wgpui::Context<EditorState>,
     ) {
         let Some((_, text)) = edits.last() else {
             return;

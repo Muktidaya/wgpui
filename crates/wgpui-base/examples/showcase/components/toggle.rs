@@ -23,7 +23,7 @@ impl BaseShowcase {
                 this.bg(super::example_rgb(0x171717))
                     .text_color(super::example_rgb(0xffffff))
             })
-            .font_weight(gpui::FontWeight::BOLD)
+            .font_weight(wgpui::FontWeight::BOLD)
             .accessibility_label("Bold")
             .child("B")
     }

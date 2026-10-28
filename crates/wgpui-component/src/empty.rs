@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, relative, rems,
 };
@@ -379,7 +379,7 @@ mod tests {
         Sizable as _,
         avatar::{Avatar, AvatarGroup},
     };
-    use gpui::{Context, InteractiveElement as _, Render, TestAppContext, px};
+    use wgpui::{Context, InteractiveElement as _, Render, TestAppContext, px};
 
     struct MediaLayout {
         grouped: bool,
@@ -426,7 +426,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn media_keeps_intrinsic_width_and_slot_alignment(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -445,7 +445,7 @@ mod tests {
 
                     // A zero-width group paints outside its centered slot.
                     assert!(media.size.width > px(0.), "grouped: {grouped}");
-                    let alignment = |bounds: gpui::Bounds<gpui::Pixels>| {
+                    let alignment = |bounds: wgpui::Bounds<wgpui::Pixels>| {
                         if leading {
                             bounds.left()
                         } else {

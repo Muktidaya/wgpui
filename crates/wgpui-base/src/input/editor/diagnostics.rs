@@ -3,9 +3,9 @@ use std::{
     ops::{Deref, Range},
 };
 
-use gpui::SharedString;
 use ropey::Rope;
 use sum_tree::{Bias, SeekTarget, SumTree};
+use wgpui::SharedString;
 
 use crate::input::{Position, RopeExt as _};
 

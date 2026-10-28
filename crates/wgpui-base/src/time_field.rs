@@ -2,7 +2,7 @@ use crate::TestSupportExt as _;
 use std::rc::Rc;
 
 use chrono::{NaiveTime, Timelike as _};
-use gpui::{
+use wgpui::{
     AnyElement, App, Context, ElementId, Empty, Entity, EventEmitter, FocusHandle, Focusable,
     InteractiveElement, IntoElement, KeyBinding, KeyDownEvent, MouseButton, MouseDownEvent,
     ParentElement, Render, RenderOnce, Role, SharedString, StatefulInteractiveElement,
@@ -489,7 +489,7 @@ type SegmentRenderer =
 /// An unstyled, pre-wired segment passed to the [`TimeField`] segment slot.
 #[derive(IntoElement)]
 pub struct TimeFieldSegment {
-    base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<wgpui::Div>>,
     style: StyleRefinement,
     children: Vec<AnyElement>,
 }
@@ -513,7 +513,7 @@ impl Styled for TimeFieldSegment {
     }
 }
 impl InteractiveElement for TimeFieldSegment {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }

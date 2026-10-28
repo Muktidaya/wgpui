@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
+use wgpui::prelude::FluentBuilder as _;
+use wgpui::{
     AnyElement, App, DefiniteLength, Edges, ElementId, Entity, Hsla, InteractiveElement as _,
     IntoElement, MouseButton, ParentElement as _, Rems, RenderOnce, Role, SharedString,
     StyleRefinement, Styled, TextAlign, TouchPhase, Window, div, px, relative,
@@ -16,8 +16,8 @@ use crate::{ActiveTheme, Colorize, v_flex};
 use crate::{IconName, Size};
 use crate::{RoleOverride, Selectable, StyledExt, h_flex};
 use crate::{Sizable, StyleSized};
-use gpui_base::InputBase as BaseInput;
 use rust_i18n::t;
+use wgpui_base::InputBase as BaseInput;
 
 use super::state::{TextInputState, sync_focused_input_registry};
 use super::{InputContentType, InputState, sync_native_content_type};
@@ -107,9 +107,9 @@ pub(crate) fn input_style(disabled: bool, cx: &App) -> (Hsla, Hsla) {
 /// A text input element bind to an [`InputState`].
 #[derive(IntoElement)]
 pub struct Input {
-    token_renderer: Option<gpui_base::input::InlineTokenRenderer>,
-    token_click_listener: Option<gpui_base::input::InlineTokenClickListener>,
-    token_hover_listener: Option<gpui_base::input::InlineTokenHoverListener>,
+    token_renderer: Option<wgpui_base::input::InlineTokenRenderer>,
+    token_click_listener: Option<wgpui_base::input::InlineTokenClickListener>,
+    token_hover_listener: Option<wgpui_base::input::InlineTokenHoverListener>,
     id: Option<ElementId>,
     state: TextInputState,
     style: StyleRefinement,
@@ -138,7 +138,7 @@ pub struct Input {
 
     /// An optional paste handler. If set, it is invoked with the clipboard item
     /// before the default text insertion. Return `true` if handled.
-    paste_handler: Option<Rc<dyn Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
+    paste_handler: Option<Rc<dyn Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool>>,
 }
 
 impl Sizable for Input {
@@ -391,7 +391,7 @@ impl Input {
     /// needs `read_from_clipboard_async` and permission, out of scope here.
     pub fn on_paste(
         mut self,
-        handler: impl Fn(&gpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
+        handler: impl Fn(&wgpui::ClipboardItem, &mut Window, &mut App) -> bool + 'static,
     ) -> Self {
         self.paste_handler = Some(Rc::new(handler));
         self
@@ -423,7 +423,7 @@ impl Input {
 
         let dispatch = {
             let focus_handle = focus_handle.clone();
-            move |action: &dyn gpui::Action, window: &mut Window, cx: &mut App| {
+            move |action: &dyn wgpui::Action, window: &mut Window, cx: &mut App| {
                 focus_handle.dispatch_action(action, window, cx);
             }
         };
@@ -431,21 +431,21 @@ impl Input {
         if editable && copyable {
             let dispatch = dispatch.clone();
             items.push(EditMenuItem::new(t!("Input.Cut"), move |window, cx| {
-                dispatch(&gpui_base::input::Cut, window, cx);
+                dispatch(&wgpui_base::input::Cut, window, cx);
             }));
         }
         if copyable {
             let dispatch = dispatch.clone();
             let state = state.clone();
             items.push(EditMenuItem::new(t!("Input.Copy"), move |window, cx| {
-                dispatch(&gpui_base::input::Copy, window, cx);
+                dispatch(&wgpui_base::input::Copy, window, cx);
                 state.close_edit_menu(cx);
             }));
         }
         if pasteable {
             let dispatch = dispatch.clone();
             items.push(EditMenuItem::new(t!("Input.Paste"), move |window, cx| {
-                dispatch(&gpui_base::input::Paste, window, cx);
+                dispatch(&wgpui_base::input::Paste, window, cx);
             }));
         }
         if selectable {
@@ -541,14 +541,14 @@ impl RenderOnce for Input {
 
         state.ensure_highlighter_factory(crate::highlighter::input_highlighter_factory(), cx);
         state.set_editor_style(
-            gpui_base::input::InputEditorStyle {
+            wgpui_base::input::InputEditorStyle {
                 foreground: cx.theme().foreground,
                 muted_foreground: cx.theme().muted_foreground,
                 background: cx.theme().editor_background(),
                 border: cx.theme().border,
                 selection: cx.theme().selection,
                 caret: cx.theme().caret,
-                diagnostics: gpui_base::input::DiagnosticColors {
+                diagnostics: wgpui_base::input::DiagnosticColors {
                     error: cx.theme().highlight_theme.style.status.error(cx),
                     warning: cx.theme().highlight_theme.style.status.warning(cx),
                     info: cx.theme().highlight_theme.style.status.info(cx),
@@ -611,24 +611,24 @@ impl RenderOnce for Input {
                             .menu_with_disabled(
                                 t!("Input.Go to Definition"),
                                 !(enabled && capabilities.has_definition()),
-                                Box::new(gpui_base::input::GoToDefinition),
+                                Box::new(wgpui_base::input::GoToDefinition),
                             )
                             .menu_with_disabled(
                                 t!("Input.Show Code Actions"),
                                 !(editable && capabilities.has_code_actions()),
-                                Box::new(gpui_base::input::ToggleCodeActions),
+                                Box::new(wgpui_base::input::ToggleCodeActions),
                             )
                             .separator();
                     }
                     menu.menu_with_disabled(
                         t!("Input.Cut"),
                         !(editable && capabilities.is_copyable()),
-                        Box::new(gpui_base::input::Cut),
+                        Box::new(wgpui_base::input::Cut),
                     )
                     .menu_with_disabled(
                         t!("Input.Copy"),
                         !capabilities.is_copyable(),
-                        Box::new(gpui_base::input::Copy),
+                        Box::new(wgpui_base::input::Copy),
                     )
                     // Offered whenever the text can change, without peeking
                     // at the clipboard: the synchronous read is always empty
@@ -636,12 +636,12 @@ impl RenderOnce for Input {
                     .menu_with_disabled(
                         t!("Input.Paste"),
                         !editable,
-                        Box::new(gpui_base::input::Paste),
+                        Box::new(wgpui_base::input::Paste),
                     )
                     .separator()
                     .menu(
                         t!("Input.Select All"),
-                        Box::new(gpui_base::input::SelectAll),
+                        Box::new(wgpui_base::input::SelectAll),
                     )
                 };
                 menu.show(position, window, cx);
@@ -725,7 +725,7 @@ impl RenderOnce for Input {
             None => placeholder.clone(),
         };
         state.set_accessibility(
-            gpui_base::input::InputAccessibility::new(accessibility_role)
+            wgpui_base::input::InputAccessibility::new(accessibility_role)
                 .with_label(aria_label)
                 .with_placeholder(placeholder)
                 .with_accessibility_id(self.accessibility_id)
@@ -831,7 +831,7 @@ impl RenderOnce for Input {
             .relative()
             .children(overlays.floating)
             .when_some(paste_handler, |this, handler| {
-                this.capture_action(move |_: &gpui_base::input::Paste, window, cx| {
+                this.capture_action(move |_: &wgpui_base::input::Paste, window, cx| {
                     if let Some(clipboard) = cx.read_from_clipboard() {
                         if handler(&clipboard, window, cx) {
                             cx.stop_propagation();
@@ -989,13 +989,13 @@ mod tests {
         assert_eq!(RoleOverride::from(None), RoleOverride::Presentational);
     }
 
-    #[gpui::test]
-    fn test_on_paste_builder(cx: &mut gpui::TestAppContext) {
-        use gpui::{AppContext as _, Render};
+    #[wgpui::test]
+    fn test_on_paste_builder(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{AppContext as _, Render};
 
         struct Probe;
         impl Render for Probe {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 div()
             }
         }
@@ -1011,13 +1011,13 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_on_token_hover_builder(cx: &mut gpui::TestAppContext) {
-        use gpui::{AppContext as _, Render};
+    #[wgpui::test]
+    fn test_on_token_hover_builder(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{AppContext as _, Render};
 
         struct Probe;
         impl Render for Probe {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 div()
             }
         }
@@ -1033,10 +1033,10 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn editable_input_offers_accessibility_write_action(cx: &mut gpui::TestAppContext) {
-        use gpui::{AccessibleAction, AppContext as _, Element as _, IntoElement as _, Render};
+    #[wgpui::test]
+    fn editable_input_offers_accessibility_write_action(cx: &mut wgpui::TestAppContext) {
         use std::cell::RefCell;
+        use wgpui::{AccessibleAction, AppContext as _, Element as _, IntoElement as _, Render};
 
         type EmittedState = Option<(Option<String>, bool)>;
 
@@ -1051,7 +1051,7 @@ mod tests {
             fn render(
                 &mut self,
                 _window: &mut Window,
-                _cx: &mut gpui::Context<Self>,
+                _cx: &mut wgpui::Context<Self>,
             ) -> impl IntoElement {
                 let state = self.state.clone();
                 let emitted = self.emitted.clone();
@@ -1064,7 +1064,7 @@ mod tests {
                     .on_prepaint(move |_, window, cx| {
                         state.update(cx, |state, cx| {
                             let input = state.render(window, cx).into_element();
-                            let mut node = gpui::accesskit::Node::new(Role::Unknown);
+                            let mut node = wgpui::accesskit::Node::new(Role::Unknown);
                             input.write_a11y_info(&mut node);
                             *emitted.borrow_mut() = Some((
                                 node.value().map(ToOwned::to_owned),
@@ -1115,10 +1115,10 @@ mod tests {
         assert_eq!(*captured.borrow(), Some((None, true)));
     }
 
-    #[gpui::test]
-    fn input_emits_accessibility_id(cx: &mut gpui::TestAppContext) {
-        use gpui::{AppContext as _, Element as _, IntoElement as _, Render};
+    #[wgpui::test]
+    fn input_emits_accessibility_id(cx: &mut wgpui::TestAppContext) {
         use std::cell::RefCell;
+        use wgpui::{AppContext as _, Element as _, IntoElement as _, Render};
 
         type EmittedIds = Vec<Option<String>>;
 
@@ -1131,7 +1131,7 @@ mod tests {
             fn render(
                 &mut self,
                 _window: &mut Window,
-                _cx: &mut gpui::Context<Self>,
+                _cx: &mut wgpui::Context<Self>,
             ) -> impl IntoElement {
                 let states = self.states.clone();
                 let emitted = self.emitted.clone();
@@ -1144,7 +1144,7 @@ mod tests {
                             .map(|state| {
                                 state.update(cx, |state, cx| {
                                     let input = state.render(window, cx).into_element();
-                                    let mut node = gpui::accesskit::Node::new(Role::Unknown);
+                                    let mut node = wgpui::accesskit::Node::new(Role::Unknown);
                                     input.write_a11y_info(&mut node);
                                     node.author_id().map(ToOwned::to_owned)
                                 })
@@ -1179,20 +1179,20 @@ mod tests {
         )));
     }
 
-    #[gpui::test]
-    fn focused_input_registry_tracks_focus_and_blur(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn focused_input_registry_tracks_focus_and_blur(cx: &mut wgpui::TestAppContext) {
         use crate::{Root, WindowExt as _};
-        use gpui::{AppContext as _, Render};
+        use wgpui::{AppContext as _, Render};
 
         struct Probe {
             input: Entity<InputState>,
             textarea: Entity<crate::input::TextareaState>,
             editor: Entity<crate::input::EditorState>,
-            otp: Entity<gpui_base::OtpState>,
-            other: gpui::FocusHandle,
+            otp: Entity<wgpui_base::OtpState>,
+            other: wgpui::FocusHandle,
         }
         impl Render for Probe {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 div()
                     .child(div().track_focus(&self.other))
                     .child(Input::new(&self.input))
@@ -1214,7 +1214,7 @@ mod tests {
                 let textarea_state = cx.new(|cx| crate::input::TextareaState::new(window, cx));
                 let editor_state =
                     cx.new(|cx| crate::input::EditorState::new(window, cx).language("rust"));
-                let otp_state = cx.new(|cx| gpui_base::OtpState::new(6, window, cx));
+                let otp_state = cx.new(|cx| wgpui_base::OtpState::new(6, window, cx));
                 input = Some(state.clone());
                 textarea = Some(textarea_state.clone());
                 editor = Some(editor_state.clone());
@@ -1237,7 +1237,7 @@ mod tests {
         let editor = editor.unwrap();
         let otp = otp.unwrap();
         let other_focus = other_focus.unwrap();
-        let mut cx = gpui::VisualTestContext::from_window(window.into(), cx);
+        let mut cx = wgpui::VisualTestContext::from_window(window.into(), cx);
 
         // Focusing each kind of input registers it, and blurring clears it.
         let cases: Vec<AnyInputState> = vec![
@@ -1269,18 +1269,18 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn focused_input_registry_ignores_input_removed_while_focused(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn focused_input_registry_ignores_input_removed_while_focused(cx: &mut wgpui::TestAppContext) {
         use crate::{Root, WindowExt as _};
-        use gpui::{AppContext as _, Render};
+        use wgpui::{AppContext as _, Render};
 
         struct Probe {
             input: Entity<InputState>,
             show_input: bool,
-            other: gpui::FocusHandle,
+            other: wgpui::FocusHandle,
         }
         impl Render for Probe {
-            fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+            fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
                 let base = div().child(div().track_focus(&self.other));
                 if self.show_input {
                     base.child(Input::new(&self.input))
@@ -1313,7 +1313,7 @@ mod tests {
         let input: AnyInputState = input.unwrap().into();
         let other_focus = other_focus.unwrap();
         let probe = probe_entity.unwrap();
-        let mut cx = gpui::VisualTestContext::from_window(window.into(), cx);
+        let mut cx = wgpui::VisualTestContext::from_window(window.into(), cx);
 
         cx.update(|window, cx| {
             let _ = window.draw(cx);

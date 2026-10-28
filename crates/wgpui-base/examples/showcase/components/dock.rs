@@ -1,10 +1,10 @@
 use super::*;
 
-use gpui::{
+use std::cell::RefCell;
+use wgpui::{
     AnyElement, Axis, Div, Entity, EventEmitter, FocusHandle, Focusable, MouseButton,
     MouseMoveEvent, MouseUpEvent, SharedString, Stateful, rgba,
 };
-use std::cell::RefCell;
 
 const SURFACE: u32 = 0xffffff;
 const CHROME: u32 = 0xf4f4f5;
@@ -13,8 +13,8 @@ const MUTED: u32 = 0x71717a;
 const ACCENT: u32 = 0x2563eb;
 const DROP_TARGET: u32 = 0x2563eb33;
 
-const TAB_BAR_HEIGHT: gpui::Pixels = px(26.);
-const RESIZE_STRIP: gpui::Pixels = px(4.);
+const TAB_BAR_HEIGHT: wgpui::Pixels = px(26.);
+const RESIZE_STRIP: wgpui::Pixels = px(4.);
 
 /// One dockable view. Its only obligation to base is a stable name; the title
 /// and body are this example's own, and reach the skin through a downcast of

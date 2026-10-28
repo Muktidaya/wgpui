@@ -1,4 +1,4 @@
-use gpui::{App, SharedString, Task, Window};
+use wgpui::{App, SharedString, Task, Window};
 
 use crate::IndexPath;
 
@@ -235,8 +235,8 @@ impl<I: SearchableListItem + 'static> SearchableListDelegate for SearchableVec<S
             .map_or(0, |(matched, group)| matched.len(group.items.len()))
     }
 
-    fn section(&self, section: usize) -> Option<gpui::AnyElement> {
-        use gpui::IntoElement as _;
+    fn section(&self, section: usize) -> Option<wgpui::AnyElement> {
+        use wgpui::IntoElement as _;
 
         let (_, group) = self.matched_item(section)?;
         Some(group.title.clone().into_any_element())
@@ -285,11 +285,11 @@ impl<I: SearchableListItem + 'static> SearchableListDelegate for SearchableVec<S
 
 #[cfg(test)]
 mod tests {
-    use gpui::TestAppContext;
+    use wgpui::TestAppContext;
 
     use super::*;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_searchable_vec_maps_matched_rows_to_items(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {
@@ -308,7 +308,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_searchable_group_keeps_matched_rows(cx: &mut TestAppContext) {
         let cx = cx.add_empty_window();
         cx.update(|window, cx| {

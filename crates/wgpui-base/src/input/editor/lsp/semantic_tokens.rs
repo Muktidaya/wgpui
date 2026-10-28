@@ -1,10 +1,10 @@
 use std::ops::Range;
 
 use anyhow::Result;
-use gpui::{App, Context, HighlightStyle, SharedString, Task, Window};
 use instant::Duration;
 use lsp_types::{Position, SemanticTokens, SemanticTokensLegend};
 use ropey::Rope;
+use wgpui::{App, Context, HighlightStyle, SharedString, Task, Window};
 
 use crate::input::{EditorMode, HighlightStyleResolver, InputBaseState, Lsp, RopeExt};
 
@@ -195,8 +195,8 @@ fn decode_semantic_tokens(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::hsla;
     use lsp_types::{SemanticToken, SemanticTokenType, SemanticTokensLegend};
+    use wgpui::hsla;
 
     fn legend() -> SemanticTokensLegend {
         SemanticTokensLegend {

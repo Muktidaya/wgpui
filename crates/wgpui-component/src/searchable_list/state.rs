@@ -1,9 +1,9 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, Bounds, Context, Entity, FocusHandle, Focusable as _, Length,
     Pixels, StyleRefinement, Subscription, Window,
 };
 
-use gpui_base::DeferredPopover;
+use wgpui_base::DeferredPopover;
 
 use crate::{IndexPath, Size, list::ListState, searchable_list::adapter::SearchableListAdapter};
 
@@ -31,8 +31,8 @@ where
     pub(crate) size: Size,
     pub(crate) style: StyleRefinement,
     pub(crate) cleanable: bool,
-    pub(crate) placeholder: Option<gpui::SharedString>,
-    pub(crate) search_placeholder: Option<gpui::SharedString>,
+    pub(crate) placeholder: Option<wgpui::SharedString>,
+    pub(crate) search_placeholder: Option<wgpui::SharedString>,
     pub(crate) menu_width: Length,
     pub(crate) menu_max_h: Length,
     pub(crate) scroll_bounce: Option<bool>,
@@ -122,7 +122,7 @@ where
             placeholder: None,
             search_placeholder: None,
             menu_width: Length::Auto,
-            menu_max_h: gpui::rems(20.).into(),
+            menu_max_h: wgpui::rems(20.).into(),
             scroll_bounce: None,
             disabled: false,
             appearance: true,

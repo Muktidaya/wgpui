@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, relative,
 };
@@ -69,13 +69,13 @@ pub trait DialogFooterButton {
 }
 #[derive(IntoElement)]
 pub struct DialogClose {
-    base: gpui_base::DialogClose,
+    base: wgpui_base::DialogClose,
 }
 
 impl DialogClose {
     pub fn new() -> Self {
         Self {
-            base: gpui_base::DialogClose::new(),
+            base: wgpui_base::DialogClose::new(),
         }
     }
 

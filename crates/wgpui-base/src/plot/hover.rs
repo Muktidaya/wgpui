@@ -3,7 +3,7 @@
 //!
 //! This is behavior only. A styled layer draws the crosshair, dots and tooltip
 //! box, and projects its timing through [`PlotMotion`](crate::PlotMotion).
-use gpui::{App, Pixels, Point, Window};
+use wgpui::{App, Pixels, Point, Window};
 
 use crate::{
     Spring, Theme,
@@ -227,7 +227,7 @@ pub fn is_hover_entering(window: &mut Window, cx: &mut App) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{point, px};
+    use wgpui::{point, px};
 
     use super::*;
 

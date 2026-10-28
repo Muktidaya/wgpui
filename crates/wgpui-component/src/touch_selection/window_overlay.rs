@@ -1,8 +1,8 @@
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, ClipboardItem, Context, IntoElement, ParentElement as _, Render, Subscription, Window, div,
 };
-use gpui_base::TextSelection;
-use rust_i18n::t;
+use wgpui_base::TextSelection;
 
 use super::{EditMenuItem, TouchSelectionOverlay};
 

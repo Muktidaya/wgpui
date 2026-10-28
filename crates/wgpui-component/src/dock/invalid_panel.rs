@@ -1,18 +1,18 @@
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, Context, EventEmitter, FocusHandle, Focusable, IntoElement, ParentElement as _, Render,
     Styled as _, Window, div,
 };
-use gpui_base::dock::{PanelEvent, PanelState};
-use rust_i18n::t;
+use wgpui_base::dock::{PanelEvent, PanelState};
 
 use crate::{ActiveTheme as _, dock::Panel};
 
 /// Stands in for a panel this build cannot construct — one whose
-/// `panel_name` no [`PanelRegistry`](gpui_base::dock::PanelRegistry) builder
+/// `panel_name` no [`PanelRegistry`](wgpui_base::dock::PanelRegistry) builder
 /// answers to.
 ///
 /// It reports the original [`PanelState`] from
-/// [`dump`](gpui_base::dock::Panel::dump), so a layout written by a build that
+/// [`dump`](wgpui_base::dock::Panel::dump), so a layout written by a build that
 /// knows the panel survives a load and a save here rather than losing it.
 pub(crate) struct InvalidPanel {
     focus_handle: FocusHandle,
@@ -34,7 +34,7 @@ impl InvalidPanel {
     }
 }
 
-impl gpui_base::dock::Panel for InvalidPanel {
+impl wgpui_base::dock::Panel for InvalidPanel {
     fn panel_name(&self) -> &'static str {
         "InvalidPanel"
     }

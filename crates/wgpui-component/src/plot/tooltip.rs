@@ -1,11 +1,11 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, Half as _, Hsla, IntoElement, ParentElement, Pixels, Point,
     RenderOnce, SharedString, Size, StyleRefinement, Styled, Window, deferred, div, point,
     prelude::FluentBuilder, px,
 };
-use gpui_base::motion::spring;
-pub use gpui_base::plot::{PlotHover, TooltipState};
-use gpui_base::plot::{hover_progress, is_hover_entering, pointer_spring};
+use wgpui_base::motion::spring;
+pub use wgpui_base::plot::{PlotHover, TooltipState};
+use wgpui_base::plot::{hover_progress, is_hover_entering, pointer_spring};
 
 use crate::ThemeStyled as _;
 use crate::{ActiveTheme, Colorize, StyledExt, h_flex, v_flex};
@@ -202,8 +202,8 @@ impl Dot {
         Self {
             point,
             size: px(6.),
-            stroke: gpui::transparent_black(),
-            fill: gpui::transparent_black(),
+            stroke: wgpui::transparent_black(),
+            fill: wgpui::transparent_black(),
             halo: None,
         }
     }
@@ -609,27 +609,27 @@ impl RenderOnce for Tooltip {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{point, px};
+    use wgpui::{point, px};
 
     use super::*;
 
     #[test]
     fn a_value_color_colors_only_the_row_added_last() {
-        let tooltip = Tooltip::new(point(px(0.), px(0.)), gpui::size(px(100.), px(100.)))
-            .value_color(gpui::red())
-            .row(gpui::blue(), "Open", "1")
-            .row(gpui::blue(), "Close", "2")
-            .value_color(gpui::green());
+        let tooltip = Tooltip::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(100.)))
+            .value_color(wgpui::red())
+            .row(wgpui::blue(), "Open", "1")
+            .row(wgpui::blue(), "Close", "2")
+            .value_color(wgpui::green());
         let colors: Vec<_> = tooltip.rows.iter().map(|row| row.value_color).collect();
-        assert_eq!(colors, vec![None, Some(gpui::green())]);
+        assert_eq!(colors, vec![None, Some(wgpui::green())]);
     }
 
     #[test]
     fn a_plain_row_has_no_swatch_and_takes_a_value_color() {
-        let tooltip = Tooltip::new(point(px(0.), px(0.)), gpui::size(px(100.), px(100.)))
-            .row(gpui::blue(), "Call", "1")
+        let tooltip = Tooltip::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(100.)))
+            .row(wgpui::blue(), "Call", "1")
             .plain_row("Total", "3")
-            .value_color(gpui::red());
+            .value_color(wgpui::red());
         let rows: Vec<_> = tooltip
             .rows
             .iter()
@@ -637,15 +637,15 @@ mod tests {
             .collect();
         assert_eq!(
             rows,
-            vec![(Some(gpui::blue()), None), (None, Some(gpui::red()))]
+            vec![(Some(wgpui::blue()), None), (None, Some(wgpui::red()))]
         );
     }
 
     #[test]
     fn plain_rows_keep_a_swatch_slot_only_beside_series_rows() {
-        let tooltip = || Tooltip::new(point(px(0.), px(0.)), gpui::size(px(100.), px(100.)));
+        let tooltip = || Tooltip::new(point(px(0.), px(0.)), wgpui::size(px(100.), px(100.)));
         let mixed = tooltip()
-            .row(gpui::blue(), "Call", "1")
+            .row(wgpui::blue(), "Call", "1")
             .plain_row("Total", "3");
         let plain = tooltip().plain_row("Total", "3").plain_row("Ratio", "0.5");
         assert!(has_swatches(&mixed.rows));

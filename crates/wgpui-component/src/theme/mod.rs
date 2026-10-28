@@ -2,14 +2,6 @@ use crate::{
     highlighter::HighlightTheme, list::ListSettings, notification::NotificationSettings,
     scroll::ScrollbarMode, sheet::SheetSettings,
 };
-use gpui::{
-    App, Global, Hsla, IsZero as _, Pixels, SharedString, Window, WindowAppearance,
-    prelude::FluentBuilder as _, px,
-};
-pub use gpui_base::{
-    ColorTokens, RadiusTokens, SemanticThemeTokens, ShadowTokens, SpacingTokens, TextStyleToken,
-    TypographyTokens,
-};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -17,6 +9,14 @@ use std::{
     rc::Rc,
     sync::Arc,
     time::Duration,
+};
+use wgpui::{
+    App, Global, Hsla, IsZero as _, Pixels, SharedString, Window, WindowAppearance,
+    prelude::FluentBuilder as _, px,
+};
+pub use wgpui_base::{
+    ColorTokens, RadiusTokens, SemanticThemeTokens, ShadowTokens, SpacingTokens, TextStyleToken,
+    TypographyTokens,
 };
 
 mod color;
@@ -109,34 +109,34 @@ const SCROLLBAR_THUMB_INSET: Pixels = px(4.);
 /// response lands in the same place, and the tolerance is sub-pixel so the
 /// spring rests once nothing visible moves. The hover fades on the same tier.
 /// The data draws in over [`PLOT_APPEAR`] on [`plot_appear_easing`].
-fn plot_motion(motion: &MotionTokens) -> gpui_base::PlotMotion {
-    gpui_base::PlotMotion::default()
-        .with_pointer(gpui_base::Spring::new(motion.duration_fast).with_epsilon(0.1))
+fn plot_motion(motion: &MotionTokens) -> wgpui_base::PlotMotion {
+    wgpui_base::PlotMotion::default()
+        .with_pointer(wgpui_base::Spring::new(motion.duration_fast).with_epsilon(0.1))
         .with_enter(
-            gpui_base::motion::Transition::new(motion.duration_fast)
+            wgpui_base::motion::Transition::new(motion.duration_fast)
                 .easing(motion.easing_enter.clone()),
         )
         .with_exit(
-            gpui_base::motion::Transition::new(motion.duration_fast)
+            wgpui_base::motion::Transition::new(motion.duration_fast)
                 .easing(motion.easing_exit.clone()),
         )
-        .with_appear(gpui_base::motion::Transition::new(PLOT_APPEAR).ease(plot_appear_easing))
+        .with_appear(wgpui_base::motion::Transition::new(PLOT_APPEAR).ease(plot_appear_easing))
 }
 
 /// The scrollbar motion this design system projects onto Base.
 ///
 /// Scrolling and track hover reveal a scrollbar by fading it in place. In hover
 /// mode, pointing at the thumb slides it in from the nearest edge as it fades.
-fn scrollbar_motion(mode: ScrollbarMode) -> gpui_base::ScrollbarMotion {
-    gpui_base::ScrollbarMotion::default()
+fn scrollbar_motion(mode: ScrollbarMode) -> wgpui_base::ScrollbarMotion {
+    wgpui_base::ScrollbarMotion::default()
         .with_idle(SCROLLBAR_IDLE)
         .with_enter(SCROLLBAR_ENTER)
         .with_exit(SCROLLBAR_EXIT)
         .with_expand(SCROLLBAR_EXPAND)
-        .with_entrance(gpui_base::ScrollbarEntrance::Fade)
+        .with_entrance(wgpui_base::ScrollbarEntrance::Fade)
         .with_thumb_hover_entrance(match mode {
-            ScrollbarMode::Scrolling | ScrollbarMode::Always => gpui_base::ScrollbarEntrance::Fade,
-            ScrollbarMode::Hover => gpui_base::ScrollbarEntrance::SlideAndFade,
+            ScrollbarMode::Scrolling | ScrollbarMode::Always => wgpui_base::ScrollbarEntrance::Fade,
+            ScrollbarMode::Hover => wgpui_base::ScrollbarEntrance::SlideAndFade,
         })
 }
 
@@ -377,19 +377,19 @@ impl Theme {
 
     /// This theme projected onto the Base layer, which owns the scrollbar and
     /// resize handles and reads the semantic tokens.
-    fn base_theme(&self) -> gpui_base::Theme {
-        gpui_base::Theme {
+    fn base_theme(&self) -> wgpui_base::Theme {
+        wgpui_base::Theme {
             appearance: if self.mode.is_dark() {
-                gpui_base::ThemeAppearance::Dark
+                wgpui_base::ThemeAppearance::Dark
             } else {
-                gpui_base::ThemeAppearance::Light
+                wgpui_base::ThemeAppearance::Light
             },
             tokens: self.semantic_tokens(),
-            scrollbar: gpui_base::ScrollbarTheme::new()
+            scrollbar: wgpui_base::ScrollbarTheme::new()
                 .with_mode(self.scrollbar_mode)
                 .with_motion(scrollbar_motion(self.scrollbar_mode))
                 .with_styles(
-                    gpui_base::ScrollbarStyles::default()
+                    wgpui_base::ScrollbarStyles::default()
                         .track(|style| style.bg(self.scrollbar))
                         .track_hover(|style| style.bg(self.scrollbar))
                         .track_active(|style| style.bg(self.scrollbar).border_color(self.border))
@@ -397,7 +397,7 @@ impl Theme {
                             style
                                 .bg(self.tokens.scrollbar_thumb)
                                 .radius(self.radius)
-                                .when(gpui_base::is_mobile(), |style| {
+                                .when(wgpui_base::is_mobile(), |style| {
                                     style
                                         .width(MOBILE_SCROLLBAR_THUMB_WIDTH)
                                         .inset(MOBILE_SCROLLBAR_THUMB_INSET)
@@ -408,7 +408,7 @@ impl Theme {
                             style
                                 .bg(self.tokens.scrollbar_thumb_hover)
                                 .radius(self.radius)
-                                .when(gpui_base::is_mobile(), |style| {
+                                .when(wgpui_base::is_mobile(), |style| {
                                     style
                                         .width(SCROLLBAR_THUMB_HOVER_WIDTH)
                                         .inset(SCROLLBAR_THUMB_INSET)
@@ -418,18 +418,18 @@ impl Theme {
                             style
                                 .bg(self.tokens.scrollbar_thumb_hover)
                                 .radius(self.radius)
-                                .when(gpui_base::is_mobile(), |style| {
+                                .when(wgpui_base::is_mobile(), |style| {
                                     style
                                         .width(SCROLLBAR_THUMB_ACTIVE_WIDTH)
                                         .inset(SCROLLBAR_THUMB_INSET)
                                 })
                         }),
                 ),
-            resizable: gpui_base::ResizableTheme {
+            resizable: wgpui_base::ResizableTheme {
                 handle: Some(self.border),
                 active_handle: Some(self.drag_border),
             },
-            plot: gpui_base::PlotTheme::new().with_motion(plot_motion(&self.motion)),
+            plot: wgpui_base::PlotTheme::new().with_motion(plot_motion(&self.motion)),
         }
     }
 
@@ -523,7 +523,7 @@ impl Theme {
     /// A theme whose [`Theme::radius`] is zero squares these off too, so one
     /// setting governs the whole UI instead of leaving a handful of
     /// permanently round elements behind. Use it in place of
-    /// [`gpui::Styled::rounded_full`], or reach for
+    /// [`wgpui::Styled::rounded_full`], or reach for
     /// [`crate::ThemeStyled::rounded_full_style`] when styling an element.
     pub fn radius_full(&self) -> Pixels {
         if self.radius.is_zero() {
@@ -653,7 +653,7 @@ impl Theme {
 
 #[cfg(test)]
 mod semantic_token_tests {
-    use gpui::{Hsla, IsZero as _, px};
+    use wgpui::{Hsla, IsZero as _, px};
 
     use super::{RADIUS_FULL, Theme};
 
@@ -746,7 +746,7 @@ impl From<&ThemeColor> for Theme {
             transparent: Hsla::transparent_black(),
             font_family: ".SystemUIFont".into(),
             font_size: px(16.),
-            mono_font_family: gpui_base::TypographyTokens::default().mono,
+            mono_font_family: wgpui_base::TypographyTokens::default().mono,
             mono_font_size: px(13.),
             radius: px(6.),
             radius_lg: px(8.),
@@ -814,7 +814,7 @@ impl From<WindowAppearance> for ThemeMode {
 #[cfg(test)]
 mod update_tests {
     use super::*;
-    use gpui::{TestAppContext, linear_color_stop, linear_gradient};
+    use wgpui::{TestAppContext, linear_color_stop, linear_gradient};
 
     fn gradient(from: Hsla, to: Hsla) -> ThemeToken {
         ThemeToken::new(
@@ -825,12 +825,12 @@ mod update_tests {
 
     /// A color edited on `colors` reaches the token the components paint
     /// with, and the Base projection the scrollbar paints with.
-    #[gpui::test]
+    #[wgpui::test]
     fn editing_colors_updates_the_tokens_and_the_base_projection(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
-            let sidebar = gpui::rgb(0x123456).into();
-            let primary = gpui::rgb(0xabcdef).into();
+            let sidebar = wgpui::rgb(0x123456).into();
+            let primary = wgpui::rgb(0xabcdef).into();
 
             Theme::update(cx, |theme| {
                 theme.sidebar = sidebar;
@@ -842,14 +842,14 @@ mod update_tests {
             assert_eq!(theme.tokens.sidebar.color, sidebar);
             assert_eq!(theme.tokens.sidebar.background, sidebar.into());
             assert_eq!(theme.tokens.primary.color, primary);
-            assert_eq!(gpui_base::Theme::global(cx).tokens.colors.primary, primary);
-            assert!(gpui_base::Theme::global(cx).tokens.radius.md.is_zero());
+            assert_eq!(wgpui_base::Theme::global(cx).tokens.colors.primary, primary);
+            assert!(wgpui_base::Theme::global(cx).tokens.radius.md.is_zero());
         });
     }
 
     /// Replacing the whole `colors` struct, as an application installing its
     /// own palette does, rewrites every token.
-    #[gpui::test]
+    #[wgpui::test]
     fn replacing_the_palette_rewrites_every_token(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -863,22 +863,22 @@ mod update_tests {
 
     /// A gradient a theme file gave a token survives edits to other fields;
     /// editing that field's color replaces the gradient with the solid color.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_gradient_survives_until_its_own_color_is_edited(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
-            let from = gpui::rgb(0x4f46e5).into();
-            let to = gpui::rgb(0x06b6d4).into();
+            let from = wgpui::rgb(0x4f46e5).into();
+            let to = wgpui::rgb(0x06b6d4).into();
             let token = gradient(from, to);
             Theme::update(cx, |theme| theme.tokens.primary = token);
             // The token's solid color is written back, so text painted with
             // `theme.primary` matches the gradient's representative color.
             assert_eq!(Theme::global(cx).primary, from);
 
-            Theme::update(cx, |theme| theme.secondary = gpui::rgb(0x222222).into());
+            Theme::update(cx, |theme| theme.secondary = wgpui::rgb(0x222222).into());
             assert_eq!(Theme::global(cx).tokens.primary, token);
 
-            let solid = gpui::rgb(0x999999).into();
+            let solid = wgpui::rgb(0x999999).into();
             Theme::update(cx, |theme| theme.primary = solid);
             assert_eq!(Theme::global(cx).tokens.primary, solid.into());
         });
@@ -886,7 +886,7 @@ mod update_tests {
 
     /// Setting `mode` through `update` loads that mode's theme, the same as
     /// `change`, and the Base projection follows.
-    #[gpui::test]
+    #[wgpui::test]
     fn setting_the_mode_loads_that_modes_theme(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -899,11 +899,11 @@ mod update_tests {
             assert_ne!(theme.background, light_background);
             assert_eq!(theme.tokens.background.color, theme.background);
             assert_eq!(
-                gpui_base::Theme::global(cx).appearance,
-                gpui_base::ThemeAppearance::Dark
+                wgpui_base::Theme::global(cx).appearance,
+                wgpui_base::ThemeAppearance::Dark
             );
             assert_eq!(
-                gpui_base::Theme::global(cx).tokens.colors.background,
+                wgpui_base::Theme::global(cx).tokens.colors.background,
                 theme.background
             );
         });
@@ -912,7 +912,7 @@ mod update_tests {
     /// Applying a theme file through `update` keeps the gradients it
     /// declares: the config sets `colors` and `tokens` to one color, which is
     /// not a conflict to resolve.
-    #[gpui::test]
+    #[wgpui::test]
     fn applying_a_config_keeps_its_gradients(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -942,7 +942,7 @@ mod update_tests {
     /// `apply_config` switches to the file's mode itself, so `edit` must not
     /// load that mode's theme a second time over what the closure went on to
     /// set — the same closure has to land the same result from either mode.
-    #[gpui::test]
+    #[wgpui::test]
     fn edits_after_applying_a_config_of_the_other_mode_survive(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -956,7 +956,7 @@ mod update_tests {
             let config = Rc::new(config);
             assert!(!Theme::global(cx).is_dark());
 
-            let red = gpui::red();
+            let red = wgpui::red();
             Theme::update(cx, |theme| {
                 theme.apply_config(&config);
                 theme.radius = px(0.);
@@ -969,11 +969,11 @@ mod update_tests {
             assert_eq!(theme.radius, px(0.), "the file's radius must not reload");
             assert_eq!(theme.primary, red);
             assert_eq!(theme.tokens.primary, red.into());
-            assert_eq!(gpui_base::Theme::global(cx).tokens.colors.primary, red);
+            assert_eq!(wgpui_base::Theme::global(cx).tokens.colors.primary, red);
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn update_returns_the_closure_result(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -989,9 +989,9 @@ mod update_tests {
 #[cfg(test)]
 mod base_theme_projection_tests {
     use super::*;
-    use gpui::TestAppContext;
+    use wgpui::TestAppContext;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn base_theme_tracks_initialization_and_mode_changes(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
@@ -1003,42 +1003,42 @@ mod base_theme_projection_tests {
             Theme::set_scrollbar_mode(ScrollbarMode::Always, cx);
             assert_eq!(Theme::global(cx).scrollbar_mode, ScrollbarMode::Always);
             assert_eq!(
-                gpui_base::Theme::global(cx).scrollbar.mode(),
-                gpui_base::ScrollbarMode::Always
+                wgpui_base::Theme::global(cx).scrollbar.mode(),
+                wgpui_base::ScrollbarMode::Always
             );
             assert_styled_projection(cx);
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scrollbar_motion_is_owned_here_and_projected_onto_base(cx: &mut TestAppContext) {
         cx.update(|cx| {
             init(cx);
 
             // Base itself ships none of this timing.
-            let bare = gpui_base::ScrollbarMotion::default();
+            let bare = wgpui_base::ScrollbarMotion::default();
             assert_eq!(bare.enter(), Duration::ZERO);
             assert_eq!(bare.exit(), Duration::ZERO);
             assert_eq!(bare.expand(), Duration::ZERO);
 
             Theme::set_scrollbar_mode(ScrollbarMode::Scrolling, cx);
-            let motion = gpui_base::Theme::global(cx).scrollbar.motion();
+            let motion = wgpui_base::Theme::global(cx).scrollbar.motion();
             assert_eq!(motion.idle(), SCROLLBAR_IDLE);
             assert_eq!(motion.enter(), SCROLLBAR_ENTER);
             assert_eq!(motion.exit(), SCROLLBAR_EXIT);
             assert_eq!(motion.expand(), SCROLLBAR_EXPAND);
             assert_eq!(
                 motion.entrance(),
-                gpui_base::ScrollbarEntrance::Fade,
+                wgpui_base::ScrollbarEntrance::Fade,
                 "scroll-revealed scrollbars fade in without sliding"
             );
 
             Theme::set_scrollbar_mode(ScrollbarMode::Hover, cx);
-            let motion = gpui_base::Theme::global(cx).scrollbar.motion();
-            assert_eq!(motion.entrance(), gpui_base::ScrollbarEntrance::Fade);
+            let motion = wgpui_base::Theme::global(cx).scrollbar.motion();
+            assert_eq!(motion.entrance(), wgpui_base::ScrollbarEntrance::Fade);
             assert_eq!(
                 motion.thumb_hover_entrance(),
-                gpui_base::ScrollbarEntrance::SlideAndFade
+                wgpui_base::ScrollbarEntrance::SlideAndFade
             );
         });
     }
@@ -1058,7 +1058,7 @@ mod base_theme_projection_tests {
 
     fn assert_styled_projection(cx: &App) {
         let theme = Theme::global(cx);
-        let base = gpui_base::Theme::global(cx);
+        let base = wgpui_base::Theme::global(cx);
 
         assert_eq!(base.tokens, theme.semantic_tokens());
         assert_eq!(base.scrollbar.mode(), theme.scrollbar_mode);
@@ -1070,8 +1070,8 @@ mod base_theme_projection_tests {
         assert_eq!(base.resizable.active_handle, Some(theme.drag_border));
     }
 
-    #[gpui::test]
-    fn default_component_palettes_match_base_light_and_dark_tokens(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn default_component_palettes_match_base_light_and_dark_tokens(cx: &mut wgpui::TestAppContext) {
         fn assert_close(left: ColorTokens, right: ColorTokens) {
             macro_rules! color {
                 ($field:ident) => {

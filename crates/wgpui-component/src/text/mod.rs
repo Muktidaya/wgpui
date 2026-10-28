@@ -8,24 +8,24 @@ pub use compat::{
     Text, TextView, TextViewLayoutState, TextViewPlugin, TextViewPrepaintState, html, markdown,
 };
 pub use frontmatter::FrontmatterPlugin;
-pub use gpui_base::text::{
+pub use style::TextViewStyle;
+pub use wgpui_base::text::{
     InlineElement, InlineRenderContext, MarkdownBlockParserFn, MarkdownBlockRenderFn,
     MarkdownExtensions, MarkdownNode, MarkdownParseContext, MarkdownPlugin, RangeHighlight,
     RangeHighlightError, RenderedText, SelectionFormat, TableData, TextViewMotion, TextViewState,
     markdown_ast,
 };
-pub use style::TextViewStyle;
 
 #[cfg(any(feature = "tree-sitter", feature = "syntect"))]
 use std::cell::RefCell;
 #[cfg(feature = "tree-sitter")]
 use std::collections::HashMap;
 
-use gpui::Styled as _;
-#[cfg(feature = "tree-sitter")]
-use gpui_base::input::{InputEdit, Point, RopeExt as _};
 #[cfg(feature = "tree-sitter")]
 use ropey::Rope;
+use wgpui::Styled as _;
+#[cfg(feature = "tree-sitter")]
+use wgpui_base::input::{InputEdit, Point, RopeExt as _};
 
 #[cfg(feature = "tree-sitter")]
 use crate::highlighter::{LanguageRegistry, SyntaxHighlighter};
@@ -34,20 +34,20 @@ use crate::highlighter::{LanguageRegistry, SyntaxHighlighter};
 mod window_selection;
 
 /// Derives the Base rich-text style installed by the component theme adapter.
-pub(crate) fn base_text_view_style(theme: &crate::Theme) -> gpui_base::TextViewStyle {
+pub(crate) fn base_text_view_style(theme: &crate::Theme) -> wgpui_base::TextViewStyle {
     let radius = theme.semantic_tokens().radius.md;
-    let mut table = gpui::StyleRefinement::default();
+    let mut table = wgpui::StyleRefinement::default();
     table.corner_radii.top_left = Some(radius.into());
     table.corner_radii.top_right = Some(radius.into());
     table.corner_radii.bottom_left = Some(radius.into());
     table.corner_radii.bottom_right = Some(radius.into());
-    let mut code_block = gpui::StyleRefinement::default();
+    let mut code_block = wgpui::StyleRefinement::default();
     code_block.corner_radii = table.corner_radii.clone();
-    let table_head = gpui::StyleRefinement::default()
+    let table_head = wgpui::StyleRefinement::default()
         .bg(theme.table_head)
         .text_color(theme.table_head_foreground);
 
-    gpui_base::TextViewStyle::default()
+    wgpui_base::TextViewStyle::default()
         .with_foreground(theme.foreground)
         .with_muted_foreground(theme.muted_foreground)
         .with_link(theme.link)
@@ -57,17 +57,17 @@ pub(crate) fn base_text_view_style(theme: &crate::Theme) -> gpui_base::TextViewS
         .with_code_block(code_block)
         .with_table(table)
         .with_table_head(table_head)
-        .with_inline_code(gpui::HighlightStyle {
+        .with_inline_code(wgpui::HighlightStyle {
             background_color: Some(theme.accent),
             ..Default::default()
         })
         .with_dark(theme.is_dark())
 }
 
-pub(crate) fn install_text_view_defaults(theme: &crate::Theme, cx: &mut gpui::App) {
+pub(crate) fn install_text_view_defaults(theme: &crate::Theme, cx: &mut wgpui::App) {
     // Component's Root sets the theme foreground, so every container that
     // sets its own text color is one a text view should follow.
-    let defaults = gpui_base::TextViewDefaults::new()
+    let defaults = wgpui_base::TextViewDefaults::new()
         .with_style(base_text_view_style(theme))
         .with_inherit_text_color(true);
 
@@ -82,13 +82,13 @@ pub(crate) fn install_text_view_defaults(theme: &crate::Theme, cx: &mut gpui::Ap
 #[cfg(feature = "tree-sitter")]
 pub(crate) fn component_code_block_highlighter(
     highlight_theme: std::sync::Arc<crate::highlighter::HighlightTheme>,
-) -> impl Fn(&gpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)>
+) -> impl Fn(&wgpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)>
 + Send
 + Sync
 + 'static {
     move |block| {
         thread_local! {
-            static HIGHLIGHTERS: RefCell<HashMap<gpui::SharedString, SyntaxHighlighter>> =
+            static HIGHLIGHTERS: RefCell<HashMap<wgpui::SharedString, SyntaxHighlighter>> =
                 RefCell::new(HashMap::new());
         }
 
@@ -129,7 +129,7 @@ pub(crate) fn component_code_block_highlighter(
 #[cfg(all(feature = "syntect", not(feature = "tree-sitter")))]
 pub(crate) fn component_code_block_highlighter(
     highlight_theme: std::sync::Arc<crate::highlighter::HighlightTheme>,
-) -> impl Fn(&gpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)>
+) -> impl Fn(&wgpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)>
 + Send
 + Sync
 + 'static {
@@ -145,7 +145,7 @@ pub(crate) fn component_code_block_highlighter(
 
 /// The type [`shared_code_block_highlighter`] returns.
 #[cfg(any(feature = "tree-sitter", feature = "syntect"))]
-pub(crate) type SharedCodeBlockHighlighter = dyn Fn(&gpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)>
+pub(crate) type SharedCodeBlockHighlighter = dyn Fn(&wgpui_base::text::CodeBlock) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)>
     + Send
     + Sync;
 
@@ -221,7 +221,7 @@ fn shared_code_block_highlighter_at(
 mod tests {
     use std::sync::Arc;
 
-    use gpui::{StyleRefinement, Styled as _, px};
+    use wgpui::{StyleRefinement, Styled as _, px};
 
     use crate::Theme;
 
@@ -233,7 +233,7 @@ mod tests {
     #[cfg(all(feature = "syntect", not(feature = "tree-sitter")))]
     #[test]
     fn syntect_highlights_a_code_fence() {
-        use gpui_base::text::CodeBlock;
+        use wgpui_base::text::CodeBlock;
 
         use crate::highlighter::HighlightTheme;
 
@@ -259,8 +259,8 @@ mod tests {
     mod code_block_highlighter {
         use std::ops::Range;
 
-        use gpui::{HighlightStyle, Hsla, SharedString};
-        use gpui_base::text::CodeBlock;
+        use wgpui::{HighlightStyle, Hsla, SharedString};
+        use wgpui_base::text::CodeBlock;
 
         use crate::highlighter::{HighlightTheme, LanguageConfig, LanguageRegistry};
 
@@ -389,10 +389,10 @@ mod tests {
     #[test]
     fn component_text_view_table_respects_square_base_radius_token() {
         let mut theme = Theme::default();
-        theme.radius = gpui::px(0.);
+        theme.radius = wgpui::px(0.);
 
         let style = super::base_text_view_style(&theme);
-        let square = Some(gpui::px(0.).into());
+        let square = Some(wgpui::px(0.).into());
         assert_eq!(style.table().corner_radii.top_left, square);
         assert_eq!(style.table().corner_radii.top_right, square);
         assert_eq!(style.table().corner_radii.bottom_left, square);
@@ -400,12 +400,12 @@ mod tests {
     }
 
     #[cfg(feature = "tree-sitter")]
-    #[gpui::test]
-    fn component_initialization_installs_default_code_highlighting(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn component_initialization_installs_default_code_highlighting(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
 
         cx.update(|cx| {
-            assert!(gpui_base::TextViewDefaults::global(cx).has_code_block_highlighter());
+            assert!(wgpui_base::TextViewDefaults::global(cx).has_code_block_highlighter());
         });
     }
 
@@ -418,14 +418,14 @@ mod tests {
             .style(style)
             .selectable(true)
             .scrollable(true)
-            .image_source(|uri| gpui::ImageSource::from(std::path::PathBuf::from(uri.as_ref())));
+            .image_source(|uri| wgpui::ImageSource::from(std::path::PathBuf::from(uri.as_ref())));
     }
 
     #[test]
     fn legacy_text_view_keeps_element_associated_types() {
         fn assert_element_types<T>()
         where
-            T: gpui::Element<
+            T: wgpui::Element<
                     RequestLayoutState = super::TextViewLayoutState,
                     PrepaintState = super::TextViewPrepaintState,
                 >,
@@ -438,9 +438,9 @@ mod tests {
     #[test]
     fn legacy_default_style_keeps_active_component_theme_colors() {
         let mut theme = Theme::default();
-        theme.foreground = gpui::rgb(0xf4f4f5).into();
-        theme.link = gpui::rgb(0x38bdf8).into();
-        theme.selection = gpui::rgba(0x2563eb66).into();
+        theme.foreground = wgpui::rgb(0xf4f4f5).into();
+        theme.link = wgpui::rgb(0x38bdf8).into();
+        theme.selection = wgpui::rgba(0x2563eb66).into();
 
         let style = super::compat::resolve_component_style(&theme, super::TextViewStyle::default());
 
@@ -452,8 +452,8 @@ mod tests {
     #[test]
     fn legacy_table_refinement_keeps_component_radius() {
         let theme = Theme::default();
-        let mut table = gpui::StyleRefinement::default();
-        table.overflow.x = Some(gpui::Overflow::Scroll);
+        let mut table = wgpui::StyleRefinement::default();
+        table.overflow.x = Some(wgpui::Overflow::Scroll);
 
         let style = super::compat::resolve_component_style(
             &theme,
@@ -465,19 +465,19 @@ mod tests {
         assert_eq!(style.table().corner_radii.top_right, radius);
         assert_eq!(style.table().corner_radii.bottom_left, radius);
         assert_eq!(style.table().corner_radii.bottom_right, radius);
-        assert_eq!(style.table().overflow.x, Some(gpui::Overflow::Scroll));
+        assert_eq!(style.table().overflow.x, Some(wgpui::Overflow::Scroll));
     }
 
     #[test]
     fn legacy_partial_styles_refine_component_theme_defaults() {
         let theme = Theme::default();
-        let mut table_head = gpui::StyleRefinement::default();
+        let mut table_head = wgpui::StyleRefinement::default();
         table_head
             .text
             .get_or_insert_with(Default::default)
-            .font_weight = Some(gpui::FontWeight::BOLD);
-        let inline_code = gpui::HighlightStyle {
-            font_style: Some(gpui::FontStyle::Italic),
+            .font_weight = Some(wgpui::FontWeight::BOLD);
+        let inline_code = wgpui::HighlightStyle {
+            font_style: Some(wgpui::FontStyle::Italic),
             ..Default::default()
         };
 
@@ -499,12 +499,12 @@ mod tests {
                 .text
                 .as_ref()
                 .and_then(|text| text.font_weight),
-            Some(gpui::FontWeight::BOLD)
+            Some(wgpui::FontWeight::BOLD)
         );
         assert_eq!(style.inline_code().background_color, Some(theme.accent));
         assert_eq!(
             style.inline_code().font_style,
-            Some(gpui::FontStyle::Italic)
+            Some(wgpui::FontStyle::Italic)
         );
     }
 

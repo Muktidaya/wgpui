@@ -1,13 +1,13 @@
 use std::{collections::HashMap, fmt::Display};
 
-use gpui::{
+use serde::{Deserialize, Deserializer, de::Error as _};
+use wgpui::{
     Background, Hsla, LinearColorStop, SharedString, hsla, linear_color_stop, linear_gradient,
 };
-use serde::{Deserialize, Deserializer, de::Error as _};
 
 use anyhow::{Error, Result, anyhow};
 
-/// Create a [`gpui::Hsla`] color.
+/// Create a [`wgpui::Hsla`] color.
 ///
 /// - h: 0..360.0
 /// - s: 0.0..100.0
@@ -62,7 +62,7 @@ pub trait Colorize: Sized {
 
 /// Helper functions for Oklab color space conversions
 mod oklab {
-    use gpui::Rgba;
+    use wgpui::Rgba;
 
     /// Convert sRGB component to linear RGB
     #[inline]
@@ -319,7 +319,7 @@ impl Colorize for Hsla {
             1.
         };
 
-        let v = gpui::Rgba { r, g, b, a };
+        let v = wgpui::Rgba { r, g, b, a };
         let color: Hsla = v.into();
         Ok(color)
     }
@@ -692,7 +692,7 @@ color_methods!(rose);
 ///
 pub fn try_parse_color(color: &str) -> Result<Hsla> {
     if color.starts_with("#") {
-        let rgba = gpui::Rgba::try_from(color)?;
+        let rgba = wgpui::Rgba::try_from(color)?;
         return Ok(rgba.into());
     }
 
@@ -932,7 +932,7 @@ fn parse_linear_color_stop(stop: &str, default_percentage: f32) -> Result<Linear
 
 #[cfg(test)]
 mod tests {
-    use gpui::{rgb, rgba};
+    use wgpui::{rgb, rgba};
 
     use super::*;
 
@@ -1013,7 +1013,7 @@ mod tests {
     fn test_mix_oklab() {
         let red = Hsla::parse_hex("#FF0000").unwrap();
         let blue = Hsla::parse_hex("#0000FF").unwrap();
-        let transparent = gpui::Hsla {
+        let transparent = wgpui::Hsla {
             h: 0.0,
             s: 0.0,
             l: 0.0,
@@ -1115,10 +1115,10 @@ mod tests {
 
         assert_eq!(
             try_parse_background("linear-gradient(135deg, #4F46E5, #06B6D4)").unwrap(),
-            gpui::linear_gradient(
+            wgpui::linear_gradient(
                 135.,
-                gpui::linear_color_stop(from, 0.),
-                gpui::linear_color_stop(to, 1.)
+                wgpui::linear_color_stop(from, 0.),
+                wgpui::linear_color_stop(to, 1.)
             )
         );
     }
@@ -1127,10 +1127,10 @@ mod tests {
     fn test_try_parse_background_linear_gradient_direction_and_stops() {
         assert_eq!(
             try_parse_background("linear-gradient(to right, red-500 25%, blue-600 75%)").unwrap(),
-            gpui::linear_gradient(
+            wgpui::linear_gradient(
                 90.,
-                gpui::linear_color_stop(crate::red_500(), 0.25),
-                gpui::linear_color_stop(crate::blue_600(), 0.75)
+                wgpui::linear_color_stop(crate::red_500(), 0.25),
+                wgpui::linear_color_stop(crate::blue_600(), 0.75)
             )
         );
     }

@@ -1,7 +1,7 @@
 use std::{collections::HashSet, time::Duration};
 
 use crate::input::{InputEvent, InputState};
-use gpui::{
+use wgpui::{
     App, Context, Entity, EventEmitter, FocusHandle, Focusable as _, SharedString, Subscription,
     Task, Window,
 };
@@ -1243,7 +1243,7 @@ impl EventEmitter<QuestionnaireEvent> for QuestionnaireState {}
 
 #[cfg(test)]
 mod tests {
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Entity, IntoElement, Render, TestAppContext, VisualTestContext,
         div,
     };
@@ -1384,7 +1384,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn validates_navigates_skips_and_emits_completion_before_submit(cx: &mut TestAppContext) {
         let (harness, state, _, _, cx) = harness(cx);
 
@@ -1444,7 +1444,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn keeps_input_draft_separate_and_synchronizes_silent_setters_and_reset(
         cx: &mut TestAppContext,
     ) {
@@ -1543,7 +1543,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn validates_all_items_and_returns_to_the_first_invalid_item(cx: &mut TestAppContext) {
         let (_, state, _, _, cx) = harness(cx);
         state.update(cx, |state, cx| {
@@ -1586,7 +1586,7 @@ mod tests {
         assert!(cx.update(|window, cx| { state.update(cx, |state, cx| state.submit(window, cx)) }));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn preserves_schema_order_and_temporarily_excludes_disabled_answers(cx: &mut TestAppContext) {
         let (_, state, _, _, cx) = harness(cx);
 
@@ -1660,7 +1660,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortcuts_disabled_current_fallback_and_recompletion_are_deterministic(
         cx: &mut TestAppContext,
     ) {
@@ -1885,7 +1885,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn choosing_a_single_answer_holds_it_then_confirms(cx: &mut TestAppContext) {
         let (harness, state, cx) = choose_harness(cx);
 
@@ -1925,7 +1925,7 @@ mod tests {
         assert_eq!(count(cx, &harness, "submit"), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn arrows_multiple_choices_and_typing_never_confirm(cx: &mut TestAppContext) {
         let (harness, state, cx) = choose_harness(cx);
 
@@ -1974,7 +1974,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_rejected_choice_stays_on_its_item(cx: &mut TestAppContext) {
         let (harness, state, cx) = choose_harness(cx);
 
@@ -1995,7 +1995,7 @@ mod tests {
         assert_eq!(count(cx, &harness, "current"), 0);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_confirms_without_the_hold(cx: &mut TestAppContext) {
         let (_, state, cx) = choose_harness(cx);
         cx.update(|_, cx| cx.set_reduce_motion(true));

@@ -1,8 +1,8 @@
 use crate::input::InputModeKind;
 use aho_corasick::AhoCorasick;
-use gpui::{Context, Window};
 use ropey::Rope;
 use std::{ops::Range, rc::Rc};
+use wgpui::{Context, Window};
 
 use super::{
     InputBaseState, Replace, RopeExt as _, Search, movement::MoveDirection, state::ScrollPadding,
@@ -290,7 +290,7 @@ impl<M: InputModeKind> InputBaseState<M> {
     /// Keep the matches in step with an edit. A closed search skips the scan:
     /// it copies and searches the whole document, and nothing reads the
     /// matches until the search is resumed or navigated, which sync first.
-    pub(super) fn update_search(&mut self, _cx: &mut gpui::App) {
+    pub(super) fn update_search(&mut self, _cx: &mut wgpui::App) {
         if !self.search_session.is_active() {
             return;
         }

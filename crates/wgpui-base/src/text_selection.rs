@@ -6,7 +6,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Bounds, Context, Element, ElementId, Entity, EntityId, EventEmitter,
     Global, GlobalElementId, Half, Hitbox, HitboxBehavior, Hsla, InputEvent as _,
     InspectorElementId, IntoElement, LayoutId, LongPressEvent, MouseButton, MouseDownEvent,
@@ -1402,7 +1402,7 @@ impl WindowSelectionState {
             state.publish_snapshots(cx);
         });
     }
-    fn acquire(window_id: gpui::WindowId, cx: &mut App) -> Entity<Self> {
+    fn acquire(window_id: wgpui::WindowId, cx: &mut App) -> Entity<Self> {
         if !cx.has_global::<SelectionStateRegistry>() {
             cx.set_global(SelectionStateRegistry::default());
         }
@@ -2761,21 +2761,25 @@ impl WindowSelectionState {
 #[derive(Default)]
 /// Non-owning window locator; retained [`TextSelection`] element state owns
 /// each live selection entity.
-struct SelectionStateRegistry(HashMap<gpui::WindowId, WeakEntity<WindowSelectionState>>);
+struct SelectionStateRegistry(HashMap<wgpui::WindowId, WeakEntity<WindowSelectionState>>);
 
 impl Global for SelectionStateRegistry {}
 
 #[derive(Default)]
-struct PendingTextSelectionScopes(HashMap<gpui::WindowId, TextSelectionScopeId>);
+struct PendingTextSelectionScopes(HashMap<wgpui::WindowId, TextSelectionScopeId>);
 
 impl Global for PendingTextSelectionScopes {}
 
 #[derive(Default)]
-struct TextSelectionScopeStacks(HashMap<gpui::WindowId, Vec<TextSelectionScopeId>>);
+struct TextSelectionScopeStacks(HashMap<wgpui::WindowId, Vec<TextSelectionScopeId>>);
 
 impl Global for TextSelectionScopeStacks {}
 
-fn push_text_selection_scope(window_id: gpui::WindowId, scope: TextSelectionScopeId, cx: &mut App) {
+fn push_text_selection_scope(
+    window_id: wgpui::WindowId,
+    scope: TextSelectionScopeId,
+    cx: &mut App,
+) {
     if !cx.has_global::<TextSelectionScopeStacks>() {
         cx.set_global(TextSelectionScopeStacks::default());
     }
@@ -2786,7 +2790,7 @@ fn push_text_selection_scope(window_id: gpui::WindowId, scope: TextSelectionScop
         .push(scope);
 }
 
-fn pop_text_selection_scope(window_id: gpui::WindowId, cx: &mut App) {
+fn pop_text_selection_scope(window_id: wgpui::WindowId, cx: &mut App) {
     let stacks = &mut cx.global_mut::<TextSelectionScopeStacks>().0;
     let remove_stack = stacks.get_mut(&window_id).is_some_and(|stack| {
         stack.pop();
@@ -2798,7 +2802,7 @@ fn pop_text_selection_scope(window_id: gpui::WindowId, cx: &mut App) {
 }
 
 fn current_text_selection_scope(
-    window_id: gpui::WindowId,
+    window_id: wgpui::WindowId,
     cx: &App,
 ) -> Option<TextSelectionScopeId> {
     cx.has_global::<TextSelectionScopeStacks>()
@@ -2812,7 +2816,7 @@ fn current_text_selection_scope(
 }
 
 fn with_text_selection_scope<T>(
-    window_id: gpui::WindowId,
+    window_id: wgpui::WindowId,
     scope: TextSelectionScopeId,
     cx: &mut App,
     callback: impl FnOnce(&mut App) -> T,
@@ -2874,7 +2878,7 @@ impl TextSelection {
     ///
     /// Prefer [`Self::clear`] when a window reference is available. This
     /// narrow entry point supports hosts retiring deprecated window wrappers.
-    pub fn clear_for_window(window_id: gpui::WindowId, cx: &mut App) {
+    pub fn clear_for_window(window_id: wgpui::WindowId, cx: &mut App) {
         clear_window_text_selection(window_id, cx);
     }
 
@@ -3479,7 +3483,7 @@ fn live_text_selection_state(
     WindowSelectionState::existing(window, cx)
 }
 
-pub(crate) fn clear_window_text_selection(window_id: gpui::WindowId, cx: &mut App) {
+pub(crate) fn clear_window_text_selection(window_id: wgpui::WindowId, cx: &mut App) {
     if !cx.has_global::<SelectionStateRegistry>() {
         return;
     }
@@ -3500,14 +3504,14 @@ mod tests {
     use super::*;
     use crate::ElementExt as _;
     use crate::element_ext::TextSelectionScopeExt;
-    use gpui::{
-        Bounds, ContentMask, Context, Hitbox, HitboxBehavior, HitboxId, InteractiveElement as _,
-        IntoElement, ParentElement as _, Render, SharedString, Styled as _, StyledText,
-        TestAppContext, TextLayout, Window, div, point, prelude::FluentBuilder as _, px, size,
-    };
     use std::{
         cell::{Cell, RefCell},
         rc::Rc,
+    };
+    use wgpui::{
+        Bounds, ContentMask, Context, Hitbox, HitboxBehavior, HitboxId, InteractiveElement as _,
+        IntoElement, ParentElement as _, Render, SharedString, Styled as _, StyledText,
+        TestAppContext, TextLayout, Window, div, point, prelude::FluentBuilder as _, px, size,
     };
 
     struct FakeParticipant {
@@ -3658,7 +3662,7 @@ mod tests {
     }
 
     impl FakeParticipant {
-        fn new(text: &str, cx: &mut gpui::App) -> Self {
+        fn new(text: &str, cx: &mut wgpui::App) -> Self {
             let selection = TextSelectionHandle::new(text, cx);
             Self { selection }
         }
@@ -3669,7 +3673,7 @@ mod tests {
             y: f32,
             scope: TextSelectionScopeId,
             document_order: u64,
-            cx: &mut gpui::App,
+            cx: &mut wgpui::App,
         ) {
             let bounds = Bounds::new(point(px(0.), px(y)), size(px(100.), px(10.)));
             selection_state.register_participant(
@@ -3719,7 +3723,7 @@ mod tests {
         .with_window_points(Some(TextSelectionWindowPoints { anchor, cursor }))
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scope_stack_is_cleaned_after_panicking_subtree(cx: &mut TestAppContext) {
         let window_id = {
             let (_, window_cx) = cx.add_window_view(|_, _| SelectionElementOnlyView);
@@ -3737,7 +3741,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reentrant_scope_from_one_window_does_not_pollute_another(cx: &mut TestAppContext) {
         let first_window_id = {
             let (_, window_cx) = cx.add_window_view(|_, _| SelectionElementOnlyView);
@@ -3760,7 +3764,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_callback_can_reenter_its_selection_state(cx: &mut TestAppContext) {
         let called = Rc::new(Cell::new(false));
         let called_from_callback = called.clone();
@@ -3794,7 +3798,7 @@ mod tests {
         assert!(called.get());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_events_preserve_snapshot_then_clear_order(cx: &mut TestAppContext) {
         let observed = Rc::new(RefCell::new(Vec::new()));
         let observed_for_callback = observed.clone();
@@ -3831,7 +3835,7 @@ mod tests {
         TextSelectionRun::new(text, layout, bounds).with_document_order(order)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn public_selection_data_uses_builders_and_readers(cx: &mut TestAppContext) {
         let bounds = Bounds::new(point(px(1.), px(2.)), size(px(30.), px(10.)));
         let hitbox = Hitbox {
@@ -3895,7 +3899,7 @@ mod tests {
         assert!(projection.is_active());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_handle_is_the_public_adapter_seam(cx: &mut TestAppContext) {
         let selected = Rc::new(Cell::new(false));
         let selected_from_callback = selected.clone();
@@ -3928,7 +3932,7 @@ mod tests {
         assert!(!selected.get());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_handle_can_subscribe_its_window_to_refresh(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("refresh", cx),
@@ -3939,7 +3943,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_preserves_forward_reversed_and_unicode_ranges(cx: &mut TestAppContext) {
         let (text, layout) = laid_out_runs(&["aé🙂z"], cx).pop().unwrap();
         let run = text_run(0, text, layout.clone());
@@ -3955,7 +3959,7 @@ mod tests {
         assert!(reversed.is_active());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn double_click_expands_a_plain_run_to_the_input_word_boundary(cx: &mut TestAppContext) {
         let (text, layout) = laid_out_runs(&["one café, three"], cx).pop().unwrap();
         let run = text_run(0, text, layout.clone());
@@ -3968,7 +3972,7 @@ mod tests {
         assert_eq!(states.ranges(), &[Some(4..9)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn multi_click_uses_text_layout_window_coordinates_at_a_nonzero_origin(
         cx: &mut TestAppContext,
     ) {
@@ -3985,7 +3989,7 @@ mod tests {
         assert_eq!(projection.ranges(), &[Some(6..10)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn triple_click_expands_to_the_input_logical_line_not_the_visual_row(cx: &mut TestAppContext) {
         let (text, layout) = laid_out_runs(&["second line"], cx).pop().unwrap();
         let run = text_run(0, text, layout.clone());
@@ -3999,7 +4003,7 @@ mod tests {
         assert_eq!(line_range_at("first line\nsecond line\nthird", 15), 11..22);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_spans_multiple_runs_and_leaves_empty_gutters_unselected(
         cx: &mut TestAppContext,
     ) {
@@ -4022,7 +4026,7 @@ mod tests {
         assert!(states.is_active());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_caches_multiple_participant_copies_in_document_order(
         cx: &mut TestAppContext,
     ) {
@@ -4075,7 +4079,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_invalidates_cached_copy_when_the_snapshot_changes(cx: &mut TestAppContext) {
         let (text, layout) = laid_out_runs(&["first"], cx).pop().unwrap();
         let first_snapshot = plain_snapshot(
@@ -4116,7 +4120,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_orders_cached_runs_by_frame_order_not_input_order(cx: &mut TestAppContext) {
         let mut runs = laid_out_runs(&["one", "two"], cx);
         let (first_text, first_layout) = runs.remove(0);
@@ -4147,7 +4151,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_projection_safely_rejects_a_text_layout_length_mismatch(cx: &mut TestAppContext) {
         let (_, layout) = laid_out_runs(&["short"], cx).pop().unwrap();
         let start = layout.position_for_index(0).unwrap();
@@ -4161,7 +4165,7 @@ mod tests {
         assert!(states.is_active());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn begin_update_and_end_publish_a_cross_participant_selection(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4192,7 +4196,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_extension_keeps_its_original_anchor_when_reversed(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4219,7 +4223,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn content_key_resolver_runs_outside_the_window_state_lease(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let state = cx.new(|_| WindowSelectionState::default());
@@ -4247,7 +4251,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_dnd_does_not_move_a_text_selection_cursor(cx: &mut TestAppContext) {
         let window = cx.add_window(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("unused", cx),
@@ -4265,7 +4269,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_extension_falls_back_when_the_anchor_participant_was_swept(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4299,7 +4303,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn scope_and_suppression_prevent_unrelated_participants_from_participating(
         cx: &mut TestAppContext,
     ) {
@@ -4331,7 +4335,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dead_participants_are_pruned_and_empty_selection_falls_back_safely(cx: &mut TestAppContext) {
         let selection_state = cx.update(|cx| {
             let selection_state = cx.new(|_| WindowSelectionState::default());
@@ -4353,7 +4357,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn text_selection_namespace_reports_copies_ends_and_clears_selection(cx: &mut TestAppContext) {
         let (view, cx) = cx.add_window_view(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("copied", cx),
@@ -4383,7 +4387,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn two_windows_isolate_selection_copy_clear_and_release_ownership(cx: &mut TestAppContext) {
         let first = cx.add_window(|_, cx| WindowOwnedSelectionView {
             selection: TextSelectionHandle::new("first", cx),
@@ -4435,7 +4439,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn copy_callback_can_reenter_window_and_handle_selection(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SelectionElementOnlyView);
         cx.update(|window, cx| {
@@ -4469,7 +4473,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn cross_participant_selection_excludes_participants_outside_its_document_interval(
         cx: &mut TestAppContext,
     ) {
@@ -4509,7 +4513,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn changing_scope_clears_the_previous_scope_selection(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4540,7 +4544,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn blank_only_drag_never_publishes_or_copies_selection(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4563,7 +4567,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn unmounted_selection_does_not_revive_when_the_participant_returns(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4601,7 +4605,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_an_unselected_participant_preserves_the_current_selection(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4624,7 +4628,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn removing_either_range_endpoint_discards_the_shared_selection(cx: &mut TestAppContext) {
         for remove_anchor in [true, false] {
             cx.update(|cx| {
@@ -4654,7 +4658,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clear_or_unmount_stops_auto_scroll_before_discarding_the_anchor(cx: &mut TestAppContext) {
         for unmount in [false, true] {
             let commands = Rc::new(RefCell::new(Vec::new()));
@@ -4700,7 +4704,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_auto_scroll_stops_when_the_content_mask_collapses(cx: &mut TestAppContext) {
         let window = cx.add_window(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("unused", cx),
@@ -4739,7 +4743,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_moves_after_a_click_do_not_auto_scroll(cx: &mut TestAppContext) {
         let window = cx.add_window(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("unused", cx),
@@ -4762,7 +4766,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn proxy_endpoints_break_equal_position_ties_by_document_order(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let mut selection_state = WindowSelectionState::default();
@@ -4791,7 +4795,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn equal_area_hovered_participants_break_ties_by_document_order(cx: &mut TestAppContext) {
         cx.update(|cx| {
             for _ in 0..64 {
@@ -4832,7 +4836,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn text_selection_namespace_is_a_safe_no_op_until_the_element_is_rendered(
         cx: &mut TestAppContext,
     ) {
@@ -4848,7 +4852,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn unit_selection_element_supports_scope_and_registration_on_the_first_frame(
         cx: &mut TestAppContext,
     ) {
@@ -4874,7 +4878,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn lazy_registration_does_not_enable_queries_without_the_element(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, cx| WindowSelectionView {
             selection: TextSelectionHandle::new("registered", cx),
@@ -4943,7 +4947,7 @@ mod tests {
         }
     }
 
-    fn draw_selection_frame(cx: &mut gpui::VisualTestContext) {
+    fn draw_selection_frame(cx: &mut wgpui::VisualTestContext) {
         cx.update(|window, cx| window.draw(cx).clear());
         cx.run_until_parked();
     }
@@ -4953,7 +4957,7 @@ mod tests {
     fn select_retained_texts(
         last: usize,
         release: bool,
-        cx: &mut gpui::VisualTestContext,
+        cx: &mut wgpui::VisualTestContext,
     ) -> String {
         cx.update(|window, cx| {
             let state = WindowSelectionState::existing(window, cx).unwrap();
@@ -4968,7 +4972,7 @@ mod tests {
             let start = point(bounds[0].left() + px(0.1), bounds[0].center().y);
             let end = point(bounds[last].right() - px(0.1), bounds[last].center().y);
             window.dispatch_event(
-                gpui::PlatformInput::MouseDown(MouseDownEvent {
+                wgpui::PlatformInput::MouseDown(MouseDownEvent {
                     position: start,
                     button: MouseButton::Left,
                     click_count: 1,
@@ -4977,7 +4981,7 @@ mod tests {
                 cx,
             );
             window.dispatch_event(
-                gpui::PlatformInput::MouseMove(MouseMoveEvent {
+                wgpui::PlatformInput::MouseMove(MouseMoveEvent {
                     position: end,
                     pressed_button: Some(MouseButton::Left),
                     ..Default::default()
@@ -4986,10 +4990,10 @@ mod tests {
             );
             if release {
                 window.dispatch_event(
-                    gpui::PlatformInput::MouseUp(MouseUpEvent {
+                    wgpui::PlatformInput::MouseUp(MouseUpEvent {
                         position: end,
                         button: MouseButton::Left,
-                        modifiers: gpui::Modifiers::default(),
+                        modifiers: wgpui::Modifiers::default(),
                         click_count: 1,
                     }),
                     cx,
@@ -5000,7 +5004,7 @@ mod tests {
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_selection_frame_publication_visits_participants_linearly(cx: &mut TestAppContext) {
         for count in [4, 16] {
             cx.update(crate::init);
@@ -5036,7 +5040,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn retained_text_order_survives_partial_frames_insertion_and_reordering(
         cx: &mut TestAppContext,
     ) {
@@ -5114,7 +5118,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn retained_selection_state_releases_and_does_not_resurrect_selection(cx: &mut TestAppContext) {
         let (view, cx) = cx.add_window_view(|_, cx| ToggleSelectionElementView {
             enabled: true,
@@ -5162,7 +5166,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mounted_selection_element_does_not_keep_an_idle_frame_queue_alive(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SelectionElementOnlyView);
         cx.update(|window, cx| {
@@ -5173,7 +5177,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_element_initializes_suppression_and_respects_bubble_suppression(
         cx: &mut TestAppContext,
     ) {
@@ -5184,12 +5188,12 @@ mod tests {
         cx.simulate_mouse_down(
             point(px(1.), px(1.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.simulate_mouse_up(
             point(px(1.), px(1.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.update(|window, cx| {
             assert!(GlobalState::is_text_selection_suppressed(cx));
@@ -5197,7 +5201,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn frame_sweep_keeps_a_participant_registered_before_the_selection_element_paints(
         cx: &mut TestAppContext,
     ) {
@@ -5222,7 +5226,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn two_selection_elements_schedule_only_one_post_frame_sweep(cx: &mut TestAppContext) {
         let (view, cx) = cx.add_window_view(|_, cx| DoubleSelectionElementView {
             selection: TextSelectionHandle::new("once", cx),
@@ -5251,7 +5255,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn duplicate_selection_elements_gate_real_pointer_gestures_and_reentrant_clear(
         cx: &mut TestAppContext,
     ) {
@@ -5281,17 +5285,17 @@ mod tests {
         cx.simulate_mouse_down(
             point(px(10.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.simulate_mouse_up(
             point(px(10.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.simulate_mouse_down(
             point(px(70.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers {
+            wgpui::Modifiers {
                 shift: true,
                 ..Default::default()
             },
@@ -5299,30 +5303,30 @@ mod tests {
         cx.simulate_mouse_up(
             point(px(70.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.update(|window, cx| assert!(TextSelection::has_selection(window, cx)));
 
         cx.simulate_mouse_down(
             point(px(15.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.simulate_mouse_move(
             point(px(85.), px(10.)),
             Some(MouseButton::Left),
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.simulate_mouse_up(
             point(px(85.), px(10.)),
             MouseButton::Left,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         cx.update(|window, cx| assert!(TextSelection::has_selection(window, cx)));
         assert_eq!(clear_count.get(), 3);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_layer_handles_real_double_and_triple_click_events(cx: &mut TestAppContext) {
         let (text, layout) = laid_out_runs(&["alpha beta"], cx).pop().unwrap();
         let (view, cx) = cx.add_window_view(|_, cx| DoubleSelectionElementView {
@@ -5338,14 +5342,14 @@ mod tests {
         let position = layout.position_for_index(7).unwrap();
         cx.simulate_event(MouseDownEvent {
             position,
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
             button: MouseButton::Left,
             click_count: 2,
             first_mouse: false,
         });
         cx.simulate_event(MouseUpEvent {
             position,
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
             button: MouseButton::Left,
             click_count: 2,
         });
@@ -5366,14 +5370,14 @@ mod tests {
 
         cx.simulate_event(MouseDownEvent {
             position,
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
             button: MouseButton::Left,
             click_count: 3,
             first_mouse: false,
         });
         cx.simulate_event(MouseUpEvent {
             position,
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
             button: MouseButton::Left,
             click_count: 3,
         });
@@ -5431,12 +5435,12 @@ mod tests {
         index: usize,
         click_count: usize,
         shift: bool,
-        cx: &mut gpui::VisualTestContext,
+        cx: &mut wgpui::VisualTestContext,
     ) -> Point<Pixels> {
         let position = cx.update(|window, cx| painted_position(text, index, window, cx));
         cx.simulate_event(MouseDownEvent {
             position,
-            modifiers: gpui::Modifiers {
+            modifiers: wgpui::Modifiers {
                 shift,
                 ..Default::default()
             },
@@ -5449,34 +5453,34 @@ mod tests {
 
     /// Drags the pressed button to the character `index` of `text`, and
     /// returns the text selected there.
-    fn drag_to(text: &str, index: usize, cx: &mut gpui::VisualTestContext) -> String {
+    fn drag_to(text: &str, index: usize, cx: &mut wgpui::VisualTestContext) -> String {
         let position = cx.update(|window, cx| painted_position(text, index, window, cx));
         cx.simulate_event(MouseMoveEvent {
             position,
             pressed_button: Some(MouseButton::Left),
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
         });
         painted_selection(cx)
     }
 
-    fn release(click_count: usize, cx: &mut gpui::VisualTestContext) {
+    fn release(click_count: usize, cx: &mut wgpui::VisualTestContext) {
         let position = cx.update(|window, _| window.mouse_position());
         cx.simulate_event(MouseUpEvent {
             position,
-            modifiers: gpui::Modifiers::default(),
+            modifiers: wgpui::Modifiers::default(),
             button: MouseButton::Left,
             click_count,
         });
     }
 
-    fn painted_selection(cx: &mut gpui::VisualTestContext) -> String {
+    fn painted_selection(cx: &mut wgpui::VisualTestContext) -> String {
         cx.update(|window, cx| {
             let _ = window.draw(cx);
             TextSelection::selected_text(window, cx)
         })
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn double_click_drag_extends_the_selection_by_words(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| SelectableTextsView {
             texts: vec!["one two three", "four five six"],
@@ -5493,7 +5497,7 @@ mod tests {
         assert_eq!(painted_selection(cx), "two three\nfour five");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn triple_click_drag_extends_the_selection_by_lines(cx: &mut TestAppContext) {
         let text = "first line\nsecond line\nthird line";
         let (_, cx) = cx.add_window_view(|_, _| SelectableTextsView { texts: vec![text] });
@@ -5507,7 +5511,7 @@ mod tests {
         assert_eq!(painted_selection(cx), "first line\nsecond line");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_after_a_double_click_extends_by_words(cx: &mut TestAppContext) {
         let text = "one two three";
         let (_, cx) = cx.add_window_view(|_, _| SelectableTextsView { texts: vec![text] });

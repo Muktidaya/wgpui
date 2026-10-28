@@ -1,11 +1,11 @@
 use crate::{ActiveTheme, Disableable, StyledExt, h_flex};
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, ElementId, InteractiveElement, IntoElement, MouseButton,
     ParentElement, RenderOnce, Role, SharedString, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, prelude::FluentBuilder as _,
 };
-use gpui_base::TestSupportExt as _;
-use smallvec::SmallVec;
+use wgpui_base::TestSupportExt as _;
 
 #[derive(IntoElement)]
 pub(crate) struct MenuItemElement {
@@ -78,13 +78,13 @@ impl Disableable for MenuItemElement {
 }
 
 impl Styled for MenuItemElement {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl ParentElement for MenuItemElement {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.children.extend(elements);
     }
 }
@@ -139,8 +139,8 @@ impl RenderOnce for MenuItemElement {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn aria_label_sets_accessible_name(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn aria_label_sets_accessible_name(_cx: &mut wgpui::TestAppContext) {
         let item = MenuItemElement::new("open").aria_label("Open");
 
         assert_eq!(item.aria_label, Some("Open".into()));

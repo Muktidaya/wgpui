@@ -7,15 +7,15 @@
 
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, ElementId, IntoElement, ParentElement as _, Pixels, Render, Styled as _,
     Window, deferred, div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::{
+use wgpui_base::{
     ResizeHandleContext, ResizeHandleRenderer, ResizeHandleState, Transition, transition,
 };
 
-pub use gpui_base::{
+pub use wgpui_base::{
     HandleEdge, ResizablePanel, ResizablePanelEvent, ResizablePanelGroup, ResizableState,
     ResizeHandle, resizable_panel,
 };
@@ -27,23 +27,23 @@ const INDICATOR_THICKNESS: Pixels = px(3.);
 
 /// Create a [`ResizablePanelGroup`] with horizontal resizing.
 pub fn h_resizable(id: impl Into<ElementId>) -> ResizablePanelGroup {
-    gpui_base::h_resizable(id).with_handle_appearance(resize_handle_appearance())
+    wgpui_base::h_resizable(id).with_handle_appearance(resize_handle_appearance())
 }
 
 /// Create a [`ResizablePanelGroup`] with vertical resizing.
 pub fn v_resizable(id: impl Into<ElementId>) -> ResizablePanelGroup {
-    gpui_base::v_resizable(id).with_handle_appearance(resize_handle_appearance())
+    wgpui_base::v_resizable(id).with_handle_appearance(resize_handle_appearance())
 }
 
 /// Create a standalone [`ResizeHandle`] wearing this design system's divider,
 /// for an edge no [`ResizablePanelGroup`] owns -- an application's sidebar,
 /// say. What the drag resizes is the caller's; see
-/// [`gpui_base::resize_handle`].
+/// [`wgpui_base::resize_handle`].
 pub fn resize_handle<T: 'static, E: 'static + Render>(
     id: impl Into<ElementId>,
     axis: Axis,
 ) -> ResizeHandle<T, E> {
-    gpui_base::resize_handle(id, axis).with_appearance(resize_handle_appearance())
+    wgpui_base::resize_handle(id, axis).with_appearance(resize_handle_appearance())
 }
 
 /// This design system's divider appearance, for a handle that base does not

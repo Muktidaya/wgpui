@@ -1,10 +1,10 @@
 use std::{rc::Rc, time::Duration};
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     Animation, AnimationExt, ElementId, Hsla, IntoElement, Pixels, Point, Styled, point,
     prelude::FluentBuilder, px,
 };
-use smallvec::SmallVec;
 
 /// A cubic bezier function like CSS `cubic-bezier`.
 ///
@@ -222,7 +222,7 @@ impl EffectTransition {
         self,
         element: E,
         id: impl Into<ElementId>,
-    ) -> gpui::AnimationElement<E> {
+    ) -> wgpui::AnimationElement<E> {
         let animation = Animation::new(self.duration).with_easing({
             let easing = self.easing.clone();
             move |t| easing(t)

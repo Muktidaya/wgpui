@@ -1,10 +1,8 @@
-extern crate wgpui_component as gpui_component;
-
-use gpui_component::theme::{ThemeConfig, ThemeConfigColors, ThemeMode};
+use wgpui_component::theme::{ThemeConfig, ThemeConfigColors, ThemeMode};
 
 #[test]
 fn legacy_text_view_style_struct_literal_shape_is_unchanged() {
-    use gpui_component::text::TextViewStyle;
+    use wgpui_component::text::TextViewStyle;
 
     let defaults = TextViewStyle::default();
     let _ = TextViewStyle {

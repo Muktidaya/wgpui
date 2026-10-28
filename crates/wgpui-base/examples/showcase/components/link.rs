@@ -1,5 +1,5 @@
-use gpui::{IntoElement, ParentElement as _, Styled as _, div};
-use gpui_base::Link;
+use wgpui::{IntoElement, ParentElement as _, Styled as _, div};
+use wgpui_base::Link;
 
 use super::super::BaseShowcase;
 

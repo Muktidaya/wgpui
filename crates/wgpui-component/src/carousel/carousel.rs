@@ -1,14 +1,14 @@
 use std::{panic::Location, sync::Arc};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, App, Axis, Bounds, ClickEvent, Element, ElementId, Entity, FocusHandle, Focusable,
     GlobalElementId, InspectorElementId, InteractiveElement as _, IntoElement, LayoutId,
     MouseButton, ParentElement, Pixels, Point, RenderOnce, Role, SharedString,
     StatefulInteractiveElement as _, StyleRefinement, Styled, Subscription, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::spring;
-use rust_i18n::t;
+use wgpui_base::spring;
 
 use super::{CONTEXT, scroll_mask::CarouselScrollMask, state::CarouselState};
 use crate::{
@@ -980,7 +980,7 @@ fn set_axis_value(point: &mut Point<Pixels>, axis: Axis, value: Pixels) {
     }
 }
 
-fn snap_offset(handle: &gpui::ScrollHandle, axis: Axis, index: usize) -> Option<Pixels> {
+fn snap_offset(handle: &wgpui::ScrollHandle, axis: Axis, index: usize) -> Option<Pixels> {
     let viewport = handle.bounds();
     let item = handle.bounds_for_item(index)?;
     let target = if axis.is_horizontal() {
@@ -989,7 +989,7 @@ fn snap_offset(handle: &gpui::ScrollHandle, axis: Axis, index: usize) -> Option<
         viewport.top() - item.top()
     };
     let maximum = handle.max_offset();
-    let max = axis_value(gpui::point(maximum.width, maximum.height), axis).max(Pixels::ZERO);
+    let max = axis_value(wgpui::point(maximum.width, maximum.height), axis).max(Pixels::ZERO);
     Some(target.clamp(-max, Pixels::ZERO))
 }
 
@@ -998,8 +998,8 @@ mod tests {
     use std::{cell::Cell, rc::Rc};
 
     use super::*;
-    use gpui::{AppContext as _, Context, Render, VisualTestContext, point};
-    use gpui_base::FocusableExt as _;
+    use wgpui::{AppContext as _, Context, Render, VisualTestContext, point};
+    use wgpui_base::FocusableExt as _;
 
     #[test]
     fn axis_helpers_only_change_the_requested_coordinate() {
@@ -1010,8 +1010,8 @@ mod tests {
         assert_eq!(value, point(px(11.), px(-5.)));
     }
 
-    #[gpui::test]
-    fn carousel_controls_accept_semantic_sizes(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn carousel_controls_accept_semantic_sizes(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
 
         assert_eq!(CarouselPrevious::new(&state).size, Size::Medium);
@@ -1026,8 +1026,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn carousel_focus_ring_is_configurable(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn carousel_focus_ring_is_configurable(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
 
         assert!(Carousel::new("carousel", &state).is_focus_ring_enabled());
@@ -1060,7 +1060,7 @@ mod tests {
         }
     }
 
-    fn assert_contextual_navigation_keys(cx: &mut gpui::TestAppContext, axis: Axis) {
+    fn assert_contextual_navigation_keys(cx: &mut wgpui::TestAppContext, axis: Axis) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3).with_axis(axis)));
         let (_, cx) = cx.add_window_view({
@@ -1097,13 +1097,13 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn horizontal_carousel_dispatches_contextual_navigation_keys(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn horizontal_carousel_dispatches_contextual_navigation_keys(cx: &mut wgpui::TestAppContext) {
         assert_contextual_navigation_keys(cx, Axis::Horizontal);
     }
 
-    #[gpui::test]
-    fn vertical_carousel_dispatches_contextual_navigation_keys(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn vertical_carousel_dispatches_contextual_navigation_keys(cx: &mut wgpui::TestAppContext) {
         assert_contextual_navigation_keys(cx, Axis::Vertical);
     }
 
@@ -1138,8 +1138,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn unhandled_navigation_keys_reach_ancestors(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn unhandled_navigation_keys_reach_ancestors(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
         let outer_actions = Rc::new(Cell::new(0));
@@ -1172,8 +1172,8 @@ mod tests {
         assert_eq!(outer_actions.get(), 2);
     }
 
-    #[gpui::test]
-    fn track_grows_by_its_leading_margin_so_items_fill_the_frame(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn track_grows_by_its_leading_margin_so_items_fill_the_frame(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         for axis in [Axis::Horizontal, Axis::Vertical] {
             let state = cx.update(|cx| cx.new(|_| CarouselState::new(3).with_axis(axis)));
@@ -1191,20 +1191,20 @@ mod tests {
                     state.frame_size().unwrap(),
                 )
             });
-            assert_eq!(frame_size, gpui::size(px(100.), px(100.)), "{axis:?}");
+            assert_eq!(frame_size, wgpui::size(px(100.), px(100.)), "{axis:?}");
             let expected = if axis.is_horizontal() {
-                Bounds::new(point(px(-16.), px(0.)), gpui::size(px(116.), px(100.)))
+                Bounds::new(point(px(-16.), px(0.)), wgpui::size(px(116.), px(100.)))
             } else {
-                Bounds::new(point(px(0.), px(-16.)), gpui::size(px(100.), px(116.)))
+                Bounds::new(point(px(0.), px(-16.)), wgpui::size(px(100.), px(116.)))
             };
             assert_eq!(track, expected, "{axis:?}");
             assert_eq!(first_item, expected, "{axis:?}");
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_slide_focuses_the_carousel_for_keyboard_navigation(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
@@ -1215,7 +1215,7 @@ mod tests {
         cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.update(|window, cx| window.focused(cx).is_none()));
 
-        cx.simulate_click(point(px(50.), px(50.)), gpui::Modifiers::default());
+        cx.simulate_click(point(px(50.), px(50.)), wgpui::Modifiers::default());
         assert!(cx.update(|window, cx| window.focused(cx).is_some()));
 
         cx.simulate_keystrokes("right");
@@ -1249,9 +1249,9 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clicking_a_control_focuses_the_carousel_for_keyboard_navigation(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
     ) {
         cx.update(crate::init);
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(3)));
@@ -1267,7 +1267,7 @@ mod tests {
         };
 
         // A pointer click on Next moves focus to the carousel.
-        cx.simulate_click(point(px(134.), px(50.)), gpui::Modifiers::default());
+        cx.simulate_click(point(px(134.), px(50.)), wgpui::Modifiers::default());
         assert_eq!(selected(cx), Some(1));
         assert!(root_focused(cx));
         cx.simulate_keystrokes("right");
@@ -1278,20 +1278,20 @@ mod tests {
         cx.update(|window, cx| window.focus_next(cx));
         cx.update(|window, cx| window.focus_next(cx));
         cx.update(|window, cx| window.draw(cx).clear());
-        let keystroke = gpui::Keystroke::parse("enter").unwrap();
-        cx.simulate_event(gpui::KeyDownEvent {
+        let keystroke = wgpui::Keystroke::parse("enter").unwrap();
+        cx.simulate_event(wgpui::KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,
             prefer_character_input: false,
         });
-        cx.simulate_event(gpui::KeyUpEvent { keystroke });
+        cx.simulate_event(wgpui::KeyUpEvent { keystroke });
         assert_eq!(selected(cx), Some(2));
         assert!(!root_focused(cx));
         assert!(cx.update(|window, cx| window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
-    fn carousel_controls_accept_accessibility_labels_and_children(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn carousel_controls_accept_accessibility_labels_and_children(cx: &mut wgpui::TestAppContext) {
         let state = cx.update(|cx| cx.new(|_| CarouselState::new(2)));
         let previous = CarouselPrevious::new(&state)
             .accessibility_label("Previous project")

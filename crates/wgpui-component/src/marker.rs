@@ -3,7 +3,7 @@ use crate::{
     shimmer::{ShimmerStyle, ShimmerText},
     spinner::Spinner,
 };
-use gpui::{
+use wgpui::{
     AnimationExt as _, AnyElement, App, ElementId, InteractiveElement as _, IntoElement,
     ParentElement, RenderOnce, SharedString, StatefulInteractiveElement as _, StyleRefinement,
     Styled, StyledText, Window, div, prelude::FluentBuilder as _, px, relative, rems,
@@ -94,7 +94,7 @@ impl Marker {
 
     /// Set the accessibility role announced for this marker.
     ///
-    /// A marker is presentational by default. Set [`gpui::Role::Status`] on a
+    /// A marker is presentational by default. Set [`wgpui::Role::Status`] on a
     /// row that reports streaming or loading progress so assistive technology
     /// announces its updates. Accessibility nodes need a stable identity, so
     /// the role takes effect only together with [`Self::id`].
@@ -472,9 +472,9 @@ mod tests {
 
         assert_eq!(Marker::default().role, RoleOverride::default());
         assert!(Marker::default().id.is_none());
-        let status = Marker::new().id("sync-status").role(gpui::Role::Status);
+        let status = Marker::new().id("sync-status").role(wgpui::Role::Status);
         assert_eq!(status.id, Some("sync-status".into()));
-        assert_eq!(status.role, RoleOverride::Role(gpui::Role::Status));
+        assert_eq!(status.role, RoleOverride::Role(wgpui::Role::Status));
 
         let styled = Marker::new().opacity(0.37).child("Status").child("Details");
 

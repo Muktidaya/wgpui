@@ -30,7 +30,7 @@ canonical package map and acceptance state are in `../../docs/kit.md` and
 `../../STATUS.md`. The source candidate ports upstream v0.8.1; framework and Kit versions remain
 independent. Kit is now an active workspace member and the application façade.
 Preserve the Base behavior / styled presentation boundary and native wgpu/winit
-backend. Internal `gpui` dependency aliases are intentional.
+backend. Workspace dependencies and Rust imports use canonical WGPUI names.
 
 ## Common Commands
 
@@ -86,12 +86,12 @@ The implemented foundation architecture is documented in
 `docs/kit/styling-and-motion.md`. Preserve these constraints when designing or
 implementing this architecture:
 
-- Do not modify `gpui-base` unless the user explicitly requests a Base-layer
+- Do not modify `wgpui-base` unless the user explicitly requests a Base-layer
   change. By default, implement component behavior and visual styling in
   `crates/wgpui-component` or the application layer.
 
-- Keep `gpui-component` as the ecosystem and product brand.
-- The adapter package is `wgpui-base`; vendored code may use the `gpui_base` alias. Preserve the base-layer architecture described by the upstream terminology without renaming published packages.
+- Preserve upstream GPUI Component attribution; use canonical WGPUI package and import names for this workspace.
+- The adapter package is `wgpui-base`; source imports use `wgpui_base`. Preserve the base-layer architecture described by the upstream terminology without renaming published packages.
 - Follow the ownership boundary: the framework owns behavior and infrastructure;
   the application owns component source and visual style.
 - Keep the base layer visually unopinionated. It may provide interaction behavior,
@@ -99,21 +99,21 @@ implementing this architecture:
   virtual lists, dock infrastructure, and semantic design tokens.
 - Theme APIs must expose semantic tokens (colors, spacing, radius, typography, and
   shadows), not an ever-growing set of component-specific styling fields.
-- Keep source distribution or registry tooling above the `gpui-base` seam; no
+- Keep source distribution or registry tooling above the `wgpui-base` seam; no
   registry or CLI crate is currently part of the workspace.
 - Preserve 100% backward compatibility for existing consumers, including current
-  imports such as `use gpui_component::button::Button;`.
+  imports such as `use wgpui_component::button::Button;`.
 
 ### Component Initialization
 
-**Critical requirement**: You must call `gpui_component::init(cx)` at your application's entry point before using any GPUI Component features.
+**Critical requirement**: You must call `wgpui_component::init(cx)` at your application's entry point before using any GPUI Component features.
 
 ```rust
 fn main() {
     let app = Application::new();
     app.run(move |cx| {
         // This must be called first
-        gpui_component::init(cx);
+        wgpui_component::init(cx);
 
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
@@ -161,8 +161,8 @@ presentation skin (`DockSkin`) over it. See `docs/kit/architecture.md`.
 - **`DockArea`**: Owns the center and dock trees, reconciles them into a
   cache of container entities keyed by `NodeId`
 - **`TabGroup`** / **`TilesState`**: The `Tabs`/`Tiles` container entities
-- **`Panel`**: Split at the seam — `gpui_base::dock::Panel` for behavior,
-  `gpui_component::dock::Panel` for presentation; a panel implements both
+- **`Panel`**: Split at the seam — `wgpui_base::dock::Panel` for behavior,
+  `wgpui_component::dock::Panel` for presentation; a panel implements both
 - **`PanelRegistry`**: Resolves a persisted `panel_name` back to a panel type
 
 The Dock system supports:
@@ -202,7 +202,7 @@ Text input system based on Rope data structure:
    mutable temporary element followed by imperative reassignment when the builder API can
    express the same operation.
 7. **No `pub` fields on public data types**: A public struct handed across the
-   `gpui-base`/application seam — a state snapshot, capability set, render context, or
+   `wgpui-base`/application seam — a state snapshot, capability set, render context, or
    option set — keeps its fields private, is constructed with a builder, and is read
    through methods. Adding a `pub` field is a breaking change; adding one behind a builder
    is not. Setters and readers must not collide: an all-boolean type names setters after
@@ -249,7 +249,7 @@ The `Icon` element does not include SVG files by default. You need to:
 
 ## Dependencies
 
-- Runtime: WGPUI 0.4.0 from this repository root; vendored `gpui` dependency keys are Cargo aliases, not a Zed Git dependency.
+- Runtime: WGPUI 0.4.0 from this repository root; the `wgpui` dependency is the local framework, not a Zed Git dependency.
 - Tree-sitter: For syntax highlighting
 - Ropey: Rope data structure for text, and `RopeExt` trait with more features.
 - Markdown rendering: `markdown` crate

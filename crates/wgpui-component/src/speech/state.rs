@@ -1,6 +1,6 @@
 use std::{cell::OnceCell, rc::Rc, time::Duration};
 
-use gpui::{App, Context, EventEmitter, SharedString, Subscription, Task, WeakEntity};
+use wgpui::{App, Context, EventEmitter, SharedString, Subscription, Task, WeakEntity};
 
 use super::{
     AudioInput, AudioSink, RecognitionSession, SpeechError, SpeechRecognizer, SpeechSink,
@@ -376,7 +376,7 @@ pub(super) fn defer_session_update(
 mod tests {
     use std::{cell::RefCell, rc::Rc, time::Duration};
 
-    use gpui::{App, AppContext as _, Entity, Subscription, TestAppContext};
+    use wgpui::{App, AppContext as _, Entity, Subscription, TestAppContext};
 
     use super::*;
     use crate::speech::{AudioFormat, AudioInput, AudioSink, RecognitionSession, SpeechSink};
@@ -517,7 +517,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn session_runs_from_start_to_final(cx: &mut TestAppContext) {
         let f = Fixture::new(FakeRecognizer::default(), cx);
 
@@ -575,7 +575,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stop_ends_with_the_transcript_so_far_after_the_timeout(cx: &mut TestAppContext) {
         let f = Fixture::new(FakeRecognizer::default(), cx);
         f.state.update(cx, |state, cx| state.start(cx));
@@ -592,7 +592,7 @@ mod tests {
         assert_eq!(f.take_events().last().unwrap(), "final:half a sentence");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn cancel_discards_the_session_and_ignores_late_results(cx: &mut TestAppContext) {
         let f = Fixture::new(FakeRecognizer::default(), cx);
         f.state.update(cx, |state, cx| state.start(cx));
@@ -624,7 +624,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn input_error_ends_the_session(cx: &mut TestAppContext) {
         let f = Fixture::new(FakeRecognizer::default(), cx);
         f.state.update(cx, |state, cx| state.start(cx));
@@ -639,7 +639,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn recognizer_that_fails_to_start_leaves_the_state_idle(cx: &mut TestAppContext) {
         let f = Fixture::new(
             FakeRecognizer {
@@ -658,7 +658,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn input_start_failure_cancels_the_opened_recognizer(cx: &mut TestAppContext) {
         let recognizer = FakeRecognizer::default();
         let input = FakeInput {
@@ -691,7 +691,7 @@ mod tests {
         ));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dropping_the_state_releases_capture_and_recognition(cx: &mut TestAppContext) {
         let fixture = Fixture::new(FakeRecognizer::default(), cx);
         fixture.state.update(cx, |state, cx| state.start(cx));
@@ -711,7 +711,7 @@ mod tests {
         cx.run_until_parked();
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn state_without_a_recognizer_is_unsupported(cx: &mut TestAppContext) {
         let state = cx.update(|cx| {
             cx.new(|cx| {

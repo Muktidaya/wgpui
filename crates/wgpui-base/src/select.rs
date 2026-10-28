@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AccessibleAction, AnyElement, App, ElementId, FocusHandle, InteractiveElement as _,
     IntoElement, KeyBinding, ParentElement, RenderOnce, Role, SharedString,
     StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
@@ -51,7 +51,7 @@ type ActionHandler = Rc<dyn Fn(&mut Window, &mut App)>;
 /// `aria_active_descendant()`; this root cannot do it on the caller's behalf.
 #[derive(IntoElement)]
 pub struct Select {
-    base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<wgpui::Div>>,
     open: bool,
     disabled: bool,
     focus_handle: Option<FocusHandle>,
@@ -318,11 +318,11 @@ impl RenderOnce for Select {
 mod tests {
     use super::*;
     use crate::input::InputState;
-    use gpui::{
+    use std::sync::{Arc, Mutex};
+    use wgpui::{
         AppContext as _, Context, Element as _, Entity, Focusable, Render, TestAppContext,
         VisualTestContext, accesskit, px,
     };
-    use std::sync::{Arc, Mutex};
 
     struct SelectHarness {
         open: bool,
@@ -406,7 +406,7 @@ mod tests {
     fn harness(
         cx: &mut TestAppContext,
         disabled: bool,
-    ) -> (&mut VisualTestContext, gpui::Entity<SelectHarness>) {
+    ) -> (&mut VisualTestContext, wgpui::Entity<SelectHarness>) {
         cx.update(crate::init);
         let (state, cx) = cx.add_window_view(move |_, cx| SelectHarness::new(disabled, cx));
         cx.update(|window, cx| {
@@ -416,7 +416,7 @@ mod tests {
         (cx, state)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn arrows_open_and_transfer_focus_to_content(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
 
@@ -434,7 +434,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn confirm_opens_a_closed_select(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
 
@@ -445,7 +445,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn space_opens_and_confirms_a_non_searchable_select(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
         cx.simulate_keystrokes("space");
@@ -464,7 +464,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn space_in_a_select_search_input_remains_text(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
         let input = cx.update(|window, cx| {
@@ -495,7 +495,7 @@ mod tests {
         assert!(state.read_with(cx, |state, _| state.open));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn escape_closes_and_restores_trigger_focus(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
 
@@ -524,7 +524,7 @@ mod tests {
     /// control. GPUI exposes no way to dispatch an accessibility action in a
     /// test (`Window::handle_a11y_action` is `pub(crate)`), so this covers the
     /// shared path through the route a test can reach.
-    #[gpui::test]
+    #[wgpui::test]
     fn every_close_dismisses_before_it_closes(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
 
@@ -538,7 +538,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_select_is_not_keyboard_interactive(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, true);
 
@@ -553,7 +553,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn projects_application_owned_accessible_state(cx: &mut TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
@@ -588,7 +588,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn confirm_is_consumed_when_opening_and_accepting(cx: &mut TestAppContext) {
         let (cx, state) = harness(cx, false);
         cx.simulate_keystrokes("enter");

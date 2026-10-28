@@ -1,10 +1,10 @@
-use gpui::prelude::FluentBuilder as _;
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::prelude::FluentBuilder as _;
+use wgpui::{
     App, ClickEvent, FocusHandle, InteractiveElement as _, IntoElement, MouseButton, ParentElement,
     Pixels, RenderOnce, Role, StatefulInteractiveElement as _, StyleRefinement, Styled, Window,
     div,
 };
-use smallvec::SmallVec;
 
 use crate::StyledExt as _;
 use crate::{Dialog, DialogChangeReason, DialogHandle};
@@ -17,7 +17,7 @@ macro_rules! alert_part {
         #[derive(IntoElement)]
         pub struct $name {
             style: StyleRefinement,
-            children: SmallVec<[gpui::AnyElement; 2]>,
+            children: SmallVec<[wgpui::AnyElement; 2]>,
         }
         impl $name {
             pub fn new() -> Self {
@@ -33,7 +33,7 @@ macro_rules! alert_part {
             }
         }
         impl ParentElement for $name {
-            fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+            fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
                 self.children.extend(elements);
             }
         }
@@ -62,7 +62,7 @@ alert_part!(AlertDialogDescription, "alert-dialog-description");
 
 #[derive(IntoElement)]
 pub struct AlertDialogTrigger {
-    trigger: gpui::AnyElement,
+    trigger: wgpui::AnyElement,
     open: std::rc::Rc<dyn Fn(&mut Window, &mut App)>,
     handle: Option<DialogHandle>,
 }
@@ -102,7 +102,7 @@ macro_rules! alert_close_part {
         #[derive(IntoElement)]
         pub struct $name {
             style: StyleRefinement,
-            children: SmallVec<[gpui::AnyElement; 1]>,
+            children: SmallVec<[wgpui::AnyElement; 1]>,
         }
         impl $name {
             pub fn new() -> Self {
@@ -118,7 +118,7 @@ macro_rules! alert_close_part {
             }
         }
         impl ParentElement for $name {
-            fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+            fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
                 self.children.extend(elements);
             }
         }
@@ -147,7 +147,7 @@ alert_close_part!(AlertDialogCancel, "alert-dialog-cancel");
 #[derive(IntoElement)]
 pub struct AlertDialogAction {
     style: StyleRefinement,
-    children: SmallVec<[gpui::AnyElement; 1]>,
+    children: SmallVec<[wgpui::AnyElement; 1]>,
 }
 
 impl AlertDialogAction {
@@ -166,7 +166,7 @@ impl Default for AlertDialogAction {
 }
 
 impl ParentElement for AlertDialogAction {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.children.extend(elements);
     }
 }
@@ -278,7 +278,7 @@ impl Styled for AlertDialog {
     }
 }
 impl ParentElement for AlertDialog {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.0.extend(elements);
     }
 }
@@ -292,8 +292,8 @@ impl IntoElement for AlertDialog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, div, point, px};
     use std::{cell::Cell, rc::Rc};
+    use wgpui::{Context, Render, div, point, px};
 
     struct Harness {
         close_requested: Rc<Cell<bool>>,
@@ -308,8 +308,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn backdrop_is_not_closable_by_default(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn backdrop_is_not_closable_by_default(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let close_requested = Rc::new(Cell::new(false));
         let (_, cx) = cx.add_window_view({
@@ -325,9 +325,9 @@ mod tests {
 
     /// The host centers its popup by default; styling the alert dialog
     /// replaces that layout just as it does for a plain dialog.
-    #[gpui::test]
-    fn host_style_positions_the_popup(cx: &mut gpui::TestAppContext) {
-        use gpui::{Bounds, canvas};
+    #[wgpui::test]
+    fn host_style_positions_the_popup(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{Bounds, canvas};
 
         struct TopLeft(Rc<Cell<Bounds<Pixels>>>);
         impl Render for TopLeft {

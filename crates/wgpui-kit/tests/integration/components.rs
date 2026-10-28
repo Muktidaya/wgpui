@@ -1,5 +1,5 @@
 use crate::common;
-use gpui_component::{
+use wgpui_component::{
     Disableable, TitleBar,
     button::{Button, DropdownButton},
     clipboard::Clipboard,
@@ -48,7 +48,7 @@ impl Render for Controls {
 
 #[wgpui_kit::test]
 fn kit_controls_use_native_events_and_report_state(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, handle_content) =
         common::open_window(cx, Some(size(px(600.), px(500.))), |window, cx| {
             cx.new(|cx| Controls {
@@ -172,7 +172,7 @@ impl Render for NamedButton {
 
 #[wgpui_kit::test]
 fn button_reports_accessibility_name_without_claiming_visible_text(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |_, cx| cx.new(|_| NamedButton));
     cx.update_window(handle.into(), |_, window, cx| {
         window.draw(cx).clear();
@@ -201,7 +201,7 @@ impl Render for NamedClipboard {
 
 #[wgpui_kit::test]
 fn clipboard_reports_default_and_explicit_accessibility_names(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |_, cx| cx.new(|_| NamedClipboard));
     cx.update_window(handle.into(), |_, window, cx| {
         window.draw(cx).clear();
@@ -235,7 +235,7 @@ impl Render for NamedDropdownButtons {
 
 #[wgpui_kit::test]
 fn dropdown_button_names_its_menu_trigger(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |_, cx| cx.new(|_| NamedDropdownButtons));
     cx.update_window(handle.into(), |_, window, cx| {
         window.draw(cx).clear();
@@ -257,7 +257,7 @@ struct ScrollFocus {
 }
 impl Render for ScrollFocus {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        use gpui_component::scroll::ScrollableElement as _;
+        use wgpui_component::scroll::ScrollableElement as _;
         div()
             .id("original")
             .test_support()
@@ -269,7 +269,7 @@ impl Render for ScrollFocus {
 }
 #[wgpui_kit::test]
 fn scrollable_elements_forward_observed_focus_binding(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, handle_content) = common::open_window(cx, None, |_, cx| {
         cx.new(|cx| ScrollFocus {
             focus: cx.focus_handle(),
@@ -321,7 +321,7 @@ impl Render for Progresses {
 
 #[wgpui_kit::test]
 fn progress_and_progress_circle_are_observable(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, None, |_, cx| cx.new(|_| Progresses));
     cx.update_window(handle.into(), |_, window, cx| {
         window.draw(cx).clear();
@@ -347,7 +347,7 @@ impl Render for WindowWithTitleBar {
 
 #[wgpui_kit::test]
 fn title_bar_and_window_controls_are_observable(cx: &mut TestAppContext) {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     let (handle, _) = common::open_window(cx, Some(size(px(600.), px(400.))), |_, cx| {
         cx.new(|_| WindowWithTitleBar)
     });

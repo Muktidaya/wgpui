@@ -3,12 +3,12 @@
 
 use std::{rc::Rc, sync::Arc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, Axis, Context, Div, Element, Empty, InteractiveElement as _,
     IntoElement, MouseMoveEvent, MouseUpEvent, ParentElement as _, Pixels, Render, Stateful, Style,
     Styled as _, Window, div,
 };
-use gpui_base::{
+use wgpui_base::{
     HandleEdge, ResizeHandleContext,
     dock::{
         DockAreaRenderer, DockContext, DockEvent, DockPlacement, NodeId, PanelState, PanelView,
@@ -176,7 +176,7 @@ impl Element for DockResizeTracker {
     type RequestLayoutState = ();
     type PrepaintState = ();
 
-    fn id(&self) -> Option<gpui::ElementId> {
+    fn id(&self) -> Option<wgpui::ElementId> {
         None
     }
 
@@ -186,19 +186,19 @@ impl Element for DockResizeTracker {
 
     fn request_layout(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (wgpui::LayoutId, Self::RequestLayoutState) {
         (window.request_layout(Style::default(), None, cx), ())
     }
 
     fn prepaint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        _: gpui::Bounds<Pixels>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
+        _: wgpui::Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         _: &mut Window,
         _: &mut App,
@@ -207,9 +207,9 @@ impl Element for DockResizeTracker {
 
     fn paint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
-        _: gpui::Bounds<Pixels>,
+        _: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
+        _: wgpui::Bounds<Pixels>,
         _: &mut Self::RequestLayoutState,
         _: &mut Self::PrepaintState,
         window: &mut Window,
@@ -255,16 +255,16 @@ impl Element for DockResizeTracker {
 mod tests {
     use std::rc::Rc;
 
-    use gpui::{
+    use wgpui::{
         App, Entity, IntoElement as _, Modifiers, MouseButton, TestAppContext, VisualTestContext,
         Window, point, px, size,
     };
 
     use std::cell::Cell;
 
-    use gpui_base::dock::DockAreaRenderer;
+    use wgpui_base::dock::DockAreaRenderer;
 
-    use gpui_base::PANEL_MIN_SIZE;
+    use wgpui_base::PANEL_MIN_SIZE;
 
     use crate::dock::{
         DockArea, DockLayout, DockPlacement, DockSkin,
@@ -279,23 +279,23 @@ mod tests {
     struct ChromelessDockSkin;
 
     impl DockAreaRenderer for ChromelessDockSkin {
-        fn tab_group_renderer(&self) -> Rc<dyn gpui_base::dock::TabGroupRenderer> {
+        fn tab_group_renderer(&self) -> Rc<dyn wgpui_base::dock::TabGroupRenderer> {
             Rc::new(ChromelessTabs)
         }
     }
 
     struct ChromelessTabs;
-    impl gpui_base::dock::TabGroupRenderer for ChromelessTabs {
+    impl wgpui_base::dock::TabGroupRenderer for ChromelessTabs {
         // The one hook with no default, because a group with no tab bar has no
         // way to choose between its panels. Drawn as nothing, so the height it
         // leaves the content is the whole group.
         fn render_tab_bar(
             &self,
-            _: &gpui_base::dock::TabGroupContext,
+            _: &wgpui_base::dock::TabGroupContext,
             _: &mut Window,
             _: &mut App,
-        ) -> gpui::AnyElement {
-            gpui::Empty.into_any_element()
+        ) -> wgpui::AnyElement {
+            wgpui::Empty.into_any_element()
         }
     }
 
@@ -307,12 +307,12 @@ mod tests {
     /// its extent is not a column beside the centre: it takes whatever the row
     /// gives it and the panes inside shrink to their content. Nothing failed,
     /// and nothing said why.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_dock_is_its_own_width_under_a_renderer_that_draws_no_chrome(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
-        let measured = Rc::new(Cell::new(gpui::Size::default()));
+        let measured = Rc::new(Cell::new(wgpui::Size::default()));
         let probe = measured.clone();
-        let centre = Rc::new(Cell::new(gpui::Size::default()));
+        let centre = Rc::new(Cell::new(wgpui::Size::default()));
         let centre_probe = centre.clone();
         let (area, cx) = cx.add_window_view(|window, cx| {
             DockArea::new("test", None, window, cx).with_renderer(Rc::new(ChromelessDockSkin))
@@ -410,7 +410,7 @@ mod tests {
     /// handle then let the right dock's drag listener (painted later, so
     /// dispatched first) claim the drag, and one pixel of movement threw the
     /// right dock to nearly the full area width.
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_the_left_handle_resizes_only_the_left_dock(cx: &mut TestAppContext) {
         let (area, cx) = area_with_side_docks(cx);
         cx.update(|window, cx| window.draw(cx).clear());
@@ -454,7 +454,7 @@ mod tests {
         );
         assert_eq!(left, Some(px(240.)), "the left dock follows the pointer");
     }
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_the_bottom_dock_closed_and_open_reports_each_toggle(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let (area, cx) = cx.add_window_view(|window, cx| {
@@ -526,7 +526,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dragging_the_bottom_handle_below_the_minimum_snaps_to_the_nearer_end(
         cx: &mut TestAppContext,
     ) {

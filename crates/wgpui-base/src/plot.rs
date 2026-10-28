@@ -16,7 +16,7 @@ pub mod shape;
 
 use std::{fmt::Debug, ops::Add, time::Duration};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ElementId, IntoElement, Path, PathBuilder, Pixels, Point, Window,
     point, px,
 };

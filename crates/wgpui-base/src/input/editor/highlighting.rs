@@ -1,7 +1,7 @@
 use std::{ops::Range, rc::Rc, sync::Arc};
 
-use gpui::{AnyElement, Context, HighlightStyle, Hsla, SharedString, Window};
 use ropey::Rope;
+use wgpui::{AnyElement, Context, HighlightStyle, Hsla, SharedString, Window};
 
 use super::{EditorState, FoldRange, InputEdit};
 use crate::SemanticThemeTokens;
@@ -180,7 +180,7 @@ impl Default for InputEditorStyle {
 
 #[cfg(test)]
 mod tests {
-    use gpui::hsla;
+    use wgpui::hsla;
 
     use super::InputEditorStyle;
     use crate::SemanticThemeTokens;

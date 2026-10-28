@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Weekday};
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, AppContext, Bounds, ClickEvent, Context, ElementId, Empty, Entity, EventEmitter,
     FocusHandle, Focusable, InteractiveElement as _, IntoElement, KeyBinding, MouseButton,
     ParentElement as _, Pixels, Render, RenderOnce, SharedString, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Subscription, Window, deferred, div, prelude::FluentBuilder as _, px,
 };
-use rust_i18n::t;
 
 use crate::ThemeStyled as _;
 use crate::{
@@ -23,7 +23,7 @@ use super::calendar::{Calendar, CalendarEvent, CalendarState, Date, Matcher};
 use super::time_field::{
     HourCycle, TimeField, TimeFieldEvent, TimeFieldState, TimePrecision, tabular_figures,
 };
-use gpui_base::{DatePicker as BaseDatePicker, ElementExt as _};
+use wgpui_base::{DatePicker as BaseDatePicker, ElementExt as _};
 
 const CONTEXT: &'static str = "DatePicker";
 pub(crate) fn init(cx: &mut App) {
@@ -481,7 +481,7 @@ impl DatePickerState {
         }
     }
 
-    fn clean(&mut self, _: &gpui::ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
+    fn clean(&mut self, _: &wgpui::ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
         cx.stop_propagation();
         let default_time = self.default_time;
         self.set_times(default_time, default_time, window, cx);
@@ -497,7 +497,7 @@ impl DatePickerState {
 
     fn toggle_calendar(
         &mut self,
-        _: &gpui::ClickEvent,
+        _: &wgpui::ClickEvent,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -590,7 +590,7 @@ impl crate::FocusableExt for DatePicker {
 }
 
 impl Render for DatePickerState {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl gpui::IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl wgpui::IntoElement {
         Empty
     }
 }
@@ -850,7 +850,7 @@ impl RenderOnce for DatePicker {
                             ),
                         cx,
                     ))
-                    .with_priority(gpui_base::POPUP_PRIORITY),
+                    .with_priority(wgpui_base::POPUP_PRIORITY),
                 )
             })
     }

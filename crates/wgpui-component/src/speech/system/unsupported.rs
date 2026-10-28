@@ -1,4 +1,4 @@
-use gpui::{App, SharedString};
+use wgpui::{App, SharedString};
 
 use crate::speech::{AudioFormat, RecognitionSession, SpeechError, SpeechRecognizer, SpeechSink};
 

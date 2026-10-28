@@ -3,7 +3,7 @@
 use crate::TestSupportExt as _;
 use std::{rc::Rc, sync::Arc};
 
-use gpui::{
+use wgpui::{
     AnyElement, AnyView, App, Bounds, Context, Div, DragMoveEvent, Empty, EventEmitter,
     FocusHandle, Focusable, InteractiveElement as _, IntoElement, ParentElement as _, Pixels,
     Render, Stateful, Styled as _, WeakEntity, Window, div, prelude::FluentBuilder as _, px,
@@ -975,7 +975,7 @@ impl TabGroupRenderer for BareTabGroup {
 mod tests {
     use std::cell::RefCell;
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, Entity, Modifiers, MouseButton, StatefulInteractiveElement as _,
         TestAppContext, VisualTestContext, point, px, size,
     };
@@ -1055,7 +1055,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_announces_its_first_panel_active(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a"], cx);
@@ -1065,7 +1065,7 @@ mod tests {
         let _ = (group, panels);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selecting_another_tab_deactivates_then_activates(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1080,7 +1080,7 @@ mod tests {
         assert_eq!(drain_active(&log), vec![("a", false), ("b", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_context_snapshots_the_group_state(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1101,7 +1101,7 @@ mod tests {
 
     /// A panel hidden while it holds the displayed slot is still the panel
     /// told it is active; only what gets drawn falls back to a visible one.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_hidden_displayed_panel_is_still_the_active_one(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1120,7 +1120,7 @@ mod tests {
 
     /// `on_removed` is a departing panel's deactivation signal, so the group
     /// must not also announce `false` to it.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_dropped_from_the_group_is_never_told_it_went_inactive(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1138,7 +1138,7 @@ mod tests {
         assert_eq!(drain_active(&log), vec![("b", true)]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selecting_a_tab_that_is_not_there_changes_nothing(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1156,7 +1156,7 @@ mod tests {
         assert!(drain_active(&log).is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_locked_group_can_be_neither_dragged_nor_dropped_into(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1190,7 +1190,7 @@ mod tests {
 
     /// Zooming is a lock of its own: a zoomed group fills the dock, so there
     /// is nothing beside it to drop against.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zoomed_group_takes_no_drops(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1207,7 +1207,7 @@ mod tests {
 
     /// Dragging the last visible panel out of the only group would leave the
     /// dock empty and undroppable, so it is refused.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_only_groups_last_visible_panel_cannot_be_dragged_out(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1229,7 +1229,7 @@ mod tests {
         assert!(beside_others);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_from_another_group_lands_as_one_move(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1247,7 +1247,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn dropping_a_panel_back_onto_its_own_group_is_ignored(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1263,7 +1263,7 @@ mod tests {
         assert!(events.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_hovering_split_turns_a_drop_into_a_split(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1289,7 +1289,7 @@ mod tests {
 
     /// The tab bar reports the slot a drop landed on, and a slot always means
     /// "into these tabs" however the content area had resolved the cursor.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_tab_slot_overrides_the_hovering_split(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1318,7 +1318,7 @@ mod tests {
 
     /// A lone panel splitting out of its own group would empty that group and
     /// refill it, which is no move at all.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_lone_panel_cannot_split_out_of_its_own_group(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a"], cx);
@@ -1342,7 +1342,7 @@ mod tests {
         assert!(events.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_placeholder_replays_only_when_the_target_moves(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1376,7 +1376,7 @@ mod tests {
 
     /// The indicator is hit state, not a latch: a drag cancelled while
     /// hovering must not leave the placeholder painted.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_indicator_is_withheld_when_no_drag_is_in_flight(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1401,7 +1401,7 @@ mod tests {
         assert!(!published);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_host_drag_reports_the_group_and_the_edge_it_resolved(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1417,7 +1417,7 @@ mod tests {
         assert_eq!(*events.borrow(), vec!["item onto 1 at Some(Bottom)"]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn closing_asks_the_container_rather_than_editing_the_group(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1441,7 +1441,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn zooming_toggles_and_tells_the_displayed_panel(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1470,7 +1470,7 @@ mod tests {
     /// A real drag over a locked group must resolve nothing: base installs no
     /// drop handling on one, so the placement is never computed and the layout
     /// tree is never asked to move anything.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_drag_over_a_locked_group_resolves_nothing(cx: &mut TestAppContext) {
         let (group, _calls, cx) = build_skinned_group(&["a", "b"], cx);
         cx.update(|window, cx| {
@@ -1494,7 +1494,7 @@ mod tests {
 
     /// `Dock::new` marks a dock's last group unclosable so the dock cannot be
     /// emptied out from under itself.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_the_container_sealed_shut_refuses_to_close(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, panels, cx) = build_group(&log, &["a", "b"], cx);
@@ -1522,7 +1522,7 @@ mod tests {
     /// itself. Placing a sibling beside the group makes the same panel
     /// closable again, which is what pins the reason to `alone` rather than to
     /// something else the sealed default also forbids.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_only_groups_last_panel_is_not_closable(cx: &mut TestAppContext) {
         let log = log_of();
         let (group, _panels, cx) = build_group(&log, &["a"], cx);
@@ -1547,7 +1547,7 @@ mod tests {
 
     /// Collapsing takes the displayed panel off screen, and the active-state
     /// contract counts that as no panel being displayed.
-    #[gpui::test]
+    #[wgpui::test]
     fn collapsing_deactivates_the_displayed_panel_and_expanding_restores_it(
         cx: &mut TestAppContext,
     ) {
@@ -1733,7 +1733,7 @@ mod tests {
 
     /// The composition contract every later renderer copies: which hooks base
     /// calls, and in what order.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_renderer_composes_frame_then_tab_bar_then_content(cx: &mut TestAppContext) {
         let (_group, calls, cx) = build_skinned_group(&["a"], cx);
 
@@ -1748,7 +1748,7 @@ mod tests {
 
     /// With nothing to display base asks for the empty element instead of the
     /// active panel, and never for both.
-    #[gpui::test]
+    #[wgpui::test]
     fn an_empty_group_asks_the_renderer_for_its_empty_state(cx: &mut TestAppContext) {
         let (_group, calls, cx) = build_skinned_group(&[], cx);
 
@@ -1763,7 +1763,7 @@ mod tests {
     /// The drop listeners must sit on the content frame, not the outer frame:
     /// a drag over the group resolves against the content frame's own bounds,
     /// which the skin — not base — decides.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_content_frame_is_what_a_drag_is_measured_against(cx: &mut TestAppContext) {
         let (group, calls, cx) = build_skinned_group(&["a", "b"], cx);
         cx.update(|window, cx| window.draw(cx).clear());
@@ -1790,7 +1790,7 @@ mod tests {
 
     /// A drop landing on the content frame reports a move the container can
     /// apply, and clears the hover state behind it.
-    #[gpui::test]
+    #[wgpui::test]
     fn dropping_on_the_content_frame_reports_the_move(cx: &mut TestAppContext) {
         let (group, _calls, cx) = build_skinned_group(&["a", "b"], cx);
         let events = record_events(&group, cx);

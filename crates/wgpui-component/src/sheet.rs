@@ -1,16 +1,16 @@
-use gpui_base::TestSupportExt as _;
 use std::{rc::Rc, time::Duration};
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use wgpui::{
     Animation, AnimationExt as _, AnyElement, App, ClickEvent, DefiniteLength, DismissEvent, Edges,
     EventEmitter, FocusHandle, InteractiveElement as _, IntoElement, ParentElement, Pixels,
     RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::{
+use wgpui_base::{
     Sheet as BaseSheet, TextSelectionScopeExt as _, TextSelectionScopeId, actions::Cancel,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     ActiveTheme, IconName, Placement, Sizable, StyledExt as _, WindowExt as _,
@@ -128,7 +128,7 @@ impl ParentElement for Sheet {
     }
 }
 impl Styled for Sheet {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -146,7 +146,7 @@ impl RenderOnce for Sheet {
             left: frame_insets.left.max(safe_insets.left),
         };
         let size = window.viewport_size()
-            - gpui::size(
+            - wgpui::size(
                 frame_insets.left + frame_insets.right,
                 frame_insets.top + frame_insets.bottom,
             );

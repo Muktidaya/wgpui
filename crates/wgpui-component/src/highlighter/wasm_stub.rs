@@ -5,9 +5,9 @@
 //!
 //! Note: diagnostics.rs is available in WASM, only syntax highlighting requires stubs.
 
-use gpui::{HighlightStyle, SharedString};
 use std::ops::Range;
 use std::time::Duration;
+use wgpui::{HighlightStyle, SharedString};
 
 // Syntax highlighter stub. With `syntect` it names highlights for the
 // presentations that resolve styles themselves, such as a diff.
@@ -150,7 +150,7 @@ pub enum FontWeightContent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, JsonSchema, Serialize, Deserialize)]
 pub struct ThemeStyle {
-    pub color: Option<gpui::Hsla>,
+    pub color: Option<wgpui::Hsla>,
     pub font_style: Option<FontStyle>,
     pub font_weight: Option<FontWeightContent>,
 }
@@ -160,20 +160,20 @@ impl From<ThemeStyle> for HighlightStyle {
         HighlightStyle {
             color: style.color,
             font_weight: style.font_weight.map(|w| match w {
-                FontWeightContent::Thin => gpui::FontWeight::THIN,
-                FontWeightContent::ExtraLight => gpui::FontWeight::EXTRA_LIGHT,
-                FontWeightContent::Light => gpui::FontWeight::LIGHT,
-                FontWeightContent::Normal => gpui::FontWeight::NORMAL,
-                FontWeightContent::Medium => gpui::FontWeight::MEDIUM,
-                FontWeightContent::Semibold => gpui::FontWeight::SEMIBOLD,
-                FontWeightContent::Bold => gpui::FontWeight::BOLD,
-                FontWeightContent::ExtraBold => gpui::FontWeight::EXTRA_BOLD,
-                FontWeightContent::Black => gpui::FontWeight::BLACK,
+                FontWeightContent::Thin => wgpui::FontWeight::THIN,
+                FontWeightContent::ExtraLight => wgpui::FontWeight::EXTRA_LIGHT,
+                FontWeightContent::Light => wgpui::FontWeight::LIGHT,
+                FontWeightContent::Normal => wgpui::FontWeight::NORMAL,
+                FontWeightContent::Medium => wgpui::FontWeight::MEDIUM,
+                FontWeightContent::Semibold => wgpui::FontWeight::SEMIBOLD,
+                FontWeightContent::Bold => wgpui::FontWeight::BOLD,
+                FontWeightContent::ExtraBold => wgpui::FontWeight::EXTRA_BOLD,
+                FontWeightContent::Black => wgpui::FontWeight::BLACK,
             }),
             font_style: style.font_style.map(|s| match s {
-                FontStyle::Normal => gpui::FontStyle::Normal,
-                FontStyle::Italic => gpui::FontStyle::Italic,
-                FontStyle::Underline => gpui::FontStyle::Normal,
+                FontStyle::Normal => wgpui::FontStyle::Normal,
+                FontStyle::Italic => wgpui::FontStyle::Italic,
+                FontStyle::Underline => wgpui::FontStyle::Normal,
             }),
             ..Default::default()
         }
@@ -358,77 +358,77 @@ pub struct StatusColors {
 }
 
 impl StatusColors {
-    pub fn error(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn error(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn error_background(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn error_background(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn error_border(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn error_border(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn warning(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn warning(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn warning_background(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn warning_background(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn warning_border(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn warning_border(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn info(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn info(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn info_background(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn info_background(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn info_border(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn info_border(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn success(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn success(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn success_background(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn success_background(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn success_border(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn success_border(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn hint(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn hint(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn hint_background(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn hint_background(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 
-    pub fn hint_border(&self, _cx: &gpui::App) -> gpui::Hsla {
-        gpui::Hsla::default()
+    pub fn hint_border(&self, _cx: &wgpui::App) -> wgpui::Hsla {
+        wgpui::Hsla::default()
     }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash, JsonSchema, Serialize, Deserialize)]
 pub struct HighlightThemeStyle {
-    pub editor_background: Option<gpui::Hsla>,
-    pub editor_foreground: Option<gpui::Hsla>,
-    pub editor_active_line: Option<gpui::Hsla>,
-    pub editor_line_number: Option<gpui::Hsla>,
-    pub editor_active_line_number: Option<gpui::Hsla>,
-    pub editor_invisible: Option<gpui::Hsla>,
+    pub editor_background: Option<wgpui::Hsla>,
+    pub editor_foreground: Option<wgpui::Hsla>,
+    pub editor_active_line: Option<wgpui::Hsla>,
+    pub editor_line_number: Option<wgpui::Hsla>,
+    pub editor_active_line_number: Option<wgpui::Hsla>,
+    pub editor_invisible: Option<wgpui::Hsla>,
     #[serde(rename = "editor.gutter.background")]
-    pub editor_gutter_background: Option<gpui::Hsla>,
+    pub editor_gutter_background: Option<wgpui::Hsla>,
     #[serde(flatten)]
     pub status: StatusColors,
     #[serde(rename = "syntax")]
@@ -463,7 +463,7 @@ impl HighlightTheme {
     }
 }
 
-impl gpui_base::input::HighlightStyleResolver for HighlightTheme {
+impl wgpui_base::input::HighlightStyleResolver for HighlightTheme {
     fn style(&self, name: &str) -> Option<HighlightStyle> {
         self.style.syntax.style(name)
     }

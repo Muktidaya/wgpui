@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     AlignItems, AnyElement, AnyView, App, Axis, Div, ElementId, InteractiveElement as _,
     IntoElement, ParentElement, Pixels, Rems, RenderOnce, SharedString, StyleRefinement, Styled,
     Window, div, prelude::FluentBuilder as _, px,

@@ -1,5 +1,5 @@
-use gpui::{App, Hsla};
-use gpui_base::input::DiagnosticSeverity;
+use wgpui::{App, Hsla};
+use wgpui_base::input::DiagnosticSeverity;
 
 use crate::ActiveTheme as _;
 

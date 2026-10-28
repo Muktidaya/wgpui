@@ -1,11 +1,11 @@
 use std::rc::Rc;
 
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Anchor, AnyElement, App, Context, ElementId, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, RenderOnce, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Task, Window, div, prelude::FluentBuilder as _,
 };
-use instant::Duration;
 
 use crate::{Popup, StyledExt as _};
 
@@ -14,7 +14,7 @@ type ContentBuilder = Box<
         &mut HoverCardState,
         &mut Window,
         &mut Context<HoverCardState>,
-    ) -> Stateful<gpui::Div>,
+    ) -> Stateful<wgpui::Div>,
 >;
 type OpenChangeHandler = Rc<dyn Fn(&bool, &mut Window, &mut App)>;
 
@@ -64,7 +64,7 @@ impl HoverCard {
                 &mut HoverCardState,
                 &mut Window,
                 &mut Context<HoverCardState>,
-            ) -> Stateful<gpui::Div>
+            ) -> Stateful<wgpui::Div>
             + 'static,
     {
         self.content = Some(Box::new(content));
@@ -269,7 +269,7 @@ impl RenderOnce for HoverCard {
             popup.content(state.update(cx, |state, cx| {
                 content(state, window, cx)
                     .when(self.tap_to_open, |content| {
-                        content.on_mouse_up_out(gpui::MouseButton::Left, dismiss)
+                        content.on_mouse_up_out(wgpui::MouseButton::Left, dismiss)
                     })
                     .when(!self.tap_to_open, |content| content.on_hover(hover))
             }))
@@ -281,7 +281,7 @@ impl RenderOnce for HoverCard {
 mod tests {
     use std::cell::RefCell;
 
-    use gpui::{Context, Render, TestAppContext, point, px};
+    use wgpui::{Context, Render, TestAppContext, point, px};
 
     use super::*;
 
@@ -317,13 +317,13 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn public_hover_card_owns_delayed_open_and_close(cx: &mut TestAppContext) {
         let delay = Duration::from_millis(100);
         let (_, cx) = cx.add_window_view(|_, _| Harness::default());
         cx.update(|window, cx| window.draw(cx).clear());
 
-        cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(10.), px(10.)), None, wgpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
         cx.update(|window, cx| {
@@ -332,14 +332,14 @@ mod tests {
         });
         assert!(cx.debug_bounds("hover-card-content").is_some());
 
-        cx.simulate_mouse_move(point(px(100.), px(100.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(100.), px(100.)), None, wgpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
         cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("hover-card-content").is_none());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn public_hover_card_reports_each_open_change(cx: &mut TestAppContext) {
         let delay = Duration::from_millis(100);
         let open_changes = Rc::new(RefCell::new(Vec::new()));
@@ -352,7 +352,7 @@ mod tests {
         });
         cx.update(|window, cx| window.draw(cx).clear());
 
-        cx.simulate_mouse_move(point(px(10.), px(10.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(10.), px(10.)), None, wgpui::Modifiers::default());
         assert_eq!(*open_changes.borrow(), Vec::<bool>::new());
 
         cx.executor().advance_clock(delay);
@@ -363,13 +363,13 @@ mod tests {
         });
         assert_eq!(*open_changes.borrow(), vec![true]);
 
-        cx.simulate_mouse_move(point(px(100.), px(100.)), None, gpui::Modifiers::default());
+        cx.simulate_mouse_move(point(px(100.), px(100.)), None, wgpui::Modifiers::default());
         cx.executor().advance_clock(delay);
         cx.run_until_parked();
         cx.update(|window, cx| window.draw(cx).clear());
         assert_eq!(*open_changes.borrow(), vec![true, false]);
     }
-    #[gpui::test]
+    #[wgpui::test]
     fn tap_card_ignores_hover_and_toggles_and_dismisses(cx: &mut TestAppContext) {
         let changes = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({

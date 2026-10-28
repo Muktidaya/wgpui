@@ -1,10 +1,10 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
-use gpui_base::{Toolbar as BaseToolbar, ToolbarGroup as BaseToolbarGroup};
+use wgpui_base::{Toolbar as BaseToolbar, ToolbarGroup as BaseToolbarGroup};
 
 use crate::{Sizable, Size, StyleSized as _, StyledExt as _};
 
@@ -263,8 +263,8 @@ impl RenderOnce for Toolbar {
 mod tests {
     use super::*;
     use crate::button::{Button, ButtonVariant};
-    use gpui::{Context, Render, TestAppContext, div};
     use std::sync::{Arc, Mutex};
+    use wgpui::{Context, Render, TestAppContext, div};
 
     #[derive(IntoElement)]
     struct SizeProbe {
@@ -354,7 +354,7 @@ mod tests {
         assert!(button.is_compact());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn toolbar_size_propagates_to_items_independent_of_builder_order(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let expected = std::array::from_fn(|_| Arc::new(Mutex::new(None)));
@@ -367,7 +367,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn toolbar_group_propagates_its_size_to_items(cx: &mut TestAppContext) {
         let item = Arc::new(Mutex::new(None));
         let observed = item.clone();

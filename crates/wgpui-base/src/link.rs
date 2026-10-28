@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, MouseButton, ParentElement, Refineable as _, RenderOnce, Role, SharedString,
     Stateful, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
 use crate::{StateStyle, StyledExt as _, a11y_disabled::A11yDisabledExt as _};
 
@@ -212,7 +212,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         TestAppContext, VisualTestContext, accesskit, canvas, point, px,
     };
@@ -297,7 +297,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_runs_injected_open_strategy_and_activation_once(cx: &mut TestAppContext) {
         let (cx, activations, keyboard_events, opened, _) = harness(cx, false);
 
@@ -309,7 +309,7 @@ mod tests {
         assert_eq!(cx.opened_url(), None);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn open_strategy_runs_before_activation_callback(cx: &mut TestAppContext) {
         struct OrderedLink(Rc<RefCell<Vec<&'static str>>>);
 
@@ -333,7 +333,7 @@ mod tests {
         assert_eq!(result.borrow().as_slice(), &["open", "activate"]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_and_space_each_activate_once(cx: &mut TestAppContext) {
         let (cx, activations, keyboard_events, opened, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -353,7 +353,7 @@ mod tests {
         assert_eq!(cx.opened_url(), None);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn href_without_strategy_never_opens_externally(cx: &mut TestAppContext) {
         struct TargetOnly;
 
@@ -370,7 +370,7 @@ mod tests {
         assert_eq!(cx.opened_url(), None);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_link_is_inert_and_blocks_parent_activation(cx: &mut TestAppContext) {
         let (cx, activations, _, opened, parent_clicks) = harness(cx, true);
 
@@ -411,7 +411,7 @@ mod tests {
         assert_eq!(semantic_only.resolved_style().opacity, Some(0.5));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_exposes_link_role_label_and_action_surface(cx: &mut TestAppContext) {
         type Captured = Arc<Mutex<Option<(accesskit::Node, accesskit::Node)>>>;
 

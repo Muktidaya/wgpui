@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     App, Context, Edges, Entity, IntoElement, Pixels, Subscription, TestAppContext, Window,
     WindowHandle, div, px,
 };
@@ -118,7 +118,7 @@ impl Table {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn a_fitted_column_holds_its_content_on_whole_device_pixels(cx: &mut TestAppContext) {
     let table = Table::new(cx);
 
@@ -155,7 +155,7 @@ fn a_fitted_column_holds_its_content_on_whole_device_pixels(cx: &mut TestAppCont
     );
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn a_fit_stays_within_the_column_and_emits_only_on_a_change(cx: &mut TestAppContext) {
     let table = Table::new(cx);
     let free = table.col_width(cx, FREE);

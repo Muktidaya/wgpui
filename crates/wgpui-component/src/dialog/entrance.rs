@@ -1,8 +1,8 @@
-use gpui::{
+use serde::{Deserialize, Serialize};
+use wgpui::{
     AnyElement, App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement,
     LayoutId, Pixels, Window, point, px,
 };
-use serde::{Deserialize, Serialize};
 
 /// The entrance presentation shared by Dialog and AlertDialog.
 ///
@@ -108,7 +108,7 @@ impl Element for EntranceSurface {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         Anchor, Context, InteractiveElement as _, ParentElement as _, Render,
         StatefulInteractiveElement as _, Styled as _, TestAppContext, div, size,
     };
@@ -134,14 +134,14 @@ mod tests {
             );
             surface.progress = self.progress;
             div().size_full().child(
-                gpui_base::Positioner::corner(Anchor::TopLeft, point(px(100.), self.requested_y))
+                wgpui_base::Positioner::corner(Anchor::TopLeft, point(px(100.), self.requested_y))
                     .margin(px(16.))
                     .child(surface),
             )
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn fade_slide_uses_resolved_bounds_and_keeps_the_surface_inside_the_window(
         cx: &mut TestAppContext,
     ) {

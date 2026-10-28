@@ -16,7 +16,7 @@ wgpui = "0.4.0"
 wgpui-base = "0.8.1"
 ```
 
-Until these candidate versions are published, use path dependencies on this repository: the framework is at the repository root and Base is at `crates/wgpui-base`. See the [Kit guide](../../docs/kit.md#source-candidate-compatibility) for dependency and public type compatibility. Internal source aliases such as `gpui` do not change the public package names; applications import `wgpui` and `wgpui_base`.
+Until these candidate versions are published, use path dependencies on this repository: the framework is at the repository root and Base is at `crates/wgpui-base`. See the [Kit guide](../../docs/kit.md#source-candidate-compatibility) for dependency and public type compatibility. Source and application imports use the canonical `wgpui` and `wgpui_base` names.
 
 ## Where it fits
 

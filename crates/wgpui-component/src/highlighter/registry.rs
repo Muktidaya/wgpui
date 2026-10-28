@@ -1,4 +1,3 @@
-use gpui::{App, FontWeight, HighlightStyle, Hsla, SharedString};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -10,6 +9,7 @@ use std::{
         atomic::{AtomicU64, Ordering},
     },
 };
+use wgpui::{App, FontWeight, HighlightStyle, Hsla, SharedString};
 
 use anyhow::Result;
 
@@ -180,12 +180,12 @@ pub enum FontStyle {
     Underline,
 }
 
-impl From<FontStyle> for gpui::FontStyle {
+impl From<FontStyle> for wgpui::FontStyle {
     fn from(style: FontStyle) -> Self {
         match style {
-            FontStyle::Normal => gpui::FontStyle::Normal,
-            FontStyle::Italic => gpui::FontStyle::Italic,
-            FontStyle::Underline => gpui::FontStyle::Normal,
+            FontStyle::Normal => wgpui::FontStyle::Normal,
+            FontStyle::Italic => wgpui::FontStyle::Italic,
+            FontStyle::Underline => wgpui::FontStyle::Normal,
         }
     }
 }
@@ -488,7 +488,7 @@ impl HighlightTheme {
     }
 }
 
-impl gpui_base::input::HighlightStyleResolver for HighlightTheme {
+impl wgpui_base::input::HighlightStyleResolver for HighlightTheme {
     fn style(&self, name: &str) -> Option<HighlightStyle> {
         self.style.syntax.style(name)
     }
@@ -635,10 +635,10 @@ mod tests {
         use crate::highlighter::{Language, SyntaxHighlighter, languages};
 
         struct CaptureStyles;
-        impl gpui_base::input::HighlightStyleResolver for CaptureStyles {
-            fn style(&self, _name: &str) -> Option<gpui::HighlightStyle> {
-                Some(gpui::HighlightStyle {
-                    color: Some(gpui::rgb(0x123456).into()),
+        impl wgpui_base::input::HighlightStyleResolver for CaptureStyles {
+            fn style(&self, _name: &str) -> Option<wgpui::HighlightStyle> {
+                Some(wgpui::HighlightStyle {
+                    color: Some(wgpui::rgb(0x123456).into()),
                     ..Default::default()
                 })
             }

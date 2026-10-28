@@ -1,4 +1,4 @@
-use gpui::{App, Bounds, IntoElement, ParentElement, Pixels, Styled as _, Window, canvas};
+use wgpui::{App, Bounds, IntoElement, ParentElement, Pixels, Styled as _, Window, canvas};
 
 use crate::TextSelectionScopeId;
 

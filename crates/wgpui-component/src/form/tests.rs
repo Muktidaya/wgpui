@@ -1,5 +1,5 @@
 use super::*;
-use gpui::{Context, InteractiveElement as _, Render, TestAppContext, div};
+use wgpui::{Context, InteractiveElement as _, Render, TestAppContext, div};
 
 #[test]
 fn test_form_builder() {
@@ -67,7 +67,7 @@ impl Render for FormHarness {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn label_layout_is_independent_of_field_columns(cx: &mut TestAppContext) {
     cx.update(crate::init);
     for width in [360., 800.] {
@@ -98,7 +98,7 @@ fn label_layout_is_independent_of_field_columns(cx: &mut TestAppContext) {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn footer_spans_columns_after_fields_and_aligns_actions_to_trailing_edge(cx: &mut TestAppContext) {
     cx.update(crate::init);
     for width in [360., 800.] {
@@ -128,7 +128,7 @@ fn footer_spans_columns_after_fields_and_aligns_actions_to_trailing_edge(cx: &mu
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn default_without_footer_keeps_legacy_geometry(cx: &mut TestAppContext) {
     cx.update(crate::init);
     for layout in [Axis::Horizontal, Axis::Vertical] {
@@ -154,7 +154,7 @@ fn default_without_footer_keeps_legacy_geometry(cx: &mut TestAppContext) {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn form_applies_styled_refinements(cx: &mut TestAppContext) {
     cx.update(crate::init);
     struct FormCompareHarness {
@@ -210,7 +210,7 @@ fn form_applies_styled_refinements(cx: &mut TestAppContext) {
     assert_eq!(styled_gap - default_gap, px(22.));
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn hidden_fields_are_not_rendered(cx: &mut TestAppContext) {
     cx.update(crate::init);
     struct HiddenFieldHarness {

@@ -12,7 +12,7 @@
 
 use std::{cell::RefCell, ops::Range, rc::Rc};
 
-use gpui::{Bounds, Hsla, Pixels, TextLayout};
+use wgpui::{Bounds, Hsla, Pixels, TextLayout};
 
 pub(crate) trait EditorSink {
     /// The leaf `key` was laid out this frame as one `TextLayout`.

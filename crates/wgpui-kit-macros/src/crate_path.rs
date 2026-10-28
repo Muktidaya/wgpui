@@ -6,7 +6,7 @@ use quote::quote;
 ///
 /// Order: `wgpui` (this adaptor), then `wgpui-kit` and the import alias `gpui`, then
 /// upstream `gpui-kit` / `gpui-pre` so a later kit consumer still resolves.
-pub(crate) fn gpui() -> syn::Result<TokenStream> {
+pub(crate) fn wgpui() -> syn::Result<TokenStream> {
     for name in ["wgpui", "wgpui-kit", "gpui", "gpui-kit", "gpui-pre"] {
         if let Ok(found) = crate_name(name) {
             return Ok(found_crate_path(found));

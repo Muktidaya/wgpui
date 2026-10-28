@@ -1,7 +1,7 @@
 //! Presentation callbacks and measured geometry. None of this enters document history.
 use super::{InlineToken, InlineTokenSpan, InputBaseState, InputModeKind, rope_ext::RopeExt as _};
-use gpui::{AnyElement, App, Bounds, ClickEvent, Font, IntoElement, Pixels, Window};
 use std::{collections::HashMap, ops::Range, rc::Rc};
+use wgpui::{AnyElement, App, Bounds, ClickEvent, Font, IntoElement, Pixels, Window};
 
 /// Read-only context for a single inline renderer. Width is the full available row.
 #[derive(Clone)]
@@ -162,13 +162,13 @@ impl InlineTokenPresentation {
         if let Some(render) = &self.renderer {
             render(token, window, cx)
         } else {
-            gpui::div()
+            wgpui::div()
                 .child(token.token().label().clone())
                 .into_any_element()
         }
     }
 }
-use gpui::ParentElement as _;
+use wgpui::ParentElement as _;
 
 #[derive(Default)]
 pub(super) struct TokenLayoutCache {

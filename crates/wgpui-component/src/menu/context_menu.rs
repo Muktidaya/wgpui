@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Bounds, Context, DismissEvent, Element, ElementId, Entity,
     FocusHandle, Focusable, GlobalElementId, Hitbox, HitboxBehavior, InspectorElementId,
     InteractiveElement, IntoElement, LayoutId, LongPressEvent, MouseButton, MouseDownEvent,
@@ -195,7 +195,7 @@ impl DeferredMenu {
                     ),
             ),
         )
-        .with_priority(gpui_base::POPUP_PRIORITY)
+        .with_priority(wgpui_base::POPUP_PRIORITY)
         .into_any()
     }
 }
@@ -283,11 +283,11 @@ impl<E: ParentElement + Styled + IntoElement + 'static> Element for ContextMenu<
 
     fn request_layout(
         &mut self,
-        id: Option<&gpui::GlobalElementId>,
-        _: Option<&gpui::InspectorElementId>,
+        id: Option<&wgpui::GlobalElementId>,
+        _: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (wgpui::LayoutId, Self::RequestLayoutState) {
         let anchor = self.anchor;
 
         self.with_element_state(
@@ -339,9 +339,9 @@ impl<E: ParentElement + Styled + IntoElement + 'static> Element for ContextMenu<
 
     fn prepaint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
+        _: Option<&wgpui::GlobalElementId>,
         _: Option<&InspectorElementId>,
-        bounds: gpui::Bounds<gpui::Pixels>,
+        bounds: wgpui::Bounds<wgpui::Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         window: &mut Window,
         cx: &mut App,
@@ -364,9 +364,9 @@ impl<E: ParentElement + Styled + IntoElement + 'static> Element for ContextMenu<
 
     fn paint(
         &mut self,
-        _: Option<&gpui::GlobalElementId>,
+        _: Option<&wgpui::GlobalElementId>,
         _: Option<&InspectorElementId>,
-        _: gpui::Bounds<gpui::Pixels>,
+        _: wgpui::Bounds<wgpui::Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         hitbox: &mut Self::PrepaintState,
         window: &mut Window,
@@ -388,7 +388,11 @@ impl<E: ParentElement + Styled + IntoElement + 'static> Element for ContextMenu<
                     && event.phase == TouchPhase::Started
                     && !window.default_prevented()
                     && hitbox.is_hovered(window)
-                    && !gpui_base::TextSelection::is_selectable_at(event.start_position, window, cx)
+                    && !wgpui_base::TextSelection::is_selectable_at(
+                        event.start_position,
+                        window,
+                        cx,
+                    )
                 {
                     window.prevent_default();
                     open_menu(&shared_state, &builder, event.start_position, window, cx);
@@ -539,11 +543,11 @@ mod tests {
     use super::*;
     use crate::menu::PopupMenuItem;
     use crate::theme::Theme;
-    use gpui::{
+    use std::cell::Cell;
+    use wgpui::{
         Context, FocusHandle, IntoElement, KeyBinding, Render, TestAppContext, VisualTestContext,
         actions, point, px,
     };
-    use std::cell::Cell;
 
     actions!(context_menu_test, [RemoveTab, CopyText]);
 
@@ -581,7 +585,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn action_bubbles_from_trigger_and_focus_restores_on_dismiss(cx: &mut TestAppContext) {
         cx.update(|cx| {
             cx.set_global(Theme::default());
@@ -691,7 +695,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn item_click_fires_once_from_rows_without_an_id(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let clicked = Rc::new(Cell::new(0));
@@ -731,7 +735,7 @@ mod tests {
     /// and the app-global listener registry kept that clone alive even after
     /// the window (and its element state) was gone, so the menu entity
     /// survived the window. The subscription now holds a `Weak` instead.
-    #[gpui::test]
+    #[wgpui::test]
     fn open_without_dismiss_releases_the_menu_entity(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let before = cx.update(|cx| cx.leak_detector_snapshot());
@@ -795,7 +799,7 @@ mod tests {
     /// node, claimed in prepaint by whichever focused element comes first.
     /// Moving focus to the menu while prepainting it let the previous focus
     /// claim the frame first, which aborts debug builds.
-    #[gpui::test]
+    #[wgpui::test]
     fn menu_takes_focus_before_its_first_frame(cx: &mut TestAppContext) {
         cx.update(|cx| crate::init(cx));
         let content_focused_at_render = Rc::new(Cell::new(false));
@@ -832,7 +836,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shortcut_hint_is_painted_on_the_frame_the_menu_opens(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);

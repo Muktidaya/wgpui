@@ -1,5 +1,5 @@
 use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
     Refineable as _, RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
@@ -125,7 +125,7 @@ impl InputContextMenuCapabilities {
 /// normal children. Applications remain responsible for all presentation.
 #[derive(IntoElement)]
 pub struct InputBase {
-    base: crate::ObservedElement<gpui::Stateful<Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     style: StyleRefinement,
     semantic_styles: InputStyles,
     children: Vec<AnyElement>,
@@ -174,7 +174,7 @@ impl InputBase {
     /// This only declares an observation relationship with `test-support`; it
     /// never adds a native accessibility node or registers a focus handle. The
     /// relationship follows the frame's GPUI element-state lifetime.
-    pub fn semantic_owner(self, editor: gpui::EntityId) -> Self {
+    pub fn semantic_owner(self, editor: wgpui::EntityId) -> Self {
         #[cfg(feature = "test-support")]
         {
             Self {
@@ -248,7 +248,7 @@ impl ParentElement for InputBase {
 }
 
 impl InteractiveElement for InputBase {
-    fn track_focus(mut self, focus: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, focus: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(focus);
         self
     }
@@ -294,9 +294,9 @@ mod tests {
     fn semantic_state_styles_override_the_normal_style() {
         let focused = InputBase::new("focused")
             .focused(true)
-            .border_color(gpui::red())
-            .styles(|styles| styles.focused(|style| style.border_color(gpui::blue())));
-        assert_eq!(focused.resolved_style().border_color, Some(gpui::blue()));
+            .border_color(wgpui::red())
+            .styles(|styles| styles.focused(|style| style.border_color(wgpui::blue())));
+        assert_eq!(focused.resolved_style().border_color, Some(wgpui::blue()));
 
         let disabled = InputBase::new("disabled")
             .focused(true)

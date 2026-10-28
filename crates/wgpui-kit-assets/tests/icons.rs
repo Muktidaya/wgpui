@@ -1,7 +1,7 @@
 #![cfg(not(target_family = "wasm"))]
 
-use gpui::{AssetSource, IntoElement};
 use std::collections::BTreeSet;
+use wgpui::{AssetSource, IntoElement};
 use wgpui_kit_assets::{AllAssets, Assets, IconName};
 
 #[test]
@@ -24,7 +24,7 @@ fn shared_names_work_without_component() {
     assert_eq!(IconName::Accessibility.path(), "icons/accessibility.svg");
     assert_eq!(IconName::ALargeSmall.path(), "icons/a-large-small.svg");
     let _ = IconName::Search.into_any_element();
-    let _: gpui::AnyElement = IconName::Search.into();
+    let _: wgpui::AnyElement = IconName::Search.into();
 }
 
 wgpui_kit_assets::icon_assets!(SelectedAssets, [Search, Check]);
@@ -58,7 +58,7 @@ fn empty_selection_is_a_valid_asset_source() {
 fn default_assets_preserve_the_component_bundle_without_all_lucide_icons() {
     let expected: BTreeSet<_> = include_str!("../default-icons.txt")
         .lines()
-        .map(gpui::SharedString::from)
+        .map(wgpui::SharedString::from)
         .collect();
     let actual: BTreeSet<_> = Assets.list("icons/").unwrap().into_iter().collect();
     assert_eq!(actual, expected);

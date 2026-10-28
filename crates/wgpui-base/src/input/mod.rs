@@ -5,7 +5,7 @@
 //! contradicts, and it hides the real API surface from anyone reading it.
 #![warn(unreachable_pub)]
 
-use gpui::App;
+use wgpui::App;
 
 /// Character used by masked editor modes.
 pub(crate) const MASK_CHAR: char = '•';

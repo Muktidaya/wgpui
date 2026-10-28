@@ -9,12 +9,12 @@ use crate::{
     setting::SettingPage,
     sidebar::{Sidebar, SidebarMenu, SidebarMenuItem},
 };
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, AppContext as _, Axis, ElementId, Entity, IntoElement, ParentElement as _, Pixels,
     RenderOnce, StyleRefinement, Styled, Window, container_query, div, prelude::FluentBuilder as _,
     px, relative,
 };
-use rust_i18n::t;
 
 const STACKED_LAYOUT_MAX_WIDTH: Pixels = px(480.);
 
@@ -116,7 +116,7 @@ impl Settings {
         options: &RenderOptions,
         window: &mut Window,
         cx: &mut App,
-    ) -> gpui::AnyElement {
+    ) -> wgpui::AnyElement {
         let page_ix = state.read(cx).selected_index.page_ix;
         if let Some(page) = self.pages.get(page_ix)
             && !filter.groups[page_ix].is_empty()

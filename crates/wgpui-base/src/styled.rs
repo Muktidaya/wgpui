@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, BoxShadow, Corners, DefiniteLength, Div, Edges, FocusHandle, Hsla, Pixels,
     Refineable as _, Role, StyleRefinement, Styled, Window, div, hsla, point,
 };
@@ -66,14 +66,14 @@ pub fn box_shadow(
 macro_rules! font_weight {
     ($method:ident, $weight:ident) => {
         fn $method(self) -> Self {
-            self.font_weight(gpui::FontWeight::$weight)
+            self.font_weight(wgpui::FontWeight::$weight)
         }
     };
 }
 
 #[cfg_attr(
     any(feature = "inspector", debug_assertions),
-    gpui_macros::derive_inspector_reflection
+    wgpui_derive::derive_inspector_reflection
 )]
 pub trait StyledExt: Styled + Sized {
     fn refine_style(mut self, style: &StyleRefinement) -> Self {
@@ -97,7 +97,7 @@ pub trait StyledExt: Styled + Sized {
     ///
     /// ```
     /// use wgpui_base::StyledExt as _;
-    /// use gpui::{ParentElement as _, Styled as _, div};
+    /// use wgpui::{ParentElement as _, Styled as _, div};
     ///
     /// // A sidebar beside a detail pane, both spanning the full height.
     /// div().h_flex().size_full().child(div().w_64().h_full());
@@ -225,7 +225,7 @@ pub fn refine_style_refinement(base: &mut StyleRefinement, overlay: &StyleRefine
 
 #[cfg(any(feature = "inspector", debug_assertions))]
 pub fn styled_ext_reflection_methods<T: Styled + 'static>()
--> Vec<gpui::inspector_reflection::FunctionReflection<T>> {
+-> Vec<wgpui::inspector_reflection::FunctionReflection<T>> {
     styled_ext_reflection::methods::<T>()
 }
 
@@ -236,7 +236,7 @@ fn hsl(hue: f32, saturation: f32, lightness: f32) -> Hsla {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{
+    use wgpui::{
         Context, InteractiveElement as _, IntoElement, ParentElement as _, Render, TestAppContext,
         px,
     };
@@ -279,7 +279,7 @@ mod tests {
 
     /// `h_flex` centers on the cross axis while `v_flex` leaves the default
     /// stretch. The asymmetry is deliberate but easy to trip over, so lock it.
-    #[gpui::test]
+    #[wgpui::test]
     fn h_flex_centers_and_v_flex_stretches_on_the_cross_axis(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| CrossAxisTest);
         cx.run_until_parked();

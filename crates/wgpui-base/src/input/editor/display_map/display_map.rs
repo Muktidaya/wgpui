@@ -6,8 +6,8 @@
 /// - Automatic projection updates on text/layout changes
 use std::ops::Range;
 
-use gpui::{App, Font, Pixels};
 use ropey::Rope;
+use wgpui::{App, Font, Pixels};
 
 use super::fold_map::FoldMap;
 use super::folding::FoldRange;

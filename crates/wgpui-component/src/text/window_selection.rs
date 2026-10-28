@@ -5,19 +5,19 @@ mod tests {
         Placement, Root,
         text::{TextView, TextViewState},
     };
-    use gpui::{
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+    use std::time::Duration;
+    use wgpui::{
         App, AppContext as _, Bounds, Context, Element, ElementId, Entity, FocusHandle,
         GlobalElementId, Hitbox, InspectorElementId, InteractiveElement as _, IntoElement,
         LayoutId, Modifiers, MouseButton, MouseDownEvent, MouseUpEvent, ParentElement as _, Pixels,
         Render, SharedString, Styled as _, StyledText, TestAppContext, VisualTestContext, Window,
         div, point, px, relative,
     };
-    use gpui_base::{
+    use wgpui_base::{
         AutoScroll, TextSelection, TextSelectionHandle, TextSelectionRegistration, TextSelectionRun,
     };
-    use std::cell::{Cell, RefCell};
-    use std::rc::Rc;
-    use std::time::Duration;
 
     struct PlainSelectableText {
         selection: TextSelectionHandle,
@@ -85,7 +85,7 @@ mod tests {
         ) -> Self::PrepaintState {
             self.styled_text
                 .prepaint(id, inspector_id, bounds, &mut (), window, cx);
-            let hitbox = window.insert_hitbox(bounds, gpui::HitboxBehavior::Normal);
+            let hitbox = window.insert_hitbox(bounds, wgpui::HitboxBehavior::Normal);
             self.selection.register(
                 TextSelectionRegistration::new(hitbox.clone(), bounds)
                     .with_document_order(self.document_order)
@@ -212,7 +212,7 @@ mod tests {
         scenario: CrossRendererVirtualScenario,
         cx: &mut TestAppContext,
     ) {
-        use gpui::ListOffset;
+        use wgpui::ListOffset;
 
         cx.update(crate::init);
         let (root, cx) = cx.add_window_view(move |window, cx| {
@@ -274,7 +274,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_to_virtual_tail_exports_unpainted_plain_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Plain,
@@ -283,7 +283,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn plain_to_virtual_tail_exports_unpainted_source_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Source,
@@ -292,7 +292,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn virtual_head_to_plain_exports_unpainted_plain_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Plain,
@@ -301,7 +301,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn virtual_head_to_plain_exports_unpainted_source_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Source,
@@ -310,7 +310,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn middle_virtual_renderer_exports_all_plain_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Plain,
@@ -319,7 +319,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn middle_virtual_renderer_exports_all_source_blocks(cx: &mut TestAppContext) {
         assert_cross_renderer_virtual_export(
             crate::text::SelectionFormat::Source,
@@ -354,10 +354,10 @@ mod tests {
         /// Top padding above the views. Bumping it shifts the whole content
         /// down, which is the layout-level equivalent of an outer container
         /// scrolling (see `selection_follows_content_when_layout_shifts`).
-        top_offset: gpui::Pixels,
+        top_offset: wgpui::Pixels,
         /// Blank gap between the two views, used to anchor a selection in blank
         /// space (the proxy-anchored endpoint path).
-        mid_gap: gpui::Pixels,
+        mid_gap: wgpui::Pixels,
         first_style: crate::text::TextViewStyle,
     }
 
@@ -435,7 +435,7 @@ mod tests {
         (chat, cx)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn base_plain_selection_and_text_view_share_one_cross_renderer_selection(
         cx: &mut TestAppContext,
     ) {
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(selected.trim(), "Plain adapter\nTextView adapter");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clearing_base_state_leaves_no_root_owned_text_view_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
@@ -529,7 +529,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn base_clear_resets_text_view_before_returning(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
@@ -553,7 +553,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn base_clear_then_select_all_in_one_effect_keeps_the_new_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
@@ -668,8 +668,8 @@ mod tests {
     /// writer shows up as an overshoot.
     fn drag_and_hold(
         text_view: &Entity<TextViewState>,
-        start: gpui::Point<Pixels>,
-        edge: gpui::Point<Pixels>,
+        start: wgpui::Point<Pixels>,
+        edge: wgpui::Point<Pixels>,
         ticks: u32,
         cx: &mut VisualTestContext,
     ) -> Pixels {
@@ -699,7 +699,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn held_text_view_drag_auto_scroll_extends_selection(cx: &mut TestAppContext) {
         let source = (0..100)
             .map(|ix| format!("Paragraph {ix} with enough text to select"))
@@ -765,11 +765,11 @@ mod tests {
         assert_eq!(window_selected_text(cx), after);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn compatibility_text_view_drag_selection_auto_scrolls_both_directions(
         cx: &mut TestAppContext,
     ) {
-        use gpui::ListOffset;
+        use wgpui::ListOffset;
 
         let source = (0..100)
             .map(|ix| format!("Paragraph {ix} with enough text to select"))
@@ -853,7 +853,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn padded_reader_text_view_auto_scrolls_at_the_clipping_edge(cx: &mut TestAppContext) {
         let source = (0..100)
             .map(|ix| format!("Paragraph {ix} with enough text to select"))
@@ -927,7 +927,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn clipped_reader_text_view_auto_scrolls_at_the_visible_edge(cx: &mut TestAppContext) {
         let source = (0..100)
             .map(|ix| format!("Paragraph {ix} with enough text to select"))
@@ -979,9 +979,9 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn padded_scrollable_text_view_uses_content_origin_for_virtual_blocks(cx: &mut TestAppContext) {
-        use gpui::ListOffset;
+        use wgpui::ListOffset;
 
         const BLOCKS: usize = 20;
         let source = (0..BLOCKS)
@@ -1069,9 +1069,9 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_spans_blocks_scrolled_past(cx: &mut TestAppContext) {
-        use gpui::{ScrollDelta, ScrollEvent};
+        use wgpui::{ScrollDelta, ScrollEvent};
 
         const BLOCKS: usize = 20;
 
@@ -1144,9 +1144,9 @@ mod tests {
     /// Source mode has the same gap to bridge as plain text: a block the
     /// selection spans but that scrolled past without painting reports no
     /// selection of its own, and must still be copied — with its markup.
-    #[gpui::test]
+    #[wgpui::test]
     fn source_selection_spans_blocks_scrolled_past(cx: &mut TestAppContext) {
-        use gpui::{ScrollDelta, ScrollEvent};
+        use wgpui::{ScrollDelta, ScrollEvent};
 
         const BLOCKS: usize = 20;
 
@@ -1213,9 +1213,9 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shrinking_virtual_selection_drops_blocks_beyond_the_new_cursor(cx: &mut TestAppContext) {
-        use gpui::ListOffset;
+        use wgpui::ListOffset;
 
         const BLOCKS: usize = 20;
         let source = (0..BLOCKS)
@@ -1300,7 +1300,7 @@ mod tests {
 
     /// A multi-click selection has to come back as source too. The click stores
     /// the plain word it selected as a shortcut, which has lost its markup.
-    #[gpui::test]
+    #[wgpui::test]
     fn source_multi_click_selection_keeps_its_markup(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|window, cx| {
@@ -1337,7 +1337,7 @@ mod tests {
         assert_eq!(text.trim(), "**Hello**", "got: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_inside_one_block_leaves_the_rest(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let source = (0..20)
@@ -1368,7 +1368,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn source_format_maps_offsets_per_rendered_run(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (_, cx) = cx.add_window_view(|window, cx| {
@@ -1399,13 +1399,13 @@ mod tests {
 
     fn drag(
         cx: &mut VisualTestContext,
-        from: gpui::Point<gpui::Pixels>,
-        to: gpui::Point<gpui::Pixels>,
+        from: wgpui::Point<wgpui::Pixels>,
+        to: wgpui::Point<wgpui::Pixels>,
     ) {
         drag_through(cx, &[from, to]);
     }
 
-    fn drag_through(cx: &mut VisualTestContext, points: &[gpui::Point<gpui::Pixels>]) {
+    fn drag_through(cx: &mut VisualTestContext, points: &[wgpui::Point<wgpui::Pixels>]) {
         assert!(points.len() >= 2);
         let from = points[0];
         let to = *points.last().unwrap();
@@ -1434,7 +1434,7 @@ mod tests {
 
     fn click(
         cx: &mut VisualTestContext,
-        position: gpui::Point<gpui::Pixels>,
+        position: wgpui::Point<wgpui::Pixels>,
         modifiers: Modifiers,
     ) {
         cx.simulate_mouse_down(position, MouseButton::Left, modifiers);
@@ -1490,7 +1490,7 @@ mod tests {
             window: &mut Window,
             cx: &mut App,
         ) -> (LayoutId, Self::RequestLayoutState) {
-            (window.request_layout(gpui::Style::default(), None, cx), ())
+            (window.request_layout(wgpui::Style::default(), None, cx), ())
         }
 
         fn prepaint(
@@ -1543,7 +1543,7 @@ mod tests {
             div().size_full().child(
                 self.inner
                     .clone()
-                    .cached(gpui::StyleRefinement::default().size_full()),
+                    .cached(wgpui::StyleRefinement::default().size_full()),
             )
         }
     }
@@ -1555,7 +1555,7 @@ mod tests {
     /// the selection it had just painted, and re-registering it on the next
     /// frame brought the selection back — it blinked, and the window never
     /// stopped redrawing.
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_inside_a_cached_view_survives_replayed_frames(cx: &mut TestAppContext) {
         let source = (0..20)
             .map(|ix| format!("Paragraph {ix} with enough text to select"))
@@ -1619,7 +1619,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_extends_from_previous_plain_click(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1629,7 +1629,7 @@ mod tests {
         assert_eq!(window_selected_text(cx).trim(), "Hello world");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_reuses_anchor_for_repeated_extension(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
         let anchor = point(px(0.), px(15.));
@@ -1642,7 +1642,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_keeps_anchor_when_cursor_crosses_it(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
         let anchor = point(px(20.), px(15.));
@@ -1655,7 +1655,7 @@ mod tests {
         assert_eq!(window_selected_text(cx).trim(), "He");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_drag_keeps_previous_plain_click_as_anchor(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
         let modifiers = shift_modifiers();
@@ -1674,7 +1674,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_uses_anchor_established_by_latest_plain_click(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
         let start = point(px(0.), px(15.));
@@ -1690,7 +1690,7 @@ mod tests {
         assert_eq!(window_selected_text(cx).trim(), "He");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_without_anchor_falls_back_to_plain_click(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1699,7 +1699,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_extends_across_text_views(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
 
@@ -1720,7 +1720,7 @@ mod tests {
         assert!(!second_selecting);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_focuses_the_new_endpoint_view(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
 
@@ -1740,7 +1740,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn same_size_content_replacement_invalidates_finished_selection(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
 
@@ -1759,7 +1759,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_drag_replacement_invalidates_after_mouse_up(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
         let first = chat.read_with(cx, |chat, _| chat.first.clone());
@@ -1793,7 +1793,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn active_drag_append_keeps_compatible_selection(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
         let first = chat.read_with(cx, |chat, _| chat.first.clone());
@@ -1825,7 +1825,7 @@ mod tests {
         assert!(selected.contains("Hello world"), "selected={selected:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn same_size_style_reflow_keeps_finished_selection(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
         drag(cx, point(px(0.), px(15.)), point(px(300.), px(15.)));
@@ -1842,7 +1842,7 @@ mod tests {
         assert_eq!(window_selected_text(cx).trim(), "Hello world");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn shift_click_on_suppressing_control_clears_text_view_selection(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1854,7 +1854,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn cross_view_drag_merges_text_top_to_bottom(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1870,7 +1870,7 @@ mod tests {
         assert!(text.contains('\n'), "expected newline separator: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_from_blank_space_selects_views_below(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1890,7 +1890,7 @@ mod tests {
         assert!(text.contains("Second message"), "got: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_entirely_in_blank_gap_selects_nothing(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
 
@@ -1910,7 +1910,7 @@ mod tests {
         assert_eq!(text, "", "blank-only drag selected text: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_entirely_in_right_gutter_selects_nothing(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1922,7 +1922,7 @@ mod tests {
         assert_eq!(text, "", "right-gutter drag selected text: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_follows_content_when_layout_shifts(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
 
@@ -1972,7 +1972,7 @@ mod tests {
         assert_eq!(before, after, "selection drifted after layout shift");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn suppressed_mouse_down_does_not_start_selection(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -1986,7 +1986,7 @@ mod tests {
         assert!(text.is_empty(), "expected no selection, got: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_selectable_view_is_excluded(cx: &mut TestAppContext) {
         let (_, cx) = setup(false, cx);
 
@@ -2004,7 +2004,7 @@ mod tests {
         assert!(!text.contains("Second message"), "got: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_within_single_view_excludes_others(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -2016,7 +2016,7 @@ mod tests {
         assert!(!text.trim().is_empty(), "expected some selection");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn mouse_down_clears_previous_selection(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -2032,7 +2032,7 @@ mod tests {
         assert_eq!(window_selected_text(cx), "");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn double_click_selects_word_under_root(cx: &mut TestAppContext) {
         let (_, cx) = setup(true, cx);
 
@@ -2061,7 +2061,7 @@ mod tests {
         assert!(!text.contains("Second message"), "got: {text:?}");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_back_into_anchor_view_clears_other_views(cx: &mut TestAppContext) {
         let (chat, cx) = setup(true, cx);
         let second = chat.read_with(cx, |chat, _| chat.second.clone());
@@ -2227,7 +2227,7 @@ mod tests {
         state
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_inside_dialog_still_selects_its_text(cx: &mut TestAppContext) {
         let (_, cx) = setup_modal(cx);
         let dialog_state = open_dialog_with_text(cx, "Dialog text");
@@ -2248,7 +2248,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn drag_inside_sheet_still_selects_its_text(cx: &mut TestAppContext) {
         let (_, cx) = setup_modal(cx);
         let sheet_state = open_sheet_with_text(cx, "Sheet text");
@@ -2267,7 +2267,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn opening_dialog_clears_base_selection(cx: &mut TestAppContext) {
         let (view, cx) = setup_modal(cx);
 
@@ -2291,7 +2291,7 @@ mod tests {
     /// Regression guard: with a dialog open, a drag that starts in the
     /// dialog's text and leaves it over the overlay must not select the
     /// TextView behind the overlay (#2501 de-guarded both Dialog and Sheet).
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_behind_active_dialog_is_excluded(cx: &mut TestAppContext) {
         let (view, cx) = setup_modal(cx);
         let dialog_state = open_dialog_with_text(cx, "Dialog text");
@@ -2314,7 +2314,7 @@ mod tests {
     }
 
     /// The same guard for a Sheet.
-    #[gpui::test]
+    #[wgpui::test]
     fn selection_behind_active_sheet_is_excluded(cx: &mut TestAppContext) {
         let (view, cx) = setup_modal(cx);
         let sheet_state = open_sheet_with_text(cx, "Sheet text");

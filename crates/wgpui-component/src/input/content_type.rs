@@ -1,4 +1,4 @@
-use gpui::Window;
+use wgpui::Window;
 
 /// Semantic content type for an [`Input`](super::Input).
 ///
@@ -164,7 +164,7 @@ pub(super) fn sync_native_content_type(
     }
 
     #[cfg(all(target_os = "macos", not(test)))]
-    gpui_base::input::set_text_content_type(
+    wgpui_base::input::set_text_content_type(
         window,
         content_type.and_then(InputContentType::ns_text_content_type),
     );

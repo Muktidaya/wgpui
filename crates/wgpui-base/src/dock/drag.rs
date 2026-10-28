@@ -14,7 +14,7 @@ use std::{
     },
 };
 
-use gpui::{
+use wgpui::{
     Bounds, Context, Empty, IntoElement, Pixels, Point, Render, Size, Window, point, px, size,
 };
 
@@ -282,59 +282,59 @@ pub fn split_placement_at(bounds: Bounds<Pixels>, position: Point<Pixels>) -> Op
 
 #[cfg(test)]
 mod tests {
-    use gpui::point;
+    use wgpui::point;
 
     use super::*;
 
     #[test]
     fn drop_placeholder_bounds_cover_each_target_placement() {
-        let bounds = gpui::Bounds {
+        let bounds = wgpui::Bounds {
             origin: point(px(120.), px(80.)),
-            size: gpui::size(px(400.), px(300.)),
+            size: wgpui::size(px(400.), px(300.)),
         };
 
         assert_eq!(
             DropPlaceholderBounds::for_placement(bounds, Some(Placement::Left)),
             DropPlaceholderBounds {
                 origin: point(px(0.), px(0.)),
-                size: gpui::size(px(200.), px(300.)),
+                size: wgpui::size(px(200.), px(300.)),
             }
         );
         assert_eq!(
             DropPlaceholderBounds::for_placement(bounds, Some(Placement::Right)),
             DropPlaceholderBounds {
                 origin: point(px(200.), px(0.)),
-                size: gpui::size(px(200.), px(300.)),
+                size: wgpui::size(px(200.), px(300.)),
             }
         );
         assert_eq!(
             DropPlaceholderBounds::for_placement(bounds, Some(Placement::Top)),
             DropPlaceholderBounds {
                 origin: point(px(0.), px(0.)),
-                size: gpui::size(px(400.), px(150.)),
+                size: wgpui::size(px(400.), px(150.)),
             }
         );
         assert_eq!(
             DropPlaceholderBounds::for_placement(bounds, Some(Placement::Bottom)),
             DropPlaceholderBounds {
                 origin: point(px(0.), px(150.)),
-                size: gpui::size(px(400.), px(150.)),
+                size: wgpui::size(px(400.), px(150.)),
             }
         );
         assert_eq!(
             DropPlaceholderBounds::for_placement(bounds, None),
             DropPlaceholderBounds {
                 origin: point(px(0.), px(0.)),
-                size: gpui::size(px(400.), px(300.)),
+                size: wgpui::size(px(400.), px(300.)),
             }
         );
     }
 
     #[test]
     fn split_placement_follows_the_cursor_zone() {
-        let bounds = gpui::Bounds {
+        let bounds = wgpui::Bounds {
             origin: point(px(120.), px(80.)),
-            size: gpui::size(px(400.), px(300.)),
+            size: wgpui::size(px(400.), px(300.)),
         };
         // 35% / 65% of 400x300 from origin (120, 80).
         let at = |x: f32, y: f32| split_placement_at(bounds, point(px(x), px(y)));
@@ -348,9 +348,9 @@ mod tests {
 
     #[test]
     fn split_placement_prefers_horizontal_in_the_corners() {
-        let bounds = gpui::Bounds {
+        let bounds = wgpui::Bounds {
             origin: Point::default(),
-            size: gpui::size(px(400.), px(300.)),
+            size: wgpui::size(px(400.), px(300.)),
         };
 
         // Top-left corner satisfies both Left and Top; x is tested first.
@@ -366,9 +366,9 @@ mod tests {
 
     #[test]
     fn split_placement_boundaries_fall_into_the_centre() {
-        let bounds = gpui::Bounds {
+        let bounds = wgpui::Bounds {
             origin: Point::default(),
-            size: gpui::size(px(400.), px(300.)),
+            size: wgpui::size(px(400.), px(300.)),
         };
 
         // Comparisons are strict, so the threshold itself is the centre zone.

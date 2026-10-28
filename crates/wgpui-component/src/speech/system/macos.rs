@@ -4,7 +4,6 @@ use std::{cell::RefCell, rc::Rc};
 
 use anyhow::anyhow;
 use block2::RcBlock;
-use gpui::{App, SharedString, Task};
 use objc2::{AnyThread as _, rc::Retained, runtime::NSObjectProtocol as _, sel};
 use objc2_av_foundation::{AVAuthorizationStatus, AVCaptureDevice, AVMediaTypeAudio};
 use objc2_avf_audio::{AVAudioCommonFormat, AVAudioFormat, AVAudioPCMBuffer};
@@ -14,6 +13,7 @@ use objc2_speech::{
     SFSpeechRecognizer, SFSpeechRecognizerAuthorizationStatus,
 };
 use smol::channel::{Receiver, Sender, unbounded};
+use wgpui::{App, SharedString, Task};
 
 use crate::speech::{AudioFormat, RecognitionSession, SpeechError, SpeechRecognizer, SpeechSink};
 
@@ -200,7 +200,7 @@ fn send_event(events: &Sender<Event>, event: Event) {
 async fn run(
     recognition: Rc<RefCell<Recognition>>,
     events: Receiver<Event>,
-    cx: &mut gpui::AsyncApp,
+    cx: &mut wgpui::AsyncApp,
 ) {
     while let Ok(event) = events.recv().await {
         match cx.update(|cx| recognition.borrow_mut().on_event(event, cx)) {

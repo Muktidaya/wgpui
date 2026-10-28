@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{HighlightStyle, Pixels, Rems, StyleRefinement, px, rems};
+use wgpui::{HighlightStyle, Pixels, Rems, StyleRefinement, px, rems};
 
 use crate::highlighter::HighlightTheme;
 

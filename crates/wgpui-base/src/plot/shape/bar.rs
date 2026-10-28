@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, Background, Bounds, Corners, PaintQuad, Pixels, Point, Size, Window, fill, point, px,
 };
 
@@ -68,7 +68,7 @@ impl<T> Default for Bar<T> {
             band_width: 0.,
             base: Box::new(|_| 0.),
             value: Box::new(|_| None),
-            fill: Box::new(|_, _, _| gpui::black().into()),
+            fill: Box::new(|_, _, _| wgpui::black().into()),
             label: None,
             corner_radii: Corners::all(px(0.)),
         }
@@ -142,7 +142,7 @@ impl<T> Bar<T> {
     /// coordinates from this frame should do so themselves.
     ///
     /// Accepts any type convertible to [`Background`], including solid colors and
-    /// fully-specified [`gpui::linear_gradient`] values. The background is used
+    /// fully-specified [`wgpui::linear_gradient`] values. The background is used
     /// verbatim — the gradient angle is not adjusted for bar orientation.
     pub fn fill<F, B>(mut self, fill: F) -> Self
     where
@@ -240,7 +240,7 @@ impl<T> Bar<T> {
 
 /// Origin point for a bar label, positioned outside the bar at the value end.
 ///
-/// The caller chooses the [`gpui::TextAlign`] (typically `Center` for vertical
+/// The caller chooses the [`wgpui::TextAlign`] (typically `Center` for vertical
 /// bars, `Left` for `BarAlignment::Left`, `Right` for `BarAlignment::Right`).
 fn label_origin(
     alignment: BarAlignment,

@@ -11,7 +11,7 @@
 //! plots have finished, for as long as the scope itself is painted.
 use std::{cell::RefCell, collections::HashMap, panic::Location, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement,
     LayoutId, Pixels, Window,
 };
@@ -260,7 +260,7 @@ pub(super) fn track_appear(
 mod tests {
     use std::{cell::RefCell, rc::Rc, time::Duration};
 
-    use gpui::{
+    use wgpui::{
         Bounds, Context, ElementId, IntoElement, ParentElement as _, Pixels, Render, Styled as _,
         TestAppContext, WindowHandle, px, size,
     };
@@ -336,7 +336,7 @@ mod tests {
                 samples: self.samples.clone(),
                 generation: Some(self.generation),
             });
-            let body = gpui::div().size_full().children(plot);
+            let body = wgpui::div().size_full().children(plot);
             match self.scope {
                 Some(scope) => PlotAppearScope::new(("scope", scope), body).into_any_element(),
                 None => body.into_any_element(),
@@ -426,7 +426,7 @@ mod tests {
         frames
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_plot_appears_once_over_the_theme_duration(cx: &mut TestAppContext) {
         let (window, samples) = open(cx, Some(0));
         assert_eq!(samples.borrow().last(), Some(&0.));
@@ -446,7 +446,7 @@ mod tests {
         assert_eq!(samples.borrow().last(), Some(&1.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_reduced_motion_skips_the_appear(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let (window, samples) = open(cx, Some(0));
@@ -456,7 +456,7 @@ mod tests {
 
     /// A plot that does not opt in is whole at once and asks for no frames,
     /// even with an appear duration in the theme.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_plot_without_a_generation_does_not_appear(cx: &mut TestAppContext) {
         let (window, samples) = open(cx, None);
         assert_eq!(samples.borrow().first(), Some(&1.));
@@ -464,7 +464,7 @@ mod tests {
     }
 
     /// A new generation starts the appear over.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_new_generation_replays_the_appear(cx: &mut TestAppContext) {
         let (window, samples) = open(cx, Some(0));
         cx.executor().advance_clock(Duration::from_millis(100));
@@ -483,7 +483,7 @@ mod tests {
 
     /// Inside a scope, a plot painted again after a gap is whole at once and
     /// asks for no frames.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scope_keeps_a_finished_appear_across_a_remount(cx: &mut TestAppContext) {
         let (window, samples) = open_scoped(cx, Some(0));
         assert_eq!(samples.borrow().last(), Some(&0.));
@@ -508,7 +508,7 @@ mod tests {
     }
 
     /// A plot taken away before its appear finished draws in again.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scope_replays_an_unfinished_appear(cx: &mut TestAppContext) {
         let (window, _) = open_scoped(cx, Some(0));
         assert_eq!(update_scoped(window, cx, |view| view.mounted = false), None);
@@ -520,7 +520,7 @@ mod tests {
 
     /// The memory goes with the scope: a scope under a new id, or one that
     /// stops being painted, draws its plots in afresh.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_scope_forgets_when_it_goes(cx: &mut TestAppContext) {
         let (window, _) = open_scoped(cx, Some(0));
         finish_appear(window, cx);
@@ -542,7 +542,7 @@ mod tests {
     }
 
     /// Without a scope, a plot painted again after a gap draws in again.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_without_a_scope_a_remount_replays(cx: &mut TestAppContext) {
         let (window, _) = open_scoped(cx, None);
         finish_appear(window, cx);

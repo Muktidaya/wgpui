@@ -1,7 +1,7 @@
-use gpui::{
+use wgpui::{
     Context, IntoElement, ParentElement as _, Styled as _, div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::Radio;
+use wgpui_base::Radio;
 
 use super::super::BaseShowcase;
 

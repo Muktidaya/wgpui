@@ -1,5 +1,5 @@
 use crate::{ColorName, Sizable, Size, StyledExt, theme::ActiveTheme as _};
-use gpui::{
+use wgpui::{
     AbsoluteLength, AnyElement, App, Hsla, InteractiveElement as _, IntoElement, ParentElement,
     RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, relative, rems,
     transparent_white,

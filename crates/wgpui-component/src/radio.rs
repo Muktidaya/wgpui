@@ -5,12 +5,12 @@ use crate::{
     text::Text, tooltip::ComponentTooltip, v_flex,
 };
 use crate::{StyleSized as _, ThemeStyled as _};
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, ElementId, InteractiveElement, IntoElement, ParentElement, RenderOnce,
     SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder, relative, rems,
 };
-use gpui_base::{Radio as BaseRadio, RadioGroup as BaseRadioGroup};
+use wgpui_base::{Radio as BaseRadio, RadioGroup as BaseRadioGroup};
 
 /// A Radio element.
 ///
@@ -68,7 +68,7 @@ impl Radio {
 
     /// Overrides how long the pointer must rest before the tooltip shows.
     ///
-    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
     pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
         self.tooltip.show_delay = Some(delay);
         self
@@ -150,13 +150,13 @@ impl crate::FocusableExt for Radio {
 }
 
 impl Styled for Radio {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl InteractiveElement for Radio {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -267,7 +267,7 @@ impl RenderOnce for Radio {
                         .children(self.children),
                 )
             })
-            .on_mouse_down(gpui::MouseButton::Left, |_, window, _| {
+            .on_mouse_down(wgpui::MouseButton::Left, |_, window, _| {
                 window.prevent_default()
             })
             .when_some(self.on_click.clone(), |this, on_click| {

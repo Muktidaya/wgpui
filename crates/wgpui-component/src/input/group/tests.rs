@@ -1,6 +1,6 @@
 use super::*;
 use crate::input::{InputState, TextareaState};
-use gpui::{AppContext as _, TestAppContext};
+use wgpui::{AppContext as _, TestAppContext};
 
 #[test]
 fn validation_takes_precedence_over_focus_and_remains_visible_when_disabled() {
@@ -34,7 +34,7 @@ fn validation_takes_precedence_over_focus_and_remains_visible_when_disabled() {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn test_input_group_builder(cx: &mut TestAppContext) {
     cx.update(crate::init);
     cx.add_window(|window, cx| {
@@ -74,7 +74,7 @@ fn test_input_group_builder(cx: &mut TestAppContext) {
         assert_eq!(button.size, Size::Small);
         assert!(button.button.is_icon_only());
         assert!(matches!(button.button.variant(), ButtonVariant::Ghost));
-        gpui::Empty
+        wgpui::Empty
     });
 }
 
@@ -82,13 +82,13 @@ fn test_input_group_builder(cx: &mut TestAppContext) {
 mod interaction {
     use super::*;
     use crate::{Root, WindowExt as _};
-    use gpui::{
+    use std::rc::Rc;
+    use wgpui::{
         ClipboardEntry, ClipboardItem, Context, Entity, EntityInputHandler as _, FocusHandle,
         InputEvent as _, LongPressEvent, Modifiers, Render, TouchPhase, VisualTestContext, point,
         px,
     };
-    use gpui_base::test_support::{ElementSnapshot, find};
-    use std::rc::Rc;
+    use wgpui_base::test_support::{ElementSnapshot, find};
 
     struct Probe {
         input: Entity<InputState>,
@@ -100,7 +100,7 @@ mod interaction {
         invalid: bool,
         clicks: usize,
         control_style: StyleRefinement,
-        width: gpui::DefiniteLength,
+        width: wgpui::DefiniteLength,
         paste_handler: Option<Rc<dyn Fn(&ClipboardItem, &mut Window, &mut App) -> bool>>,
     }
 
@@ -213,7 +213,7 @@ mod interaction {
         draw(cx);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn paste_hooks_receive_payloads_and_respect_editability(cx: &mut TestAppContext) {
         for multiline in [false, true] {
             let (probe, mut cx) = mount(cx, multiline);
@@ -244,12 +244,12 @@ mod interaction {
             let payloads = [
                 ClipboardItem {
                     entries: vec![
-                        ClipboardEntry::Image(gpui::Image::empty()),
-                        ClipboardEntry::String(gpui::ClipboardString::new("image caption".into())),
+                        ClipboardEntry::Image(wgpui::Image::empty()),
+                        ClipboardEntry::String(wgpui::ClipboardString::new("image caption".into())),
                     ],
                 },
                 ClipboardItem {
-                    entries: vec![ClipboardEntry::ExternalPaths(gpui::ExternalPaths::new([
+                    entries: vec![ClipboardEntry::ExternalPaths(wgpui::ExternalPaths::new([
                         "attachment.png".into(),
                     ]))],
                 },
@@ -292,7 +292,7 @@ mod interaction {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn long_press_shows_edit_menu_and_copy_keeps_the_text(cx: &mut TestAppContext) {
         for multiline in [false, true] {
             let (probe, mut cx) = mount(cx, multiline);
@@ -356,7 +356,7 @@ mod interaction {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn editor_overrides_preserve_caret_selection_and_ime_geometry(cx: &mut TestAppContext) {
         let (probe, mut cx) = mount(cx, false);
         let state = probe.read_with(&cx, |probe, _| probe.input.clone());
@@ -392,7 +392,7 @@ mod interaction {
         assert_eq!(state.read_with(&cx, |state, _| state.value()), "Ada 文文");
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn textarea_keeps_scrolling_native_between_block_addons(cx: &mut TestAppContext) {
         let (probe, mut cx) = mount(cx, true);
         let state = probe.read_with(&cx, |probe, _| probe.textarea.clone());
@@ -421,7 +421,7 @@ mod interaction {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn addon_focus_editing_and_button_actions_use_the_retained_state(cx: &mut TestAppContext) {
         let (probe, mut cx) = mount(cx, false);
         let state = probe.read_with(&cx, |probe, _| probe.input.clone());
@@ -451,7 +451,7 @@ mod interaction {
         assert!(control.bounds().right() <= after.left());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_blocks_actions_and_edits_but_readonly_keeps_copy_and_actions(
         cx: &mut TestAppContext,
     ) {
@@ -514,7 +514,7 @@ mod interaction {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn textarea_grows_between_block_addons_and_retains_native_focus(cx: &mut TestAppContext) {
         let (probe, mut cx) = mount(cx, true);
         let state = probe.read_with(&cx, |probe, _| probe.textarea.clone());
@@ -626,7 +626,7 @@ mod interaction {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn ordered_children_and_native_button_popup_composition(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let changes = Rc::new(std::cell::RefCell::new(Vec::new()));

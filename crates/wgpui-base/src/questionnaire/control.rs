@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     ElementId, Entity, InteractiveElement as _, SharedString, StatefulInteractiveElement as _,
     prelude::FluentBuilder as _,
 };
@@ -30,7 +30,7 @@ impl QuestionnaireChoiceControl {
         item: impl Into<SharedString>,
         value: impl Into<SharedString>,
         id: impl Into<ElementId>,
-        cx: &gpui::App,
+        cx: &wgpui::App,
     ) -> Option<Self> {
         let item = item.into();
         let value = value.into();
@@ -49,7 +49,7 @@ impl QuestionnaireChoiceControl {
         // control keeps Enter for activation.
         let confirm_state = state.clone();
         let confirm =
-            move |event: &gpui::KeyDownEvent, window: &mut gpui::Window, cx: &mut gpui::App| {
+            move |event: &wgpui::KeyDownEvent, window: &mut wgpui::Window, cx: &mut wgpui::App| {
                 if selected
                     && !window.default_prevented()
                     && !event.is_held

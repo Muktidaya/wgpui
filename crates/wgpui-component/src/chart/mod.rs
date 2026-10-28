@@ -20,7 +20,7 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ContentMask, ElementId, Hsla, IntoElement, ParentElement as _, Pixels,
     SharedString, Size, TextAlign, Window, point, px,
 };
@@ -48,7 +48,7 @@ use crate::{
 /// A `GlobalElementId` is the whole id stack, so rows that carry their own id —
 /// which `List` and `uniform_list` give them — already separate the copies
 /// underneath them; only id-less siblings collide, and those name an id with
-/// `id`. GPUI takes this same trade-off for [`gpui::Window::use_state`].
+/// `id`. GPUI takes this same trade-off for [`wgpui::Window::use_state`].
 #[track_caller]
 pub(crate) fn caller_id() -> ElementId {
     ElementId::CodeLocation(*Location::caller())
@@ -118,8 +118,8 @@ pub(crate) fn reveal_mask(
     let end = start + (bounds.right() + bleed - start) * progress.max(0.);
     Some(ContentMask {
         bounds: Bounds::from_corners(
-            gpui::point(bounds.left() - bleed, bounds.top() - bleed),
-            gpui::point(end, bounds.bottom() + bleed),
+            wgpui::point(bounds.left() - bleed, bounds.top() - bleed),
+            wgpui::point(end, bounds.bottom() + bleed),
         ),
     })
 }
@@ -573,8 +573,8 @@ pub(crate) fn pinned_plot_mask(bounds: Bounds<Pixels>, height: f32) -> ContentMa
     let bleed = HOVER_DOT_SIZE / 2.;
     ContentMask {
         bounds: Bounds::from_corners(
-            bounds.origin - gpui::point(bleed, bleed),
-            gpui::point(bounds.right() + bleed, bounds.top() + px(height) + bleed),
+            bounds.origin - wgpui::point(bleed, bleed),
+            wgpui::point(bounds.right() + bleed, bounds.top() + px(height) + bleed),
         ),
     }
 }
@@ -650,7 +650,7 @@ where
 mod tests {
     use std::cell::Cell;
 
-    use gpui::{Hsla, SharedString, TestAppContext, blue, div, green, point, px, red, size};
+    use wgpui::{Hsla, SharedString, TestAppContext, blue, div, green, point, px, red, size};
 
     use super::TooltipContent;
     use crate::{
@@ -714,7 +714,7 @@ mod tests {
     /// of data laid out for more points sits mid-axis and stays centered.
     #[test]
     fn only_the_last_point_right_aligns_its_label() {
-        use gpui::{Hsla, TextAlign};
+        use wgpui::{Hsla, TextAlign};
 
         use super::{build_point_x_labels, point_range};
         use crate::plot::scale::ScalePoint;
@@ -752,7 +752,7 @@ mod tests {
     fn a_named_id_replaces_the_default() {
         assert_eq!(
             Plot::id(&chart().id("pie")),
-            Some(gpui::ElementId::Name("pie".into()))
+            Some(wgpui::ElementId::Name("pie".into()))
         );
     }
 
@@ -824,7 +824,7 @@ mod tests {
 
     /// Rows read the caller's value text and color, one per series, each told
     /// which row it is.
-    #[gpui::test]
+    #[wgpui::test]
     fn tooltip_fill_writes_each_row_with_the_value_color(cx: &mut TestAppContext) {
         let mut content = TooltipContent::<f64>::default();
         content.set_value(|_, ix, value| format!("{ix}: {value:+}").into());
@@ -855,7 +855,7 @@ mod tests {
 
     /// Without a title of the chart's or the caller's, the tooltip has none, as a
     /// radar with element labels shows.
-    #[gpui::test]
+    #[wgpui::test]
     fn tooltip_fill_leaves_the_title_off_without_one(cx: &mut TestAppContext) {
         let content = TooltipContent::<f64>::default();
         let cx = cx.add_empty_window();
@@ -878,7 +878,7 @@ mod tests {
 
     /// A caller's own content replaces the title and rows, which are never built,
     /// so a series without a value doesn't hide it.
-    #[gpui::test]
+    #[wgpui::test]
     fn tooltip_fill_renders_the_caller_content_without_building_rows(cx: &mut TestAppContext) {
         let mut content = TooltipContent::<f64>::default();
         content.set_title(|_| "Caller".into());
