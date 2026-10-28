@@ -160,6 +160,18 @@
             MACOSX_DEPLOYMENT_TARGET = "11.0";
           };
 
+          # strictDeps does not expose host Mesa's share directory to the Vulkan loader.
+          # Pin software-driver discovery only while checking, using the evaluated package.
+          preCheck = lib.optionalString pkgs.stdenv.isLinux ''
+            set -- ${pkgs.mesa}/share/vulkan/icd.d/lvp_icd.*.json
+            if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+              echo "Expected exactly one Mesa Lavapipe ICD manifest" >&2
+              exit 1
+            fi
+            export VK_DRIVER_FILES="$1"
+            export LP_NUM_THREADS=1
+          '';
+
           cargoExtraArgs = "--locked --workspace --all-features";
           cargoBuildExtraArgs = "--lib";
           cargoTestCommand = "cargo test --profile test";
