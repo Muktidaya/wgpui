@@ -8,8 +8,9 @@
 //! `#[wgpui_kit::test]` runs the test and provides its GPUI context. This module
 //! supplies UI interactions and snapshots; it does not inspect rendered pixels.
 //!
-//! [`ElementSnapshot`] is immutable. Call [`TestWindowExt::render_frame`] after
-//! external changes, or use [`TestAppContextExt::wait_for`] for asynchronous UI.
+//! [`ElementSnapshot`](crate::test::ElementSnapshot) is immutable. Call
+//! [`TestWindowExt::render_frame`](crate::test::TestWindowExt::render_frame) after
+//! external changes, or use [`TestAppContextExt::wait_for`](crate::test::TestAppContextExt::wait_for) for asynchronous UI.
 use crate::{
     AnyWindowHandle, App, AppContext, ElementId, InputEvent, KeyDownEvent, KeyUpEvent, Keystroke,
     Modifiers, ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
