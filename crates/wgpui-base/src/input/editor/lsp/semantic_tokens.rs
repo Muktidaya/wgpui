@@ -121,7 +121,7 @@ impl Lsp {
         // Fetch the whole document; results are cached and filtered to the
         // viewport at paint time (mirrors `update_document_colors`), so a
         // scroll never needs a refetch.
-        let range = 0..text.len();
+        let range = 0..text.len_bytes();
         let input_state = cx.entity();
 
         // debounce timer 100ms

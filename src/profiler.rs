@@ -154,7 +154,7 @@ impl<'a> SerializedThreadTaskTimings<'a> {
 // Allow 20mb of task timing entries
 const MAX_TASK_TIMINGS: usize = (20 * 1024 * 1024) / core::mem::size_of::<TaskTiming>();
 
-pub(crate) type TaskTimings = circular_buffer::CircularBuffer<MAX_TASK_TIMINGS, TaskTiming>;
+pub(crate) type TaskTimings = circular_buffer::FixedCircularBuffer<TaskTiming, MAX_TASK_TIMINGS>;
 pub(crate) type GuardedTaskTimings = spin::Mutex<ThreadTimings>;
 
 pub(crate) struct GlobalThreadTimings {
@@ -233,3 +233,8 @@ pub(crate) fn add_task_timing(timing: TaskTiming) {
         timings.push_back(timing);
     });
 }
+
+#[cfg(feature = "profiler")]
+mod frame;
+#[cfg(feature = "profiler")]
+pub use frame::*;

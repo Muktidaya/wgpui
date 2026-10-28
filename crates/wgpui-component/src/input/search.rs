@@ -69,6 +69,10 @@ pub(super) struct SearchPanel<M: crate::input::overlay::OverlayMode> {
 }
 
 impl<M: crate::input::overlay::OverlayMode> SearchPanel<M> {
+    pub(super) fn replace_mode(&self) -> bool {
+        self.session.replace_mode
+    }
+
     pub(super) fn sync_session(&mut self, session: &gpui_base::input::SearchSession) {
         self.session = session.clone();
     }
@@ -135,7 +139,7 @@ impl<M: crate::input::overlay::OverlayMode> SearchPanel<M> {
         }
 
         self.search_input.update(cx, |this, cx| {
-            if selected_text.len() > 0 {
+            if selected_text.len_bytes() > 0 {
                 this.set_value(selected_text.to_string(), window, cx);
             }
             this.select_all(window, cx);

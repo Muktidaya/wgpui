@@ -1296,7 +1296,8 @@ use std::sync::Mutex;
 
 pub struct WgpuRenderer {
     context: Arc<WgpuContext>,
-    surface: wgpu::Surface<'static>,
+    surface: Option<wgpu::Surface<'static>>,
+    offscreen_texture: Option<wgpu::Texture>,
     surface_configuration: wgpu::SurfaceConfiguration,
     atlas_sampler: wgpu::Sampler,
     surface_sampler: wgpu::Sampler,
@@ -1391,6 +1392,22 @@ impl WgpuRenderer {
             desired_maximum_frame_latency: 2,
         };
 
+        Self::with_target(
+            context,
+            Some(surface),
+            surface_configuration,
+            atlas,
+            path_sample_count,
+        )
+    }
+
+    fn with_target(
+        context: Arc<WgpuContext>,
+        surface: Option<wgpu::Surface<'static>>,
+        surface_configuration: wgpu::SurfaceConfiguration,
+        atlas: Arc<WgpuAtlas>,
+        path_sample_count: u32,
+    ) -> anyhow::Result<Self> {
         let atlas_sampler = context.device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("atlas_sampler"),
             mag_filter: wgpu::FilterMode::Linear,
@@ -1416,11 +1433,14 @@ impl WgpuRenderer {
             WgpuPipelines::new(context.as_ref(), &surface_configuration, path_sample_count);
 
         // Configure the surface for presentation before the first draw call.
-        surface.configure(&context.device, &surface_configuration);
+        if let Some(surface) = &surface {
+            surface.configure(&context.device, &surface_configuration);
+        }
 
         let mut renderer = Self {
-            context: context.clone(),
+            context,
             surface,
+            offscreen_texture: None,
             surface_configuration,
             atlas,
             atlas_sampler,
@@ -1432,8 +1452,101 @@ impl WgpuRenderer {
             path_intermediate_view: None,
             surface_bind_groups: Mutex::new(HashMap::new()),
         };
+        renderer.ensure_offscreen_texture();
         renderer.ensure_path_intermediate();
         Ok(renderer)
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    pub(crate) fn new_headless() -> anyhow::Result<Self> {
+        let context = Arc::new(WgpuContext::new()?);
+        let atlas = Arc::new(WgpuAtlas::new(context.clone()));
+        let configuration = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            color_space: wgpu::SurfaceColorSpace::Auto,
+            width: 1,
+            height: 1,
+            present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: wgpu::CompositeAlphaMode::PreMultiplied,
+            view_formats: vec![],
+            desired_maximum_frame_latency: 2,
+        };
+        Self::with_target(context, None, configuration, atlas, 4)
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    fn read_offscreen_image(&self) -> anyhow::Result<image::RgbaImage> {
+        let texture = self
+            .offscreen_texture
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("renderer has no offscreen target"))?;
+        let width = self.surface_configuration.width;
+        let height = self.surface_configuration.height;
+        let row_bytes = width
+            .checked_mul(4)
+            .ok_or_else(|| anyhow::anyhow!("image row size overflow"))?;
+        let padded_row_bytes = row_bytes.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let buffer = self.context.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("WGPUI offscreen image readback"),
+            size: u64::from(padded_row_bytes) * u64::from(height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder =
+            self.context
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("WGPUI screenshot copy"),
+                });
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(padded_row_bytes),
+                    rows_per_image: Some(height),
+                },
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        let submission = self.context.queue.submit(Some(encoder.finish()));
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        buffer
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                if sender.send(result).is_err() {
+                    log::error!("offscreen image readback receiver was dropped");
+                }
+            });
+        self.context.device.poll(wgpu::PollType::Wait {
+            submission_index: Some(submission),
+            timeout: Some(std::time::Duration::from_secs(30)),
+        })?;
+        receiver.recv_timeout(std::time::Duration::from_secs(30))??;
+        let mapped = buffer.slice(..).get_mapped_range()?;
+        let mut pixels = Vec::with_capacity((u64::from(row_bytes) * u64::from(height)) as usize);
+        for row in mapped.chunks_exact(padded_row_bytes as usize) {
+            pixels.extend_from_slice(
+                row.get(..row_bytes as usize)
+                    .ok_or_else(|| anyhow::anyhow!("GPU readback row is incomplete"))?,
+            );
+        }
+        drop(mapped);
+        buffer.unmap();
+        image::RgbaImage::from_raw(width, height, pixels)
+            .ok_or_else(|| anyhow::anyhow!("GPU readback image dimensions are invalid"))
     }
 
     pub fn draw(&self, scene: &Scene) {
@@ -1524,10 +1637,14 @@ impl WgpuRenderer {
                 });
         }
 
-        let surface_texture = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(texture)
-            | wgpu::CurrentSurfaceTexture::Suboptimal(texture) => texture,
-            _ => return,
+        let surface_texture = if let Some(surface) = &self.surface {
+            match surface.get_current_texture() {
+                wgpu::CurrentSurfaceTexture::Success(texture)
+                | wgpu::CurrentSurfaceTexture::Suboptimal(texture) => Some(texture),
+                _ => return,
+            }
+        } else {
+            None
         };
 
         let quads_bind_group = self
@@ -1610,9 +1727,15 @@ impl WgpuRenderer {
                     }],
                 });
 
-        let frame_view = surface_texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+        let frame_view = if let Some(surface_texture) = &surface_texture {
+            surface_texture
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default())
+        } else if let Some(texture) = &self.offscreen_texture {
+            texture.create_view(&wgpu::TextureViewDescriptor::default())
+        } else {
+            return;
+        };
 
         let mut pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("main"),
@@ -1875,15 +1998,41 @@ impl WgpuRenderer {
             cache.retain(|key, _| seen_surface_generations.contains(key));
         }
         self.context.queue.submit(Some(command_encoder.finish()));
-        self.context.queue.present(surface_texture);
+        if let Some(surface_texture) = surface_texture {
+            self.context.queue.present(surface_texture);
+        }
     }
 
     pub fn update_drawable_size(&mut self, size: geometry::Size<DevicePixels>) {
         self.surface_configuration.width = size.width.0 as u32;
         self.surface_configuration.height = size.height.0 as u32;
-        self.surface
-            .configure(&self.context.device, &self.surface_configuration);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.context.device, &self.surface_configuration);
+        }
+        self.ensure_offscreen_texture();
         self.ensure_path_intermediate();
+    }
+
+    fn ensure_offscreen_texture(&mut self) {
+        if self.surface.is_some() {
+            return;
+        }
+        self.offscreen_texture = Some(self.context.device.create_texture(
+            &wgpu::TextureDescriptor {
+                label: Some("WGPUI offscreen color target"),
+                size: wgpu::Extent3d {
+                    width: self.surface_configuration.width.max(1),
+                    height: self.surface_configuration.height.max(1),
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: self.surface_configuration.format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            },
+        ));
     }
 
     fn ensure_path_intermediate(&mut self) {
@@ -2123,8 +2272,10 @@ impl WgpuRenderer {
             // wgpu pick a mode the surface actually supports.
             wgpu::CompositeAlphaMode::Inherit
         };
-        self.surface
-            .configure(&self.context.device, &self.surface_configuration);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.context.device, &self.surface_configuration);
+        }
+        self.ensure_offscreen_texture();
     }
 
     #[allow(dead_code)]
@@ -2133,5 +2284,86 @@ impl WgpuRenderer {
             width: DevicePixels(self.surface_configuration.width as i32),
             height: DevicePixels(self.surface_configuration.height as i32),
         }
+    }
+}
+
+#[cfg(any(test, feature = "test-support"))]
+impl crate::PlatformHeadlessRenderer for WgpuRenderer {
+    fn render_scene_to_image(
+        &mut self,
+        scene: &Scene,
+        size: crate::Size<DevicePixels>,
+    ) -> anyhow::Result<image::RgbaImage> {
+        self.render_scene(scene, size)?;
+        self.read_offscreen_image()
+    }
+
+    fn render_scene(
+        &mut self,
+        scene: &Scene,
+        size: crate::Size<DevicePixels>,
+    ) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            size.width.0 > 0 && size.height.0 > 0,
+            "offscreen target dimensions must be positive"
+        );
+        let maximum = self.context.device.limits().max_texture_dimension_2d;
+        anyhow::ensure!(
+            size.width.0 as u32 <= maximum && size.height.0 as u32 <= maximum,
+            "offscreen target exceeds the GPU texture size limit"
+        );
+        if self.viewport_size() != size {
+            self.update_drawable_size(size);
+        }
+        self.draw(scene);
+        Ok(())
+    }
+
+    fn sprite_atlas(&self) -> Arc<dyn PlatformAtlas> {
+        self.atlas.clone()
+    }
+}
+
+#[cfg(test)]
+mod offscreen_tests {
+    use super::*;
+    use crate::{Bounds, ContentMask, PlatformHeadlessRenderer, point, rgb, size};
+
+    #[test]
+    #[ignore = "requires a usable WGPU adapter"]
+    fn offscreen_readback_preserves_pixels_padding_and_resize() -> anyhow::Result<()> {
+        let mut renderer = WgpuRenderer::new_headless()?;
+        for (width, height, color, expected) in [
+            (13, 7, 0xff0000, [255, 0, 0, 255]),
+            (67, 3, 0x00ff00, [0, 255, 0, 255]),
+            (5, 9, 0x0000ff, [0, 0, 255, 255]),
+        ] {
+            let mut scene = Scene::default();
+            let bounds = Bounds::new(
+                point(ScaledPixels(0.), ScaledPixels(0.)),
+                size(ScaledPixels(width as f32), ScaledPixels(height as f32)),
+            );
+            scene.insert_primitive(Quad {
+                bounds,
+                content_mask: ContentMask { bounds },
+                background: rgb(color).into(),
+                ..Default::default()
+            });
+            scene.finish();
+            let image = renderer
+                .render_scene_to_image(&scene, size(DevicePixels(width), DevicePixels(height)))?;
+            assert_eq!(image.dimensions(), (width as u32, height as u32));
+            assert!(
+                image.pixels().all(|pixel| pixel.0 == expected),
+                "GPU pixels differ after padded readback or resize"
+            );
+            let repeated = renderer
+                .render_scene_to_image(&scene, size(DevicePixels(width), DevicePixels(height)))?;
+            assert_eq!(
+                image, repeated,
+                "unchanged scenes must produce deterministic GPU pixels"
+            );
+        }
+        Ok(())
     }
 }

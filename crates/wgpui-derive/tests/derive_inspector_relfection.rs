@@ -33,6 +33,31 @@ trait Transform: Clone {
 
     /// Adds one to the value
     fn add_one(self) -> Self;
+
+    fn reset(mut self) -> Self {
+        self.set_value(0);
+        self
+    }
+
+    #[allow(clippy::needless_arbitrary_self_type)]
+    fn explicit_value(self: Self) -> Self {
+        self
+    }
+
+    fn boxed_value(self: Box<Self>) -> Self {
+        *self
+    }
+
+    #[allow(dead_code)]
+    fn copy_value(&self) -> Self {
+        self.clone()
+    }
+
+    #[allow(dead_code)]
+    fn reset_borrowed(&mut self) -> Self {
+        self.set_value(0);
+        self.clone()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,13 +97,23 @@ fn test_derive_inspector_reflection() {
     // Get all methods that match the pattern fn(self) -> Self or fn(mut self) -> Self
     let methods = methods::<Number>();
 
-    assert_eq!(methods.len(), 5);
+    assert_eq!(methods.len(), 8);
     let method_names: Vec<_> = methods.iter().map(|m| m.name).collect();
     assert!(method_names.contains(&"double"));
     assert!(method_names.contains(&"triple"));
     assert!(method_names.contains(&"increment"));
     assert!(method_names.contains(&"quadruple"));
     assert!(method_names.contains(&"add_one"));
+    assert!(method_names.contains(&"reset"));
+    assert!(!method_names.contains(&"copy_value"));
+    assert!(!method_names.contains(&"reset_borrowed"));
+
+    let reset = find_method::<Number>("reset").map(|method| method.invoke(Number(42)));
+    assert_eq!(reset, Some(Number(0)));
+    let explicit = find_method::<Number>("explicit_value").map(|method| method.invoke(Number(42)));
+    assert_eq!(explicit, Some(Number(42)));
+    let boxed = find_method::<Number>("boxed_value").map(|method| method.invoke(Number(42)));
+    assert_eq!(boxed, Some(Number(42)));
 
     // Invoke methods by name
     let num = Number(5);

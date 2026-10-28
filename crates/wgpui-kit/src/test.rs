@@ -10,12 +10,20 @@
 //!
 //! [`ElementSnapshot`] is immutable. Call [`TestWindowExt::render_frame`] after
 //! external changes, or use [`TestAppContextExt::wait_for`] for asynchronous UI.
-use gpui::{
-    AnyWindowHandle, App, AppContext, ElementId, InputEvent, Keystroke, MouseButton,
-    MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels, Point, ScrollDelta, ScrollWheelEvent,
-    TestAppContext, Window, point, px,
+use crate::{
+    AnyWindowHandle, App, AppContext, ElementId, InputEvent, KeyDownEvent, KeyUpEvent, Keystroke,
+    Modifiers, ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
+    Pixels, Point, ScrollDelta, ScrollEvent, TestAppContext, Window, point, px,
 };
 use std::time::Duration;
+
+mod events;
+mod input;
+mod query;
+
+pub use events::TestEventExt;
+pub use input::TestInput;
+pub use query::TestQueryExt;
 
 pub use gpui_base::TestSupportExt;
 use gpui_base::test_support as observation;
@@ -27,6 +35,9 @@ pub trait TestWindowExt {
     fn find(&self, id: impl Into<ElementId>) -> ElementSnapshot;
     /// Returns None for an absent target; ambiguous IDs still require a scope.
     fn try_find(&self, id: impl Into<ElementId>) -> Option<ElementSnapshot>;
+    /// Returns all registered matches from the last completed frame, including invisible ones.
+    /// Ordered by bounds origin (y, then x); equal-origin order is unspecified.
+    fn find_all(&self, id: impl Into<ElementId>) -> Vec<ElementSnapshot>;
     /// Restricts queries to a GPUI identity scope; no additional layout wrapper is needed.
     fn within(&mut self, id: impl Into<ElementId>) -> ScopedWindow<'_>;
     /// Invalidates cached facts and completes a frame.
@@ -34,6 +45,19 @@ pub trait TestWindowExt {
     fn click(&mut self, id: impl Into<ElementId>, cx: &mut App);
     /// Clicks at a local offset from the target's top-left corner.
     fn click_at(&mut self, id: impl Into<ElementId>, offset: Point<Pixels>, cx: &mut App);
+    /// Dispatches modifiers-changed when necessary, then move/down/up, and restores
+    /// the previous modifier state with another modifiers-changed event after the click.
+    /// Each step renders a frame; caps lock is preserved.
+    fn click_with_options(&mut self, id: impl Into<ElementId>, options: ClickOptions, cx: &mut App);
+    /// A centered left click with modifiers; restores the previous modifier state.
+    fn click_with_modifiers(
+        &mut self,
+        id: impl Into<ElementId>,
+        modifiers: Modifiers,
+        cx: &mut App,
+    ) {
+        self.click_with_options(id, ClickOptions::new().with_modifiers(modifiers), cx);
+    }
     fn right_click(&mut self, id: impl Into<ElementId>, cx: &mut App);
     fn double_click(&mut self, id: impl Into<ElementId>, cx: &mut App);
     fn hover(&mut self, id: impl Into<ElementId>, cx: &mut App);
@@ -43,10 +67,74 @@ pub trait TestWindowExt {
     fn drag(&mut self, from: Point<Pixels>, to: Point<Pixels>, cx: &mut App);
     /// Drags between two observed element centers, with native hit testing.
     fn drag_to(&mut self, from: impl Into<ElementId>, to: impl Into<ElementId>, cx: &mut App);
-    /// Sends a parsed GPUI keystroke, such as "backspace" or "cmd-a".
+    /// Sends key-down and key-up for a parsed GPUI key, such as "backspace" or "cmd-a".
+    /// Enter and Tab run key bindings without additionally inserting text.
     fn press(&mut self, key: &str, cx: &mut App);
     /// Sends text to the current focus; does not focus a target or replace its whole value.
     fn input(&mut self, text: &str, cx: &mut App);
+}
+
+/// Click configuration owned by the caller. Defaults to one left click at the center,
+/// without modifiers. Offsets are relative to the target's top-left corner.
+#[derive(Clone, Copy, Debug)]
+pub struct ClickOptions {
+    offset: Option<Point<Pixels>>,
+    button: MouseButton,
+    count: usize,
+    modifiers: Modifiers,
+}
+impl Default for ClickOptions {
+    fn default() -> Self {
+        Self {
+            offset: None,
+            button: MouseButton::Left,
+            count: 1,
+            modifiers: Modifiers::default(),
+        }
+    }
+}
+impl ClickOptions {
+    /// Creates one centered left click without modifiers.
+    pub fn new() -> Self {
+        Self::default()
+    }
+    /// Sets an offset from the target bounds origin; validated when clicking.
+    pub fn with_offset(mut self, offset: Point<Pixels>) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+    /// Returns the local offset, or `None` for the center.
+    pub fn offset(&self) -> Option<Point<Pixels>> {
+        self.offset
+    }
+    /// Sets the mouse button.
+    pub fn with_button(mut self, button: MouseButton) -> Self {
+        self.button = button;
+        self
+    }
+    /// Returns the mouse button.
+    pub fn button(&self) -> MouseButton {
+        self.button
+    }
+    /// Sets the number of clicks. Panics if `count` is zero.
+    pub fn with_count(mut self, count: usize) -> Self {
+        assert!(count > 0, "click count must be positive");
+        self.count = count;
+        self
+    }
+    /// Returns the positive number of clicks.
+    pub fn count(&self) -> usize {
+        self.count
+    }
+    /// Sets the modifier state for the click sequence.
+    pub fn with_modifiers(mut self, modifiers: Modifiers) -> Self {
+        self.modifiers = modifiers;
+        self
+    }
+    /// Returns the modifier state for the click sequence.
+    pub fn modifiers(&self) -> Modifiers {
+        self.modifiers
+    }
 }
 
 fn require(window: &Window, scope: &[ElementId], id: &ElementId) -> ElementSnapshot {
@@ -87,13 +175,14 @@ fn move_pointer(
     window: &mut Window,
     position: Point<Pixels>,
     pressed_button: Option<MouseButton>,
+    modifiers: Modifiers,
     cx: &mut App,
 ) {
     window.dispatch_event(
         MouseMoveEvent {
             position,
             pressed_button,
-            modifiers: Default::default(),
+            modifiers,
         }
         .to_platform_input(),
         cx,
@@ -106,13 +195,14 @@ fn mouse_down(
     position: Point<Pixels>,
     button: MouseButton,
     click_count: usize,
+    modifiers: Modifiers,
     cx: &mut App,
 ) {
     window.dispatch_event(
         MouseDownEvent {
             button,
             position,
-            modifiers: Default::default(),
+            modifiers,
             click_count,
             first_mouse: false,
         }
@@ -127,13 +217,14 @@ fn mouse_up(
     position: Point<Pixels>,
     button: MouseButton,
     click_count: usize,
+    modifiers: Modifiers,
     cx: &mut App,
 ) {
     window.dispatch_event(
         MouseUpEvent {
             button,
             position,
-            modifiers: Default::default(),
+            modifiers,
             click_count,
         }
         .to_platform_input(),
@@ -146,24 +237,59 @@ fn click_target(
     window: &mut Window,
     scope: &[ElementId],
     id: ElementId,
-    offset: Option<Point<Pixels>>,
-    button: MouseButton,
-    count: usize,
+    options: ClickOptions,
     cx: &mut App,
 ) {
+    let ClickOptions {
+        offset,
+        button,
+        count,
+        modifiers: _,
+    } = options;
     window.render_frame(cx);
+    let modifiers = window.modifiers();
     let position = target_position(window, scope, &id, offset);
-    move_pointer(window, position, None, cx);
+    move_pointer(window, position, None, modifiers, cx);
     for click_count in 1..=count {
-        mouse_down(window, position, button, click_count, cx);
-        mouse_up(window, position, button, click_count, cx);
+        mouse_down(window, position, button, click_count, modifiers, cx);
+        mouse_up(window, position, button, click_count, modifiers, cx);
     }
+}
+
+fn change_modifiers(window: &mut Window, modifiers: Modifiers, cx: &mut App) {
+    if window.modifiers() != modifiers {
+        window.dispatch_event(
+            ModifiersChangedEvent {
+                modifiers,
+                capslock: window.capslock(),
+            }
+            .to_platform_input(),
+            cx,
+        );
+        window.render_frame(cx);
+    }
+}
+
+fn click_with_options_target(
+    window: &mut Window,
+    scope: &[ElementId],
+    id: ElementId,
+    options: ClickOptions,
+    cx: &mut App,
+) {
+    // Validate before changing modifier state, so a missing target leaves it intact.
+    window.render_frame(cx);
+    target_position(window, scope, &id, options.offset);
+    let previous = window.modifiers();
+    change_modifiers(window, options.modifiers, cx);
+    click_target(window, scope, id, options, cx);
+    change_modifiers(window, previous, cx);
 }
 
 fn hover_target(window: &mut Window, scope: &[ElementId], id: ElementId, cx: &mut App) {
     window.render_frame(cx);
     let position = target_position(window, scope, &id, None);
-    move_pointer(window, position, None, cx);
+    move_pointer(window, position, None, window.modifiers(), cx);
 }
 
 fn scroll_target(
@@ -175,11 +301,12 @@ fn scroll_target(
 ) {
     window.render_frame(cx);
     let position = target_position(window, scope, &id, None);
-    move_pointer(window, position, None, cx);
+    move_pointer(window, position, None, window.modifiers(), cx);
     window.dispatch_event(
-        ScrollWheelEvent {
+        ScrollEvent {
             position,
             delta,
+            modifiers: window.modifiers(),
             ..Default::default()
         }
         .to_platform_input(),
@@ -208,6 +335,9 @@ impl TestWindowExt for Window {
     fn try_find(&self, id: impl Into<ElementId>) -> Option<ElementSnapshot> {
         observation::find(self, &[], &id.into())
     }
+    fn find_all(&self, id: impl Into<ElementId>) -> Vec<ElementSnapshot> {
+        observation::find_all(self, &[], &id.into())
+    }
     fn within(&mut self, id: impl Into<ElementId>) -> ScopedWindow<'_> {
         let scope = observation::scope(self, &[], &id.into());
         ScopedWindow {
@@ -220,16 +350,36 @@ impl TestWindowExt for Window {
         self.draw(cx).clear();
     }
     fn click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
-        click_target(self, &[], id.into(), None, MouseButton::Left, 1, cx);
+        click_target(self, &[], id.into(), ClickOptions::new(), cx);
     }
     fn click_at(&mut self, id: impl Into<ElementId>, offset: Point<Pixels>, cx: &mut App) {
-        click_target(self, &[], id.into(), Some(offset), MouseButton::Left, 1, cx);
+        click_target(
+            self,
+            &[],
+            id.into(),
+            ClickOptions::new().with_offset(offset),
+            cx,
+        );
+    }
+    fn click_with_options(
+        &mut self,
+        id: impl Into<ElementId>,
+        options: ClickOptions,
+        cx: &mut App,
+    ) {
+        click_with_options_target(self, &[], id.into(), options, cx);
     }
     fn right_click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
-        click_target(self, &[], id.into(), None, MouseButton::Right, 1, cx);
+        click_target(
+            self,
+            &[],
+            id.into(),
+            ClickOptions::new().with_button(MouseButton::Right),
+            cx,
+        );
     }
     fn double_click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
-        click_target(self, &[], id.into(), None, MouseButton::Left, 2, cx);
+        click_target(self, &[], id.into(), ClickOptions::new().with_count(2), cx);
     }
     fn hover(&mut self, id: impl Into<ElementId>, cx: &mut App) {
         hover_target(self, &[], id.into(), cx);
@@ -242,8 +392,9 @@ impl TestWindowExt for Window {
     }
     fn drag(&mut self, from: Point<Pixels>, to: Point<Pixels>, cx: &mut App) {
         self.render_frame(cx);
-        move_pointer(self, from, None, cx);
-        mouse_down(self, from, MouseButton::Left, 1, cx);
+        let modifiers = self.modifiers();
+        move_pointer(self, from, None, modifiers, cx);
+        mouse_down(self, from, MouseButton::Left, 1, modifiers, cx);
         for step in 1..=8 {
             let fraction = step as f32 / 8.;
             move_pointer(
@@ -253,16 +404,17 @@ impl TestWindowExt for Window {
                     from.y + (to.y - from.y) * fraction,
                 ),
                 Some(MouseButton::Left),
+                modifiers,
                 cx,
             );
         }
-        mouse_up(self, to, MouseButton::Left, 1, cx);
+        mouse_up(self, to, MouseButton::Left, 1, modifiers, cx);
     }
     fn press(&mut self, key: &str, cx: &mut App) {
-        let key =
-            Keystroke::parse(key).unwrap_or_else(|error| panic!("invalid test keystroke: {error}"));
+        let key = Keystroke::parse_with_os(key, cx.platform_info().os)
+            .unwrap_or_else(|error| panic!("invalid test keystroke: {error}"));
         self.render_frame(cx);
-        self.dispatch_keystroke(key, cx);
+        press_key(self, key, cx);
         self.render_frame(cx);
     }
     fn input(&mut self, text: &str, cx: &mut App) {
@@ -282,6 +434,11 @@ impl ScopedWindow<'_> {
     pub fn try_find(&self, id: impl Into<ElementId>) -> Option<ElementSnapshot> {
         observation::find(self.window, &self.scope, &id.into())
     }
+    /// All registered descendants, including invisible ones, by current-frame bounds.
+    /// Equal-origin order is unspecified.
+    pub fn find_all(&self, id: impl Into<ElementId>) -> Vec<ElementSnapshot> {
+        observation::find_all(self.window, &self.scope, &id.into())
+    }
     pub fn within(&mut self, id: impl Into<ElementId>) -> ScopedWindow<'_> {
         let scope = observation::scope(self.window, &self.scope, &id.into());
         ScopedWindow {
@@ -290,35 +447,41 @@ impl ScopedWindow<'_> {
         }
     }
     pub fn click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
-        click_target(
-            self.window,
-            &self.scope,
-            id.into(),
-            None,
-            MouseButton::Left,
-            1,
-            cx,
-        );
+        click_target(self.window, &self.scope, id.into(), ClickOptions::new(), cx);
     }
     pub fn click_at(&mut self, id: impl Into<ElementId>, offset: Point<Pixels>, cx: &mut App) {
         click_target(
             self.window,
             &self.scope,
             id.into(),
-            Some(offset),
-            MouseButton::Left,
-            1,
+            ClickOptions::new().with_offset(offset),
             cx,
         );
+    }
+    /// Configurable click inside this scope; restores the previous modifier state.
+    pub fn click_with_options(
+        &mut self,
+        id: impl Into<ElementId>,
+        options: ClickOptions,
+        cx: &mut App,
+    ) {
+        click_with_options_target(self.window, &self.scope, id.into(), options, cx);
+    }
+    /// Centered left click with modifiers; restores the previous modifier state.
+    pub fn click_with_modifiers(
+        &mut self,
+        id: impl Into<ElementId>,
+        modifiers: Modifiers,
+        cx: &mut App,
+    ) {
+        self.click_with_options(id, ClickOptions::new().with_modifiers(modifiers), cx);
     }
     pub fn right_click(&mut self, id: impl Into<ElementId>, cx: &mut App) {
         click_target(
             self.window,
             &self.scope,
             id.into(),
-            None,
-            MouseButton::Right,
-            1,
+            ClickOptions::new().with_button(MouseButton::Right),
             cx,
         );
     }
@@ -327,9 +490,7 @@ impl ScopedWindow<'_> {
             self.window,
             &self.scope,
             id.into(),
-            None,
-            MouseButton::Left,
-            2,
+            ClickOptions::new().with_count(2),
             cx,
         );
     }
@@ -346,11 +507,11 @@ impl ScopedWindow<'_> {
     /// Dispatches to current focus, requiring an observed focus binding inside this scope.
     /// Does not move focus; click a scoped input first.
     pub fn press(&mut self, key: &str, cx: &mut App) {
-        let key =
-            Keystroke::parse(key).unwrap_or_else(|error| panic!("invalid test keystroke: {error}"));
+        let key = Keystroke::parse_with_os(key, cx.platform_info().os)
+            .unwrap_or_else(|error| panic!("invalid test keystroke: {error}"));
         self.window.render_frame(cx);
         require_scope_focus(self.window, &self.scope);
-        self.window.dispatch_keystroke(key, cx);
+        press_key(self.window, key, cx);
         self.window.render_frame(cx);
     }
     /// Checks scope membership before every character, including after focus-changing handlers.
@@ -367,6 +528,31 @@ fn require_scope_focus(window: &Window, scope: &[ElementId]) {
     );
 }
 
+fn press_key(window: &mut Window, key: Keystroke, cx: &mut App) {
+    // GPUI's simulated IME supplies text for Enter and Tab. Native control
+    // keys should only dispatch their bindings: an intentionally propagated
+    // submit/completion action must not insert an extra newline afterward.
+    let key = if matches!(key.key.as_str(), "enter" | "tab") {
+        window.dispatch_event(
+            KeyDownEvent {
+                keystroke: key.clone(),
+                is_held: false,
+                prefer_character_input: false,
+            }
+            .to_platform_input(),
+            cx,
+        );
+        key
+    } else {
+        let key = key.with_simulated_ime();
+        window.dispatch_keystroke(key.clone(), cx);
+        key
+    };
+    // Buttons activate on key-up, so every press must complete the pair even
+    // if its key-down handler consumed the event or changed focus.
+    window.dispatch_event(KeyUpEvent { keystroke: key }.to_platform_input(), cx);
+}
+
 fn input_text(window: &mut Window, text: &str, scope: Option<&[ElementId]>, cx: &mut App) {
     window.render_frame(cx);
     for character in text.chars() {
@@ -374,8 +560,8 @@ fn input_text(window: &mut Window, text: &str, scope: Option<&[ElementId]>, cx: 
             require_scope_focus(window, scope);
         }
         let text = character.to_string();
-        let mut key =
-            Keystroke::parse(&text).expect("a Unicode character is a valid GPUI keystroke");
+        let mut key = Keystroke::parse_with_os(&text, cx.platform_info().os)
+            .expect("a Unicode character is a valid GPUI keystroke");
         key.key_char = Some(text);
         window.dispatch_keystroke(key, cx);
         window.render_frame(cx);

@@ -88,6 +88,11 @@ impl<P: Priority> ThreadPool<P> {
         }
     }
 
+    #[cfg(feature = "bench-support")]
+    pub(crate) fn queue_job(&self, priority: &P, job: impl FnOnce() + Send + 'static) {
+        self.inner.push(priority.index(), Box::new(job));
+    }
+
     pub fn queue<M: Send + Sync + 'static>(&self, priority: &P, runnable: Runnable<M>) {
         let index = priority.index();
         debug_assert!(index < P::COUNT, "priority index out of bounds");

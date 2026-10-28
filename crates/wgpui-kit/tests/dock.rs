@@ -1,3 +1,4 @@
+use std::time::Duration;
 use wgpui_kit::component::{
     Root,
     dock::{
@@ -10,7 +11,6 @@ use wgpui_kit::{
     App, AppContext, Context, Entity, EventEmitter, FocusHandle, Focusable, TestAppContext, Window,
     div, prelude::*, px, size,
 };
-use std::time::Duration;
 struct Document {
     name: &'static str,
     focus: FocusHandle,

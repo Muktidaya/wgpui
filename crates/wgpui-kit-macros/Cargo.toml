@@ -1,7 +1,7 @@
 [package]
 name = "wgpui-kit-macros"
 description = "Macros for wgpui-component."
-version = "0.6.1"
+version = "0.8.1"
 license = "Apache-2.0"
 documentation = "https://docs.rs/wgpui-kit-macros"
 homepage = "https://github.com/Muktidaya/wgpui"
@@ -9,6 +9,7 @@ repository = "https://github.com/Muktidaya/wgpui"
 readme = "README.md"
 publish = true
 edition.workspace = true
+rust-version.workspace = true
 
 [lib]
 proc-macro = true
@@ -17,10 +18,10 @@ proc-macro = true
 workspace = true
 
 [dependencies]
-proc-macro2 = "1.0"
-proc-macro-crate = "3.5"
-quote = "1.0"
-syn = "2.0"
+proc-macro2 = "1.0.107"
+proc-macro-crate = "3.5.0"
+quote = "1.0.47"
+syn = "3.0.9"
 
 [package.metadata.cargo-machete]
 ignored = ["proc-macro2", "core-text"]

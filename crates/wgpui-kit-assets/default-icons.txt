@@ -4,6 +4,7 @@ icons/arrow-left.svg
 icons/arrow-right.svg
 icons/arrow-up.svg
 icons/asterisk.svg
+icons/ban.svg
 icons/battery-charging.svg
 icons/battery-full.svg
 icons/battery-low.svg
@@ -23,6 +24,7 @@ icons/chevron-left.svg
 icons/chevron-right.svg
 icons/chevron-up.svg
 icons/chevrons-up-down.svg
+icons/circle-alert.svg
 icons/circle-check.svg
 icons/circle-user.svg
 icons/circle-x.svg
@@ -58,6 +60,7 @@ icons/map.svg
 icons/maximize.svg
 icons/memory-stick.svg
 icons/menu.svg
+icons/mic.svg
 icons/minimize.svg
 icons/minus.svg
 icons/moon.svg
@@ -76,6 +79,7 @@ icons/play.svg
 icons/plus.svg
 icons/redo-2.svg
 icons/redo.svg
+icons/refresh-cw.svg
 icons/replace.svg
 icons/resize-corner.svg
 icons/rotate-cw.svg
@@ -85,6 +89,7 @@ icons/settings.svg
 icons/sort-ascending.svg
 icons/sort-descending.svg
 icons/square-terminal.svg
+icons/square.svg
 icons/star-fill.svg
 icons/star-off.svg
 icons/star.svg

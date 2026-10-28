@@ -150,6 +150,11 @@ impl DispatchTree {
         }
     }
 
+    #[cfg(feature = "bench-support")]
+    pub(crate) fn contains_view(&self, entity_id: EntityId) -> bool {
+        self.view_node_ids.contains_key(&entity_id)
+    }
+
     pub fn clear(&mut self) {
         self.node_stack.clear();
         self.context_stack.clear();

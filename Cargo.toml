@@ -1,14 +1,14 @@
 [workspace]
-members = [".", "crates/wgpui-derive", "crates/wgpui-perf", "crates/wgpui-base", "crates/wgpui-component", "crates/wgpui-kit-macros", "crates/wgpui-kit-assets", "crates/wgpui-platform", "crates/wgpui-kit", "crates/wgpui-kit-harness", "examples/kit-hello-world"]
-default-members = [".", "crates/wgpui-kit"]
+members = [".", "crates/wgpui-fps", "crates/wgpui-http-client", "crates/wgpui-derive", "crates/wgpui-perf", "crates/wgpui-base", "crates/wgpui-component", "crates/wgpui-kit-macros", "crates/wgpui-kit-assets", "crates/wgpui-platform", "crates/wgpui-kit", "crates/wgpui-kit-harness", "examples/kit-hello-world"]
+default-members = [".", "crates/wgpui-fps", "crates/wgpui-kit"]
 exclude = ["upstream-kit", "crates/wgpui-base/examples/native", "crates/wgpui-base/examples/wasm"]
 resolver = "3"
 
 [package]
 name = "wgpui"
-version = "0.3.6"
+version = "0.4.0"
 edition = "2024"
-rust-version = "1.94"
+rust-version.workspace = true
 authors = ["Muktidaya <muktidaya@icloud.com>", "Nathan Sobo <nathan@zed.dev>"]
 description = "Independent wgpu + winit UI framework (community fork of GPUI / GPUI-CE 0.3.3)"
 repository = "https://github.com/Muktidaya/wgpui"
@@ -51,6 +51,8 @@ font-kit = []
 inspector = ["wgpui-derive/inspector"]
 leak-detection = ["backtrace"]
 windows-manifest = []
+profiler = ["dep:hdrhistogram"]
+bench-support = ["test-support", "profiler", "dep:criterion"]
 
 [lib]
 name = "wgpui"
@@ -58,117 +60,145 @@ path = "src/wgpui.rs"
 doctest = false
 
 [dependencies]
-accesskit = { version = "0.24", features = ["enumn"] }
-anyhow = "1.0.86"
-arboard = "3"
-async-channel = "2"
-async-task = "4.7"
-backtrace = { version = "0.3", optional = true }
-bytemuck = { version = "1.24", features = ["derive"] }
-chrono = "0.4"
-circular-buffer = "1.0"
+accesskit = { version = "0.25.2", features = ["enumn"] }
+accesskit_winit = "0.34.2"
+anyhow = "1.0.104"
+async-channel = "2.5.0"
+async-task = "4.7.1"
+backtrace = { version = "0.3.77", optional = true }
+bytemuck = { version = "1.25.2", features = ["derive"] }
+chrono = "0.4.45"
+circular-buffer = "2.0.1"
 collections = { package = "gpui_collections", version = "0.2.2" }
-cosmic-text = "0.19"
-ctor = "0.6.3"
+ctor = "1.0.13"
+criterion = { version = "0.8.2", optional = true }
 derive_more = { version = "2.1.1", features = ["full"] }
-etagere = "0.2"
-flume = "0.12"
-futures = "0.3"
-futures-concurrency = "7"
-wgpui-derive = { package = "wgpui_derive", path = "crates/wgpui-derive", version = "0.3.6", features = ["inspector"] }
-http_client = { package = "gpui_http_client", version = "0.2.2" }
-image = "0.25"
-inventory = "0.3.19"
-itertools = "0.14.0"
-libc = "0.2"
-log = { version = "0.4.16", features = ["kv_unstable_serde", "serde"] }
-lyon = "1.0"
-num_cpus = "1.13"
-open = "5"
-parking = "2.0.0"
-parking_lot = "0.12.1"
-pin-project = "1.1.10"
-pollster = "1"
-postage = { version = "0.5", features = ["futures-traits"] }
-profiling = "1"
-rand = "0.10"
-raw-window-handle = "0.6"
+etagere = "0.3.0"
+flume = "0.12.0"
+futures = "0.3.34"
+futures-concurrency = "7.7.1"
+wgpui-derive = { package = "wgpui_derive", path = "crates/wgpui-derive", version = "0.4.0", features = ["inspector"] }
+http_client = { package = "wgpui-http-client", path = "crates/wgpui-http-client", version = "0.1.0" }
+hdrhistogram = { version = "7.6.0", default-features = false, optional = true }
+image = "0.25.10"
+inventory = "0.3.25"
+itertools = "0.15.0"
+libc = "0.2.191"
+log = { version = "0.4.34", features = ["kv_unstable_serde", "serde"] }
+lyon = "1.0.19"
+num_cpus = "1.17.0"
+open = "5.4.5"
+parking = "2.2.1"
+parking_lot = "0.13.0"
+pin-project = "1.1.13"
+pollster = "1.0.1"
+postage = { version = "0.5.0", features = ["futures-traits"] }
+profiling = "1.0.18"
+rand = "0.10.3"
+raw-window-handle = "0.6.2"
 refineable = { package = "gpui_refineable", version = "0.2.2" }
-resvg = { version = "0.48.1", default-features = false, features = [
+resvg = { version = "0.49.0", default-features = false, features = [
     "text",
     "system-fonts",
     "memmap-fonts",
 ] }
-rfd = "0.15"
-schemars = { version = "1.0", features = ["indexmap2"] }
-seahash = "4.1"
-semver = { version = "1.0", features = ["serde"] }
-serde = { version = "1.0.221", features = ["derive", "rc"] }
-serde_json = { version = "1.0.144", features = ["preserve_order", "raw_value"] }
-slotmap = "1.0.6"
-smallvec = { version = "1.6", features = ["union"] }
-smol = "2.0"
-spin = "0.10.0"
-stacksafe = "1.0"
+rfd = "0.17.2"
+schemars = { version = "1.2.3", features = ["indexmap2"] }
+seahash = "4.1.0"
+semver = { version = "1.0.28", features = ["serde"] }
+serde = { version = "1.0.229", features = ["derive", "rc"] }
+serde_json = { version = "1.0.154", features = ["preserve_order", "raw_value"] }
+slotmap = "1.1.1"
+smallvec = { version = "1.16.4", features = ["union"] }
+smol_str = { version = "0.3.7", features = ["serde"] }
+smol = "2.0.2"
+spin = "0.12.3"
+stacksafe = "1.0.3"
 strum = { version = "0.28.0", features = ["derive"] }
 sum_tree = { package = "gpui_sum_tree", version = "0.2.2" }
-taffy = "0.13"
-thiserror = "2.0.12"
+taffy = "0.15.1"
+thiserror = "2.0.21"
 util = { package = "gpui_util", version = "0.2.2" }
 util_macros = { package = "gpui_util_macros", version = "0.2.2" }
-usvg = { version = "0.48.1", default-features = false }
-uuid = { version = "1.1.2", features = ["v4", "v5", "v7", "serde"] }
+usvg = { version = "0.49.0", default-features = false }
+uuid = { version = "1.29.0", features = ["v4", "v5", "v7", "serde"] }
 waker-fn = "1.2.0"
-web-time = "1"
-wgpu = "30"
+web-time = "1.1.0"
+wgpu = "30.0.1"
 winit = "0.30.13"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+smithay-client-toolkit = { version = "0.21.1", default-features = false, features = ["calloop", "system"] }
+wayland-client = { version = "0.31.15", features = ["system", "dlopen"] }
+
+[target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
+ashpd = { version = "0.13.13", default-features = false, features = ["async-io", "file_chooser"] }
+cairo-rs = { version = "0.22.9", features = ["v1_18"] }
+pango = { version = "0.22.9", features = ["v1_50"] }
+pangocairo = "0.22.9"
+sys-locale = "0.3.2"
+tempfile = "3.27.0"
+x11rb = "0.14.0"
+
+[target.'cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux", target_os = "freebsd")))'.dependencies]
+arboard = "3.7.0"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-core = "0.62.2"
+windows-numerics = "0.3.1"
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Graphics_DirectWrite",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Imaging",
+    "Win32_System_Com",
+    "Win32_Graphics_Gdi",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
 [target.'cfg(target_os = "macos")'.dependencies]
-block = "0.1"
-cocoa = "0.26"
-cocoa-foundation = "0.2"
-core-foundation = "0.10"
-core-foundation-sys = "0.8.6"
-core-graphics = "0.24"
-dispatch2 = "0.3.1"
-foreign-types = "0.5"
-mach2 = "0.5"
-objc = "0.2"
-objc2 = "0.6.4"
+core-foundation = "0.10.1"
+core-graphics = "0.25.0"
+core-text = "22.0.0"
+objc2 = "0.6.5"
 objc2-app-kit = { version = "0.3.2", features = [
     "NSApplication",
     "NSCell",
     "NSMenu",
     "NSMenuItem",
     "NSEvent",
+    "NSPasteboard",
+    "NSFont",
+    "NSFontDescriptor",
 ] }
 objc2-foundation = { version = "0.3.2", features = [
     "NSProcessInfo",
+    "NSArray",
+    "NSData",
     "NSString",
     "NSObject",
 ] }
 
-[target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
-oo7 = { version = "0.6", default-features = false, features = [
-    "async-std",
-    "native_crypto",
-] }
-swash = "0.2.6"
-
-[target.'cfg(target_os = "windows")'.dependencies]
-windows-core = "0.62"
-windows-numerics = "0.2"
-windows-registry = "0.6"
-
 [dev-dependencies]
-backtrace = "0.3"
+accesskit_consumer = "0.39.2"
+backtrace = "0.3.77"
 collections = { package = "gpui_collections", version = "0.2.2", features = ["test-support"] }
-env_logger = "0.11"
-http_client = { package = "gpui_http_client", version = "0.2.2", features = ["test-support"] }
-lyon = { version = "1.0", features = ["extra"] }
-pretty_assertions = { version = "1.3.0", features = ["unstable"] }
-proptest = "1"
-unicode-segmentation = "1.10"
+env_logger = "0.11.11"
+http_client = { package = "wgpui-http-client", path = "crates/wgpui-http-client", version = "0.1.0", features = ["test-support"] }
+lyon = { version = "1.0.19", features = ["extra"] }
+pretty_assertions = { version = "1.4.1", features = ["unstable"] }
+proptest = "1.12.0"
+unicode-segmentation = "1.13.3"
 util = { package = "gpui_util", version = "0.2.2", features = ["test-support"] }
 
 # ============================================================================
@@ -349,62 +379,60 @@ nonminimal_bool = "allow"
 [workspace.package]
 publish = false
 edition = "2024"
+rust-version = "1.95"
 
 [workspace.dependencies]
 collections = { package = "gpui_collections", version = "0.2.2" }
-gpui-kit = { package = "wgpui-kit", path = "crates/wgpui-kit", version = "0.6.1" }
-wgpui = { version = "0.3.6", path = "." }
-wgpui_derive = { version = "0.3.6", path = "crates/wgpui-derive" }
-wgpui-platform = { path = "crates/wgpui-platform", version = "0.6.1" }
+gpui-kit = { package = "wgpui-kit", path = "crates/wgpui-kit", version = "0.8.1" }
+wgpui = { version = "0.4.0", path = "." }
+wgpui_derive = { version = "0.4.0", path = "crates/wgpui-derive" }
+wgpui-platform = { path = "crates/wgpui-platform", version = "0.8.1" }
 
 # Dependency keys preserve upstream Rust import names (gpui_*, gpui_component_*).
-gpui = { package = "wgpui", version = "0.3.6", path = "." }
-gpui_macros = { package = "wgpui_derive", version = "0.3.6", path = "crates/wgpui-derive" }
-gpui_platform = { package = "wgpui-platform", path = "crates/wgpui-platform", version = "0.6.1" }
+gpui = { package = "wgpui", version = "0.4.0", path = "." }
+gpui_macros = { package = "wgpui_derive", version = "0.4.0", path = "crates/wgpui-derive" }
+gpui_platform = { package = "wgpui-platform", path = "crates/wgpui-platform", version = "0.8.1" }
 sum-tree = { package = "gpui_sum_tree", version = "0.2.2" }
 
-gpui-component = { package = "wgpui-component", path = "crates/wgpui-component", version = "0.6.1" }
+gpui-component = { package = "wgpui-component", path = "crates/wgpui-component", version = "0.8.1" }
 # Same package under the published name so examples can `use wgpui_component`.
-wgpui-component = { path = "crates/wgpui-component", version = "0.6.1" }
-gpui-base = { package = "wgpui-base", path = "crates/wgpui-base", version = "0.6.1" }
-gpui-component-macros = { package = "wgpui-kit-macros", path = "crates/wgpui-kit-macros", version = "0.6.1" }
-gpui-component-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.6.1" }
+wgpui-component = { path = "crates/wgpui-component", version = "0.8.1" }
+gpui-base = { package = "wgpui-base", path = "crates/wgpui-base", version = "0.8.1" }
+gpui-component-macros = { package = "wgpui-kit-macros", path = "crates/wgpui-kit-macros", version = "0.8.1" }
+gpui-component-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.8.1" }
 # Upstream 0.6.0 sources depend on this key after the gpui-kit-assets rename.
-gpui-kit-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.6.1" }
-reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.16" }
+gpui-kit-assets = { package = "wgpui-kit-assets", path = "crates/wgpui-kit-assets", version = "0.8.1" }
+reqwest_client = { package = "reqwest-client-gpui-unofficial", version = "1.25.3" }
 
-anyhow = "1"
-instant = { version = "0.1", features = ["wasm-bindgen"] }
-log = "0.4"
+anyhow = "1.0.104"
+instant = { version = "0.1.13", features = ["wasm-bindgen"] }
+log = "0.4.34"
 lsp-types = { version = "0.97.0", features = ["proposed"] }
-notify = "7.0.0"
+notify = "8.2.1"
 raw-window-handle = "0.6.2"
-ropey = { version = "=2.0.0-beta.1", features = [
-    "metric_chars",
-    "metric_lines_lf",
-    "metric_utf16",
-] }
-rust-i18n = "4.2.0"
-schemars = "1"
-semver = "1"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1"
-serde_repr = "0.1"
-smallvec = "1"
-smol = "2"
+ropey = { version = "1.6.1", default-features = false, features = ["simd"] }
+rust-i18n = "4.2.4"
+schemars = "1.2.3"
+semver = "1.0.28"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+serde_repr = "0.1.21"
+smallvec = "1.16.4"
+smol = "2.0.2"
 syntect = { version = "5.3.0", default-features = false, features = [
     "parsing",
     "default-syntaxes",
     "regex-fancy",
 ] }
-tracing = "0.1.41"
-wasm-bindgen = "0.2.113"
+two-face = { version = "0.5.2", default-features = false, features = ["syntect-fancy"] }
+tracing = "0.1.44"
+wasm-bindgen = "0.2.129"
 # Use errno stub for WASM
 errno = { version = "0.3.14", default-features = false }
 
 [workspace.dependencies.windows]
 features = ["Wdk", "Wdk_System", "Wdk_System_SystemServices"]
-version = "0.58.0"
+version = "0.62.2"
 
 [workspace.lints.clippy]
 almost_complete_range = "allow"

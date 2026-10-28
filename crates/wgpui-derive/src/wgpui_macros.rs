@@ -15,6 +15,21 @@ mod derive_inspector_reflection;
 use proc_macro::TokenStream;
 use syn::{DeriveInput, Ident};
 
+/// Runs an explicitly unsafe constructor using WGPUI's dependency path.
+#[proc_macro_attribute]
+pub fn ctor(args: TokenStream, input: TokenStream) -> TokenStream {
+    let gpui = gpui_path::gpui_crate();
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    let separator = (!args.is_empty()).then(|| quote::quote!(,));
+
+    quote::quote! {
+        #[#gpui::private::ctor::ctor(crate_path = #gpui::private::ctor #separator #args)]
+        #input
+    }
+    .into()
+}
+
 /// `Action` derive macro - see the trait documentation for details.
 #[proc_macro_derive(Action, attributes(action))]
 pub fn derive_action(input: TokenStream) -> TokenStream {
@@ -295,4 +310,41 @@ pub(crate) fn get_simple_attribute_field(ast: &DeriveInput, name: &'static str) 
         syn::Data::Enum(_) => None,
         syn::Data::Union(_) => None,
     }
+}
+
+/// Measures a synchronous UI benchmark through WGPUI's benchmark context.
+#[proc_macro_attribute]
+pub fn bench(args: TokenStream, input: TokenStream) -> TokenStream {
+    if !args.is_empty() {
+        return syn::Error::new(proc_macro2::Span::call_site(), "bench takes no arguments")
+            .to_compile_error()
+            .into();
+    }
+    let function = syn::parse_macro_input!(input as syn::ItemFn);
+    if function.sig.asyncness.is_some() || function.sig.inputs.len() != 1 {
+        return syn::Error::new_spanned(
+            &function.sig,
+            "bench requires one synchronous &mut BenchAppContext argument",
+        )
+        .to_compile_error()
+        .into();
+    }
+    let gpui = gpui_path::gpui_crate();
+    let name = &function.sig.ident;
+    let attributes = &function.attrs;
+    let visibility = &function.vis;
+    let body = &function.block;
+    let parameter = &function.sig.inputs[0];
+    quote::quote! {
+        #(#attributes)*
+        #visibility fn #name(criterion: &mut #gpui::private::criterion::Criterion) {
+            fn setup(#parameter) #body
+            criterion.bench_function(stringify!(#name), |bencher| {
+                let mut context = #gpui::BenchAppContext::new(bencher);
+                setup(&mut context);
+                context.teardown();
+            });
+        }
+    }
+    .into()
 }

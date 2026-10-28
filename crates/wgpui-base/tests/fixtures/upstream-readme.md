@@ -1,146 +1,194 @@
 <p align="center">
-  <img src="./website/public/logo.svg" width="112" alt="GPUI Component logo" />
+  <strong>WGPUI Markdown regression input</strong>
   <br>
-  <strong>wgpui-component</strong>
+  <em>Structured text, code, links, tables, and inline HTML</em>
 </p>
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+# Markdown document fixture
 
-**Adaptor** of Longbridge [gpui-component](https://github.com/longbridge/gpui-component) **0.6.0** (`94a313a7`) onto independently versioned **[wgpui](https://github.com/Muktidaya/wgpui) 0.3.5**.
+This is synthetic input for the WGPUI text-view regression suite. It provides a
+substantial document whose parser can be rebuilt while the text remains stable.
+The examples are formatting input, rather than installation instructions or a
+record of publication and development operations.
 
-The two version numbers are intentional: this crate tracks upstream component **0.6.0**; the UI runtime is **wgpui 0.3.5**, not Zed `gpui` and not crates.io `gpui-pre`. Published names are `wgpui-*`. This tree does **not** publish as `gpui-kit`. See [STATUS.md](./STATUS.md).
+The public project is [WGPUI](https://github.com/Muktidaya/wgpui). Its
+[Kit guide](https://github.com/Muktidaya/wgpui/blob/root/docs/kit.md) describes
+the application facade. This fixture intentionally mixes ordinary paragraphs,
+**strong emphasis**, *italic emphasis*, `inline code`, and links in the same line.
 
-```toml
-[dependencies]
-wgpui = "0.3.5"
-wgpui-component = "0.6.0"
-```
+## Package names and versions
 
-A crates.io consumer imports `wgpui` and `wgpui_component`. In this workspace, Cargo aliases `gpui` / `gpui_component` onto those packages so vendored upstream sources compile unchanged.
+The version values below identify the source candidate used in this document.
+They exercise a table and TOML code fences; they do not assert publication or
+completed native acceptance. The minimum Rust version is **1.95**.
 
-## Features
-
-- **60+ UI Components**: Forms, navigation, overlays, feedback, layout, and more, with polished interactions and productive defaults.
-- **Production Ready**: Upstream GPUI Kit is used to build Longbridge Pro and refined in a shipped commercial desktop application.
-- **Native Feel**: Modern controls inspired by macOS and Windows, backed by semantic themes and multiple sizes.
-- **GPU UI**: Interfaces rendered through wgpui (wgpu + winit).
-- **Data Tables**: Virtual scrolling, fixed and resizable columns, sorting, and cell selection across hundreds of thousands of rows.
-- **Virtual Lists**: Render only the visible range, including lists whose items have different sizes.
-- **Code Editor**: Stable performance at 200K lines with Tree-sitter highlighting and LSP diagnostics, completion, and hover.
-- **Dock Layout**: Resizable panels, draggable tabs, nested splits, edge docks, and serializable freeform Tiles.
-- **Rich Content**: Native Markdown and HTML rendering, syntax highlighting, and built-in charts.
-- **Design Freedom**: Use the complete visual system (`wgpui-component`) or build your own on the behavior in `wgpui-base`.
-- **Cross Platform**: macOS, Windows, and Linux.
-
-## Crate map
-
-| Published crate | Path | Upstream source name |
+| Package | Source candidate | Role |
 | --- | --- | --- |
-| `wgpui-component` | `crates/ui` | `gpui-component` (`crates/component`) |
-| `wgpui-base` | `crates/base` | `gpui-base` |
-| `wgpui-component-macros` | `crates/macros` | `gpui-component-macros` |
-| `wgpui-component-assets` | `crates/assets` | `gpui-kit-assets` |
-| `wgpui-platform` (`publish = false`) | `crates/platform` | shim for `gpui_platform::application()` |
-
-`wgpui-component` 0.6.0 depends on `wgpui` 0.3.5 (path `../wgpui` in this lab). `gpui-kit`, story gallery, WASM, and `gpui-wry` remain on disk but are not workspace members.
-
-Upstream architecture docs still say `gpui-component` / `gpui-base` / `gpui-shell`. That layering is real in the vendored sources; the crates.io names for this adaptor are the `wgpui-*` rows above. `gpui-shell` is not built here.
-
-[Explore the architecture →](docs/ARCHITECTURE.md)
-
-## Showcase
-
-Upstream GPUI Kit has powered [Longbridge Pro](https://longbridge.com/desktop) from day one.
-
-<img width="1763" alt="Longbridge Pro using GPUI Component" src="https://github.com/user-attachments/assets/e1ecb9c3-2dd3-431e-bd97-5a819c30e551" />
-
-## Usage
+| `wgpui` | `0.4.0` | Native framework |
+| `wgpui_derive` | `0.4.0` | Framework procedural macros |
+| `wgpui-http-client` | `0.1.0` | HTTP interfaces and asynchronous bodies |
+| `wgpui-kit` | `0.8.1` | Application facade |
+| `wgpui-base` | `0.8.1` | Behavior and infrastructure |
+| `wgpui-component` | `0.8.1` | Styled controls |
+| `wgpui-kit-assets` | `0.8.1` | Icon catalog |
+| `wgpui-kit-macros` | `0.8.1` | Component macros |
+| `wgpui-platform` | `0.8.1` | Platform entry |
+| `wgpui-fps` | `0.8.1` | Performance presentation |
 
 ```toml
+[package]
+name = "markdown-fixture"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
 [dependencies]
-wgpui = "0.3.5"
-wgpui-component = "0.6.0"
+wgpui = "0.4.0"
+wgpui-kit = "0.8.1"
 ```
 
-`wgpui-component` pulls `wgpui-base` and the default icon set. Features (`inspector`, `decimal`, `tree-sitter`, and each `tree-sitter-<language>`) keep their upstream names.
+The facade combines framework types with Base behavior and styled controls.
+These independently versioned packages deliberately share one framework type
+identity. A paragraph following a code block must return to ordinary typography
+and continue wrapping within the available width.
 
-Nothing has been uploaded to crates.io for this 0.6.0 line yet; until `wgpui` 0.3.5 is on the registry, depend on git or a path checkout.
+## A layered document
 
-### Basic Example
+- **Framework:** windows, entities, actions, input, text, and drawing.
+- **Base:** reusable interaction and application-owned presentation.
+- **Components:** semantic themes and styled controls.
+- **Assets:** selected or default icons.
+- **Application:** domain state, navigation, and task-specific composition.
 
-```rs
-use wgpui::*;
-use wgpui_component::{button::*, *};
+The list continues with nested content to exercise indentation and marker layout:
 
-pub struct HelloWorld;
-impl Render for HelloWorld {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+1. Construct the document's state.
+   - Keep the entity handle for later updates.
+   - Give interactive elements stable identifiers.
+   - Put callbacks after the context argument.
+2. Render the current value.
+   - Compose a label, an input, and an action.
+   - Keep disabled and selected state explicit.
+3. Observe a state transition.
+   - Update the entity through its inner context.
+   - Notify after changing visible state.
+4. Rebuild the same parser without changing this input.
+
+> A stable document can be parsed again without scheduling an endless sequence
+> of redraws. This block quotation supplies multiple wrapped lines, including
+> **emphasis** and `code`, while remaining part of the same long-form input.
+>
+> A second paragraph preserves the distinction between an empty line and a hard
+> line break inside a quoted block.
+
+### Rust source as text
+
+The following fenced block includes generic types, lifetimes, references,
+closures, a method chain, and string literals. The regression reads the source
+as Markdown; it does not compile or execute the example.
+
+```rust
+use wgpui_kit::*;
+
+actions!(fixture, [Confirm]);
+
+struct Document {
+    title: SharedString,
+    confirmed: bool,
+}
+
+impl Render for Document {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
-            .v_flex()
+            .id("document")
+            .flex()
+            .flex_col()
             .gap_2()
-            .size_full()
-            .items_center()
-            .justify_center()
-            .child("Hello, World!")
+            .child(self.title.clone())
             .child(
-                Button::new("ok")
-                    .primary()
-                    .label("Let's Go!")
-                    .on_click(|_, _, _| println!("Clicked!")),
+                div()
+                    .id("confirm")
+                    .child("Confirm")
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.confirmed = true;
+                        cx.notify();
+                    })),
             )
+            .when(self.confirmed, |this| this.child("Confirmed"))
     }
 }
 
-fn main() {
-    wgpui::Application::new().run(move |cx| {
-        wgpui_component::init(cx);
-
-        cx.spawn(async move |cx| {
-            cx.open_window(WindowOptions::default(), |window, cx| {
-                let view = cx.new(|_| HelloWorld);
-                cx.new(|cx| Root::new(view, window, cx))
-            })
-            .expect("Failed to open window");
-        })
-        .detach();
-    });
+fn describe<'a>(name: &'a str, values: &[Option<usize>]) -> (&'a str, usize) {
+    (name, values.iter().flatten().count())
 }
 ```
 
-The in-tree example [`examples/hello_world`](examples/hello_world) uses these same public crate names. Vendored library sources still `use gpui::` via workspace aliases.
+After this longer code block, the next paragraph deliberately has enough words
+to wrap across several lines at ordinary window sizes. Its clauses are distinct
+and its punctuation varies: commas separate related values, parentheses provide
+extra context, and a colon introduces a concrete list of colors, shapes, and
+measurements. Repeated rendering must retain the content without repeating the
+document's construction indefinitely.
 
-### Icons
+### Mixed inline HTML
 
-The default assets crate bundles the [Lucide](https://lucide.dev) icon set as `wgpui-component-assets`. Pass it to the application with `Application::new().with_assets(wgpui_component_assets::Assets)`. To ship your own icons, depend without that crate and name SVG files as defined on `IconName` in `crates/ui/src/icon.rs`.
+<div>
+  <p>A paragraph with <strong>strong HTML text</strong>, <em>emphasis</em>, and
+  a <a href="https://github.com/Muktidaya/wgpui" title="WGPUI public project">public project link</a>.</p>
+  <p>Literal entities remain text: &lt;Window&gt;, &amp;, &quot;label&quot; and &#x1F980;.</p>
+</div>
 
-## Development
+<details>
+  <summary>Additional document material</summary>
+  <p>This nested HTML block supplies another paragraph and <code>inline code</code>.</p>
+</details>
 
-Default branch is **`root`**. Clone:
+The text returns to Markdown after the HTML block. Keyboard labels such as
+<kbd>Ctrl</kbd> + <kbd>Enter</kbd> appear beside ordinary inline text, while
+escaped markup such as \<literal\> remains available to the parser.
 
-```bash
-git clone https://github.com/Muktidaya/wgpui-component.git
-```
+## Layout vocabulary
 
-This lab expects a sibling checkout of [wgpui](https://github.com/Muktidaya/wgpui) at `../wgpui` (also branch `root`). Toolchain: Rust **1.94.0**.
+| Kind | Example | Meaning in this fixture |
+| :--- | :---: | ---: |
+| Identifier | `document-title` | Stable element identity |
+| Length | `24px` | A short numeric label |
+| Percentage | `100%` | A value containing punctuation |
+| Range | `0..12` | Byte-oriented editor notation |
+| Character | `Δ` | A non-ASCII scalar |
+| Text | `日本語` | CJK content |
+| Emoji | `🦀` | Supplementary-plane content |
 
-Workspace default member is `hello_world`:
+Text may include mixed scripts: Latin, Ελληνικά, 日本語, العربية, and emoji 🦀.
+Those sequences exercise shaping and fallback without making a particular font
+file part of the fixture. The application can select an explicit family; the
+framework's system-role names are `.SystemUIFont` and `.SystemMonospaceFont`.
 
-```bash
-cargo +1.94.0 run -p hello_world
-cargo +1.94.0 test -p wgpui-base --lib
-cargo +1.94.0 test -p wgpui-component --lib
-cargo +1.94.0 test -p wgpui-component-harness
-```
+### Further paragraphs for wrapping
 
-The upstream Story gallery (`crates/story`) is not a workspace member in this adaptor; `cargo run` with no `-p` still builds `hello_world`, not the gallery.
+A text view can display an introductory paragraph, a short heading, a long code
+block, a table, and a trailing explanation in one document. Each block has its
+own size, yet the document should settle after the parser and layout agree.
+This paragraph mentions ordinary interface tasks: editing a name, reviewing a
+table, opening a disclosure, choosing an item, and confirming a value.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [STATUS.md](./STATUS.md).
+Another paragraph keeps the content long enough to span more than a trivial
+sample. It includes a link to the [framework documentation](https://docs.rs/wgpui),
+two **separate bold phrases**, and an inline expression such as `Some("text")`.
+The link is content, the code is content, and neither one is an instruction to
+contact a service or alter state during the regression.
 
-## License
+- A trailing list retains its marker after the preceding paragraph.
+- A second item includes *emphasis* and `0.8.1`.
+- A third item links to [the public WGPUI source](https://github.com/Muktidaya/wgpui).
 
-Apache-2.0. Copyright for upstream GPUI Component / GPUI Kit remains with Longbridge; see [LICENSE-APACHE](./LICENSE-APACHE).
+---
 
-- Runtime: [wgpui](https://github.com/Muktidaya/wgpui) (independent wgpu + winit UI crate).
-- Upstream UI: Longbridge [gpui-component](https://github.com/longbridge/gpui-component) 0.6.0.
-- UI design based on [shadcn/ui](https://ui.shadcn.com), some from [Reui](https://reui.io).
-- Icons from [Lucide](https://lucide.dev).
+## Closing block
+
+This final section supplies a heading and a paragraph after a thematic break.
+The document contains multiple headings, long text, nested lists, aligned
+tables, Rust and TOML fences, block quotations, links, inline HTML, entities,
+and Unicode. Rebuilding its parser should preserve its meaning and reach a
+stable rendered frame.

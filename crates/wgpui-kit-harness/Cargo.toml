@@ -4,6 +4,7 @@ description = "Native integration harness for wgpui-component (hello_world + cor
 version = "0.1.0"
 publish = false
 edition.workspace = true
+rust-version.workspace = true
 
 [[test]]
 name = "hello_world"
@@ -25,3 +26,10 @@ gpui_platform = { workspace = true }
 
 [lints]
 workspace = true
+
+[[bin]]
+name = "wgpui-native-acceptance"
+path = "src/native_acceptance.rs"
+
+[dependencies]
+gpui-kit.workspace = true

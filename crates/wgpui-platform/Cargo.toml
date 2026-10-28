@@ -1,14 +1,16 @@
 [package]
 name = "wgpui-platform"
 description = "Platform entry shim for wgpui-component (replaces Zed gpui_platform on native)."
-version = "0.6.1"
+version = "0.8.1"
 edition.workspace = true
+rust-version.workspace = true
 publish = true
 license = "Apache-2.0"
 homepage = "https://github.com/Muktidaya/wgpui"
 repository = "https://github.com/Muktidaya/wgpui"
 
 [features]
+bench-support = ["wgpui/bench-support"]
 test-support = ["wgpui/test-support"]
 
 [dependencies]

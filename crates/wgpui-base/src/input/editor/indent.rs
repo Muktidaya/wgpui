@@ -40,7 +40,11 @@ impl TabSize {
         let mut count = 0;
         for ch in line.chars() {
             match ch {
-                '\t' => count += self.tab_size,
+                '\t' => {
+                    if self.tab_size > 0 {
+                        count += self.tab_size - count % self.tab_size;
+                    }
+                }
                 ' ' => count += 1,
                 _ => break,
             }
@@ -129,7 +133,7 @@ impl<M: InputModeKind> TextElement<M> {
         {
             let line = state.text.slice_line(buffer_line);
             let mut current_indents = vec![];
-            if line.len() > 0 {
+            if line.len_bytes() > 0 {
                 let indent_count = tab_size.indent_count(&line);
                 for offset in (0..indent_count).step_by(tab_size.tab_size) {
                     let x = if indent_count > 0 {
@@ -315,7 +319,7 @@ impl<M: InputModeKind> InputBaseState<M> {
                 IndentDirection::Outdent => {
                     if self
                         .text
-                        .slice(line_start..)
+                        .byte_slice(line_start..)
                         .chars()
                         .take(tab_indent.chars().count())
                         .eq(tab_indent.chars())
@@ -376,7 +380,7 @@ impl<M: InputModeKind> InputBaseState<M> {
                     let start = self.text.line_start_offset(row);
                     if self
                         .text
-                        .slice(start..)
+                        .byte_slice(start..)
                         .chars()
                         .take(tab_indent.chars().count())
                         .eq(tab_indent.chars())
@@ -482,8 +486,10 @@ mod tests {
         assert_eq!(tab.indent_count(&RopeSlice::from("  abc")), 2);
         assert_eq!(tab.indent_count(&RopeSlice::from("    abc")), 4);
         assert_eq!(tab.indent_count(&RopeSlice::from("\tabc")), 4);
-        assert_eq!(tab.indent_count(&RopeSlice::from("  \tabc")), 6);
-        assert_eq!(tab.indent_count(&RopeSlice::from(" \t abc  ")), 6);
+        assert_eq!(tab.indent_count(&RopeSlice::from("  \tabc")), 4);
+        assert_eq!(tab.indent_count(&RopeSlice::from(" \t abc  ")), 5);
+        assert_eq!(tab.indent_count(&RopeSlice::from(" \t \tabc")), 8);
+        assert_eq!(tab.indent_count(&RopeSlice::from("    \tabc")), 8);
         assert_eq!(tab.indent_count(&RopeSlice::from("abc")), 0);
     }
 }

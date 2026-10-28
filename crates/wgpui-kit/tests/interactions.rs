@@ -1,9 +1,9 @@
+use std::{cell::RefCell, rc::Rc, time::Duration};
 use wgpui_kit::test::{TestAppContextExt, TestSupportExt, TestWindowExt};
 use wgpui_kit::{
     AppContext, Context, MouseButton, ScrollDelta, ScrollHandle, TestAppContext, Window, div,
     point, prelude::*, px, size,
 };
-use std::{cell::RefCell, rc::Rc, time::Duration};
 
 struct Scopes {
     clicks: Rc<RefCell<Vec<&'static str>>>,

@@ -8,8 +8,9 @@ homepage = "https://github.com/Muktidaya/wgpui"
 repository = "https://github.com/Muktidaya/wgpui"
 readme = "README.md"
 edition.workspace = true
+rust-version.workspace = true
 publish = true
-version = "0.6.1"
+version = "0.8.1"
 
 # Distinct from the pre-migration assets package; exports the icon directory
 # to the component build script through Cargo metadata.
@@ -24,4 +25,4 @@ gpui.workspace = true
 log.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-rust-embed = { version = "8.7.2", features = ["interpolate-folder-path", "include-exclude"] }
+rust-embed = { version = "8.13.0", features = ["interpolate-folder-path", "include-exclude"] }

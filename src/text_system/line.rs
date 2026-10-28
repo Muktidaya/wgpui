@@ -127,6 +127,11 @@ pub struct WrappedLine {
 }
 
 impl WrappedLine {
+    /// Returns the immutable shaped and wrapped layout, shared without copying glyphs.
+    pub fn layout(&self) -> Arc<WrappedLineLayout> {
+        self.layout.clone()
+    }
+
     /// The length of the underlying, unwrapped layout, in utf-8 bytes.
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {

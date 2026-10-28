@@ -182,7 +182,7 @@ mod tests {
 
         let named = Progress::new("upload").accessibility_label("Upload progress");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Upload progress")
         );
     }

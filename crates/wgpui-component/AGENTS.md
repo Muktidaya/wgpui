@@ -27,7 +27,7 @@ natural Chinese rather than word-for-word translation.
 
 This is the styled implementation crate inside the WGPUI workspace. The
 canonical package map and acceptance state are in `../../docs/kit.md` and
-`../../STATUS.md`. Upstream v0.6.1 is pinned; framework and Kit versions remain
+`../../STATUS.md`. The source candidate ports upstream v0.8.1; framework and Kit versions remain
 independent. Kit is now an active workspace member and the application façade.
 Preserve the Base behavior / styled presentation boundary and native wgpu/winit
 backend. Internal `gpui` dependency aliases are intentional.
@@ -38,10 +38,10 @@ backend. Internal `gpui` dependency aliases are intentional.
 
 ```bash
 # Workspace default example (story gallery is not a member)
-cargo +1.94.0 run -p wgpui-kit-hello-world
+cargo +1.95.0 run -p wgpui-kit-hello-world
 
 # Build the workspace
-cargo +1.94.0 build
+cargo +1.95.0 build
 
 # Lint check
 ../../scripts/clippy --workspace
@@ -65,16 +65,16 @@ assert presentation dimensions. Add tests when the change affects behavior,
 interaction, data flow, or prevents a meaningful regression.
 
 ```bash
-cargo +1.94.0 test -p wgpui-base --lib
-cargo +1.94.0 test -p wgpui-component --lib
-cargo +1.94.0 test -p wgpui-component-harness
+cargo +1.95.0 test -p wgpui-base --lib
+cargo +1.95.0 test -p wgpui-component --lib
+cargo +1.95.0 test -p wgpui-kit-harness
 ```
 
 ### Performance Profiling
 
 ```bash
-MTL_HUD_ENABLED=1 cargo +1.94.0 run -p wgpui-kit-hello-world
-samply record cargo +1.94.0 run -p wgpui-kit-hello-world
+MTL_HUD_ENABLED=1 cargo +1.95.0 run -p wgpui-kit-hello-world
+samply record cargo +1.95.0 run -p wgpui-kit-hello-world
 ```
 
 ## Core Architecture
@@ -249,7 +249,7 @@ The `Icon` element does not include SVG files by default. You need to:
 
 ## Dependencies
 
-- Runtime: WGPUI 0.3.6 from this repository root; vendored `gpui` dependency keys are Cargo aliases, not a Zed Git dependency.
+- Runtime: WGPUI 0.4.0 from this repository root; vendored `gpui` dependency keys are Cargo aliases, not a Zed Git dependency.
 - Tree-sitter: For syntax highlighting
 - Ropey: Rope data structure for text, and `RopeExt` trait with more features.
 - Markdown rendering: `markdown` crate

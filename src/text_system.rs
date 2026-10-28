@@ -65,23 +65,11 @@ impl TextSystem {
             font_ids_by_font: RwLock::default(),
             wrapper_pool: Mutex::default(),
             font_runs_pool: Mutex::default(),
-            fallback_font_stack: smallvec![
-                // TODO: Remove this when Linux have implemented setting fallbacks.
-                font(".ZedMono"),
-                font(".ZedSans"),
-                font("Helvetica"),
-                font("Segoe UI"),     // Windows
-                font("Ubuntu"),       // Gnome (Ubuntu)
-                font("Adwaita Sans"), // Gnome 47
-                font("Cantarell"),    // Gnome
-                font("Noto Sans"),    // KDE
-                font("DejaVu Sans"),
-                font("Arial"), // macOS, Windows
-            ],
+            fallback_font_stack: smallvec![font(".SystemUIFont"), font(".SystemMonospaceFont")],
         }
     }
 
-    /// Get a list of all available font names from the operating system.
+    /// Get the available OS font names and the system-family aliases.
     pub fn all_font_names(&self) -> Vec<String> {
         let mut names = self.platform_text_system.all_font_names();
         names.extend(
@@ -90,6 +78,7 @@ impl TextSystem {
                 .map(|font| font.family.to_string()),
         );
         names.push(".SystemUIFont".to_string());
+        names.push(".SystemMonospaceFont".to_string());
         names.sort();
         names.dedup();
         names
@@ -97,7 +86,10 @@ impl TextSystem {
 
     /// Add a font's data to the text system.
     pub fn add_fonts(&self, fonts: Vec<Cow<'static, [u8]>>) -> Result<()> {
-        self.platform_text_system.add_fonts(fonts)
+        let result = self.platform_text_system.add_fonts(fonts);
+        // Registration may partly succeed before a later font fails; retry cached selections in either case.
+        self.font_ids_by_font.write().clear();
+        result
     }
 
     /// Get the FontId for the configure font family and style.
@@ -332,7 +324,8 @@ pub struct WindowTextSystem {
 }
 
 impl WindowTextSystem {
-    pub(crate) fn new(text_system: Arc<TextSystem>) -> Self {
+    /// Creates an independent shaped-line cache backed by the given shared text system.
+    pub fn new(text_system: Arc<TextSystem>) -> Self {
         Self {
             line_layout_cache: LineLayoutCache::new(text_system.platform_text_system.clone()),
             text_system,
@@ -757,6 +750,16 @@ pub struct TextRun {
     pub strikethrough: Option<StrikethroughStyle>,
 }
 
+impl TextRun {
+    /// Copies this text style onto a run covering the given number of UTF-8 bytes.
+    pub fn with_len(&self, len: usize) -> Self {
+        Self {
+            len,
+            ..self.clone()
+        }
+    }
+}
+
 /// An identifier for a specific glyph, as returned by [`WindowTextSystem::layout_line`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
@@ -911,16 +914,5 @@ impl FontMetrics {
     /// Returns the outer limits of the area that the font covers in pixels.
     pub fn bounding_box(&self, font_size: Pixels) -> Bounds<Pixels> {
         (self.bounding_box / self.units_per_em as f32 * font_size.0).map(px)
-    }
-}
-
-#[allow(unused)]
-pub(crate) fn font_name_with_fallbacks<'a>(name: &'a str, system: &'a str) -> &'a str {
-    // Historical Zed font family names mapped to publicly licensed families.
-    match name {
-        ".SystemUIFont" => system,
-        ".ZedSans" | "Zed Plex Sans" => "IBM Plex Sans",
-        ".ZedMono" | "Zed Plex Mono" => "Lilex",
-        _ => name,
     }
 }

@@ -27,3 +27,22 @@ fn found_crate_path(found: FoundCrate) -> TokenStream {
         }
     }
 }
+
+/// Resolve the styled plot API, including renamed Kit dependencies.
+pub(crate) fn component() -> syn::Result<TokenStream> {
+    for name in ["wgpui-kit", "gpui-kit"] {
+        if let Ok(found) = crate_name(name) {
+            let kit = found_crate_path(found);
+            return Ok(quote!(#kit::component));
+        }
+    }
+    for name in ["wgpui-component", "gpui-component"] {
+        if let Ok(found) = crate_name(name) {
+            return Ok(found_crate_path(found));
+        }
+    }
+    Err(syn::Error::new(
+        Span::call_site(),
+        "IntoPlot requires wgpui-kit or wgpui-component",
+    ))
+}

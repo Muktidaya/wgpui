@@ -35,7 +35,8 @@ mod keymap;
 mod path_builder;
 mod platform;
 pub mod prelude;
-mod profiler;
+/// Task timings and optional frame, input, action, and view measurements.
+pub mod profiler;
 mod queue;
 mod scene;
 /// The scheduler module provides task scheduling, execution, and timing primitives.
@@ -64,6 +65,9 @@ pub mod _ownership_and_data_flow;
 #[doc(hidden)]
 pub mod private {
     pub use anyhow;
+    #[cfg(feature = "bench-support")]
+    pub use criterion;
+    pub use ctor;
     pub use inventory;
     pub use schemars;
     pub use serde;
@@ -76,24 +80,23 @@ mod seal {
     pub trait Sealed {}
 }
 
-pub use action::*;
+pub use a11y::{A11yActionListener, A11ySubtreeBuilder, AriaProperties};
 pub use accesskit;
 pub use accesskit::Action as AccessibleAction;
 pub use accesskit::{Orientation, Role, Toggled};
-pub use a11y::{A11yActionListener, A11ySubtreeBuilder, AriaProperties};
+pub use action::*;
 pub use anyhow::Result;
 pub use app::*;
 pub(crate) use arena::*;
 pub use asset_cache::*;
 pub use assets::*;
 pub use color::*;
-pub use ctor::ctor;
 pub use default_colors::*;
 pub use element::*;
 pub use elements::*;
 pub use executor::*;
-pub use gestures::*;
 pub use geometry::*;
+pub use gestures::*;
 pub use global::*;
 pub use http_client;
 pub use input::*;
@@ -108,6 +111,7 @@ pub(crate) use queue::{PriorityQueueReceiver, PriorityQueueSender};
 pub use refineable::*;
 pub use scene::*;
 pub use wgpui_derive::{AppContext, IntoElement, Render, VisualContext, register_action, test};
+pub use wgpui_derive::{bench, ctor};
 // Re-export scheduler types selectively to avoid ambiguity with executor wrappers.
 // Types like Task, BackgroundExecutor, ForegroundExecutor, FallibleTask, and Priority
 // are re-exported via the executor module which wraps them.
@@ -332,4 +336,28 @@ pub struct GpuSpecs {
     pub driver_name: String,
     /// Further information about the driver, as reported by Vulkan.
     pub driver_info: String,
+}
+
+/// Defines a group of UI benchmark functions.
+#[cfg(feature = "bench-support")]
+#[macro_export]
+macro_rules! bench_group {
+    ($name:ident, $($benchmark:path),+ $(,)?) => {
+        fn $name(criterion: &mut $crate::private::criterion::Criterion) {
+            $($benchmark(criterion);)+
+        }
+    };
+}
+
+/// Runs benchmark groups with Criterion's command-line configuration.
+#[cfg(feature = "bench-support")]
+#[macro_export]
+macro_rules! bench_main {
+    ($($group:path),+ $(,)?) => {
+        fn main() {
+            let mut criterion = $crate::private::criterion::Criterion::default().configure_from_args();
+            $($group(&mut criterion);)+
+            criterion.final_summary();
+        }
+    };
 }

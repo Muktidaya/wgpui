@@ -808,6 +808,11 @@ impl LinearColorStop {
 }
 
 impl Background {
+    /// Returns the solid fill color, or None for a gradient or patterned fill.
+    pub fn as_solid(&self) -> Option<Hsla> {
+        (self.tag == BackgroundTag::Solid).then_some(self.solid)
+    }
+
     /// Use specified color space for color interpolation.
     ///
     /// <https://developer.mozilla.org/en-US/docs/Web/CSS/color-interpolation-method>

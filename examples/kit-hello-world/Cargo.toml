@@ -1,9 +1,10 @@
 [package]
 name = "wgpui-kit-hello-world"
 description = "A minimal example of application development with wgpui-component."
-version = "0.6.1"
+version = "0.8.1"
 publish = false
 edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 anyhow.workspace = true

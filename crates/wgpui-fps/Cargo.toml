@@ -1,0 +1,59 @@
+[package]
+name = "wgpui-fps"
+description = "Realtime FPS, frame time, CPU, GPU and memory HUD for WGPUI applications."
+keywords = ["fps", "gpui", "hud", "performance", "profiling"]
+license = "Apache-2.0"
+documentation = "https://docs.rs/wgpui-fps"
+homepage = "https://github.com/Muktidaya/wgpui"
+repository = "https://github.com/Muktidaya/wgpui"
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+publish = true
+version = "0.8.1"
+
+[lib]
+path = "src/fps.rs"
+doctest = false
+
+[dependencies]
+# The HUD requires frame events; keep the framework's instrumentation opt-in
+# for applications that do not depend on this package.
+gpui = { workspace = true, features = ["profiler"] }
+web-time = "1.1.0"
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+sysinfo = "0.39.6"
+
+# This process' GPU usage is read straight from the platform, since `sysinfo`
+# does not report it, and so is its private memory, which `sysinfo` reports only
+# as a resident set that counts every shared library page. Each backend is the
+# counter the platform's own activity monitor attributes per process with, so no
+# vendor SDK or elevated privilege is involved.
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2.191"
+objc2-core-foundation = { version = "0.3.2", default-features = false, features = [
+    "std",
+    "CFArray",
+    "CFDictionary",
+    "CFNumber",
+    "CFString",
+] }
+objc2-io-kit = { version = "0.3.2", default-features = false, features = [
+    "std",
+    "libc",
+] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Graphics_Gdi",
+    "Win32_System_Performance",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+] }
+
+[dev-dependencies]
+gpui = { workspace = true, features = ["test-support"] }
+
+[lints]
+workspace = true

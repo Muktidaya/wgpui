@@ -1,3 +1,4 @@
+use std::time::Duration;
 use wgpui_kit::component::{
     Disableable,
     date_picker::{DatePicker, DatePickerState, DateRangePreset},
@@ -6,7 +7,6 @@ use wgpui_kit::test::{TestAppContextExt, TestWindowExt};
 use wgpui_kit::{
     AppContext, Context, ElementId, Entity, TestAppContext, Window, div, prelude::*, px, size,
 };
-use std::time::Duration;
 struct Schedule {
     date: Entity<DatePickerState>,
     disabled: bool,

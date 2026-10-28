@@ -111,6 +111,21 @@ pub trait Element: 'static + IntoElement {
     /// Writes accessibility metadata for this element into `node`.
     fn write_a11y_info(&self, _node: &mut accesskit::Node) {}
 
+    /// Moves explicit accessibility action handlers into the current rendered frame.
+    fn take_a11y_actions(&mut self) -> Vec<(accesskit::Action, crate::A11yActionListener)> {
+        Vec::new()
+    }
+
+    /// Returns the focus handle associated with this accessible element.
+    fn a11y_focus_handle(&self) -> Option<crate::FocusHandle> {
+        None
+    }
+
+    /// Whether this element reports accessibility focus while a containing element holds keyboard focus.
+    fn a11y_reports_active_descendant(&self) -> bool {
+        false
+    }
+
     /// Allows elements to contribute synthetic accessibility children.
     fn a11y_synthetic_children(
         &mut self,
@@ -320,6 +335,9 @@ trait ElementObject {
     ) -> Size<Pixels>;
 }
 
+/// The concrete element for a stateless view rendered through [`RenderOnce`].
+pub type ViewElement<V> = Component<V>;
+
 /// A wrapper around an implementer of [`Element`] that allows it to be drawn in a window.
 pub struct Drawable<E: Element> {
     /// The drawn element.
@@ -481,6 +499,7 @@ impl<E: Element> Drawable<E> {
                 }
 
                 window.next_frame.dispatch_tree.set_active_node(node_id);
+                let a11y_id = window.begin_a11y_node(&mut self.element, global_id.as_ref(), bounds);
                 self.element.paint(
                     global_id.as_ref(),
                     inspector_id.as_ref(),
@@ -490,6 +509,16 @@ impl<E: Element> Drawable<E> {
                     window,
                     cx,
                 );
+
+                if let Some(a11y_id) = a11y_id {
+                    if let Some(mut builder) =
+                        crate::A11ySubtreeBuilder::new(a11y_id, &mut window.a11y_nodes)
+                    {
+                        self.element
+                            .a11y_synthetic_children(&mut prepaint, &mut builder);
+                    }
+                    window.a11y_nodes.pop();
+                }
 
                 if global_id.is_some() {
                     window.element_id_stack.pop();
@@ -509,7 +538,7 @@ impl<E: Element> Drawable<E> {
         cx: &mut App,
     ) -> Size<Pixels> {
         if matches!(&self.phase, ElementDrawPhase::Start) {
-            self.request_layout(window, cx);
+            window.with_profiled_request_layout(|window| self.request_layout(window, cx));
         }
 
         let layout_id = match mem::take(&mut self.phase) {

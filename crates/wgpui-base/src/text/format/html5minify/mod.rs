@@ -9,7 +9,8 @@ use html5ever::{
     Attribute, ParseOpts, QualName, parse_document,
     tendril::{Tendril, TendrilSink, fmt::UTF8},
 };
-use markup5ever_rcdom::{Node, NodeData, RcDom};
+
+use super::html_dom::{HtmlDom, Node, NodeData};
 
 /// Defines the minify trait.
 #[allow(dead_code)]
@@ -116,6 +117,15 @@ impl<'a> Context<'a> {
             None
         }
     }
+
+    /// Whether the parent keeps its whitespace, or an element above it does:
+    /// text in `<pre><code>` keeps its whitespace as well.
+    fn preserves_whitespace(&self) -> bool {
+        matches!(&self.parent.data, NodeData::Element { name, .. } if preserve_whitespace(name.local.as_ref()))
+            || self
+                .parent_context
+                .is_some_and(Context::preserves_whitespace)
+    }
 }
 
 impl<'a, W> Minifier<'a, W>
@@ -169,7 +179,7 @@ where
     #[inline]
     #[allow(dead_code)]
     pub fn minify<R: io::Read>(&mut self, mut r: &mut R) -> io::Result<()> {
-        let dom = parse_document(RcDom::default(), ParseOpts::default())
+        let dom = parse_document(HtmlDom::default(), ParseOpts::default())
             .from_utf8()
             .read_from(&mut r)?;
 
@@ -183,16 +193,11 @@ where
     fn minify_node<'b>(&mut self, ctx: &'b Option<Context>, node: &'b Node) -> io::Result<()> {
         match &node.data {
             NodeData::Text { contents } => {
-                // Check if whitespace collapsing disabled
                 let contents = contents.borrow();
                 let contents = contents.as_ref();
 
-                if !self.collapse_whitespace {
-                    return self.w.write_all(contents.as_bytes());
-                }
-
                 // Check if parent is whitespace preserving element or contains code (<script>, <style>)
-                let (skip_collapse_whitespace, contains_code) =
+                let (parent_preserves_whitespace, contains_code) =
                     ctx.as_ref().map_or((false, false), |ctx| {
                         if let NodeData::Element { name, .. } = &ctx.parent.data {
                             let name = name.local.as_ref();
@@ -202,9 +207,34 @@ where
                             (false, false)
                         }
                     });
+                let skip_collapse_whitespace =
+                    ctx.as_ref().is_some_and(Context::preserves_whitespace);
 
-                if skip_collapse_whitespace {
-                    return self.w.write_all(contents.as_bytes());
+                if !self.collapse_whitespace || skip_collapse_whitespace {
+                    if contains_code {
+                        return self.w.write_all(contents.as_bytes());
+                    }
+                    // The parser drops a line feed right after `<pre>` or
+                    // `<textarea>`, so one that starts the text needs another
+                    // in front of it to survive the next parse. Comments
+                    // before it are left out, so they do not count. A line
+                    // feed after a nested start tag, as in `<pre><code>`, is
+                    // kept by the parser and needs nothing.
+                    let first = parent_preserves_whitespace
+                        && ctx.as_ref().is_some_and(|ctx| {
+                            ctx.left.is_none_or(|left| {
+                                !self.preserve_comments
+                                    && left
+                                        .iter()
+                                        .all(|node| matches!(node.data, NodeData::Comment { .. }))
+                            })
+                        });
+                    if first && contents.starts_with('\n') {
+                        self.w.write_all(b"\n")?;
+                    }
+                    // The text is decoded: `&lt;b&gt;` is `<b>` here, and
+                    // would come back as markup if written as it is.
+                    return self.write(contents.as_bytes(), reserved_entity);
                 }
 
                 if contains_code {
@@ -410,7 +440,7 @@ where
                 let omit_end = ctx.next_element().map_or(true, |node| {
                     if let NodeData::Element { name, .. } = &node.data {
                         matches!(
-                            name.local.as_ref().to_ascii_lowercase().as_str(),
+                            name.local.as_ref(),
                             "address"
                                 | "article"
                                 | "aside"
@@ -451,7 +481,14 @@ where
 
     #[allow(clippy::needless_pass_by_value)]
     fn minify_children(&mut self, ctx: &Option<Context>, node: &Node) -> io::Result<()> {
-        let children = node.children.borrow();
+        let contents = match &node.data {
+            NodeData::Element {
+                template_contents: Some(contents),
+                ..
+            } => contents.as_ref(),
+            _ => node,
+        };
+        let children = contents.children.borrow();
         let l = children.len();
 
         children.iter().enumerate().try_for_each(|(i, child)| {
@@ -477,13 +514,11 @@ where
 
     fn write_qualified_name(&mut self, name: &QualName) -> io::Result<()> {
         if let Some(prefix) = &name.prefix {
-            self.w
-                .write_all(prefix.as_ref().to_ascii_lowercase().as_bytes())?;
+            self.w.write_all(prefix.as_bytes())?;
             self.w.write_all(b":")?;
         }
 
-        self.w
-            .write_all(name.local.as_ref().to_ascii_lowercase().as_bytes())
+        self.w.write_all(name.local.as_bytes())
     }
 
     fn write_start_tag(&mut self, name: &QualName, attrs: &[Attribute]) -> io::Result<()> {
@@ -525,14 +560,17 @@ where
             b.iter()
                 .fold((true, false, false), |(unquoted, double, single), &c| {
                     let (double, single) = (double || c == b'"', single || c == b'\'');
-                    let unquoted =
-                        unquoted && !double && !single && c != b'=' && !c.is_ascii_whitespace();
+                    let unquoted = unquoted
+                        && !double
+                        && !single
+                        && !matches!(c, b'=' | b'<' | b'>' | b'`')
+                        && !c.is_ascii_whitespace();
 
                     (unquoted, double, single)
                 });
 
         if unquoted {
-            self.w.write_all(b)
+            self.write(b, reserved_entity)
         } else if double {
             self.write_attribute_value(b, b"'", reserved_entity_with_apos)
         } else {
@@ -553,7 +591,7 @@ where
         if self.collapse_whitespace {
             self.write_collapse_whitespace(b, f, Some(false))
         } else {
-            self.w.write_all(b)
+            self.write(b, f)
         }?;
 
         self.w.write_all(quote)
@@ -763,6 +801,140 @@ fn optional_end_tag(name: &str) -> bool {
 mod tests {
     use super::*;
     use std::str;
+
+    fn signature(source: &str) -> Vec<String> {
+        fn visit(node: &Node, output: &mut Vec<String>) {
+            match &node.data {
+                NodeData::Text { contents } => output.push(format!("text:{}", contents.borrow())),
+                NodeData::Element {
+                    name,
+                    attrs,
+                    template_contents,
+                    ..
+                } => {
+                    let attributes: Vec<_> = attrs
+                        .borrow()
+                        .iter()
+                        .map(|attribute| (attribute.name.clone(), attribute.value.to_string()))
+                        .collect();
+                    output.push(format!("open:{name:?}:{attributes:?}"));
+                    if let Some(contents) = template_contents {
+                        visit(contents, output);
+                    }
+                }
+                _ => {}
+            }
+            for child in node.children.borrow().iter() {
+                visit(child, output);
+            }
+            if matches!(node.data, NodeData::Element { .. }) {
+                output.push("close".into());
+            }
+        }
+
+        let dom = parse_document(HtmlDom::default(), ParseOpts::default()).one(source);
+        let mut output = Vec::new();
+        visit(&dom.document, &mut output);
+        output
+    }
+
+    #[test]
+    fn round_trips_entities_and_quoted_or_unquoted_attributes()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let source = r#"<p title="&amp;copy;" data-edge="&lt;&gt;&#96;" data-quotes="a&quot;b'c">A &amp; B &lt;tag&gt; 🙂</p>"#;
+        for collapse in [true, false] {
+            let mut output = Vec::new();
+            Minifier::new(&mut output)
+                .omit_doctype(true)
+                .collapse_whitespace(collapse)
+                .minify(&mut source.as_bytes())?;
+            let minified = str::from_utf8(&output)?;
+            assert_eq!(signature(minified), signature(source), "{minified}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn preserves_preformatted_text_and_raw_script_contents()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let source = "<pre>  &lt;img src=x&gt; &amp;copy;\n  end</pre><textarea>  &lt;&amp;copy;&gt;\n end</textarea><script>const value = 'a < b & c';</script>";
+        let mut output = Vec::new();
+        Minifier::new(&mut output)
+            .omit_doctype(true)
+            .minify(&mut source.as_bytes())?;
+        assert_eq!(signature(str::from_utf8(&output)?), signature(source));
+        Ok(())
+    }
+
+    #[test]
+    fn disabling_collapse_preserves_whitespace_and_escapes_entities()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let source = "<p title=\" a &quot; b &amp;copy; \">  A &lt;tag&gt; \n B  </p>";
+        let mut output = Vec::new();
+        Minifier::new(&mut output)
+            .omit_doctype(true)
+            .collapse_whitespace(false)
+            .minify(&mut source.as_bytes())?;
+        assert_eq!(signature(str::from_utf8(&output)?), signature(source));
+        Ok(())
+    }
+
+    #[test]
+    fn preserves_leading_line_feeds_and_nested_preformatted_whitespace()
+    -> Result<(), Box<dyn std::error::Error>> {
+        for source in [
+            "<pre>\n\n  &lt;tag&gt;\n  end</pre>",
+            "<textarea>\n\n  &amp;copy;\n  end</textarea>",
+            "<pre><!-- omitted -->\n  text</pre>",
+            "<pre><code>\n  &lt;tag&gt;\n  end</code></pre>",
+            "<pre>start <span>  nested\n  whitespace &amp;copy;</span> end</pre>",
+        ] {
+            for collapse in [true, false] {
+                for preserve_comments in [true, false] {
+                    let mut output = Vec::new();
+                    Minifier::new(&mut output)
+                        .omit_doctype(true)
+                        .collapse_whitespace(collapse)
+                        .preserve_comments(preserve_comments)
+                        .minify(&mut source.as_bytes())?;
+                    let minified = str::from_utf8(&output)?;
+                    assert_eq!(signature(minified), signature(source), "{minified}");
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn preserves_foreign_attributes_and_inert_template_contents()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let source = r#"<template><p>inert &amp; safe</p></template><svg viewBox="0 0 10 10" customCase="kept"><foreignObject><p>nested</p></foreignObject></svg>"#;
+        let mut output = Vec::new();
+        Minifier::new(&mut output)
+            .omit_doctype(true)
+            .minify(&mut source.as_bytes())?;
+        assert_eq!(signature(str::from_utf8(&output)?), signature(source));
+        Ok(())
+    }
+
+    #[test]
+    fn propagates_output_errors() {
+        struct BrokenWriter;
+        impl io::Write for BrokenWriter {
+            fn write(&mut self, _bytes: &[u8]) -> io::Result<usize> {
+                Err(io::Error::new(io::ErrorKind::BrokenPipe, "fixture"))
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let error = Minifier::new(&mut BrokenWriter)
+            .minify(&mut "<p>text</p>".as_bytes())
+            .expect_err("writer failure must be returned");
+        assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
+    }
 
     #[test]
     fn test_write_collapse_whitespace() {

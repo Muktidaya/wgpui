@@ -636,6 +636,7 @@ impl InputExample {
 
 impl Render for InputExample {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let operating_system = cx.platform_info().os;
         div()
             .bg(rgb(0xaaaaaa))
             .track_focus(&self.focus_handle(cx))
@@ -670,7 +671,7 @@ impl Render for InputExample {
             .children(self.recent_keystrokes.iter().rev().map(|ks| {
                 format!(
                     "{:} {}",
-                    ks.unparse(),
+                    ks.unparse(operating_system),
                     if let Some(key_char) = ks.key_char.as_ref() {
                         format!("-> {:?}", key_char)
                     } else {

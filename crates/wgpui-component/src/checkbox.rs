@@ -1,10 +1,10 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 
 use crate::{
     ActiveTheme, Disableable, IconName, RoleOverride, Selectable, Sizable, Size, icon::IconNamed,
     text::Text, tooltip::ComponentTooltip, v_flex,
 };
-use crate::{StyledExt as _, ThemeStyled as _};
+use crate::{StyleSized as _, StyledExt as _, ThemeStyled as _};
 use gpui::{
     AnyElement, App, ElementId, InteractiveElement, IntoElement, MouseButton, ParentElement,
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
@@ -68,6 +68,14 @@ impl Checkbox {
         self
     }
 
+    /// Overrides how long the pointer must rest before the tooltip shows.
+    ///
+    /// Defaults to [`gpui_base::TooltipDefaults::show_delay`].
+    pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
+        self.tooltip.show_delay = Some(delay);
+        self
+    }
+
     /// Set the label for the checkbox.
     pub fn label(mut self, label: impl Into<Text>) -> Self {
         self.label = Some(label.into());
@@ -76,7 +84,9 @@ impl Checkbox {
 
     /// Set the name a screen reader announces, overriding the visible label.
     ///
-    /// This does not change the label drawn on screen.
+    /// This does not change the label drawn on screen. A checkbox without a
+    /// [`label`](Self::label) or text children has no accessible name, so set this
+    /// whenever the checkbox is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
         self
@@ -215,6 +225,13 @@ pub(crate) fn checkbox_check_icon(
 impl RenderOnce for Checkbox {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.checked;
+        let has_content = self.label.is_some() || !self.children.is_empty();
+        let indicator_size = rems(match self.size {
+            Size::XSmall => 0.75,
+            Size::Small => 0.875,
+            Size::Large => 1.125,
+            _ => 1.,
+        });
 
         let base = self.base;
         let children = self.children;
@@ -266,11 +283,8 @@ impl RenderOnce for Checkbox {
             .line_height(relative(1.))
             .text_color(cx.theme().foreground)
             .map(|this| match self.size {
-                Size::XSmall => this.text_xs(),
-                Size::Small => this.text_sm(),
-                Size::Medium => this.text_base(),
-                Size::Large => this.text_lg(),
-                _ => this,
+                Size::Size(_) => this,
+                size => this.input_text_size(size),
             })
             .rounded(cx.theme().radius * 0.5)
             .when(is_focused && self.focus_ring_enabled, |this| {
@@ -282,13 +296,9 @@ impl RenderOnce for Checkbox {
                     .checked(checked)
                     .disabled(self.disabled)
                     .relative()
-                    .map(|this| match self.size {
-                        Size::XSmall => this.size_3(),
-                        Size::Small => this.size_3p5(),
-                        Size::Medium => this.size_4(),
-                        Size::Large => this.size(rems(1.125)),
-                        _ => this.size_4(),
-                    })
+                    .size(indicator_size)
+                    // Center on the first 1.25em line, including when the label wraps.
+                    .when(has_content, |this| this.mt(indicator_size * 0.125))
                     .flex_shrink_0()
                     .border_1()
                     .rounded(radius)
@@ -323,7 +333,7 @@ impl RenderOnce for Checkbox {
                     v_flex()
                         .flex_1()
                         .overflow_hidden()
-                        .line_height(relative(1.2))
+                        .line_height(relative(1.25))
                         .gap_1()
                         .map(|this| {
                             if let Some(label) = self.label {
@@ -334,7 +344,6 @@ impl RenderOnce for Checkbox {
                                         .when(self.disabled, |this| {
                                             this.text_color(cx.theme().muted_foreground)
                                         })
-                                        .line_height(relative(1.))
                                         .child(label),
                                 )
                             } else {
@@ -373,7 +382,7 @@ mod tests {
             .label("Remember me")
             .accessibility_label("Remember this account");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Remember this account"),
             "an explicit name must win over the visible label"
         );
@@ -431,7 +440,8 @@ mod tests {
     }
 
     fn activate_key(cx: &mut VisualTestContext, key: &str) {
-        let keystroke = Keystroke::parse(key).unwrap();
+        let keystroke =
+            cx.update(|_, cx| Keystroke::parse_with_os(key, cx.platform_info().os).unwrap());
         cx.simulate_event(KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,

@@ -553,6 +553,16 @@ impl ImageSource {
         }
     }
 
+    /// Reports whether this image has a pending or completed cached asset load.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn is_asset_cached(&self, cx: &App) -> bool {
+        match self {
+            Self::Resource(resource) => cx.has_asset::<ImgResourceLoader>(resource),
+            Self::Image(image) => cx.has_asset::<AssetLogger<ImageDecoder>>(image),
+            Self::Custom(_) | Self::Render(_) => false,
+        }
+    }
+
     /// Remove this image source from the asset system
     pub fn remove_asset(&self, cx: &mut App) {
         match self {

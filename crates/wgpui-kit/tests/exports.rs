@@ -102,5 +102,3 @@ mod component {
 mod assets {
     type Assets = wgpui_kit::assets::Assets;
 }
-
-// WindowProfiler is an explicit unported backend feature; see the parity inventory.

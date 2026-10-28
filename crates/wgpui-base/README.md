@@ -1,20 +1,22 @@
 # wgpui-base
 
-[![License](https://img.shields.io/crates/l/wgpui-base.svg)](../../LICENSE-APACHE)
+[![License](https://img.shields.io/crates/l/wgpui-base.svg)](LICENSE-APACHE)
 
-Unstyled behavior and infrastructure for [wgpui](https://github.com/Muktidaya/wgpui) applications. This is the adaptor of Longbridge `gpui-base` at gpui-component **0.6.0**. Published crate name: **`wgpui-base` 0.6.0**. It depends on independently versioned **wgpui 0.3.5** — those numbers are supposed to differ.
+Unstyled behavior and infrastructure for [WGPUI](https://github.com/Muktidaya/wgpui) applications, adapted from Longbridge GPUI Kit v0.8.1. The current source candidate pairs **wgpui-base 0.8.1** with **WGPUI 0.4.0** and requires **Rust 1.95**. Candidate validation and publication are in progress; [release status](../../STATUS.md) records acceptance and publication evidence.
 
-Use [`wgpui-component`](https://github.com/Muktidaya/wgpui-component) if you want ready-to-use styled controls. Use `wgpui-base` if your application should own its visual styles while reusing interaction, focus, accessibility, animation, virtual lists, and theme tokens.
+The published Base 0.6.1 and framework 0.3.6 releases remain distinct from this source candidate. Base and the framework use independent version numbers.
+
+Use [WGPUI Kit](../../docs/kit.md) for the application facade, or [`wgpui-component`](../wgpui-component) for ready-to-use styled controls. Use `wgpui-base` if your application should own its visual styles while reusing interaction, focus, accessibility, animation, virtual lists, and theme tokens.
+
+Version requirements for the candidate, once published:
 
 ```toml
 [dependencies]
-wgpui = "0.3.5"
-wgpui-base = "0.6.0"
+wgpui = "0.4.0"
+wgpui-base = "0.8.1"
 ```
 
-Until `wgpui` 0.3.5 is on crates.io, use a git or path checkout. This 0.6.0 line is not uploaded yet.
-
-Vendored sources still `use gpui::` via workspace aliases. A crates.io consumer imports `wgpui` and `wgpui_base`.
+Until these candidate versions are published, use path dependencies on this repository: the framework is at the repository root and Base is at `crates/wgpui-base`. See the [Kit guide](../../docs/kit.md#source-candidate-compatibility) for dependency and public type compatibility. Internal source aliases such as `gpui` do not change the public package names; applications import `wgpui` and `wgpui_base`.
 
 ## Where it fits
 
@@ -53,9 +55,11 @@ fn main() {
 
 ### Optional Features
 
-| Feature     | Enabled by default | Purpose                                      |
-| ----------- | ------------------ | -------------------------------------------- |
-| `inspector` | No                 | Inspector support in wgpui / `wgpui_derive`  |
+| Feature | Enabled by default | Purpose |
+| --- | --- | --- |
+| `decimal` | No | `rust_decimal::Decimal` values in plot scales |
+| `inspector` | No | Inspector support in WGPUI and `wgpui_derive` |
+| `test-support` | No | Framework support for deterministic UI tests |
 
 ## Quick Start
 
@@ -107,9 +111,9 @@ Semantic state styles layer in a fixed order: builder chain, then value states (
 
 | Control                                                 | State           | Use                                                                                       |
 | ------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------- |
-| [`Input`](../../website/base/primitives/input.md)       | `InputState`    | Single-line values, masking, validation, and number stepping                              |
-| [`Textarea`](../../website/base/primitives/textarea.md) | `TextareaState` | Ordinary multi-line text, fixed rows, wrapping, and auto-grow                             |
-| [`Editor`](../../website/base/primitives/editor.md)     | `EditorState`   | Source code, highlighting, gutter, folding, decorations, diagnostics, and LSP integration |
+| [`Input`](src/input/input/mod.rs)       | `InputState`    | Single-line values, masking, validation, and number stepping                              |
+| [`Textarea`](src/input/textarea/mod.rs) | `TextareaState` | Ordinary multi-line text, fixed rows, wrapping, and auto-grow                             |
+| [`Editor`](src/input/editor/mod.rs)     | `EditorState`   | Source code, highlighting, gutter, folding, decorations, diagnostics, and LSP integration |
 
 ### Focus, scrolling, animation, themes
 
@@ -118,25 +122,25 @@ Semantic state styles layer in a fixed order: builder chain, then value states (
 - `motion::transition` (preferred) and legacy `animation::Transition`
 - `Theme` / `SemanticThemeTokens` / `StyledExt`
 
-Upstream 0.6.0 also adds **NavStack** and splits **History** (browser-style trail) from **UndoHistory** (grouped undo/redo).
+Base includes **NavStack**, **History** (browser-style trail), and **UndoHistory** (grouped undo/redo). **Root** owns window-scoped layers and presentation plugins. The [input module guide](src/input/README.md) describes the shared editing engine; the [Kit compatibility guide](../../docs/kit.md#source-candidate-compatibility) explains the byte-offset editor contract and stable Ropey API.
 
 ## Development
 
-From the adaptor repository root (Rust 1.94.0, sibling `../wgpui`):
+From the consolidated WGPUI repository root, using Rust 1.95 or later:
 
 ```bash
-cargo +1.94.0 check -p wgpui-base --lib
-cargo +1.94.0 test -p wgpui-base --lib
+cargo +1.95.0 check --locked -p wgpui-base --all-features --all-targets
+cargo +1.95.0 test --locked -p wgpui-base --all-features --lib
 ```
 
 ## Related
 
-- [wgpui-component repository](https://github.com/Muktidaya/wgpui-component)
+- [wgpui-component](../wgpui-component)
+- [WGPUI Kit guide](../../docs/kit.md)
 - [wgpui](https://github.com/Muktidaya/wgpui)
-- [docs.rs/wgpui-base](https://docs.rs/wgpui-base) (after publish)
-- Upstream [Longbridge gpui-component](https://github.com/longbridge/gpui-component)
-- [Contributing](../../CONTRIBUTING.md)
+- [Published wgpui-base documentation](https://docs.rs/wgpui-base) (candidate documentation follows publication)
+- Upstream [Longbridge GPUI Kit](https://github.com/longbridge/gpui-kit)
 
 ## License
 
-Apache-2.0. See [`../../LICENSE-APACHE`](../../LICENSE-APACHE). Upstream copyright remains with Longbridge.
+Apache-2.0. See [LICENSE-APACHE](LICENSE-APACHE) for the license and Longbridge attribution. Upstream notices are preserved.

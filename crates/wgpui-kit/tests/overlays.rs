@@ -1,3 +1,4 @@
+use std::time::Duration;
 use wgpui_kit::component::{
     Root, WindowExt,
     button::Button,
@@ -7,17 +8,13 @@ use wgpui_kit::component::{
 };
 use wgpui_kit::test::{TestAppContextExt, TestWindowExt};
 use wgpui_kit::{AppContext, Context, Entity, TestAppContext, Window, div, prelude::*, px, size};
-use std::time::Duration;
 
 struct Workspace {
     saved: Entity<InputState>,
     draft: Entity<InputState>,
 }
 impl Render for Workspace {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let dialogs = Root::render_dialog_layer(window, cx);
-        let sheets = Root::render_sheet_layer(window, cx);
-        let notifications = Root::render_notification_layer(window, cx);
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let draft = self.draft.clone();
         let saved = self.saved.clone();
         div()
@@ -79,15 +76,15 @@ impl Render for Workspace {
                         );
                     }),
             )
-            .children(dialogs)
-            .children(sheets)
-            .children(notifications)
     }
 }
 
 #[wgpui_kit::test]
 async fn dialog_validates_scoped_input_saves_and_dismisses_notification(cx: &mut TestAppContext) {
-    cx.update(wgpui_kit::init);
+    cx.update(|cx| {
+        wgpui_kit::init(cx);
+        cx.set_reduce_motion(true);
+    });
     let handle = cx.open_window(size(px(800.), px(700.)), |window, cx| {
         let view = cx.new(|cx| Workspace {
             saved: cx.new(|cx| InputState::new(window, cx)),
@@ -106,7 +103,7 @@ async fn dialog_validates_scoped_input_saves_and_dismisses_notification(cx: &mut
     })
     .await;
     cx.update_window(handle.into(), |_, window, cx| {
-        let dialog = window.within("dialog").find(0usize).bounds();
+        let dialog = window.within("dialog").find("surface").bounds();
         assert!(dialog.left() >= px(0.) && dialog.right() <= window.viewport_size().width);
         assert!(dialog.top() >= px(0.) && dialog.bottom() <= window.viewport_size().height);
         window.within("dialog").click("ok", cx);

@@ -6,8 +6,8 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{
-    Attribute, Expr, FnArg, Ident, Item, ItemTrait, Lit, Meta, Path, ReturnType, TraitItem, Type,
-    parse_macro_input, parse_quote,
+    Attribute, Expr, FnArg, Ident, Item, ItemTrait, Lit, Meta, Path, ReceiverKind, ReturnType,
+    TraitItem, Type, parse_macro_input, parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -58,7 +58,7 @@ fn generate_reflected_trait(trait_item: ItemTrait) -> TokenStream {
                 .sig
                 .inputs
                 .iter()
-                .any(|arg| matches!(arg, FnArg::Receiver(r) if r.reference.is_none()));
+                .any(|arg| matches!(arg, FnArg::Receiver(receiver) if !matches!(receiver.kind, ReceiverKind::Reference(..))));
 
             // Check if method returns Self
             let returns_self = match &method.sig.output {

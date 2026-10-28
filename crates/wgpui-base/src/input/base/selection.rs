@@ -27,7 +27,7 @@ impl<M: InputModeKind> InputBaseState<M> {
         // has no word boundaries to select by. Take all of it instead, rather
         // than let the selection highlight reveal where the words are.
         let range = if self.masked {
-            0..self.text.len()
+            0..self.text.len_bytes()
         } else {
             let Some(range) = TextSelector::word_range(&self.text, offset) else {
                 return;
@@ -83,8 +83,11 @@ impl TextSelector {
         };
 
         let end = offset + char.len_utf8();
-        let prev_chars = text.chars_at(offset).reversed().take(128);
-        let next_chars = text.chars_at(end).take(128);
+        let prev_chars = text
+            .chars_at(text.byte_to_char(offset))
+            .reversed()
+            .take(128);
+        let next_chars = text.chars_at(text.byte_to_char(end)).take(128);
         Some(word_range_from_chars(offset, char, prev_chars, next_chars))
     }
 }
@@ -137,7 +140,7 @@ mod tests {
             let offset = line_start_offset + column;
             let range = TextSelector::word_range(&rope, offset);
 
-            let actual = range.map(|r| rope.slice(r).to_string());
+            let actual = range.map(|r| rope.byte_slice(r).to_string());
             let expect = expected.map(|s| s.to_string());
             assert_eq!(actual, expect, "line {}, column {}", line, column);
         }
@@ -158,7 +161,7 @@ mod tests {
             let offset = line_start_offset + column;
             let range = TextSelector::line_range(&rope, offset);
 
-            let actual = rope.slice(range).to_string();
+            let actual = rope.byte_slice(range).to_string();
             assert_eq!(actual, expected, "line {}, column {}", line, column);
         }
     }

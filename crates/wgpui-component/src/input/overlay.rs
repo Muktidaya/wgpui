@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use gpui::{AnyElement, App, Entity, EntityId, Global, IntoElement, WeakEntity, Window};
 use ropey::Rope;
@@ -8,6 +9,7 @@ use super::{
     popovers::{CodeActionMenu, CompletionMenu, DiagnosticPopover, HoverPopover},
     search::SearchPanel,
 };
+use gpui_base::input::CompletionHighlighter;
 
 struct InputOverlayRegistry<M: OverlayMode> {
     hosts: HashMap<EntityId, (WeakEntity<InputBaseState<M>>, InputOverlayHost<M>)>,
@@ -71,6 +73,11 @@ pub(crate) struct LspOverlays {
     code_action_signature: OverlaySignature,
     hover_signature: Option<std::ops::Range<usize>>,
     diagnostic_signature: Option<std::rc::Rc<gpui_base::input::DiagnosticEntry>>,
+    /// Highlighter last copied onto the completion menu.
+    ///
+    /// Compared by `Rc` identity, so swapping the host's closure repaints an
+    /// open menu without rebuilding its items.
+    completion_highlight: Option<Rc<CompletionHighlighter>>,
 }
 
 /// What the state read out of the engine for one sync pass.
@@ -194,6 +201,7 @@ impl OverlayMode for crate::input::EditorMode {
             code_action_signature: OverlaySignature::default(),
             hover_signature: None,
             diagnostic_signature: None,
+            completion_highlight: None,
         })
     }
 
@@ -205,6 +213,17 @@ impl OverlayMode for crate::input::EditorMode {
         cx: &mut App,
     ) {
         let cursor = snapshot.cursor;
+
+        let highlight = state.read(cx).lsp().completion_highlighter().clone();
+        if lsp
+            .completion_highlight
+            .as_ref()
+            .is_none_or(|current| !Rc::ptr_eq(current, &highlight))
+        {
+            lsp.completion_highlight = Some(highlight.clone());
+            lsp.completion
+                .update(cx, |menu, cx| menu.set_highlight(highlight, cx));
+        }
 
         if snapshot.completion != lsp.completion_signature {
             lsp.completion_signature = OverlaySignature {
@@ -319,6 +338,7 @@ impl<M: OverlayMode> InputOverlayHost<M> {
             )
         };
 
+        let panel_replace_mode = self.search.read(cx).replace_mode();
         self.search
             .update(cx, |panel, _| panel.sync_session(&search_session));
 
@@ -330,15 +350,15 @@ impl<M: OverlayMode> InputOverlayHost<M> {
             activation_revision,
         };
         if search_signature != self.search_signature {
-            // The panel writes what the user types back into the session, which
-            // lands here as a changed query on the next frame. Re-showing the
-            // panel for that echo would select the field out from under them, so
-            // recognise it: the same open session, moved only by the query the
-            // panel itself already holds.
+            // The panel writes query and replacement-mode changes back into the
+            // session. Re-showing it for that echo would select the query or steal
+            // focus from replacement, so preserve changes the panel already holds.
+            // External mode changes still move focus out of a hidden replace field.
             let was = &self.search_signature;
             let query_echo = search_open
                 && was.open
-                && was.replace_mode == search_signature.replace_mode
+                && (was.replace_mode == search_signature.replace_mode
+                    || panel_replace_mode == search_signature.replace_mode)
                 && was.anchor_offset == search_signature.anchor_offset
                 && was.activation_revision == search_signature.activation_revision
                 && self.search.read(cx).query(cx) == search_session.query;

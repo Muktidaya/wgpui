@@ -1,6 +1,6 @@
 [package]
 name = "wgpui-kit"
-version = "0.6.1"
+version = "0.8.1"
 description = "Application toolkit for WGPUI: native wgpu/winit UI, components, and default assets."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
 categories = ["gui"]
@@ -11,6 +11,7 @@ repository = "https://github.com/Muktidaya/wgpui"
 readme = "README.md"
 publish = true
 edition.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true
@@ -23,7 +24,9 @@ component = ["dep:gpui-component"]
 assets = ["dep:gpui-kit-assets"]
 # GPUI's test harness, native-platform rendering, and Kit UI test helpers.
 test-support = ["gpui/test-support", "gpui_platform/test-support", "gpui-base/test-support", "gpui-component?/test-support"]
-# Upstream frame-profiler feature is not ported; see docs/kit.md.
+profiler = ["gpui/profiler"]
+syntect = ["component", "gpui-component/syntect"]
+speech = ["component", "gpui-component/speech"]
 
 inspector = ["gpui/inspector", "gpui-base/inspector", "gpui-component?/inspector"]
 decimal = ["component", "gpui-component/decimal"]
@@ -67,6 +70,7 @@ tree-sitter-yaml = ["component", "gpui-component/tree-sitter-yaml"]
 tree-sitter-zig = ["component", "gpui-component/tree-sitter-zig"]
 
 [dependencies]
+gpui_macros.workspace = true
 gpui.workspace = true
 gpui_platform.workspace = true
 gpui-base.workspace = true
@@ -75,7 +79,13 @@ gpui-kit-assets = { workspace = true, optional = true }
 
 
 [dev-dependencies]
+chrono = "0.4.45"
+lsp-types.workspace = true
 gpui = { workspace = true, features = ["test-support"] }
+
+[[test]]
+name = "assets"
+required-features = ["assets"]
 
 [[test]]
 name = "window"
@@ -132,3 +142,13 @@ required-features = ["test-support", "component"]
 [[test]]
 name = "search"
 required-features = ["assets", "test-support", "component"]
+
+[[test]]
+name = "parity_ui"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "rendering"
+test = false
+harness = false
+required-features = ["test-support", "component", "assets"]

@@ -1,4 +1,4 @@
-use std::{cell::OnceCell, collections::HashMap, fmt::Write as _, rc::Rc, sync::OnceLock};
+use std::{collections::HashMap, fmt::Write as _, rc::Rc, sync::OnceLock};
 
 use anyhow::Result;
 use gpui::{
@@ -42,19 +42,22 @@ pub(crate) fn init(cx: &mut App) {
         };
 
         cx.defer(move |cx| {
-            _ = active_window.update(cx, |_, window, cx| {
+            if let Err(error) = active_window.update(cx, |_, window, cx| {
                 window.toggle_inspector(cx);
-            });
+            }) {
+                tracing::debug!("Window closed before toggling the inspector: {error}");
+            }
         });
     });
 
-    let inspector_el = OnceCell::new();
-    cx.register_inspector_element(move |id, state: &DivInspectorState, window, cx| {
-        let el = inspector_el.get_or_init(|| cx.new(|cx| DivInspector::new(window, cx)));
-        el.update(cx, |this, cx| {
-            this.update_inspected_element(id, state.clone(), window, cx);
-            this.render(window, cx).into_any_element()
-        })
+    cx.register_inspector_element(|window, cx| {
+        let div_inspector = cx.new(|cx| DivInspector::new(window, cx));
+        move |id, state: &DivInspectorState, window: &mut Window, cx: &mut App| {
+            div_inspector.update(cx, |this, cx| {
+                this.update_inspected_element(id, state.clone(), window, cx);
+                this.render(window, cx).into_any_element()
+            })
+        }
     });
 
     cx.set_inspector_renderer(Box::new(render_inspector));
@@ -363,7 +366,7 @@ fn rust_to_style(mut style: StyleRefinement, source: &str) -> (StyleRefinement, 
     let rope = Rope::from(source);
     let Some(begin) = source.find("div()").map(|i| i + "div()".len()) else {
         let start_pos = Position::new(0, 0);
-        let end_pos = rope.offset_to_position(rope.len());
+        let end_pos = rope.offset_to_position(rope.len_bytes());
 
         return (
             style,
@@ -382,7 +385,7 @@ fn rust_to_style(mut style: StyleRefinement, source: &str) -> (StyleRefinement, 
     let mut method = String::new();
     for line in rope.iter_lines() {
         if line.to_string().trim().starts_with("//") {
-            offset += line.len() + 1;
+            offset += line.len_bytes() + 1;
             continue;
         }
 
@@ -615,7 +618,7 @@ impl CompletionProvider for LspProvider {
             left_offset += 1;
         }
         let start = offset.saturating_sub(left_offset);
-        let trigger_character = rope.slice(start..offset).to_string();
+        let trigger_character = rope.byte_slice(start..offset).to_string();
         if !trigger_character.starts_with('.') {
             return Task::ready(Ok(CompletionResponse::Array(vec![])));
         }

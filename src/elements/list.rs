@@ -181,6 +181,7 @@ pub struct ListPrepaintState {
 #[derive(Clone)]
 enum ListItem {
     Unmeasured {
+        size_hint: Option<Size<Pixels>>,
         focus_handle: Option<FocusHandle>,
     },
     Measured {
@@ -190,6 +191,13 @@ enum ListItem {
 }
 
 impl ListItem {
+    fn size_hint(&self) -> Option<Size<Pixels>> {
+        match self {
+            Self::Unmeasured { size_hint, .. } => *size_hint,
+            Self::Measured { size, .. } => Some(*size),
+        }
+    }
+
     fn size(&self) -> Option<Size<Pixels>> {
         if let ListItem::Measured { size, .. } = self {
             Some(*size)
@@ -200,7 +208,7 @@ impl ListItem {
 
     fn focus_handle(&self) -> Option<FocusHandle> {
         match self {
-            ListItem::Unmeasured { focus_handle } | ListItem::Measured { focus_handle, .. } => {
+            ListItem::Unmeasured { focus_handle, .. } | ListItem::Measured { focus_handle, .. } => {
                 focus_handle.clone()
             }
         }
@@ -208,7 +216,7 @@ impl ListItem {
 
     fn contains_focused(&self, window: &Window, cx: &App) -> bool {
         match self {
-            ListItem::Unmeasured { focus_handle } | ListItem::Measured { focus_handle, .. } => {
+            ListItem::Unmeasured { focus_handle, .. } | ListItem::Measured { focus_handle, .. } => {
                 focus_handle
                     .as_ref()
                     .is_some_and(|handle| handle.contains_focused(window, cx))
@@ -265,6 +273,30 @@ impl ListState {
         self
     }
 
+    /// Gives unmeasured rows a height estimate until their real layout replaces it.
+    pub fn with_uniform_item_height(self, height: Pixels) -> Self {
+        let mut state = self.0.borrow_mut();
+        let default = Size {
+            width: px(0.),
+            height: height.max(px(0.)),
+        };
+        state.items = SumTree::from_iter(
+            state.items.iter().map(|item| ListItem::Unmeasured {
+                size_hint: Some(item.size_hint().unwrap_or(default)),
+                focus_handle: item.focus_handle(),
+            }),
+            (),
+        );
+        drop(state);
+        self
+    }
+
+    /// Resets the row count and seeds each row with a uniform height estimate.
+    pub fn reset_with_uniform_height(&self, count: usize, height: Pixels) {
+        self.reset(count);
+        self.clone().with_uniform_item_height(height);
+    }
+
     /// Reset this instantiation of the list state.
     ///
     /// Note that this will cause scroll events to be dropped until the next paint.
@@ -311,7 +343,10 @@ impl ListState {
         new_items.extend(
             focus_handles.into_iter().map(|focus_handle| {
                 spliced_count += 1;
-                ListItem::Unmeasured { focus_handle }
+                ListItem::Unmeasured {
+                    size_hint: None,
+                    focus_handle,
+                }
             }),
             (),
         );
@@ -398,6 +433,7 @@ impl ListState {
             let invalidated = cursor.slice(&Count(range.end), Bias::Right);
             new_items.extend(
                 invalidated.iter().map(|item| ListItem::Unmeasured {
+                    size_hint: item.size_hint(),
                     focus_handle: item.focus_handle(),
                 }),
                 (),
@@ -1128,6 +1164,7 @@ impl Element for List {
         {
             let new_items = SumTree::from_iter(
                 state.items.iter().map(|item| ListItem::Unmeasured {
+                    size_hint: item.size_hint(),
                     focus_handle: item.focus_handle(),
                 }),
                 (),
@@ -1213,11 +1250,14 @@ impl sum_tree::Item for ListItem {
 
     fn summary(&self, _: ()) -> Self::Summary {
         match self {
-            ListItem::Unmeasured { focus_handle } => ListItemSummary {
+            ListItem::Unmeasured {
+                focus_handle,
+                size_hint,
+            } => ListItemSummary {
                 count: 1,
                 rendered_count: 0,
                 unrendered_count: 1,
-                height: px(0.),
+                height: size_hint.map_or(px(0.), |size| size.height),
                 has_focus_handles: focus_handle.is_some(),
             },
             ListItem::Measured {

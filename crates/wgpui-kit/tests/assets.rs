@@ -19,7 +19,8 @@ fn assets_are_usable_through_kit_without_component() {
 fn component_accepts_shared_names_and_preserves_legacy_views() {
     use wgpui_kit::component::{Icon, IconNameExt};
     use wgpui_kit::component::{IconName as LegacyIconName, IconNamed};
-    let _: fn(LegacyIconName, &mut wgpui_kit::App) -> wgpui_kit::Entity<Icon> = LegacyIconName::view;
+    let _: fn(LegacyIconName, &mut wgpui_kit::App) -> wgpui_kit::Entity<Icon> =
+        LegacyIconName::view;
     assert_eq!(LegacyIconName::Search.path(), "icons/search.svg");
     let _: wgpui_kit::AnyElement = LegacyIconName::Search.into();
     let shared: IconName = LegacyIconName::Search.into();

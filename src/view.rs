@@ -44,11 +44,23 @@ impl<V: Render> Element for Entity<V> {
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut element = self.update(cx, |view, cx| view.render(window, cx).into_any_element());
-        let layout_id = window.with_rendered_view(self.entity_id(), |window| {
-            element.request_layout(window, cx)
-        });
-        (layout_id, element)
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
+        let profile_result = {
+            let mut element =
+                self.update(cx, |view, cx| view.render(window, cx).into_any_element());
+            let layout_id = window.with_rendered_view(self.entity_id(), |window| {
+                element.request_layout(window, cx)
+            });
+            (layout_id, element)
+        };
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            std::any::type_name::<V>(),
+            crate::profiler::ViewPhase::RequestLayout,
+        );
+        profile_result
     }
 
     fn prepaint(
@@ -60,8 +72,16 @@ impl<V: Render> Element for Entity<V> {
         window: &mut Window,
         cx: &mut App,
     ) {
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
         window.set_view_id(self.entity_id());
         window.with_rendered_view(self.entity_id(), |window| element.prepaint(window, cx));
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            std::any::type_name::<V>(),
+            crate::profiler::ViewPhase::Prepaint,
+        );
     }
 
     fn paint(
@@ -74,7 +94,15 @@ impl<V: Render> Element for Entity<V> {
         window: &mut Window,
         cx: &mut App,
     ) {
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
         window.with_rendered_view(self.entity_id(), |window| element.paint(window, cx));
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            std::any::type_name::<V>(),
+            crate::profiler::ViewPhase::Paint,
+        );
     }
 }
 
@@ -83,6 +111,7 @@ impl<V: Render> Element for Entity<V> {
 pub struct AnyView {
     entity: AnyEntity,
     render: fn(&AnyView, &mut Window, &mut App) -> AnyElement,
+    view_type_name: &'static str,
     cached_style: Option<Rc<StyleRefinement>>,
 }
 
@@ -98,6 +127,7 @@ impl<V: Render> From<Entity<V>> for AnyView {
         AnyView {
             entity: value.into_any(),
             render: any_view::render::<V>,
+            view_type_name: std::any::type_name::<V>(),
             cached_style: None,
         }
     }
@@ -117,6 +147,7 @@ impl AnyView {
         AnyWeakView {
             entity: self.entity.downgrade(),
             render: self.render,
+            view_type_name: self.view_type_name,
         }
     }
 
@@ -128,6 +159,7 @@ impl AnyView {
             Err(entity) => Err(Self {
                 entity,
                 render: self.render,
+                view_type_name: self.view_type_name,
                 cached_style: self.cached_style,
             }),
         }
@@ -171,23 +203,34 @@ impl Element for AnyView {
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        window.with_rendered_view(self.entity_id(), |window| {
-            // Disable caching when inspecting so that mouse_hit_test has all hitboxes.
-            let caching_disabled = window.is_inspector_picking(cx);
-            match self.cached_style.as_ref() {
-                Some(style) if !caching_disabled => {
-                    let mut root_style = Style::default();
-                    root_style.refine(style);
-                    let layout_id = window.request_layout(root_style, None, cx);
-                    (layout_id, None)
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
+        let profile_result = {
+            window.with_rendered_view(self.entity_id(), |window| {
+                // Disable caching when inspecting so that mouse_hit_test has all hitboxes.
+                let caching_disabled = window.is_inspector_picking(cx) || window.is_a11y_active();
+                match self.cached_style.as_ref() {
+                    Some(style) if !caching_disabled => {
+                        let mut root_style = Style::default();
+                        root_style.refine(style);
+                        let layout_id = window.request_layout(root_style, None, cx);
+                        (layout_id, None)
+                    }
+                    _ => {
+                        let mut element = (self.render)(self, window, cx);
+                        let layout_id = element.request_layout(window, cx);
+                        (layout_id, Some(element))
+                    }
                 }
-                _ => {
-                    let mut element = (self.render)(self, window, cx);
-                    let layout_id = element.request_layout(window, cx);
-                    (layout_id, Some(element))
-                }
-            }
-        })
+            })
+        };
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            self.view_type_name,
+            crate::profiler::ViewPhase::RequestLayout,
+        );
+        profile_result
     }
 
     fn prepaint(
@@ -199,64 +242,75 @@ impl Element for AnyView {
         window: &mut Window,
         cx: &mut App,
     ) -> Option<AnyElement> {
-        window.set_view_id(self.entity_id());
-        window.with_rendered_view(self.entity_id(), |window| {
-            if let Some(mut element) = element.take() {
-                element.prepaint(window, cx);
-                return Some(element);
-            }
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
+        let profile_result = {
+            window.set_view_id(self.entity_id());
+            window.with_rendered_view(self.entity_id(), |window| {
+                if let Some(mut element) = element.take() {
+                    element.prepaint(window, cx);
+                    return Some(element);
+                }
 
-            window.with_element_state::<AnyViewState, _>(
-                global_id.unwrap(),
-                |element_state, window| {
-                    let content_mask = window.content_mask();
-                    let text_style = window.text_style();
+                window.with_element_state::<AnyViewState, _>(
+                    global_id.unwrap(),
+                    |element_state, window| {
+                        let content_mask = window.content_mask();
+                        let text_style = window.text_style();
 
-                    if let Some(mut element_state) = element_state
-                        && element_state.cache_key.bounds == bounds
-                        && element_state.cache_key.content_mask == content_mask
-                        && element_state.cache_key.text_style == text_style
-                        && !window.dirty_views.contains(&self.entity_id())
-                        && !window.refreshing
-                    {
+                        if let Some(mut element_state) = element_state
+                            && element_state.cache_key.bounds == bounds
+                            && element_state.cache_key.content_mask == content_mask
+                            && element_state.cache_key.text_style == text_style
+                            && !window.dirty_views.contains(&self.entity_id())
+                            && !window.refreshing
+                        {
+                            let prepaint_start = window.prepaint_index();
+                            window.reuse_prepaint(element_state.prepaint_range.clone());
+                            cx.entities
+                                .extend_accessed(&element_state.accessed_entities);
+                            let prepaint_end = window.prepaint_index();
+                            element_state.prepaint_range = prepaint_start..prepaint_end;
+
+                            return (None, element_state);
+                        }
+
+                        let refreshing = mem::replace(&mut window.refreshing, true);
                         let prepaint_start = window.prepaint_index();
-                        window.reuse_prepaint(element_state.prepaint_range.clone());
-                        cx.entities
-                            .extend_accessed(&element_state.accessed_entities);
+                        let (mut element, accessed_entities) = cx.detect_accessed_entities(|cx| {
+                            let mut element = (self.render)(self, window, cx);
+                            element.layout_as_root(bounds.size.into(), window, cx);
+                            element.prepaint_at(bounds.origin, window, cx);
+                            element
+                        });
+
                         let prepaint_end = window.prepaint_index();
-                        element_state.prepaint_range = prepaint_start..prepaint_end;
+                        window.refreshing = refreshing;
 
-                        return (None, element_state);
-                    }
-
-                    let refreshing = mem::replace(&mut window.refreshing, true);
-                    let prepaint_start = window.prepaint_index();
-                    let (mut element, accessed_entities) = cx.detect_accessed_entities(|cx| {
-                        let mut element = (self.render)(self, window, cx);
-                        element.layout_as_root(bounds.size.into(), window, cx);
-                        element.prepaint_at(bounds.origin, window, cx);
-                        element
-                    });
-
-                    let prepaint_end = window.prepaint_index();
-                    window.refreshing = refreshing;
-
-                    (
-                        Some(element),
-                        AnyViewState {
-                            accessed_entities,
-                            prepaint_range: prepaint_start..prepaint_end,
-                            paint_range: PaintIndex::default()..PaintIndex::default(),
-                            cache_key: ViewCacheKey {
-                                bounds,
-                                content_mask,
-                                text_style,
+                        (
+                            Some(element),
+                            AnyViewState {
+                                accessed_entities,
+                                prepaint_range: prepaint_start..prepaint_end,
+                                paint_range: PaintIndex::default()..PaintIndex::default(),
+                                cache_key: ViewCacheKey {
+                                    bounds,
+                                    content_mask,
+                                    text_style,
+                                },
                             },
-                        },
-                    )
-                },
-            )
-        })
+                        )
+                    },
+                )
+            })
+        };
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            self.view_type_name,
+            crate::profiler::ViewPhase::Prepaint,
+        );
+        profile_result
     }
 
     fn paint(
@@ -269,8 +323,10 @@ impl Element for AnyView {
         window: &mut Window,
         cx: &mut App,
     ) {
+        #[cfg(feature = "profiler")]
+        let profile_start = window.window_profiler.begin_view();
         window.with_rendered_view(self.entity_id(), |window| {
-            let caching_disabled = window.is_inspector_picking(cx);
+            let caching_disabled = window.is_inspector_picking(cx) || window.is_a11y_active();
             if self.cached_style.is_some() && !caching_disabled {
                 window.with_element_state::<AnyViewState, _>(
                     global_id.unwrap(),
@@ -297,6 +353,12 @@ impl Element for AnyView {
                 element.as_mut().unwrap().paint(window, cx);
             }
         });
+        #[cfg(feature = "profiler")]
+        window.window_profiler.end_view(
+            profile_start,
+            self.view_type_name,
+            crate::profiler::ViewPhase::Paint,
+        );
     }
 }
 
@@ -320,6 +382,7 @@ impl IntoElement for AnyView {
 pub struct AnyWeakView {
     entity: AnyWeakEntity,
     render: fn(&AnyView, &mut Window, &mut App) -> AnyElement,
+    view_type_name: &'static str,
 }
 
 impl AnyWeakView {
@@ -329,6 +392,7 @@ impl AnyWeakView {
         Some(AnyView {
             entity,
             render: self.render,
+            view_type_name: self.view_type_name,
             cached_style: None,
         })
     }
@@ -339,6 +403,7 @@ impl<V: 'static + Render> From<WeakEntity<V>> for AnyWeakView {
         AnyWeakView {
             entity: view.into(),
             render: any_view::render::<V>,
+            view_type_name: std::any::type_name::<V>(),
         }
     }
 }
@@ -376,5 +441,90 @@ pub struct EmptyView;
 impl Render for EmptyView {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         Empty
+    }
+}
+
+#[cfg(test)]
+mod cached_debug_bounds_tests {
+    use super::*;
+    use crate::{
+        AppContext as _, InteractiveElement, ParentElement, Styled, TestAppContext, div, px,
+    };
+    use std::cell::Cell;
+
+    struct CachedChild {
+        selector: &'static str,
+        renders: Rc<Cell<usize>>,
+    }
+
+    impl Render for CachedChild {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            self.renders.set(self.renders.get() + 1);
+            let selector = self.selector;
+            div().size_full().debug_selector(move || selector.into())
+        }
+    }
+
+    struct CachedRoot {
+        first: Entity<CachedChild>,
+        second: Entity<CachedChild>,
+        show_second: bool,
+    }
+
+    impl Render for CachedRoot {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let mut content = div().size_full().flex().flex_col().child(
+                self.first
+                    .clone()
+                    .cached(StyleRefinement::default().size(px(40.))),
+            );
+            if self.show_second {
+                content = content.child(
+                    self.second
+                        .clone()
+                        .cached(StyleRefinement::default().size(px(40.))),
+                );
+            }
+            content
+        }
+    }
+
+    #[wgpui::test]
+    fn cached_selectors_replay_only_while_their_subtree_is_present(cx: &mut TestAppContext) {
+        let first_renders = Rc::new(Cell::new(0));
+        let second_renders = Rc::new(Cell::new(0));
+        let (root, cx) = cx.add_window_view(|_, cx| CachedRoot {
+            first: cx.new(|_| CachedChild {
+                selector: "first-cached-child",
+                renders: first_renders.clone(),
+            }),
+            second: cx.new(|_| CachedChild {
+                selector: "second-cached-child",
+                renders: second_renders.clone(),
+            }),
+            show_second: true,
+        });
+        let first_bounds = cx
+            .debug_bounds("first-cached-child")
+            .expect("first painted selector");
+        let second_bounds = cx
+            .debug_bounds("second-cached-child")
+            .expect("second painted selector");
+        let rendered = (first_renders.get(), second_renders.get());
+        for _ in 0..3 {
+            cx.update(|window, cx| window.draw(cx).clear());
+            assert_eq!(cx.debug_bounds("first-cached-child"), Some(first_bounds));
+            assert_eq!(cx.debug_bounds("second-cached-child"), Some(second_bounds));
+            assert_eq!((first_renders.get(), second_renders.get()), rendered);
+        }
+
+        root.update(cx, |root, cx| {
+            root.show_second = false;
+            cx.notify();
+        });
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(cx.debug_bounds("first-cached-child"), Some(first_bounds));
+        assert_eq!(cx.debug_bounds("second-cached-child"), None);
+        assert_eq!((first_renders.get(), second_renders.get()), rendered);
     }
 }

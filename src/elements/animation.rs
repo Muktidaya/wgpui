@@ -148,25 +148,35 @@ impl<E: IntoElement + 'static> Element for AnimationElement<E> {
                 start: Instant::now(),
                 animation_ix: 0,
             });
-            let animation_ix = state.animation_ix;
-
-            let mut delta = state.start.elapsed().as_secs_f32()
-                / self.animations[animation_ix].duration.as_secs_f32();
-
-            let mut done = false;
-            if delta > 1.0 {
-                if self.animations[animation_ix].oneshot {
-                    if animation_ix >= self.animations.len() - 1 {
-                        done = true;
-                    } else {
-                        state.start = Instant::now();
-                        state.animation_ix += 1;
-                    }
-                    delta = 1.0;
+            let (animation_ix, delta, done) = if cx.reduce_motion() {
+                let animation_ix = self.animations.len() - 1;
+                let delta = if self.animations[animation_ix].oneshot {
+                    1.0
                 } else {
-                    delta %= 1.0;
+                    0.0
+                };
+                (animation_ix, delta, true)
+            } else {
+                let animation_ix = state.animation_ix;
+                let mut delta = state.start.elapsed().as_secs_f32()
+                    / self.animations[animation_ix].duration.as_secs_f32();
+
+                let mut done = false;
+                if delta > 1.0 {
+                    if self.animations[animation_ix].oneshot {
+                        if animation_ix >= self.animations.len() - 1 {
+                            done = true;
+                        } else {
+                            state.start = Instant::now();
+                            state.animation_ix += 1;
+                        }
+                        delta = 1.0;
+                    } else {
+                        delta %= 1.0;
+                    }
                 }
-            }
+                (animation_ix, delta, done)
+            };
             let delta = (self.animations[animation_ix].easing)(delta);
 
             debug_assert!(
@@ -208,6 +218,74 @@ impl<E: IntoElement + 'static> Element for AnimationElement<E> {
         cx: &mut App,
     ) {
         element.paint(window, cx);
+    }
+}
+
+#[cfg(test)]
+mod reduced_motion_tests {
+    use super::*;
+    use crate::{Context, InteractiveElement, Render, Styled, TestAppContext, div, px};
+    use std::cell::RefCell;
+
+    struct AnimationProbe {
+        repeating: bool,
+        samples: Rc<RefCell<Vec<(usize, f32)>>>,
+    }
+
+    impl Render for AnimationProbe {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let final_animation = Animation::new(Duration::from_secs(3600));
+            let final_animation = if self.repeating {
+                final_animation.repeat()
+            } else {
+                final_animation
+            };
+            let samples = self.samples.clone();
+            div()
+                .h(px(10.))
+                .debug_selector(|| "reduced-motion-animation".into())
+                .with_animations(
+                    "reduced-motion-chain",
+                    vec![Animation::new(Duration::from_secs(3600)), final_animation],
+                    move |element, index, delta| {
+                        samples.borrow_mut().push((index, delta));
+                        element.w(px(10. + delta * 10.))
+                    },
+                )
+        }
+    }
+
+    #[wgpui::test]
+    fn final_chain_animation_has_static_geometry_without_scheduling_frames(
+        cx: &mut TestAppContext,
+    ) {
+        cx.update(|cx| cx.set_reduce_motion(true));
+        for repeating in [false, true] {
+            let samples = Rc::new(RefCell::new(Vec::new()));
+            let (_, cx) = cx.add_window_view(|_, _| AnimationProbe {
+                repeating,
+                samples: samples.clone(),
+            });
+            let expected_delta = if repeating { 0.0 } else { 1.0 };
+            for _ in 0..3 {
+                cx.update(|window, cx| window.draw(cx).clear());
+                assert_eq!(
+                    cx.debug_bounds("reduced-motion-animation")
+                        .expect("painted animated element")
+                        .size
+                        .width,
+                    px(10. + expected_delta * 10.)
+                );
+                assert_eq!(cx.update(|window, cx| window.simulate_next_frame(cx)), 0);
+            }
+            assert!(!samples.borrow().is_empty());
+            assert!(
+                samples
+                    .borrow()
+                    .iter()
+                    .all(|sample| *sample == (1, expected_delta))
+            );
+        }
     }
 }
 

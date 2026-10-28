@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.4.0 — Unreleased source candidate
+
+The candidate uses WGPUI/derive 0.4.0, Kit-family/FPS 0.8.1 and HTTP facade
+0.1.0, with **Rust 1.95** as the common minimum. It remains under validation
+and is not published. Framework/derive 0.3.6 and Kit-family 0.6.1 remain the
+published lines; their earlier release evidence does not validate this source.
+
+### Compatibility
+
+- `SharedString` is immutable and dereferences directly to `str`; runtime
+  borrowed strings become owned values. `Option<SharedString>::as_deref()`
+  returns `Option<&str>`, and `new_static` retains a constant string.
+- Base uses stable Ropey 1.6.1. Inherent Rope edits/slices use character
+  indices; editor ranges and `RopeExt` byte operations retain byte offsets.
+  Use `len_bytes`/`byte_slice` for editor ranges. Rows remain LF-only.
+- HTTP interfaces move through the maintained `wgpui-http-client` facade,
+  reexported by framework and Kit. Its released Reqwest/async-tar types
+  replace the Zed prerelease dependency family; use its `reqwest` reexport
+  for multipart types. Applications still select their network runtime.
+- Custom grammars use Tree-sitter 0.27-compatible types and ABI contracts.
+  Public accessibility nodes/actions use AccessKit 0.25. Keep dependency
+  identity consistent through framework/Kit reexports.
+- Constructor attributes require Ctor 1's explicit safety acknowledgement:
+  `#[wgpui_kit::ctor(unsafe)]`, or `#[wgpui_kit::ctor]` on an `unsafe fn`.
+  Documented derive/attribute paths resolve renamed and sole-Kit dependencies;
+  property-test/style-helper generators retain canonical paths.
+- `ThemeRegistry::watch_dir` returns setup errors to its caller.
+- Layout uses Taffy 0.15. Flex viewport chains preserve scroll allocations
+  inside maximum-height panels; the framework retains relative positioning
+  by default. See [the compatibility guide](docs/kit.md#source-candidate-compatibility).
+
+### Kit and framework source
+
+- Standard GPUI Kit v0.8.1 APIs and behavior are ported onto WGPUI's existing
+  wgpu/winit backend. Base owns `Root` and presentation plugins, and Kit's
+  window entry point installs them around application content.
+- Additional source includes carousel, diff, empty-state, questionnaire,
+  toolbar and speech components; time fields, input groups, inline tokens,
+  shared plot behavior and touch text selection.
+- Platform-aware key/modifier display, text input configuration, touch,
+  long-press/drag events, scroll sources and visual viewport queries are
+  available to the port. IME composition clearing preserves the replacement
+  transaction for atomic commit/cancellation and undo behavior.
+- Optional Tree-sitter and Syntect paths provide highlighting; Tree-sitter
+  is selected when both are enabled. HTML conversion/minification uses
+  html5ever 0.40 and private DOM storage preserving entities, foreign
+  attributes and inert templates. Text/layout caches account for scale and
+  text size.
+- The optional frame profiler provides frame/input/action/view/task timing
+  interfaces. `wgpui-fps` supplies a performance HUD using those measurements
+  and operating-system resource counters; it does not claim physical
+  scanout timing or infer unavailable counters.
+- Desktop text uses Core Text on macOS, DirectWrite on Windows and Pango
+  on Linux/FreeBSD; Cosmic Text and its exclusive dependencies are removed.
+  UI and monospace defaults use OS font roles, with application overrides
+  preserved. Bundled IBM Plex Sans and Lilex fonts are removed.
+- Native text preserves UTF-8 editor indices, four-cell tabs, font run
+  boundaries, fallback, variable weights and scaled/color glyph coverage.
+  Fallible native-service accessors expose initialization failures.
+  Linux requires Pango >=1.50, Cairo >=1.18, HarfBuzz and Fontconfig.
+- Semantic accessibility trees, synthetic children, active descendants and
+  native AccessKit action delivery are implemented in the candidate. Speech
+  interfaces support application-provided capture/recognition and optional
+  native integration; Linux applications supply a recognizer.
+
+### Candidate acceptance
+
+Implementation presence is distinct from completed acceptance. Final source,
+feature combinations, package/registry consumers, Linux/Nix and native
+validation remain in progress. This is the standard-backend Kit port;
+GPUI Fast's automatic-retention contracts are excluded, while explicit
+cached views remain available. Browser, webview/shell and mobile platform
+integration remain separate work. See [release status](STATUS.md),
+[the Kit guide](docs/kit.md) and [the acceptance inventory](docs/kit-migration-parity.json).
+
+The Microsoft SDK companions retain versions required by the latest `windows`
+crate: `windows-core` 0.62.2 and `windows-numerics` 0.3.1. Their newer 0.100.0
+releases have incompatible Rust type identities.
+
+Dependency requirements use stable release lines, with transitive instances
+still constrained by their owning packages. No absolute-latest-transitive
+or completed publication claim is made by this candidate entry.
+
 ## 0.3.5 — 2026-09-05
 
 Work after crates.io 0.3.4 (`5e94b544`). Same wgpu 30 / winit 0.30.13 / taffy 0.13 / cosmic-text 0.19 pins. **Publish `wgpui_derive` 0.3.5 before `wgpui` 0.3.5**: crates.io derive 0.3.4 does not emit `BoxShadow.inset`, so a packaged `wgpui` that depends on `"0.3.5"` cannot dry-run against the registry until derive 0.3.5 exists.

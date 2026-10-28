@@ -92,7 +92,10 @@ impl TestDispatcher {
 
     fn next_deadline(&self) -> Option<Instant> {
         let legacy = self.state.lock().delayed.first().map(|(time, _)| *time);
-        legacy.into_iter().chain(self.test_scheduler.next_timer_deadline()).min()
+        legacy
+            .into_iter()
+            .chain(self.test_scheduler.next_timer_deadline())
+            .min()
     }
 
     pub fn advance_clock(&self, by: Duration) {
@@ -102,17 +105,23 @@ impl TestDispatcher {
             if let Some(due_time) = self.next_deadline()
                 && due_time <= new_now
             {
-                self.test_scheduler.clock().advance(due_time.saturating_duration_since(self.now()));
+                self.test_scheduler
+                    .clock()
+                    .advance(due_time.saturating_duration_since(self.now()));
                 continue;
             }
             break;
         }
-        self.test_scheduler.clock().advance(new_now.saturating_duration_since(self.now()));
+        self.test_scheduler
+            .clock()
+            .advance(new_now.saturating_duration_since(self.now()));
     }
 
     pub fn advance_clock_to_next_delayed(&self) -> bool {
         if let Some(next_due_time) = self.next_deadline() {
-            self.test_scheduler.clock().advance(next_due_time.saturating_duration_since(self.now()));
+            self.test_scheduler
+                .clock()
+                .advance(next_due_time.saturating_duration_since(self.now()));
             return true;
         }
         false

@@ -18,6 +18,13 @@ use std::{
 use util::ResultExt;
 
 impl Element for &'static str {
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        Some(accesskit::Role::Label)
+    }
+    fn write_a11y_info(&self, node: &mut accesskit::Node) {
+        node.set_value(self.to_string());
+    }
+
     type RequestLayoutState = TextLayout;
     type PrepaintState = ();
 
@@ -92,6 +99,13 @@ impl IntoElement for Cow<'_, str> {
 }
 
 impl Element for SharedString {
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        Some(accesskit::Role::Label)
+    }
+    fn write_a11y_info(&self, node: &mut accesskit::Node) {
+        node.set_value(self.to_string());
+    }
+
     type RequestLayoutState = TextLayout;
     type PrepaintState = ();
 
@@ -243,7 +257,7 @@ impl StyledText {
 
     /// Set the text runs for this piece of text.
     pub fn with_runs(mut self, runs: Vec<TextRun>) -> Self {
-        let mut text = &**self.text;
+        let mut text = self.text.as_str();
         for run in &runs {
             text = text.get(run.len..).expect("invalid text run");
         }
@@ -254,6 +268,13 @@ impl StyledText {
 }
 
 impl Element for StyledText {
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        Some(accesskit::Role::Label)
+    }
+    fn write_a11y_info(&self, node: &mut accesskit::Node) {
+        node.set_value(self.text.to_string());
+    }
+
     type RequestLayoutState = ();
     type PrepaintState = ();
 
@@ -323,6 +344,7 @@ pub struct TextLayout(Rc<RefCell<Option<TextLayoutInner>>>);
 struct TextLayoutInner {
     len: usize,
     lines: SmallVec<[WrappedLine; 1]>,
+    font_size: Pixels,
     line_height: Pixels,
     wrap_width: Option<Pixels>,
     size: Option<Size<Pixels>>,
@@ -339,9 +361,11 @@ impl TextLayout {
     ) -> LayoutId {
         let text_style = window.text_style();
         let font_size = text_style.font_size.to_pixels(window.rem_size());
-        let line_height = text_style
-            .line_height
-            .to_pixels(font_size.into(), window.rem_size());
+        let line_height = window.pixel_snap(
+            text_style
+                .line_height
+                .to_pixels(font_size.into(), window.rem_size()),
+        );
 
         let runs = if let Some(runs) = runs {
             runs
@@ -378,8 +402,11 @@ impl TextLayout {
                         (None, "".into())
                     };
 
+                // Scale and rem changes can alter resolved metrics without changing the text style.
                 if let Some(text_layout) = element_state.0.borrow().as_ref()
                     && text_layout.size.is_some()
+                    && text_layout.font_size == font_size
+                    && text_layout.line_height == line_height
                     && (wrap_width.is_none() || wrap_width == text_layout.wrap_width)
                 {
                     return text_layout.size.unwrap();
@@ -392,6 +419,7 @@ impl TextLayout {
                         truncate_width,
                         &truncation_suffix,
                         &runs,
+                        crate::TruncateFrom::End,
                     )
                 } else {
                     (text.clone(), Cow::Borrowed(&*runs))
@@ -412,6 +440,7 @@ impl TextLayout {
                     element_state.0.borrow_mut().replace(TextLayoutInner {
                         lines: Default::default(),
                         len: 0,
+                        font_size,
                         line_height,
                         wrap_width,
                         size: Some(Size::default()),
@@ -430,6 +459,7 @@ impl TextLayout {
                 element_state.0.borrow_mut().replace(TextLayoutInner {
                     lines,
                     len,
+                    font_size,
                     line_height,
                     wrap_width,
                     size: Some(size),
@@ -451,40 +481,48 @@ impl TextLayout {
     }
 
     fn paint(&self, text: &str, window: &mut Window, cx: &mut App) {
-        let element_state = self.0.borrow();
-        let element_state = element_state
-            .as_ref()
-            .with_context(|| format!("measurement has not been performed on {text}"))
-            .unwrap();
-        let bounds = element_state
-            .bounds
-            .with_context(|| format!("prepaint has not been performed on {text}"))
-            .unwrap();
+        self.paint_background(window, cx)
+            .with_context(|| format!("failed to paint background for {text}"))
+            .log_err();
+        self.paint_foreground(window, cx)
+            .with_context(|| format!("failed to paint foreground for {text}"))
+            .log_err();
+    }
 
-        let line_height = element_state.line_height;
-        let mut line_origin = bounds.origin;
-        let text_style = window.text_style();
-        for line in &element_state.lines {
-            line.paint_background(
-                line_origin,
-                line_height,
-                text_style.text_align,
-                Some(bounds),
-                window,
-                cx,
-            )
-            .log_err();
-            line.paint(
-                line_origin,
-                line_height,
-                text_style.text_align,
-                Some(bounds),
-                window,
-                cx,
-            )
-            .log_err();
-            line_origin.y += line.size(line_height).height;
+    /// Paints text-run backgrounds before callers draw highlights or selections.
+    pub fn paint_background(&self, window: &mut Window, cx: &mut App) -> anyhow::Result<()> {
+        self.paint_lines(true, window, cx)
+    }
+
+    /// Paints glyphs and decorations above previously drawn backgrounds or selections.
+    pub fn paint_foreground(&self, window: &mut Window, cx: &mut App) -> anyhow::Result<()> {
+        self.paint_lines(false, window, cx)
+    }
+
+    fn paint_lines(
+        &self,
+        background: bool,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> anyhow::Result<()> {
+        let state = self.0.borrow();
+        let state = state
+            .as_ref()
+            .context("text measurement has not been performed")?;
+        let bounds = state
+            .bounds
+            .context("text prepaint has not been performed")?;
+        let mut origin = bounds.origin;
+        let align = window.text_style().text_align;
+        for line in &state.lines {
+            if background {
+                line.paint_background(origin, state.line_height, align, Some(bounds), window, cx)?;
+            } else {
+                line.paint(origin, state.line_height, align, Some(bounds), window, cx)?;
+            }
+            origin.y += line.size(state.line_height).height;
         }
+        Ok(())
     }
 
     /// Get the byte index into the input of the pixel position.
@@ -720,6 +758,13 @@ impl InteractiveText {
 }
 
 impl Element for InteractiveText {
+    fn a11y_role(&self) -> Option<accesskit::Role> {
+        Some(accesskit::Role::Label)
+    }
+    fn write_a11y_info(&self, node: &mut accesskit::Node) {
+        node.set_value(self.text.text.to_string());
+    }
+
     type RequestLayoutState = ();
     type PrepaintState = Hitbox;
 
@@ -928,5 +973,87 @@ impl IntoElement for InteractiveText {
 
     fn into_element(self) -> Self::Element {
         self
+    }
+}
+
+#[cfg(test)]
+mod measurement_cache_tests {
+    use super::*;
+    use crate::{
+        AnyWindowHandle, AvailableSpace, DrawPhase, Empty, TestAppContext, TextStyleRefinement, px,
+        rems, size,
+    };
+
+    fn measure(
+        layout: &TextLayout,
+        handle: AnyWindowHandle,
+        rem_size: Pixels,
+        cx: &mut TestAppContext,
+    ) -> (Pixels, Pixels, Arc<WrappedLineLayout>) {
+        handle
+            .update(cx, |_, window, cx| {
+                window.invalidator.set_phase(DrawPhase::Prepaint);
+                let measured = window.with_rem_size(Some(rem_size), |window| {
+                    window.with_text_style(
+                        Some(TextStyleRefinement {
+                            font_size: Some(rems(1.).into()),
+                            line_height: Some(px(25.9).into()),
+                            ..Default::default()
+                        }),
+                        |window| {
+                            let layout_id = layout.layout("cached text".into(), None, window, cx);
+                            window.compute_layout(
+                                layout_id,
+                                size(
+                                    AvailableSpace::Definite(px(600.)),
+                                    AvailableSpace::MaxContent,
+                                ),
+                                cx,
+                            );
+                            let line = layout
+                                .line_layouts()
+                                .first()
+                                .expect("one measured line")
+                                .layout();
+                            (
+                                layout.line_height(),
+                                window.layout_bounds(layout_id).size.height,
+                                line,
+                            )
+                        },
+                    )
+                });
+                window.invalidator.set_phase(DrawPhase::None);
+                measured
+            })
+            .expect("measure retained text layout")
+    }
+
+    #[wgpui::test]
+    fn retained_measurements_follow_device_scale_and_resolved_font_size(cx: &mut TestAppContext) {
+        let window = cx.add_window(|_, _| Empty);
+        let handle: AnyWindowHandle = window.into();
+        let layout = TextLayout::default();
+
+        let (line_height, allocated_height, first_line) = measure(&layout, handle, px(16.), cx);
+        assert_eq!(line_height, px(26.));
+        assert_eq!(allocated_height, px(26.));
+        assert_eq!(first_line.unwrapped_layout.font_size, px(16.));
+
+        cx.simulate_window_scale_factor_change(handle, 1.6);
+        let (line_height, allocated_height, _) = measure(&layout, handle, px(16.), cx);
+        assert_eq!(line_height, px(25.625));
+        assert_eq!(allocated_height, px(25.625));
+
+        let (line_height, _, resized_font_line) = measure(&layout, handle, px(24.), cx);
+        assert_eq!(line_height, px(25.625));
+        assert_eq!(resized_font_line.unwrapped_layout.font_size, px(24.));
+        let (_, _, repeated_line) = measure(&layout, handle, px(24.), cx);
+        assert!(Arc::ptr_eq(&resized_font_line, &repeated_line));
+
+        cx.simulate_window_scale_factor_change(handle, 2.);
+        let (line_height, allocated_height, _) = measure(&layout, handle, px(16.), cx);
+        assert_eq!(line_height, px(26.));
+        assert_eq!(allocated_height, px(26.));
     }
 }

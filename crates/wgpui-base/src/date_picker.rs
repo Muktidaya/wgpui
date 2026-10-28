@@ -9,6 +9,7 @@ use gpui::{
 
 use crate::{
     StyledExt as _,
+    a11y_disabled::A11yDisabledExt as _,
     actions::{Cancel, Confirm},
 };
 
@@ -88,12 +89,12 @@ impl RenderOnce for DatePicker {
             .on_action({
                 let handler = handler.clone();
                 move |_: &Confirm, window, cx| {
+                    // Enter opens the picker, and closes it again once the
+                    // value shown in the popup is the one the user wants.
                     if disabled {
                         cx.propagate();
-                    } else if !open {
-                        if let Some(handler) = &handler {
-                            handler(true, window, cx);
-                        }
+                    } else if let Some(handler) = &handler {
+                        handler(!open, window, cx);
                     }
                 }
             })
@@ -108,5 +109,6 @@ impl RenderOnce for DatePicker {
             })
             .refine_style(&self.style)
             .children(self.children)
+            .a11y_disabled(disabled)
     }
 }

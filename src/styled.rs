@@ -240,6 +240,11 @@ pub trait Styled: Sized {
         self
     }
 
+    /// Prevents this flex item from growing into remaining space.
+    fn flex_grow_0(self) -> Self {
+        self.flex_grow(0.)
+    }
+
     /// Alias for [`Self::flex_shrink`] with a shrink factor of 1.
     fn flex_shrink_1(mut self) -> Self {
         self.flex_shrink(1.)
@@ -283,6 +288,12 @@ pub trait Styled: Sized {
     /// [Docs](https://tailwindcss.com/docs/align-items#end)
     fn items_end(mut self) -> Self {
         self.style().align_items = Some(AlignItems::FlexEnd);
+        self
+    }
+
+    /// Stretches flex children across the container's cross axis.
+    fn items_stretch(mut self) -> Self {
+        self.style().align_items = Some(crate::AlignItems::Stretch);
         self
     }
 

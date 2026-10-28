@@ -24,6 +24,7 @@ pub(crate) struct CrossWindowInner {
     pub(crate) event_loop_proxy: EventLoopProxy<CrossEvent>,
     pub(crate) handle: AnyWindowHandle,
     pub(crate) hovered: Cell<bool>,
+    pub(crate) accessibility_adapter: OnceCell<RefCell<accesskit_winit::Adapter>>,
     pub(crate) state: CrossWindowState,
 }
 
@@ -32,8 +33,13 @@ pub(crate) struct CrossWindowState {
     pub(crate) callbacks: Callbacks,
     pub(crate) input_handler: RefCell<Option<PlatformInputHandler>>,
     pub(crate) mouse_position: Cell<Point<Pixels>>,
+    pub(crate) touch_ids: RefCell<collections::FxHashMap<u64, crate::TouchId>>,
+    pub(crate) next_touch_id: Cell<u64>,
     pub(crate) modifiers: Cell<Modifiers>,
     pub(crate) capslock: Cell<Capslock>,
+    pub(crate) occluded: Cell<bool>,
+    pub(crate) accessibility_active: Cell<bool>,
+    pub(crate) text_input_configuration: RefCell<crate::TextInputConfiguration>,
 }
 
 #[derive(Default)]
@@ -45,6 +51,9 @@ pub(crate) struct Callbacks {
     pub(crate) on_hover_status_change: Cell<Option<Box<dyn FnMut(bool)>>>,
     pub(crate) on_resize: Cell<Option<Box<dyn FnMut(crate::Size<crate::Pixels>, f32)>>>,
     pub(crate) on_moved: Cell<Option<Box<dyn FnMut()>>>,
+    pub(crate) on_visibility_change: Cell<Option<Box<dyn FnMut(bool)>>>,
+    pub(crate) on_visual_viewport_changed: Cell<Option<Box<dyn FnMut()>>>,
+    pub(crate) on_accessibility_event: Cell<Option<Box<dyn FnMut(accesskit_winit::WindowEvent)>>>,
     pub(crate) on_should_close: Cell<Option<Box<dyn FnMut() -> bool>>>,
     pub(crate) on_hit_test_window_control:
         Cell<Option<Box<dyn FnMut() -> Option<crate::WindowControlArea>>>>,
@@ -81,6 +90,7 @@ impl CrossWindow {
             event_loop_proxy,
             handle,
             hovered: Cell::new(false),
+            accessibility_adapter: OnceCell::new(),
             state: CrossWindowState::default(),
         }))
     }
@@ -101,13 +111,28 @@ impl CrossWindow {
         }
     }
 
-    pub(crate) fn initialize(&self, winit_window: winit::window::Window) {
+    pub(crate) fn initialize(
+        &self,
+        winit_window: winit::window::Window,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+    ) {
         let initial_size = winit_window.inner_size();
 
         self.0
             .winit_window
             .set(Arc::new(winit_window))
             .expect("winit_window already initialized");
+
+        self.0
+            .accessibility_adapter
+            .set(RefCell::new(
+                accesskit_winit::Adapter::with_event_loop_proxy(
+                    event_loop,
+                    self.window(),
+                    self.0.event_loop_proxy.clone(),
+                ),
+            ))
+            .unwrap_or_else(|_| panic!("accessibility adapter already initialized"));
 
         if initial_size.width > 0 && initial_size.height > 0 {
             let renderer = WgpuRenderer::new(
@@ -134,6 +159,32 @@ impl CrossWindow {
 }
 
 impl PlatformWindow for CrossWindow {
+    fn on_visual_viewport_changed(&self, callback: Box<dyn FnMut()>) {
+        self.0
+            .state
+            .callbacks
+            .on_visual_viewport_changed
+            .set(Some(callback));
+    }
+
+    fn is_a11y_active(&self) -> bool {
+        self.0.state.accessibility_active.get()
+    }
+
+    fn update_a11y(&self, update: accesskit::TreeUpdate) {
+        if let Some(adapter) = self.0.accessibility_adapter.get() {
+            adapter.borrow_mut().update_if_active(|| update);
+        }
+    }
+
+    fn on_accessibility_event(&self, callback: Box<dyn FnMut(accesskit_winit::WindowEvent)>) {
+        self.0
+            .state
+            .callbacks
+            .on_accessibility_event
+            .set(Some(callback));
+    }
+
     fn bounds(&self) -> Bounds<Pixels> {
         let scale_factor = self.window().scale_factor() as f32;
         let physical_size = self.window().inner_size();
@@ -153,6 +204,33 @@ impl PlatformWindow for CrossWindow {
                 height: Pixels(physical_size.height as f32 / scale_factor),
             },
         }
+    }
+
+    fn is_resizable(&self) -> bool {
+        self.window().is_resizable()
+    }
+
+    fn is_visible(&self) -> bool {
+        self.window().is_visible().unwrap_or(true) && !self.0.state.occluded.get()
+    }
+
+    fn set_text_input_configuration(&self, configuration: &crate::TextInputConfiguration) {
+        // Winit exposes IME purpose, but no per-field capitalization or enter-key hint.
+        // Preserve those preferences for backends that can apply richer native sessions.
+        self.0
+            .state
+            .text_input_configuration
+            .replace(configuration.clone());
+        self.window()
+            .set_ime_purpose(winit::window::ImePurpose::Normal);
+    }
+
+    fn show_soft_keyboard(&self) {
+        self.window().set_ime_allowed(true);
+    }
+
+    fn hide_soft_keyboard(&self) {
+        self.window().set_ime_allowed(false);
     }
 
     fn is_maximized(&self) -> bool {
@@ -262,7 +340,7 @@ impl PlatformWindow for CrossWindow {
     }
 
     fn set_background_appearance(&self, _background_appearance: WindowBackgroundAppearance) {
-        // Window chrome transparency is not implemented in 0.3.4.
+        // Window chrome transparency is not implemented by the WGPUI window backend.
     }
 
     fn minimize(&self) {
@@ -311,6 +389,14 @@ impl PlatformWindow for CrossWindow {
 
     fn on_resize(&self, callback: Box<dyn FnMut(crate::Size<crate::Pixels>, f32)>) {
         self.0.state.callbacks.on_resize.set(Some(callback));
+    }
+
+    fn on_visibility_change(&self, callback: Box<dyn FnMut(bool)>) {
+        self.0
+            .state
+            .callbacks
+            .on_visibility_change
+            .set(Some(callback));
     }
 
     fn on_moved(&self, callback: Box<dyn FnMut()>) {
