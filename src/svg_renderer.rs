@@ -173,27 +173,26 @@ mod tests {
     }
 
     #[test]
-    fn svg_single_frame_preserves_supersampling_and_bgra_conversion() -> anyhow::Result<()> {
+    fn svg_single_frame_preserves_supersampling_and_straight_rgba() -> anyhow::Result<()> {
         let renderer = SvgRenderer::new(Arc::new(()));
         let rgba = renderer.render_single_frame(HALF_RED, 1.0, false)?;
-        let bgra = renderer.render_single_frame(HALF_RED, 1.0, true)?;
+        let legacy = renderer.render_single_frame(HALF_RED, 1.0, true)?;
         assert_eq!(rgba.frame_count(), 1);
         assert_eq!(rgba.size(0), Size::new(DevicePixels(8), DevicePixels(4)));
-        assert_eq!(bgra.size(0), rgba.size(0));
+        assert_eq!(legacy.size(0), rgba.size(0));
         assert_eq!(rgba.scale_factor, SMOOTH_SVG_SCALE_FACTOR);
         let rgba = rgba.as_bytes(0).context("SVG frame must contain pixels")?;
-        let bgra = bgra.as_bytes(0).context("SVG frame must contain pixels")?;
-        assert_eq!(rgba.len(), bgra.len());
-        for (rgba, bgra) in rgba.chunks_exact(4).zip(bgra.chunks_exact(4)) {
-            if rgba[3] == 0 {
-                assert_eq!(rgba, &[0, 0, 0, 0]);
-                assert_eq!(bgra, &[0, 0, 0, 0]);
+        let legacy = legacy
+            .as_bytes(0)
+            .context("SVG frame must contain pixels")?;
+        assert_eq!(rgba, legacy);
+        for pixel in rgba.chunks_exact(4) {
+            if pixel[3] == 0 {
+                assert_eq!(pixel, &[0, 0, 0, 0]);
             } else {
-                assert_eq!(rgba, &[128, 0, 0, 128]);
-                assert_eq!(&bgra[..2], &[0, 0]);
                 // Unpremultiplication passes through quantized 8-bit alpha.
-                assert!(bgra[2].abs_diff(255) <= 1);
-                assert_eq!(bgra[3], 128);
+                assert!(pixel[0].abs_diff(255) <= 1);
+                assert_eq!(&pixel[1..], &[0, 0, 128]);
             }
         }
         Ok(())
