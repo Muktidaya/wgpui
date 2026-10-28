@@ -16,6 +16,7 @@ pub use icon::{IconName, IconNamed};
 /// ## Usage
 ///
 /// ```rust,no_run
+/// # extern crate gpui as wgpui;
 /// use wgpui::*;
 /// use wgpui_kit_assets::Assets;
 ///
