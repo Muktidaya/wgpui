@@ -135,12 +135,12 @@ fn plot_macro_resolves_the_facade() {
     let _: UI::component::plot::PlotElement<PlotFixture> = PlotFixture.into_element();
 }
 """
-        (directory / "src/lib.rs").write_text(consumer_source.replace("UI", alias))
+        (directory / "src/lib.rs").write_text(consumer_source.replace("UI", alias), encoding="utf-8")
         (directory / "Cargo.toml").write_text(
             '[package]\nname = "kit-consumer-check"\nversion = "0.0.0"\nedition = "2024"\npublish = false\n'
             '[dependencies]\n' + alias + ' = { package = "wgpui-kit", path = '
             + json.dumps(str(root / 'crates/wgpui-kit'))
-            + ', default-features = ' + str(defaults).lower() + ', features = ["test-support"] }\n'
+            + ', default-features = ' + str(defaults).lower() + ', features = ["test-support"] }\n', encoding="utf-8"
         )
         shutil.copy2(root / "Cargo.lock", directory / "Cargo.lock")
         environment = dict(os.environ)
@@ -152,11 +152,11 @@ fn plot_macro_resolves_the_facade() {
     for alias in ["wgpui", "engine"]:
         directory = Path(temporary) / ("framework-" + alias)
         (directory / "src").mkdir(parents=True)
-        (directory / "src/lib.rs").write_text(framework_source.replace("FRAMEWORK", alias))
+        (directory / "src/lib.rs").write_text(framework_source.replace("FRAMEWORK", alias), encoding="utf-8")
         (directory / "Cargo.toml").write_text(
             '[package]\nname = "framework-consumer-check"\nversion = "0.0.0"\nedition = "2024"\npublish = false\n'
             '[dependencies]\n' + alias + ' = { package = "wgpui", path = '
-            + json.dumps(str(root)) + ', features = ["test-support"] }\n'
+            + json.dumps(str(root)) + ', features = ["test-support"] }\n', encoding="utf-8"
         )
         shutil.copy2(root / "Cargo.lock", directory / "Cargo.lock")
         environment = dict(os.environ)
