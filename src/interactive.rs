@@ -501,6 +501,36 @@ impl Deref for ScrollEvent {
     }
 }
 
+/// A pinch (magnification) gesture from a trackpad.
+#[derive(Clone, Debug, Default)]
+pub struct PinchEvent {
+    /// The last known pointer position, not the location of the gesture.
+    ///
+    /// The platform reports no position for a pinch. Neither a pinch nor a
+    /// two-finger scroll moves the cursor, so this may be arbitrarily stale:
+    /// magnifying about it will pull the view back to wherever the cursor was
+    /// last left.
+    pub position: Point<Pixels>,
+
+    /// The change in magnification since the last event, as a fraction:
+    /// `scale *= 1.0 + delta`.
+    pub delta: f32,
+
+    /// The modifiers that were held down during the gesture.
+    pub modifiers: Modifiers,
+
+    /// The phase of the touch event.
+    pub touch_phase: TouchPhase,
+}
+
+impl Sealed for PinchEvent {}
+impl InputEvent for PinchEvent {
+    fn to_platform_input(self) -> PlatformInput {
+        PlatformInput::Pinch(self)
+    }
+}
+impl MouseEvent for PinchEvent {}
+
 /// A mouse wheel event from the platform.
 #[derive(Clone, Debug, Default)]
 pub struct ScrollWheelEvent {
@@ -720,6 +750,9 @@ pub enum PlatformInput {
     LongPress(crate::LongPressEvent),
     /// A back-navigation gesture.
     BackGesture(crate::BackGestureEvent),
+
+    /// A pinch (magnification) gesture was performed on a trackpad.
+    Pinch(PinchEvent),
     /// Files were dragged and dropped onto the window.
     FileDrop(FileDropEvent),
 }
@@ -754,6 +787,7 @@ impl PlatformInput {
             PlatformInput::MouseMove(event) => Some(event),
             PlatformInput::MouseExited(event) => Some(event),
             PlatformInput::ScrollWheel(event) => Some(event),
+            PlatformInput::Pinch(event) => Some(event),
             PlatformInput::FileDrop(event) => Some(event),
             PlatformInput::Scroll(event) => Some(event),
             PlatformInput::Touch(_) => None,
@@ -773,6 +807,7 @@ impl PlatformInput {
             PlatformInput::MouseMove(_) => None,
             PlatformInput::MouseExited(_) => None,
             PlatformInput::ScrollWheel(_) => None,
+            PlatformInput::Pinch(_) => None,
             PlatformInput::FileDrop(_) => None,
             PlatformInput::Scroll(_)
             | PlatformInput::Touch(_)

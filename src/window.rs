@@ -4286,6 +4286,12 @@ impl Window {
                     source: crate::ScrollSource::Pointer,
                 })
             }
+            PlatformInput::Pinch(pinch) => {
+                // The position is the last known one rather than a new one, so
+                // it is deliberately not recorded as a mouse move.
+                self.modifiers = pinch.modifiers;
+                PlatformInput::Pinch(pinch)
+            }
             // Translate dragging and dropping of external files from the operating system
             // to internal drag and drop events.
             PlatformInput::FileDrop(file_drop) => match file_drop {
