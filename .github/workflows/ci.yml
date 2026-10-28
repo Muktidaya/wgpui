@@ -65,10 +65,38 @@ jobs:
         run: cargo test --locked -p wgpui --all-features --lib platform::macos_clipboard::tests -- --ignored --test-threads=1
       - run: cargo test --locked -p wgpui-kit --features test-support --lib --tests
       - run: cargo check --locked -p wgpui-kit --all-features
-      - run: python scripts/check-kit-consumers.py
       - name: Strict workspace lint
         if: runner.os == 'macOS'
         run: ./scripts/clippy --workspace
       - name: Performance runner contract
         if: runner.os == 'macOS'
         run: python scripts/check-perf.py
+
+  consumers:
+    needs: workspace
+    if: ${{ !cancelled() }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+        toolchain: ['1.95.0', stable]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
+      CARGO_BUILD_JOBS: '1'
+      RUST_TEST_THREADS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Linux native libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libpango1.0-dev libcairo2-dev libharfbuzz-dev fonts-dejavu-core fonts-noto-cjk fonts-noto-color-emoji libssl-dev libvulkan-dev libegl1 libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools libdbus-1-dev libasound2-dev pkg-config cmake lld
+      - name: Fetch locked consumer dependency sources
+        run: cargo fetch --locked
+      - name: Ordinary external macro consumers
+        run: python scripts/check-kit-consumers.py
