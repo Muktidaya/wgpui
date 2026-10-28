@@ -15,3 +15,5 @@
 [许可证](LICENSE-APACHE)。
 
 [English](README.md)
+
+捆绑的 IBM Plex Sans 字体文件及其画廊加载配置已移除。保留的网页画廊是未受支持的历史参考，其余字体资源仅描述该快照。

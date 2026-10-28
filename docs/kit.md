@@ -96,3 +96,5 @@ cargo +1.95.0 run -p wgpui-kit-hello-world
 ```
 
 The performance runner's protocol remains compatible with existing `util_macros::perf` tests; renaming the package does not rename its existing benchmark metadata protocol.
+
+The byte-index geometry API retains the scope documented by [upstream Kit v0.8.1](https://github.com/longbridge/gpui-kit/blob/v0.8.1/website/base/text-view.md). Full visual navigation with bidi caret affinity and both sides of soft-wrap boundaries remains future work. Base's existing RTL glyph-box range-selection helper and its regression coverage are preserved.

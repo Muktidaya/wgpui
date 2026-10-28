@@ -92,6 +92,15 @@
           harfbuzz
         ];
 
+        # Tests run before executable RPATH fixup, so direct runtime libraries must be discoverable.
+        linuxRuntimeLibs = linuxLibs ++ (with pkgs; [
+          fontconfig
+          freetype
+          glib
+          openssl
+          zlib
+        ]);
+
         linuxFonts = with pkgs; [
           liberation_ttf
           dejavu_fonts
@@ -146,7 +155,7 @@
             CARGO_PROFILE_TEST_LTO = "false";
             CARGO_PROFILE_TEST_DEBUG = "0";
           } // lib.optionalAttrs pkgs.stdenv.isLinux {
-            LD_LIBRARY_PATH = lib.makeLibraryPath linuxLibs;
+            LD_LIBRARY_PATH = lib.makeLibraryPath linuxRuntimeLibs;
             FONTCONFIG_FILE = linuxFontConfig;
           } // lib.optionalAttrs pkgs.stdenv.isDarwin {
             MACOSX_DEPLOYMENT_TARGET = "11.0";
@@ -189,7 +198,7 @@
             export RUST_BACKTRACE=1
             export RUST_SRC_PATH="${toolchain}/lib/rustlib/src/rust/library"
             ${lib.optionalString pkgs.stdenv.isLinux ''
-              export LD_LIBRARY_PATH="${lib.makeLibraryPath linuxLibs}:$LD_LIBRARY_PATH"
+              export LD_LIBRARY_PATH="${lib.makeLibraryPath linuxRuntimeLibs}:$LD_LIBRARY_PATH"
             ''}
           '';
         };

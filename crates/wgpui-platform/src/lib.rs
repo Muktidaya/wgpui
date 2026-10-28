@@ -12,6 +12,7 @@ pub fn application() -> Application {
 }
 
 /// Creates WGPUI's real offscreen renderer when an adapter is available.
+#[cfg(any(feature = "test-support", feature = "bench-support"))]
 pub use wgpui::current_headless_renderer;
 
 /// Platform services usable without constructing a native event loop.

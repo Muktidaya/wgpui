@@ -1006,6 +1006,90 @@ mod rendering {
         }
     }
 
+    struct DirectionalText {
+        mixed: bool,
+    }
+
+    impl Render for DirectionalText {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let (text, red_range, blue_range) = if self.mixed {
+                ("AאבB", 1..3, 3..5)
+            } else {
+                ("אבגד", 0..4, 4..8)
+            };
+            div()
+                .size_full()
+                .p(px(8.))
+                .bg(hsla(0., 0., 1., 1.))
+                .text_color(hsla(0., 0., 0., 1.))
+                .text_size(px(36.))
+                .child(wgpui_kit::StyledText::new(text).with_highlights([
+                    (
+                        red_range,
+                        wgpui_kit::HighlightStyle {
+                            color: Some(hsla(0., 1., 0.5, 1.)),
+                            ..Default::default()
+                        },
+                    ),
+                    (
+                        blue_range,
+                        wgpui_kit::HighlightStyle {
+                            color: Some(hsla(2. / 3., 1., 0.5, 1.)),
+                            ..Default::default()
+                        },
+                    ),
+                ]))
+        }
+    }
+
+    fn directional_text_keeps_logical_foreground_ranges(mixed: bool) {
+        let mut cx = context(Arc::new(Assets));
+        let (handle, _) = cx
+            .update(|cx| {
+                wgpui_kit::open_window(
+                    wgpui_kit::WindowOptions {
+                        window_bounds: Some(wgpui_kit::WindowBounds::Windowed(Bounds {
+                            origin: Default::default(),
+                            size: size(px(220.), px(80.)),
+                        })),
+                        focus: false,
+                        show: false,
+                        ..Default::default()
+                    },
+                    cx,
+                    |_, cx| cx.new(|_| DirectionalText { mixed }),
+                )
+            })
+            .expect("directional text window");
+        cx.update_window(handle, |_, window, cx| window.render_frame(cx))
+            .expect("directional text frame");
+        let image = cx
+            .capture_screenshot(handle)
+            .expect("directional text capture must use the real renderer");
+        let mut red_count = 0_u64;
+        let mut blue_count = 0_u64;
+        let mut red_x = 0_u64;
+        let mut blue_x = 0_u64;
+        for (x, _, pixel) in image.enumerate_pixels() {
+            if pixel[0] > 150 && pixel[1] < 100 && pixel[2] < 100 {
+                red_count += 1;
+                red_x += u64::from(x);
+            }
+            if pixel[2] > 150 && pixel[0] < 100 && pixel[1] < 100 {
+                blue_count += 1;
+                blue_x += u64::from(x);
+            }
+        }
+        assert!(
+            red_count > 8 && blue_count > 8,
+            "both logical text colors must be painted (mixed={mixed}, red={red_count}, blue={blue_count})"
+        );
+        assert!(
+            red_x as f64 / red_count as f64 > blue_x as f64 / blue_count as f64,
+            "the first logical Hebrew range must be visually right of the second (mixed={mixed})"
+        );
+    }
+
     pub fn run() {
         println!("running pixels_detect_missing_check_even_when_checked_state_is_correct");
         pixels_detect_missing_check_even_when_checked_state_is_correct();
@@ -1043,6 +1127,11 @@ mod rendering {
             table_shows_keyboard_focus_only(focus_ring);
             println!("passed table_shows_keyboard_focus_only (focus_ring = {focus_ring})");
         }
-        println!("rendering: 13 passed (real offscreen renderer)");
+        for mixed in [false, true] {
+            println!("running directional_text_keeps_logical_foreground_ranges (mixed={mixed})");
+            directional_text_keeps_logical_foreground_ranges(mixed);
+            println!("passed directional_text_keeps_logical_foreground_ranges (mixed={mixed})");
+        }
+        println!("rendering: 15 passed (real offscreen renderer)");
     }
 }

@@ -65,11 +65,6 @@ def main() -> None:
             FONTS / "NotoEmoji-Regular.ttf",
             text_file,
         )
-        subset(
-            FONTS / "IBMPlexSans-Regular.source.ttf",
-            FONTS / "IBMPlexSans-Regular.ttf",
-            text_file,
-        )
 
 
 if __name__ == "__main__":

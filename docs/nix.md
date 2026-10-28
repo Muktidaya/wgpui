@@ -36,6 +36,11 @@ tests. Font discovery uses only this declared closure; user font directories
 and host configuration files are excluded. Applications can still register
 their own font assets through WGPUI's text-system API.
 
+Linux checks and the development shell expose the native runtime libraries on
+the loader path, including Fontconfig, FreeType, GLib/GObject, OpenSSL and zlib. Tests execute
+before Nix fixes executable runtime search paths; having a library available
+to the compiler or pkg-config alone does not make it discoverable at that stage.
+
 To limit Nix-level build concurrency as well, use:
 
 ```sh

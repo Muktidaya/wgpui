@@ -110,6 +110,11 @@ pub trait Scheduler: Send + Sync {
     /// Returns the clock used by this scheduler.
     fn clock(&self) -> Arc<dyn Clock>;
 
+    /// Reports whether this scheduler uses deterministic test execution.
+    fn is_test(&self) -> bool {
+        false
+    }
+
     #[cfg(any(test, feature = "test-support"))]
     fn as_test(&self) -> Option<&TestScheduler> {
         None

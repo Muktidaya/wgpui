@@ -90,39 +90,41 @@ impl LineLayout {
             }
         }
 
-        if self.len == 1 {
-            if x > self.width / 2. {
-                return 1;
-            } else {
-                return 0;
-            }
+        if self.width - x < x - prev_x {
+            self.len
+        } else {
+            prev_index
         }
-
-        self.len
     }
 
     /// The x position of the character at the given index
     pub fn x_for_index(&self, index: usize) -> Pixels {
-        for run in &self.runs {
-            for glyph in &run.glyphs {
-                if glyph.index >= index {
-                    return glyph.position.x;
-                }
-            }
-        }
-        self.width
+        self.glyph_for_index(index)
+            .map_or(self.width, |(_, glyph)| glyph.position.x)
     }
 
     /// The corresponding Font at the given index
     pub fn font_id_for_index(&self, index: usize) -> Option<FontId> {
+        self.glyph_for_index(index).map(|(font_id, _)| font_id)
+    }
+
+    fn glyph_for_index(&self, index: usize) -> Option<(FontId, &ShapedGlyph)> {
+        // Native glyph order can be visual while byte indices remain logical.
+        let mut closest: Option<(FontId, &ShapedGlyph)> = None;
         for run in &self.runs {
             for glyph in &run.glyphs {
-                if glyph.index >= index {
-                    return Some(run.font_id);
+                if glyph.index < index {
+                    continue;
+                }
+                if glyph.index == index {
+                    return Some((run.font_id, glyph));
+                }
+                if closest.is_none_or(|(_, candidate)| glyph.index < candidate.index) {
+                    closest = Some((run.font_id, glyph));
                 }
             }
         }
-        None
+        closest
     }
 
     fn compute_wrap_boundaries(
@@ -670,5 +672,82 @@ impl<'a> Borrow<dyn AsCacheKeyRef + 'a> for Arc<CacheKey> {
 impl AsCacheKeyRef for CacheKeyRef<'_> {
     fn as_cache_key_ref(&self) -> CacheKeyRef<'_> {
         *self
+    }
+}
+
+#[cfg(test)]
+mod caret_regression_tests {
+    use super::*;
+
+    fn synthetic_layout(text: &str, indices: &[usize]) -> LineLayout {
+        LineLayout {
+            width: px(indices.len() as f32 * 10.),
+            runs: vec![ShapedRun {
+                font_id: FontId(0),
+                glyphs: indices
+                    .iter()
+                    .enumerate()
+                    .map(|(cell, &index)| ShapedGlyph {
+                        id: GlyphId(1),
+                        position: point(px(cell as f32 * 10.), px(0.)),
+                        index,
+                        is_emoji: false,
+                    })
+                    .collect(),
+            }],
+            len: text.len(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn nearest_caret_uses_the_single_cluster_midpoint_for_multibyte_text() {
+        for text in ["a", "é", "🙂"] {
+            let layout = synthetic_layout(text, &[0]);
+            for (x, expected) in [
+                (-1., 0),
+                (1., 0),
+                (4., 0),
+                (5., 0),
+                (6., text.len()),
+                (9., text.len()),
+                (11., text.len()),
+            ] {
+                assert_eq!(
+                    layout.closest_index_for_x(px(x)),
+                    expected,
+                    "nearest byte boundary for {text:?} at x={x}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn nearest_caret_compares_both_edges_of_the_final_cluster() {
+        let layout = synthetic_layout("abé", &[0, 1, 2]);
+        assert_eq!(layout.closest_index_for_x(px(21.)), 2);
+        assert_eq!(layout.closest_index_for_x(px(25.)), 2);
+        assert_eq!(layout.closest_index_for_x(px(26.)), 4);
+        assert_eq!(layout.closest_index_for_x(px(31.)), 4);
+    }
+    #[test]
+    fn logical_byte_anchors_and_fonts_do_not_depend_on_visual_glyph_order() {
+        let mut layout = synthetic_layout("אבג", &[4, 2, 0]);
+        layout.runs = std::mem::take(&mut layout.runs)
+            .into_iter()
+            .flat_map(|run| run.glyphs)
+            .enumerate()
+            .map(|(font, glyph)| ShapedRun {
+                font_id: FontId(font),
+                glyphs: vec![glyph],
+            })
+            .collect();
+
+        assert_eq!(layout.x_for_index(0), px(20.));
+        assert_eq!(layout.x_for_index(2), px(10.));
+        assert_eq!(layout.x_for_index(4), px(0.));
+        assert_eq!(layout.font_id_for_index(0), Some(FontId(2)));
+        assert_eq!(layout.font_id_for_index(2), Some(FontId(1)));
+        assert_eq!(layout.font_id_for_index(4), Some(FontId(0)));
     }
 }

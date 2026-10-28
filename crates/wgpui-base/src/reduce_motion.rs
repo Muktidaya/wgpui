@@ -80,8 +80,7 @@ fn is_test_scheduler(cx: &App) -> bool {
     cx.background_executor()
         .scheduler_executor()
         .scheduler()
-        .as_test()
-        .is_some()
+        .is_test()
 }
 
 /// Writes one reading of the system preference into the flag, unless the
@@ -239,6 +238,7 @@ mod tests {
     #[gpui::test]
     fn the_test_scheduler_is_never_asked_for_the_platform_preference(cx: &mut TestAppContext) {
         cx.update(|cx| {
+            assert!(super::is_test_scheduler(cx));
             apply_system_reduce_motion(cx);
             assert!(!cx.reduce_motion());
         });

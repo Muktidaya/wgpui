@@ -599,6 +599,7 @@ pub struct App {
     pub(crate) this: Weak<AppCell>,
     pub(crate) platform: Rc<dyn Platform>,
     pub(crate) mode: GpuiMode,
+    reduce_motion: bool,
     text_system: Arc<TextSystem>,
     flushing_effects: bool,
     pending_updates: usize,
@@ -678,6 +679,7 @@ impl App {
                 platform: platform.clone(),
                 text_system,
                 mode: GpuiMode::Production,
+                reduce_motion: false,
                 actions: Rc::new(ActionRegistry::default()),
                 flushing_effects: false,
                 pending_updates: 0,
@@ -1527,19 +1529,14 @@ impl App {
         &self.background_executor
     }
 
-    /// Whether the user prefers reduced motion. Stub: always `false` until platform wiring lands.
+    /// Returns the application's reduced-motion preference.
     pub fn reduce_motion(&self) -> bool {
-        #[cfg(any(test, feature = "test-support"))]
-        if let Some(value) = self.try_global::<TestReduceMotion>() {
-            return value.0;
-        }
-        false
+        self.reduce_motion
     }
 
-    #[cfg(any(test, feature = "test-support"))]
-    /// Overrides the motion preference for deterministic component tests.
+    /// Sets the motion preference used by animations and refreshes the windows.
     pub fn set_reduce_motion(&mut self, value: bool) {
-        self.set_global(TestReduceMotion(value));
+        self.reduce_motion = value;
         self.refresh_windows();
     }
 
@@ -2624,8 +2621,3 @@ mod test {
         assert_eq!(*observation_count.borrow(), 2);
     }
 }
-
-#[cfg(any(test, feature = "test-support"))]
-struct TestReduceMotion(bool);
-#[cfg(any(test, feature = "test-support"))]
-impl crate::Global for TestReduceMotion {}

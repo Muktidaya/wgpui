@@ -657,6 +657,10 @@ impl Scheduler for TestScheduler {
         self.clock.clone()
     }
 
+    fn is_test(&self) -> bool {
+        true
+    }
+
     fn as_test(&self) -> Option<&TestScheduler> {
         Some(self)
     }

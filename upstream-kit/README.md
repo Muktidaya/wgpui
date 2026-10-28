@@ -18,3 +18,5 @@ The retained [Design Guides](website/docs/design-guides.md),
 for understanding this historical source.
 
 [简体中文](README.zh-CN.md)
+
+The bundled IBM Plex Sans font assets and their gallery-loading recipe have been removed. The retained web gallery is an unsupported historical reference; its other font assets describe that snapshot.

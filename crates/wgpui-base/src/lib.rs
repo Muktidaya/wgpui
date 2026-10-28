@@ -253,5 +253,5 @@ pub fn init(cx: &mut App) {
     root::init(cx);
 }
 
-#[cfg(feature = "test-support")]
+#[cfg(any(test, feature = "test-support"))]
 pub mod test_support;
