@@ -10,7 +10,6 @@
         "accent.background": "#F1F5F9",
         "accent.foreground": "#0F172A",
         "accordion.background": "#FFFFFF",
-        "accordion.hover.background": "#F8FAFC",
         "background": "#FFFFFF",
         "border": "#E2E8F0",
         "button.background": "linear-gradient(180deg, #FFFFFF, #F8FAFC)",
@@ -47,8 +46,6 @@
         "chart.3": "#2563EB",
         "chart.4": "#1D4ED8",
         "chart.5": "#1E40AF",
-        "chart_bullish": "green-600",
-        "chart_bearish": "red-600",
         "danger.background": "linear-gradient(180deg, #EF4444, #DC2626)",
         "danger.active.background": "linear-gradient(180deg, #DC2626, #B91C1C)",
         "danger.foreground": "#FFFFFF",
@@ -124,7 +121,6 @@
         "table.foot.foreground": "#64748B",
         "table.hover.background": "#F1F5F9",
         "table.row.border": "#E2E8F0B3",
-        "tiles.background": "#F8FAFC",
         "title_bar.background": "linear-gradient(180deg, #FFFFFF, #F8FAFC)",
         "title_bar.border": "#E2E8F0",
         "status_bar.background": "linear-gradient(180deg, #F8FAFC, #F1F5F9)",
@@ -146,7 +142,9 @@
         "base.magenta": "purple-600",
         "base.magenta.light": "purple-400",
         "base.cyan": "cyan-600",
-        "base.cyan.light": "cyan-400"
+        "base.cyan.light": "cyan-400",
+        "chart.bullish": "green-600",
+        "chart.bearish": "red-600"
       },
       "highlight": {
         "editor.foreground": "#020617",

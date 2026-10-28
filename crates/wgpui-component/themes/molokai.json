@@ -12,7 +12,6 @@
         "accent.foreground": "#060606",
         "background": "#FEFAF9",
         "border": "#E4DEDA",
-        "window_border": "#d6d6d6",
         "ring": "#a0a0ab",
         "foreground": "#0a0a0a",
         "input.border": "#E4DEDA",
@@ -21,7 +20,6 @@
         "list.even.background": "#E4DEDA33",
         "muted.background": "#f1eded",
         "muted.foreground": "#767676",
-        "panel.background": "#FEFAF9",
         "popover.background": "#FEFAF9",
         "popover.foreground": "#0a0a0a",
         "primary.background": "#E14774",
@@ -39,7 +37,8 @@
         "base.blue": "#e16032",
         "base.blue.light": "#e16032",
         "base.magenta": "#7058be",
-        "base.cyan": "#0acc78"
+        "base.cyan": "#0acc78",
+        "window.border": "#d6d6d6"
       },
       "highlight": {
         "editor.foreground": "#0a0a0a",
@@ -156,7 +155,6 @@
         "list.even.background": "#292c2e",
         "muted.background": "#232526",
         "muted.foreground": "#5b5a54",
-        "panel.background": "#1b1d1e",
         "popover.background": "#1b1d1e",
         "popover.foreground": "#f8f8f2",
         "primary.background": "#dc1860",

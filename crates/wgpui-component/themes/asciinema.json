@@ -16,16 +16,12 @@
         "danger.hover.background": "#e94f7a",
         "foreground": "#cccccc",
         "input.border": "#3a3a3a",
-        "link.active.foreground": "#26b0d7",
-        "link.foreground": "#26b0d7",
-        "link.hover.foreground": "#3cc0e7",
         "list.active.background": "#1a1b1c",
         "list.active.border": "#cccccc",
         "list.even.background": "#1a1b1c",
         "list.head.background": "#121314",
         "muted.background": "#1a1b1c",
         "muted.foreground": "#6d6d6d",
-        "panel.background": "#181919",
         "primary.active.background": "#26b0d799",
         "primary.background": "#26b0d7",
         "primary.foreground": "#ffffff",
@@ -49,7 +45,10 @@
         "base.green": "#4ebf22",
         "base.magenta": "#b954e1",
         "base.red": "#dd3c69",
-        "base.yellow": "#ddaf3c"
+        "base.yellow": "#ddaf3c",
+        "link.active": "#26b0d7",
+        "link": "#26b0d7",
+        "link.hover": "#3cc0e7"
       },
       "highlight": {
         "editor.foreground": "#cccccc",

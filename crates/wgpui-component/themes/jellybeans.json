@@ -14,15 +14,11 @@
         "danger.foreground": "#151515",
         "foreground": "#E8E8D3",
         "input.border": "#4E4847",
-        "link.active.foreground": "#97bedc",
-        "link.foreground": "#97bedc",
-        "link.hover.foreground": "#97bedc",
         "list.active.background": "#97bedc15",
         "list.active.border": "#97bedc",
         "list.even.background": "#1C1C1C",
         "muted.background": "#242424",
         "muted.foreground": "#767676",
-        "panel.background": "#151515",
         "popover.background": "#151515",
         "popover.foreground": "#e8e8e8",
         "primary.background": "#97bedc",
@@ -51,7 +47,10 @@
         "base.magenta": "#B294BB",
         "base.magenta.light": "#fbdaff",
         "base.cyan": "#00988e",
-        "base.cyan.light": "#1ab2a8"
+        "base.cyan.light": "#1ab2a8",
+        "link.active": "#97bedc",
+        "link": "#97bedc",
+        "link.hover": "#97bedc"
       },
       "highlight": {
         "editor.foreground": "#DDDDDD",
