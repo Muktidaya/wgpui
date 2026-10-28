@@ -60,3 +60,14 @@ as relicensing separately identified icons, illustrations or theme material.
 The package-level representation of mixed contents remains a release review
 item. Archive/source integrity verification is separate from permission and
 notice review. This inventory does not declare blanket licensing acceptance.
+
+### Qualified SeaHash follow-up
+
+The source mirror `redox-unofficial-mirrors/seahash` adds a complete MIT text
+in commit `3088c5c912b70b586d27bf553fbe964e025a2c89`, immediately after the
+locked source revision `94b632aeac099031c373599313d5b5f0acbbaec0`. Its sole
+change is the license file; the text contains no copyright line. This supplies
+qualified mirrored-history evidence, rather than primary GitLab verification.
+A copyright notice from another Ticki project must not be substituted for a
+missing SeaHash notice. The pinned archive's missing text and primary-source
+verification question remain recorded separately.
