@@ -122,7 +122,7 @@ impl ResizeHandleState {
 ///
 /// A handle named no edge straddles the boundary it resizes, half its band on
 /// either side, which is what a divider between two panels of a group wants.
-/// A dock's own edge handle cannot: [`dock_frame`] clips to the dock's box, so
+/// A dock's own edge handle cannot: `dock_frame` clips to the dock's box, so
 /// the half hanging outside is cut away -- what it paints and what it
 /// hit-tests alike, which is why the outer half of a dock's grab band has
 /// never actually been grabbable. Naming the edge moves the whole band inside.
@@ -140,7 +140,6 @@ impl ResizeHandleState {
 /// drawn before this container. A renderer learns which edge it is drawing for
 /// from [`ResizeHandleContext::edge`].
 ///
-/// [`dock_frame`]: crate::dock::dock_area::dock_frame
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HandleEdge {
     /// Where the axis starts: the left edge of a horizontal handle's
