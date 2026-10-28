@@ -714,10 +714,14 @@ mod tests {
                 .write_to(&mut encoded, ImageFormat::Png)
                 .expect("the fixture encodes");
 
-            let frames = decode_frames(encoded.get_ref(), ImageFormat::Png)
-                .expect("the fixture decodes");
+            let frames =
+                decode_frames(encoded.get_ref(), ImageFormat::Png).expect("the fixture decodes");
             let decoded = frames[0].buffer();
-            let got = [decoded.as_raw()[0], decoded.as_raw()[1], decoded.as_raw()[2]];
+            let got = [
+                decoded.as_raw()[0],
+                decoded.as_raw()[1],
+                decoded.as_raw()[2],
+            ];
 
             assert_eq!(
                 got, rgb,

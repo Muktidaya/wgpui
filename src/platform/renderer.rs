@@ -1312,12 +1312,12 @@ pub struct WgpuRenderer {
     // Cache bind groups for each double-buffered surface texture generation.
     // Resizing preserves SurfaceId but replaces both texture views.
     surface_bind_groups:
-        Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64), SurfaceBinding>>,
+        Mutex<HashMap<(crate::platform::surface_registry::SurfaceId, u64, usize), SurfaceBinding>>,
     frame_capture_requests: FrameCaptureRequests,
     configure_pending: std::sync::atomic::AtomicBool,
 }
 
-/// A surface's own params buffer, and its bind groups for front index 0 and 1.
+// Each placement needs its own uniform: queued writes precede every draw in the submission.
 struct SurfaceBinding {
     params: wgpu::Buffer,
     bind_groups: [wgpu::BindGroup; 2],
@@ -1770,8 +1770,13 @@ impl WgpuRenderer {
     /// Configure the surface, keeping a failure for a retry rather than
     /// panicking on it. Returns whether it is configured.
     fn configure_surface(&self) -> bool {
-        let scope = self.context.device.push_error_scope(wgpu::ErrorFilter::Validation);
-        let Some(surface) = &self.surface else { return true; };
+        let scope = self
+            .context
+            .device
+            .push_error_scope(wgpu::ErrorFilter::Validation);
+        let Some(surface) = &self.surface else {
+            return true;
+        };
         surface.configure(&self.context.device, &self.surface_configuration);
         let error = pollster::block_on(scope.pop());
         if let Some(error) = &error {
@@ -1800,7 +1805,7 @@ impl WgpuRenderer {
         self.atlas.before_frame(&mut command_encoder);
 
         // Keep track of the exact texture generations rendered this frame.
-        let mut seen_surface_generations: Vec<(crate::platform::surface_registry::SurfaceId, u64)> =
+        let mut seen_surface_generations: Vec<(crate::platform::surface_registry::SurfaceId, u64, usize)> =
             Vec::new();
 
         let color_adjustments = ColorAdjustments {
@@ -2153,7 +2158,7 @@ impl WgpuRenderer {
                             let surface_bind_group = {
                                 let mut cache = self.surface_bind_groups.lock();
                                 let entry =
-                                    cache.entry((*surface_id, revision)).or_insert_with(|| {
+                                    cache.entry((*surface_id, revision, seen_surface_generations.len())).or_insert_with(|| {
                                         let params_buffer = self.context.device.create_buffer(
                                             &wgpu::BufferDescriptor {
                                                 label: Some("Surface Params Buffer"),
@@ -2202,7 +2207,10 @@ impl WgpuRenderer {
                                         };
                                         let bind_groups =
                                             [create_bg(&views[0]), create_bg(&views[1])];
-                                        SurfaceBinding { params: params_buffer, bind_groups }
+                                        SurfaceBinding {
+                                            params: params_buffer,
+                                            bind_groups,
+                                        }
                                     });
                                 self.context.queue.write_buffer(
                                     &entry.params,
@@ -2217,7 +2225,7 @@ impl WgpuRenderer {
                             pass.set_bind_group(1, &surface_bind_group, &[]);
                             pass.draw(0..4, 0..1);
 
-                            seen_surface_generations.push((*surface_id, revision));
+                            seen_surface_generations.push((*surface_id, revision, seen_surface_generations.len()));
                         }
                     }
                 }
@@ -2267,7 +2275,11 @@ impl WgpuRenderer {
                 request,
                 &self.context.device,
                 &mut command_encoder,
-                surface_texture.as_ref().map(|frame| &frame.texture).or(self.offscreen_texture.as_ref()).expect("a drawable target exists"),
+                surface_texture
+                    .as_ref()
+                    .map(|frame| &frame.texture)
+                    .or(self.offscreen_texture.as_ref())
+                    .expect("a drawable target exists"),
                 configuration.width,
                 configuration.height,
                 configuration.format,
@@ -2683,6 +2695,7 @@ mod offscreen_tests {
             );
         }
         Ok(())
+    }
 }
 
 #[cfg(test)]
