@@ -191,7 +191,7 @@
             doInstallCargoArtifacts = true;
             # This custom test=false target must run on real sources, never buildDepsOnly.
             postCheck = (commonArgs.postCheck or "") + lib.optionalString pkgs.stdenv.isLinux ''
-              cargo test --profile test --locked --all-features -p wgpui-kit --test rendering -- --test-threads=1
+              cargo test --profile test --locked --offline -p wgpui-kit --all-features --test rendering -- --test-threads=1
             '';
           }
         );
