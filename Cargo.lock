@@ -8490,6 +8490,7 @@ name = "wgpui-fps"
 version = "0.8.1"
 dependencies = [
  "libc",
+ "log",
  "objc2-core-foundation",
  "objc2-io-kit",
  "sysinfo",

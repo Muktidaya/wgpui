@@ -3,12 +3,13 @@
 //! that owns it, so this process' share falls out of the instance names. No
 //! driver SDK is involved, so it works the same on any vendor's adapter.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, ffi::c_void};
 
 use windows::{
     Win32::System::Performance::{
-        PDH_FMT_COUNTERVALUE_ITEM_W, PDH_FMT_DOUBLE, PDH_MORE_DATA, PdhAddEnglishCounterW,
-        PdhCloseQuery, PdhCollectQueryData, PdhGetFormattedCounterArrayW, PdhOpenQueryW,
+        PDH_FMT_COUNTERVALUE_ITEM_W, PDH_FMT_DOUBLE, PDH_HCOUNTER, PDH_HQUERY, PDH_MORE_DATA,
+        PdhAddEnglishCounterW, PdhCloseQuery, PdhCollectQueryData, PdhGetFormattedCounterArrayW,
+        PdhOpenQueryW,
     },
     core::w,
 };
@@ -42,8 +43,17 @@ pub(super) struct Probe {
 }
 
 impl Probe {
+    // The owned probe moves between sampling workers; retain its existing Send storage.
+    fn query_handle(&self) -> PDH_HQUERY {
+        PDH_HQUERY(self.query as *mut c_void)
+    }
+
+    fn counter_handle(&self) -> PDH_HCOUNTER {
+        PDH_HCOUNTER(self.counter as *mut c_void)
+    }
+
     pub(super) fn new() -> Option<Self> {
-        let mut query = 0;
+        let mut query = PDH_HQUERY::default();
         // SAFETY: both handles are live out parameters, and the counter path is
         // a static wide string.
         let opened = unsafe { PdhOpenQueryW(None, 0, &mut query) };
@@ -52,24 +62,25 @@ impl Probe {
         }
 
         let mut probe = Self {
-            query,
+            query: query.0 as isize,
             counter: 0,
             owner: format!("pid_{}_", std::process::id()),
             buffer: Vec::new(),
         };
         // SAFETY: the query was just opened, and is closed by `Drop` either way.
-        let added =
-            unsafe { PdhAddEnglishCounterW(probe.query, COUNTER_PATH, 0, &mut probe.counter) };
+        let mut counter = PDH_HCOUNTER::default();
+        let added = unsafe { PdhAddEnglishCounterW(query, COUNTER_PATH, 0, &mut counter) };
         if added != PDH_SUCCESS {
             return None;
         }
+        probe.counter = counter.0 as isize;
 
         // Utilization is a rate, so it is the difference between two
         // collections. This one is the baseline the first sample subtracts
         // from; without it that sample would read zero.
         //
         // SAFETY: the query is live.
-        if unsafe { PdhCollectQueryData(probe.query) } != PDH_SUCCESS {
+        if unsafe { PdhCollectQueryData(probe.query_handle()) } != PDH_SUCCESS {
             return None;
         }
         Some(probe)
@@ -81,7 +92,7 @@ impl Probe {
     /// process' engines are summed, since it can be on several at once.
     pub(super) fn sample(&mut self) -> Option<f32> {
         // SAFETY: the query is live until `Drop`.
-        if unsafe { PdhCollectQueryData(self.query) } != PDH_SUCCESS {
+        if unsafe { PdhCollectQueryData(self.query_handle()) } != PDH_SUCCESS {
             return None;
         }
 
@@ -110,7 +121,13 @@ impl Probe {
         // SAFETY: passing no buffer asks for the required size, which PDH
         // reports through `PDH_MORE_DATA`.
         let sized = unsafe {
-            PdhGetFormattedCounterArrayW(self.counter, PDH_FMT_DOUBLE, &mut bytes, &mut count, None)
+            PdhGetFormattedCounterArrayW(
+                self.counter_handle(),
+                PDH_FMT_DOUBLE,
+                &mut bytes,
+                &mut count,
+                None,
+            )
         };
         if sized != PDH_MORE_DATA || bytes == 0 {
             return None;
@@ -130,7 +147,7 @@ impl Probe {
         // can write both the array and the names that follow it.
         let read = unsafe {
             PdhGetFormattedCounterArrayW(
-                self.counter,
+                self.counter_handle(),
                 PDH_FMT_DOUBLE,
                 &mut bytes,
                 &mut count,
@@ -167,6 +184,9 @@ impl Drop for Probe {
     fn drop(&mut self) {
         // SAFETY: the query was opened in `new` and is closed exactly once.
         // Closing it also releases the counter added to it.
-        unsafe { PdhCloseQuery(self.query) };
+        let status = unsafe { PdhCloseQuery(self.query_handle()) };
+        if status != PDH_SUCCESS {
+            log::warn!("Could not close GPU performance query: PDH status 0x{status:08X}");
+        }
     }
 }

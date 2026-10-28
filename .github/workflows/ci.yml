@@ -45,7 +45,14 @@ jobs:
           components: clippy
       - name: Linux native libraries
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libpango1.0-dev libcairo2-dev libharfbuzz-dev fonts-dejavu-core fonts-noto-cjk fonts-noto-color-emoji libssl-dev libvulkan-dev libdbus-1-dev libasound2-dev pkg-config cmake lld
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libpango1.0-dev libcairo2-dev libharfbuzz-dev fonts-dejavu-core fonts-noto-cjk fonts-noto-color-emoji libssl-dev libvulkan-dev libegl1 libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools libdbus-1-dev libasound2-dev pkg-config cmake lld
+      - name: Linux Vulkan adapter preflight
+        if: runner.os == 'Linux'
+        run: |
+          runtime_directory="$(mktemp -d "$RUNNER_TEMP/wgpui-vulkan.XXXXXX")"
+          chmod 700 "$runtime_directory"
+          echo "XDG_RUNTIME_DIR=$runtime_directory" >> "$GITHUB_ENV"
+          XDG_RUNTIME_DIR="$runtime_directory" vulkaninfo --summary
       - run: cargo check --locked --workspace --all-targets
       - run: cargo test --locked --workspace --all-features --lib --tests
       - name: Real offscreen Kit rendering

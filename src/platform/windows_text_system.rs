@@ -1534,14 +1534,7 @@ mod rasterizer {
             }
             mapping.finish()?;
             ensure!(bytes.len() == length, "Mapped glyph bitmap is truncated");
-            for pixel in bytes.chunks_exact_mut(4) {
-                let alpha = u32::from(pixel[3]);
-                if alpha > 0 {
-                    for channel in pixel.iter_mut().take(3) {
-                        *channel = (u32::from(*channel) * 255 / alpha).min(255) as u8;
-                    }
-                }
-            }
+            crate::unpremultiply_bgra_to_rgba(&mut bytes);
             Ok((bounds.size, bytes))
         }
     }

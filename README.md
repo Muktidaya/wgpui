@@ -10,6 +10,8 @@ Programming-model notes: [docs/contexts.md](docs/contexts.md), [docs/key_dispatc
 
 This consolidated workspace also contains **[WGPUI Kit](docs/kit.md)**, an application façade and component library adapted from [GPUI Kit 0.8.1](https://github.com/longbridge/gpui-kit). See [STATUS.md](STATUS.md) for validation and release state.
 
+Headless Linux rendering tests require a Vulkan implementation as well as the loader. On Debian and Ubuntu, Mesa software rendering uses `mesa-vulkan-drivers`, with `libegl1` and `libgl1-mesa-dri` for the OpenGL fallback. Install `vulkan-tools` and run `vulkaninfo --summary` to verify adapter discovery before the real-renderer tests. A loader or development headers alone do not supply a software GPU implementation.
+
 ## Usage
 
 ```toml

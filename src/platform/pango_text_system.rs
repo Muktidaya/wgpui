@@ -3,7 +3,7 @@
 use crate::{
     Bounds, DevicePixels, Font, FontFeatures, FontId, FontMetrics, FontRun, FontStyle, GlyphId,
     LineLayout, Pixels, PlatformTextSystem, RenderGlyphParams, SUBPIXEL_VARIANTS_X, ShapedGlyph,
-    ShapedRun, Size, point, px, size, swap_rgba_pa_to_bgra,
+    ShapedRun, Size, point, px, size, unpremultiply_rgba,
 };
 use anyhow::{Context as _, Result, anyhow, ensure};
 use collections::HashMap;
@@ -629,19 +629,24 @@ impl State {
         }
         ensure!(bytes.len() == length, "Cairo glyph surface is truncated");
         if parameters.is_emoji {
-            for pixel in bytes.chunks_exact_mut(4) {
-                let native = u32::from_ne_bytes(pixel.try_into()?);
-                pixel.copy_from_slice(&[
-                    (native >> 16) as u8,
-                    (native >> 8) as u8,
-                    native as u8,
-                    (native >> 24) as u8,
-                ]);
-            }
-            swap_rgba_pa_to_bgra(&mut bytes);
+            normalize_cairo_color_pixels(&mut bytes)?;
         }
         Ok((bounds.size, bytes))
     }
+}
+
+fn normalize_cairo_color_pixels(bytes: &mut [u8]) -> Result<()> {
+    for pixel in bytes.chunks_exact_mut(4) {
+        let native = u32::from_ne_bytes(pixel.try_into()?);
+        pixel.copy_from_slice(&[
+            (native >> 16) as u8,
+            (native >> 8) as u8,
+            native as u8,
+            (native >> 24) as u8,
+        ]);
+    }
+    unpremultiply_rgba(bytes);
+    Ok(())
 }
 
 fn native_family(family: &str) -> &str {
@@ -1039,6 +1044,23 @@ mod tests {
             glyphs
                 .windows(2)
                 .all(|glyphs| glyphs[0].position.x <= glyphs[1].position.x)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn cairo_color_conversion_preserves_every_pixel_and_alpha() -> Result<()> {
+        let mut bytes = [0xfffb250d_u32, 0x801e140a, 0xff111de9, 0x00000000]
+            .into_iter()
+            .flat_map(u32::to_ne_bytes)
+            .collect::<Vec<_>>();
+        normalize_cairo_color_pixels(&mut bytes)?;
+        assert_eq!(
+            bytes,
+            [
+                251, 37, 13, 255, 59, 39, 19, 128, 17, 29, 233, 255, 0, 0, 0, 0,
+            ],
+            "Every native-endian Cairo pixel must become straight-alpha RGBA"
         );
         Ok(())
     }

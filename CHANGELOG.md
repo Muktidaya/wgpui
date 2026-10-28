@@ -9,6 +9,11 @@ published lines; their earlier release evidence does not validate this source.
 
 ### Compatibility
 
+- Processed image and color-glyph buffers use straight-alpha RGBA. Applications
+  that construct raw `RenderImage` frames must supply RGBA bytes. SVG decoding
+  returns this format through both image-loading entry points; native color
+  formats are converted at their platform boundary.
+
 - `SharedString` is immutable and dereferences directly to `str`; runtime
   borrowed strings become owned values. `Option<SharedString>::as_deref()`
   returns `Option<&str>`, and `new_static` retains a constant string.

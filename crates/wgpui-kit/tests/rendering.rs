@@ -1090,7 +1090,97 @@ mod rendering {
         );
     }
 
+    struct ColorSprite {
+        image: Arc<wgpui_kit::RenderImage>,
+    }
+
+    impl Render for ColorSprite {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let image = self.image.clone();
+            div().size_full().bg(hsla(0., 0., 1., 1.)).p(px(8.)).child(
+                wgpui_kit::canvas(
+                    move |_, _, _| image,
+                    |bounds, image, window, _| {
+                        window
+                            .paint_image(bounds, Default::default(), image, 0, false)
+                            .expect("synthetic color sprite");
+                    },
+                )
+                .w(px(144.))
+                .h(px(24.)),
+            )
+        }
+    }
+
+    fn polychrome_sprites_preserve_channel_order_and_alpha() {
+        for (format, bytes) in [
+            (wgpui_kit::ImageFormat::Png, vec![
+                137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 9, 0, 0, 0,
+                3, 8, 6, 0, 0, 0, 65, 10, 37, 118, 0, 0, 0, 26, 73, 68, 65, 84, 120, 156, 99, 248,
+                173, 202, 251, 31, 9, 55, 192, 48, 175, 234, 239, 255, 48, 204, 64, 53, 69, 0, 182,
+                110, 54, 46, 69, 122, 100, 15, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+            ]),
+            (wgpui_kit::ImageFormat::Svg, br##"<svg xmlns="http://www.w3.org/2000/svg" width="9" height="3"><rect width="3" height="3" fill="#fb250d"/><rect x="3" width="3" height="3" fill="#fb250d" fill-opacity="0.5019607843"/><rect x="6" width="3" height="3" fill="#0d25fb"/></svg>"##.to_vec()),
+        ] {
+            println!("running color sprite {format:?}");
+            let image = wgpui_kit::Image::from_bytes(format, bytes)
+                .to_image_data(wgpui_kit::SvgRenderer::new(Arc::new(Assets)))
+                .expect("synthetic red, translucent red, and blue image");
+            let mut cx = context(Arc::new(Assets));
+            let (handle, _) = cx
+                .update(|cx| {
+                    wgpui_kit::open_window(
+                        wgpui_kit::WindowOptions {
+                            window_bounds: Some(wgpui_kit::WindowBounds::Windowed(Bounds {
+                                origin: Default::default(),
+                                size: size(px(160.), px(40.)),
+                            })),
+                            focus: false,
+                            show: false,
+                            ..Default::default()
+                        },
+                        cx,
+                        |_, cx| cx.new(|_| ColorSprite { image }),
+                    )
+                })
+                .expect("color sprite window");
+            let scale_factor = cx
+                .update_window(handle, |_, window, cx| {
+                    window.render_frame(cx);
+                    window.scale_factor()
+                })
+                .expect("color sprite frame");
+            let image = cx
+                .capture_screenshot(handle)
+                .expect("sprite capture must use the real renderer");
+            assert_eq!(
+                image.dimensions(),
+                ((160. * scale_factor) as u32, (40. * scale_factor) as u32)
+            );
+            for (column, expected) in [
+                (32, [251_u8, 37, 13, 255]),
+                (80, [253_u8, 146, 134, 255]),
+                (128, [13_u8, 37, 251, 255]),
+            ] {
+                let device_column = (column as f32 * scale_factor) as u32;
+                let device_row = (20. * scale_factor) as u32;
+                let actual = image.get_pixel(device_column, device_row).0;
+                for (actual, expected) in actual.into_iter().zip(expected) {
+                    assert!(
+                        actual.abs_diff(expected) <= 2,
+                        "RGBA sprite must preserve channel order and straight alpha at x={column}: actual={:?}, expected={expected:?}",
+                        image.get_pixel(device_column, device_row).0
+                    );
+                }
+            }
+            println!("passed color sprite {format:?}");
+        }
+    }
+
     pub fn run() {
+        println!("running polychrome_sprites_preserve_channel_order_and_alpha");
+        polychrome_sprites_preserve_channel_order_and_alpha();
+        println!("passed polychrome_sprites_preserve_channel_order_and_alpha");
         println!("running pixels_detect_missing_check_even_when_checked_state_is_correct");
         pixels_detect_missing_check_even_when_checked_state_is_correct();
         println!("passed pixels_detect_missing_check_even_when_checked_state_is_correct");
@@ -1132,6 +1222,6 @@ mod rendering {
             directional_text_keeps_logical_foreground_ranges(mixed);
             println!("passed directional_text_keeps_logical_foreground_ranges (mixed={mixed})");
         }
-        println!("rendering: 15 passed (real offscreen renderer)");
+        println!("rendering: 17 passed (real offscreen renderer)");
     }
 }

@@ -261,9 +261,14 @@ fn main() {
     gpui_kit::application().with_assets(Assets).run(|cx| {
         gpui_kit::init(cx);
         cx.on_action(|_: &Quit, cx| cx.quit());
+        let (increment_binding, quit_binding) = if cx.platform_info().is_mac() {
+            ("cmd-i", "cmd-q")
+        } else {
+            ("ctrl-i", "ctrl-q")
+        };
         cx.bind_keys([
-            KeyBinding::new("secondary-i", Increment, None),
-            KeyBinding::new("secondary-q", Quit, None),
+            KeyBinding::new(increment_binding, Increment, None),
+            KeyBinding::new(quit_binding, Quit, None),
         ]);
         cx.set_menus(vec![Menu {
             name: "Acceptance".into(),

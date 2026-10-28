@@ -1,6 +1,6 @@
 [package]
 name = "wgpui-kit-hello-world"
-description = "A minimal example of application development with wgpui-component."
+description = "A minimal application using WGPUI Kit."
 version = "0.8.1"
 publish = false
 edition.workspace = true

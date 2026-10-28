@@ -5,7 +5,7 @@
 use crate::{
     Bounds, DevicePixels, Font, FontId, FontMetrics, FontRun, GlyphId, LineLayout, Pixels,
     PlatformTextSystem, RenderGlyphParams, SUBPIXEL_VARIANTS_X, ShapedGlyph, ShapedRun, Size,
-    point, px, size, swap_rgba_pa_to_bgra,
+    point, px, size, unpremultiply_rgba,
 };
 use anyhow::{Context as _, Result, anyhow, ensure};
 use collections::{HashMap, HashSet};
@@ -19,7 +19,7 @@ use core_foundation::{
     string::{CFString, CFStringCreateWithCharacters, CFStringRef},
 };
 use core_graphics::{
-    base::{CGGlyph, kCGImageAlphaPremultipliedLast},
+    base::{CGGlyph, kCGBitmapByteOrder32Big, kCGImageAlphaPremultipliedLast},
     color_space::CGColorSpace,
     context::{CGContext, CGTextDrawingMode},
     geometry::{CGAffineTransform, CGPoint, CGSize},
@@ -620,15 +620,17 @@ impl PlatformTextSystem for CoreTextSystem {
             "Invalid glyph raster size"
         );
         let state = self.0.read();
+        // Bitmap strike metrics must use the same point-sized font as rasterization.
         let font = state
             .font(params.font_id)?
-            .clone_with_font_size(f64::from(params.font_size.0 * params.scale_factor));
+            .clone_with_font_size(f64::from(params.font_size.0));
         let glyph = CGGlyph::try_from(params.glyph_id.0)?;
         let bounds = font.get_bounding_rects_for_glyphs(0, &[glyph]);
-        let left = bounds.origin.x.floor() - 1.0;
-        let top = (-(bounds.origin.y + bounds.size.height)).floor() - 1.0;
-        let right = (bounds.origin.x + bounds.size.width).ceil() + 1.0;
-        let bottom = (-bounds.origin.y).ceil() + 1.0;
+        let scale_factor = f64::from(params.scale_factor);
+        let left = (bounds.origin.x * scale_factor).floor() - 1.0;
+        let top = (-(bounds.origin.y + bounds.size.height) * scale_factor).floor() - 1.0;
+        let right = ((bounds.origin.x + bounds.size.width) * scale_factor).ceil() + 1.0;
+        let bottom = (-bounds.origin.y * scale_factor).ceil() + 1.0;
         ensure!(
             [left, top, right, bottom]
                 .into_iter()
@@ -685,7 +687,7 @@ impl PlatformTextSystem for CoreTextSystem {
                 stride,
                 &color_space,
                 if params.is_emoji {
-                    kCGImageAlphaPremultipliedLast
+                    kCGBitmapByteOrder32Big | kCGImageAlphaPremultipliedLast
                 } else {
                     7
                 },
@@ -717,9 +719,7 @@ impl PlatformTextSystem for CoreTextSystem {
             );
         }
         if params.is_emoji {
-            for pixel in bytes.chunks_exact_mut(4) {
-                swap_rgba_pa_to_bgra(pixel);
-            }
+            unpremultiply_rgba(&mut bytes);
         }
         Ok((bounds.size, bytes))
     }
@@ -991,6 +991,110 @@ mod tests {
                 .chunks_exact(4)
                 .any(|pixel| pixel[3] > 0 && pixel[..3].iter().any(|channel| *channel > 0))
         );
+        Ok(())
+    }
+
+    #[test]
+    fn native_color_emoji_bounds_contain_the_complete_ink() -> Result<()> {
+        let system = CoreTextSystem::new();
+        let ui_font = system.font_id(&font(".SystemUIFont"))?;
+        let text = "🙂";
+        let mut issues = Vec::new();
+        for font_size in [12.0, 16.0, 24.0, 32.0] {
+            let line = system.0.write().shape(
+                text,
+                px(font_size),
+                &[FontRun {
+                    len: text.len(),
+                    font_id: ui_font,
+                }],
+            )?;
+            let (font_id, glyph_id) = line
+                .runs
+                .iter()
+                .find_map(|run| {
+                    run.glyphs
+                        .iter()
+                        .find(|glyph| glyph.is_emoji)
+                        .map(|glyph| (run.font_id, glyph.id))
+                })
+                .context("Native color emoji fallback is missing")?;
+            for scale_factor in [1.0, 1.25, 1.5, 2.0] {
+                let parameters = RenderGlyphParams {
+                    font_id,
+                    glyph_id,
+                    font_size: px(font_size),
+                    subpixel_variant: point(0, 0),
+                    scale_factor,
+                    is_emoji: true,
+                };
+                let bounds = system.glyph_raster_bounds(&parameters)?;
+                let padding = 64_i32;
+                let reference_bounds = Bounds::new(
+                    point(
+                        DevicePixels(bounds.origin.x.0 - padding),
+                        DevicePixels(bounds.origin.y.0 - padding),
+                    ),
+                    size(
+                        DevicePixels(bounds.size.width.0 + padding * 2),
+                        DevicePixels(bounds.size.height.0 + padding * 2),
+                    ),
+                );
+                let (_, actual) = system.rasterize_glyph(&parameters, bounds)?;
+                let (_, reference) = system.rasterize_glyph(&parameters, reference_bounds)?;
+                let reference_width = usize::try_from(reference_bounds.size.width.0)?;
+                let reference_height = usize::try_from(reference_bounds.size.height.0)?;
+                let mut ink_left = reference_width;
+                let mut ink_top = reference_height;
+                let mut ink_right = 0_usize;
+                let mut ink_bottom = 0_usize;
+                for (position, pixel) in reference.chunks_exact(4).enumerate() {
+                    if pixel[3] > 0 {
+                        let column = position % reference_width;
+                        let row = position / reference_width;
+                        ink_left = ink_left.min(column);
+                        ink_top = ink_top.min(row);
+                        ink_right = ink_right.max(column + 1);
+                        ink_bottom = ink_bottom.max(row + 1);
+                    }
+                }
+                ensure!(
+                    ink_left > 0
+                        && ink_top > 0
+                        && ink_right > ink_left
+                        && ink_right < reference_width
+                        && ink_bottom > ink_top
+                        && ink_bottom < reference_height,
+                    "Oversized native reference must contain all emoji ink"
+                );
+                let padding = usize::try_from(padding)?;
+                let width = usize::try_from(bounds.size.width.0)?;
+                let height = usize::try_from(bounds.size.height.0)?;
+                if ink_left < padding
+                    || ink_top < padding
+                    || ink_right > padding + width
+                    || ink_bottom > padding + height
+                {
+                    issues.push(format!(
+                        "size={font_size} scale={scale_factor} bounds={bounds:?} reference ink=({ink_left},{ink_top})..({ink_right},{ink_bottom}) padding={padding}"
+                    ));
+                }
+                let mut placed = vec![0_u8; reference.len()];
+                for (row, pixels) in actual.chunks_exact(width * 4).enumerate() {
+                    let start = ((row + padding) * reference_width + padding) * 4;
+                    placed
+                        .get_mut(start..start + pixels.len())
+                        .context("Emoji raster exceeds the reference canvas")?
+                        .copy_from_slice(pixels);
+                }
+                if placed != reference {
+                    issues.push(format!(
+                        "size={font_size} scale={scale_factor}: nominal raster differs from the unclipped native reference"
+                    ));
+                }
+            }
+        }
+        assert!(issues.is_empty(), "Native emoji clipping: {issues:#?}");
         Ok(())
     }
 

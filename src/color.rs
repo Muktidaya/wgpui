@@ -22,15 +22,27 @@ pub fn rgba(hex: u32) -> Rgba {
     Rgba { r, g, b, a }
 }
 
-/// Swap from RGBA with premultiplied alpha to BGRA
-pub(crate) fn swap_rgba_pa_to_bgra(color: &mut [u8]) {
-    color.swap(0, 2);
-    if color[3] > 0 {
-        let a = color[3] as f32 / 255.;
-        color[0] = (color[0] as f32 / a) as u8;
-        color[1] = (color[1] as f32 / a) as u8;
-        color[2] = (color[2] as f32 / a) as u8;
+/// Convert every premultiplied RGBA pixel to straight-alpha RGBA.
+pub(crate) fn unpremultiply_rgba(bytes: &mut [u8]) {
+    for pixel in bytes.chunks_exact_mut(4) {
+        let alpha = u32::from(pixel[3]);
+        if alpha > 0 {
+            for channel in pixel.iter_mut().take(3) {
+                *channel = (u32::from(*channel) * 255 / alpha).min(255) as u8;
+            }
+        } else {
+            pixel[..3].fill(0);
+        }
     }
+}
+
+/// Convert native Direct2D premultiplied BGRA pixels to straight-alpha RGBA.
+#[cfg(any(target_os = "windows", test))]
+pub(crate) fn unpremultiply_bgra_to_rgba(bytes: &mut [u8]) {
+    for pixel in bytes.chunks_exact_mut(4) {
+        pixel.swap(0, 2);
+    }
+    unpremultiply_rgba(bytes);
 }
 
 /// An RGBA color
@@ -866,6 +878,23 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn premultiplied_buffers_preserve_every_color_and_alpha() {
+        let expected = [
+            251, 37, 13, 255, 59, 39, 19, 128, 17, 29, 233, 255, 0, 0, 0, 0,
+        ];
+        let mut rgba = [
+            251, 37, 13, 255, 30, 20, 10, 128, 17, 29, 233, 255, 7, 8, 9, 0,
+        ];
+        unpremultiply_rgba(&mut rgba);
+        assert_eq!(rgba, expected);
+        let mut bgra = [
+            13, 37, 251, 255, 10, 20, 30, 128, 233, 29, 17, 255, 9, 8, 7, 0,
+        ];
+        unpremultiply_bgra_to_rgba(&mut bgra);
+        assert_eq!(bgra, expected);
+    }
 
     #[test]
     fn test_deserialize_three_value_hex_to_rgba() {

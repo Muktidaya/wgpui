@@ -2039,12 +2039,7 @@ impl Image {
             bytes: &[u8],
             format: image::ImageFormat,
         ) -> Result<SmallVec<[Frame; 1]>> {
-            let mut data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
-
-            // Convert from RGBA to BGRA.
-            for pixel in data.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-            }
+            let data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
 
             Ok(SmallVec::from_elem(Frame::new(data), 1))
         }
@@ -2055,11 +2050,7 @@ impl Image {
                 let mut frames = SmallVec::new();
 
                 for frame in decoder.into_frames() {
-                    let mut frame = frame?;
-                    // Convert from RGBA to BGRA.
-                    for pixel in frame.buffer_mut().chunks_exact_mut(4) {
-                        pixel.swap(0, 2);
-                    }
+                    let frame = frame?;
                     frames.push(frame);
                 }
 
@@ -2375,5 +2366,48 @@ mod ime_protocol_tests {
         assert_eq!(byte_offset_to_utf16("a😀éz", 2), 1);
         assert_eq!(byte_offset_to_utf16("a😀éz", 6), 3);
         assert_eq!(byte_offset_to_utf16("a😀éz", usize::MAX), 5);
+    }
+}
+
+#[cfg(test)]
+mod color_image_tests {
+    use super::{Image, ImageFormat};
+    use crate::SvgRenderer;
+    use std::sync::Arc;
+
+    #[test]
+    fn svg_image_buffers_match_resource_rgba_encoding() -> crate::Result<()> {
+        let bytes = br##"<svg xmlns="http://www.w3.org/2000/svg" width="9" height="3"><rect width="3" height="3" fill="#fb250d"/><rect x="3" width="3" height="3" fill="#fb250d" fill-opacity="0.5019607843"/><rect x="6" width="3" height="3" fill="#0d25fb"/></svg>"##;
+        let renderer = SvgRenderer::new(Arc::new(()));
+        let resource = renderer.render_single_frame(bytes, 1.0, true)?;
+        let image = Image::from_bytes(ImageFormat::Svg, bytes.to_vec()).to_image_data(renderer)?;
+        assert_eq!(image.frame_count(), resource.frame_count());
+        assert_eq!(image.size(0), resource.size(0));
+        assert_eq!(image.scale_factor, resource.scale_factor);
+        assert_eq!(
+            image.as_bytes(0),
+            resource.as_bytes(0),
+            "Both public SVG decoding paths must produce the same straight-alpha RGBA pixels"
+        );
+        let width = usize::try_from(image.size(0).width.0)?;
+        let row = usize::try_from(image.size(0).height.0)? / 2;
+        for (column, expected) in [
+            (width / 6, [251_u8, 37, 13, 255]),
+            (width / 2, [251_u8, 37, 13, 128]),
+            (width * 5 / 6, [13_u8, 37, 251, 255]),
+        ] {
+            let offset = (row * width + column) * 4;
+            let actual = image
+                .as_bytes(0)
+                .and_then(|bytes| bytes.get(offset..offset + 4))
+                .ok_or_else(|| anyhow::anyhow!("SVG buffer is shorter than its declared size"))?;
+            for (actual, expected) in actual.iter().copied().zip(expected) {
+                assert!(
+                    actual.abs_diff(expected) <= 1,
+                    "SVG buffers must expose straight-alpha RGBA: {actual} versus {expected}"
+                );
+            }
+        }
+        Ok(())
     }
 }

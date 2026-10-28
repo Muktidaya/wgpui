@@ -1,6 +1,5 @@
 use crate::{
-    AssetSource, DevicePixels, IsZero, RenderImage, Result, SharedString, Size,
-    swap_rgba_pa_to_bgra,
+    AssetSource, DevicePixels, IsZero, RenderImage, Result, SharedString, Size, unpremultiply_rgba,
 };
 use image::Frame;
 use resvg::tiny_skia::Pixmap;
@@ -62,12 +61,15 @@ impl SvgRenderer {
         }
     }
 
-    /// Renders the given bytes into an image buffer.
+    /// Renders the given bytes into a straight-alpha RGBA image buffer.
+    ///
+    /// The final argument is retained for source compatibility. Both values now
+    /// produce the RGBA format required by every processed image and color glyph.
     pub fn render_single_frame(
         &self,
         bytes: &[u8],
         scale_factor: f32,
-        to_brga: bool,
+        _legacy_bgra: bool,
     ) -> Result<Arc<RenderImage>, usvg::Error> {
         self.render_pixmap(
             bytes,
@@ -78,11 +80,7 @@ impl SvgRenderer {
                 image::ImageBuffer::from_raw(pixmap.width(), pixmap.height(), pixmap.take())
                     .unwrap();
 
-            if to_brga {
-                for pixel in buffer.chunks_exact_mut(4) {
-                    swap_rgba_pa_to_bgra(pixel);
-                }
-            }
+            unpremultiply_rgba(&mut buffer);
 
             let mut image = RenderImage::new(SmallVec::from_const([Frame::new(buffer)]));
             image.scale_factor = SMOOTH_SVG_SCALE_FACTOR;

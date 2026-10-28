@@ -1,6 +1,6 @@
 [package]
 name = "wgpui-kit-harness"
-description = "Native integration harness for wgpui-component (hello_world + core widgets)."
+description = "Native integration and desktop acceptance harness for WGPUI Kit."
 version = "0.1.0"
 publish = false
 edition.workspace = true
