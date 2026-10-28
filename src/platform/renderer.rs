@@ -2761,6 +2761,111 @@ mod offscreen_tests {
 
     #[test]
     #[ignore = "requires a usable WGPU adapter"]
+    fn optional_gpu_capabilities_support_texture_creation_and_timestamp_readback()
+    -> anyhow::Result<()> {
+        let renderer = WgpuRenderer::new_headless()?;
+        let device = &renderer.context.device;
+        let offered = renderer.context.adapter.features();
+        for feature in [
+            wgpu::Features::TEXTURE_FORMAT_16BIT_NORM,
+            wgpu::Features::FLOAT32_FILTERABLE,
+            wgpu::Features::TIMESTAMP_QUERY,
+        ] {
+            assert_eq!(
+                device.features().contains(feature),
+                offered.contains(feature)
+            );
+        }
+        if device
+            .features()
+            .contains(wgpu::Features::TEXTURE_FORMAT_16BIT_NORM)
+        {
+            let _texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("normalized sixteen bit contract"),
+                size: wgpu::Extent3d {
+                    width: 4,
+                    height: 4,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+        }
+        if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
+            let query = device.create_query_set(&wgpu::QuerySetDescriptor {
+                label: None,
+                ty: wgpu::QueryType::Timestamp,
+                count: 2,
+            });
+            let resolved = device.create_buffer(&wgpu::BufferDescriptor {
+                label: None,
+                size: 16,
+                usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
+            let readback = device.create_buffer(&wgpu::BufferDescriptor {
+                label: None,
+                size: 16,
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let target = renderer
+                .offscreen_texture
+                .as_ref()
+                .expect("headless target")
+                .create_view(&Default::default());
+            let mut encoder = device.create_command_encoder(&Default::default());
+            {
+                let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &target,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    timestamp_writes: Some(wgpu::RenderPassTimestampWrites {
+                        query_set: &query,
+                        beginning_of_pass_write_index: Some(0),
+                        end_of_pass_write_index: Some(1),
+                    }),
+                    ..Default::default()
+                });
+            }
+            encoder.resolve_query_set(&query, 0..2, &resolved, 0);
+            encoder.copy_buffer_to_buffer(&resolved, 0, &readback, 0, 16);
+            let submission = renderer.context.queue.submit([encoder.finish()]);
+            let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+            readback
+                .slice(..)
+                .map_async(wgpu::MapMode::Read, move |result| {
+                    if sender.send(result).is_err() {
+                        log::debug!("timestamp test receiver was dropped");
+                    }
+                });
+            device.poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(std::time::Duration::from_secs(5)),
+            })?;
+            receiver.recv_timeout(std::time::Duration::from_secs(5))??;
+            let bytes = readback.slice(..).get_mapped_range()?;
+            let start = u64::from_ne_bytes(bytes[..8].try_into()?);
+            let end = u64::from_ne_bytes(bytes[8..].try_into()?);
+            assert!(end >= start);
+            drop(bytes);
+            readback.unmap();
+        }
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "requires a usable WGPU adapter"]
     fn separated_path_batches_keep_their_geometry() -> anyhow::Result<()> {
         let mut renderer = WgpuRenderer::new_headless()?;
         let mut scene = Scene::default();

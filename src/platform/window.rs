@@ -98,6 +98,11 @@ impl CrossWindow {
     }
 
     pub(crate) fn configure_retry_deadline(&self) -> Option<std::time::Instant> {
+        let size = self.0.winit_window.get()?.inner_size();
+        // A minimized window cannot configure or draw; its resize event resumes recovery.
+        if size.width == 0 || size.height == 0 {
+            return None;
+        }
         self.0
             .renderer
             .get()
