@@ -40,9 +40,9 @@ impl AssetSource for Assets {
     }
 }
 
-const ARROW_CIRCLE_SVG: &str = concat!(
+const CIRCLE_ARROW_SVG: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/examples/legacy/image/arrow_circle.svg"
+    "/examples/legacy/image/circle-arrow-demo.svg"
 );
 
 struct AnimationExample;
@@ -117,7 +117,7 @@ fn rotation_example(colors: &Colors) -> impl IntoElement {
                 svg()
                     .size_16()
                     .overflow_hidden()
-                    .path(ARROW_CIRCLE_SVG)
+                    .path(CIRCLE_ARROW_SVG)
                     .text_color(accent)
                     .with_animation(
                         "rotation",
@@ -151,7 +151,7 @@ fn bounce_example(colors: &Colors) -> impl IntoElement {
                 svg()
                     .size_16()
                     .overflow_hidden()
-                    .path(ARROW_CIRCLE_SVG)
+                    .path(CIRCLE_ARROW_SVG)
                     .text_color(success)
                     .with_animation(
                         "bounce_rotation",
@@ -185,7 +185,7 @@ fn scale_example(colors: &Colors) -> impl IntoElement {
                 svg()
                     .size_16()
                     .overflow_hidden()
-                    .path(ARROW_CIRCLE_SVG)
+                    .path(CIRCLE_ARROW_SVG)
                     .text_color(warning)
                     .with_animation(
                         "scale",
@@ -220,7 +220,7 @@ fn combined_example(colors: &Colors) -> impl IntoElement {
                 svg()
                     .size_16()
                     .overflow_hidden()
-                    .path(ARROW_CIRCLE_SVG)
+                    .path(CIRCLE_ARROW_SVG)
                     .text_color(error)
                     .with_animation(
                         "combined",
