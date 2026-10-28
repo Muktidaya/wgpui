@@ -2045,7 +2045,6 @@ impl Image {
             format: image::ImageFormat,
         ) -> Result<SmallVec<[Frame; 1]>> {
             let data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
-
             Ok(SmallVec::from_elem(Frame::new(data), 1))
         }
 
@@ -2055,8 +2054,7 @@ impl Image {
                 let mut frames = SmallVec::new();
 
                 for frame in decoder.into_frames() {
-                    let frame = frame?;
-                    frames.push(frame);
+                    frames.push(frame?);
                 }
 
                 frames
