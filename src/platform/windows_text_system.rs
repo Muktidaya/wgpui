@@ -989,7 +989,12 @@ impl IDWriteTextRenderer_Impl for TextRenderer_Impl {
                         px(y - context.baseline - offset.ascenderOffset),
                     ),
                     index: index_in_text,
-                    is_emoji: native_color_glyph(&face, *glyph)?,
+                    is_emoji: rasterizer::native_color_glyph(
+                        &context.state.factory,
+                        &face,
+                        *glyph,
+                        run.fontEmSize,
+                    )?,
                 });
             }
             context.runs.push(ShapedRun {
@@ -1046,21 +1051,6 @@ unsafe fn native_slice<'a, T>(pointer: *const T, length: usize) -> Result<&'a [T
     );
     Ok(unsafe { std::slice::from_raw_parts(pointer, length) })
 }
-fn native_color_glyph(face: &IDWriteFontFace3, glyph: u16) -> Result<bool> {
-    if !unsafe { face.IsColorFont() }.as_bool() {
-        return Ok(false);
-    }
-    let face: IDWriteFontFace4 = face.cast()?;
-    let formats = unsafe { face.GetGlyphImageFormats(glyph, 1, u32::MAX) }?;
-    let colored = DWRITE_GLYPH_IMAGE_FORMATS_COLR
-        | DWRITE_GLYPH_IMAGE_FORMATS_SVG
-        | DWRITE_GLYPH_IMAGE_FORMATS_PNG
-        | DWRITE_GLYPH_IMAGE_FORMATS_JPEG
-        | DWRITE_GLYPH_IMAGE_FORMATS_TIFF
-        | DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8
-        | DWRITE_GLYPH_IMAGE_FORMATS_COLR_PAINT_TREE;
-    Ok((formats & colored).0 != 0)
-}
 
 mod rasterizer {
     // SPDX-License-Identifier: Apache-2.0
@@ -1086,11 +1076,81 @@ mod rasterizer {
     };
     use windows_numerics::{Matrix3x2, Vector2};
 
+    const COLOR_GLYPH_FORMATS: DWRITE_GLYPH_IMAGE_FORMATS = DWRITE_GLYPH_IMAGE_FORMATS(
+        DWRITE_GLYPH_IMAGE_FORMATS_COLR.0
+            | DWRITE_GLYPH_IMAGE_FORMATS_SVG.0
+            | DWRITE_GLYPH_IMAGE_FORMATS_PNG.0
+            | DWRITE_GLYPH_IMAGE_FORMATS_JPEG.0
+            | DWRITE_GLYPH_IMAGE_FORMATS_TIFF.0
+            | DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8.0,
+    );
+
     struct GlyphRun(DWRITE_GLYPH_RUN);
     impl Drop for GlyphRun {
         fn drop(&mut self) {
             unsafe { ManuallyDrop::drop(&mut self.0.fontFace) };
         }
+    }
+
+    fn with_native_glyph_run<T>(
+        face: &IDWriteFontFace3,
+        glyph: u16,
+        font_em_size: f32,
+        callback: impl FnOnce(&DWRITE_GLYPH_RUN) -> Result<T>,
+    ) -> Result<T> {
+        ensure!(
+            font_em_size.is_finite() && font_em_size > 0.0,
+            "Invalid DirectWrite glyph size"
+        );
+        let glyphs = [glyph];
+        let advances = [0.0];
+        let offsets = [DWRITE_GLYPH_OFFSET::default()];
+        let run = GlyphRun(DWRITE_GLYPH_RUN {
+            fontFace: ManuallyDrop::new(Some(face.cast()?)),
+            fontEmSize: font_em_size,
+            glyphCount: 1,
+            glyphIndices: glyphs.as_ptr(),
+            glyphAdvances: advances.as_ptr(),
+            glyphOffsets: offsets.as_ptr(),
+            isSideways: false.into(),
+            bidiLevel: 0,
+        });
+        callback(&run.0)
+    }
+
+    pub(super) fn native_color_glyph(
+        factory: &IDWriteFactory5,
+        face: &IDWriteFontFace3,
+        glyph: u16,
+        font_em_size: f32,
+    ) -> Result<bool> {
+        with_native_glyph_run(face, glyph, font_em_size, |run| {
+            let factory: IDWriteFactory4 = factory.cast()?;
+            // Image-format metadata can omit color glyphs that DirectWrite can translate.
+            match unsafe {
+                factory.TranslateColorGlyphRun(
+                    Vector2::default(),
+                    run,
+                    None,
+                    COLOR_GLYPH_FORMATS,
+                    DWRITE_MEASURING_MODE_NATURAL,
+                    None,
+                    0,
+                )
+            } {
+                Ok(colors) => Ok(unsafe { colors.MoveNext() }
+                    .context("Reading native glyph color layers")?
+                    .as_bool()),
+                Err(error) if error.code() == DWRITE_E_NOCOLOR => {
+                    // Paint trees use newer rendering APIs; retain their existing positive recognition.
+                    let face: IDWriteFontFace4 = face.cast()?;
+                    let formats = unsafe { face.GetGlyphImageFormats(glyph, 1, u32::MAX) }
+                        .context("Reading native glyph paint-tree formats")?;
+                    Ok((formats & DWRITE_GLYPH_IMAGE_FORMATS_COLR_PAINT_TREE).0 != 0)
+                }
+                Err(error) => Err(error).context("Translating native glyph color layers"),
+            }
+        })
     }
 
     fn with_glyph_run<T>(
@@ -1110,26 +1170,15 @@ mod rasterizer {
             pixels.is_finite() && pixels > 0.0,
             "DirectWrite raster size overflow"
         );
-        let glyphs = [u16::try_from(parameters.glyph_id.0)?];
-        let advances = [0.0];
-        let offsets = [DWRITE_GLYPH_OFFSET::default()];
-        let run = GlyphRun(DWRITE_GLYPH_RUN {
-            fontFace: ManuallyDrop::new(Some(face.cast()?)),
-            fontEmSize: pixels,
-            glyphCount: 1,
-            glyphIndices: glyphs.as_ptr(),
-            glyphAdvances: advances.as_ptr(),
-            glyphOffsets: offsets.as_ptr(),
-            isSideways: false.into(),
-            bidiLevel: 0,
-        });
-        callback(
-            &run.0,
-            Vector2 {
-                X: f32::from(parameters.subpixel_variant.x) / f32::from(SUBPIXEL_VARIANTS_X),
-                Y: f32::from(parameters.subpixel_variant.y) / f32::from(SUBPIXEL_VARIANTS_Y),
-            },
-        )
+        with_native_glyph_run(face, u16::try_from(parameters.glyph_id.0)?, pixels, |run| {
+            callback(
+                run,
+                Vector2 {
+                    X: f32::from(parameters.subpixel_variant.x) / f32::from(SUBPIXEL_VARIANTS_X),
+                    Y: f32::from(parameters.subpixel_variant.y) / f32::from(SUBPIXEL_VARIANTS_Y),
+                },
+            )
+        })
     }
 
     fn glyph_analysis(
@@ -1512,14 +1561,9 @@ mod rasterizer {
                     return Ok(());
                 }
                 let factory4: IDWriteFactory4 = factory.cast()?;
-                let formats = DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE
-                    | DWRITE_GLYPH_IMAGE_FORMATS_CFF
-                    | DWRITE_GLYPH_IMAGE_FORMATS_COLR
-                    | DWRITE_GLYPH_IMAGE_FORMATS_SVG
-                    | DWRITE_GLYPH_IMAGE_FORMATS_PNG
-                    | DWRITE_GLYPH_IMAGE_FORMATS_JPEG
-                    | DWRITE_GLYPH_IMAGE_FORMATS_TIFF
-                    | DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8;
+                let formats = COLOR_GLYPH_FORMATS
+                    | DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE
+                    | DWRITE_GLYPH_IMAGE_FORMATS_CFF;
                 let colors = match unsafe {
                     factory4.TranslateColorGlyphRun(
                         origin,
@@ -1711,6 +1755,33 @@ mod tests {
         )
     }
 
+    fn glyph_summary(system: &DirectWriteTextSystem, line: &LineLayout) -> Result<Vec<String>> {
+        let state = system.0.lock();
+        line.runs
+            .iter()
+            .map(|run| {
+                let face = &state.font(run.font_id)?.face;
+                let family = localized_name(&unsafe { face.GetFamilyNames() }?, &state.locale)?;
+                let color_font = unsafe { face.IsColorFont() }.as_bool();
+                let face: IDWriteFontFace4 = face.cast()?;
+                let glyphs = run
+                    .glyphs
+                    .iter()
+                    .map(|glyph| {
+                        let formats = unsafe {
+                            face.GetGlyphImageFormats(u16::try_from(glyph.id.0)?, 1, u32::MAX)
+                        }?;
+                        Ok(format!(
+                            "byte={} glyph={} color={} formats={:#x}",
+                            glyph.index, glyph.id.0, glyph.is_emoji, formats.0
+                        ))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Ok(format!("{family:?} color_font={color_font}: {glyphs:?}"))
+            })
+            .collect()
+    }
+
     #[test]
     fn missing_logical_system_face_maps_to_an_installed_monospace_outline() -> Result<()> {
         let factory: IDWriteFactory = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
@@ -1804,7 +1875,14 @@ mod tests {
         assert!(
             glyphs
                 .iter()
-                .any(|glyph| glyph.index == emoji && glyph.is_emoji)
+                .any(|glyph| glyph.index == emoji && glyph.is_emoji),
+            "Native emoji classification: {:?}",
+            glyph_summary(&system, &line)?
+        );
+        assert!(
+            glyphs
+                .iter()
+                .any(|glyph| glyph.index == 3 && !glyph.is_emoji)
         );
         let line = shape(&system, id, "مرحبا")?;
         let glyphs = line
@@ -1883,7 +1961,12 @@ mod tests {
                     .find(|glyph| glyph.is_emoji)
                     .map(|glyph| (run.font_id, glyph.id))
             })
-            .context("Native color emoji fallback is missing")?;
+            .with_context(|| {
+                format!(
+                    "Native color emoji fallback is missing: {:?}",
+                    glyph_summary(&system, &line)
+                )
+            })?;
         let parameters = RenderGlyphParams {
             font_id: id,
             glyph_id: glyph,
