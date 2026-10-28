@@ -885,14 +885,19 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     return;
                 }
 
+                let surface_pending = window
+                    .0
+                    .wgpu_context
+                    .surface_registry
+                    .has_present_pending_for(window_id);
                 window.0.state.callbacks.invoke_mut(
                     &window.0.state.callbacks.on_request_frame,
                     |cb| {
                         cb(crate::RequestFrameOptions {
                             force_render: false,
-                            // Only present after an actual draw; don't keep the
-                            // GPU busy re-presenting the same frame every tick.
-                            require_presentation: false,
+                            // Only present after an actual draw or a surface present;
+                            // don't keep the GPU busy re-presenting the same frame every tick.
+                            require_presentation: surface_pending,
                         });
                     },
                 );

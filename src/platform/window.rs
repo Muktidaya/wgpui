@@ -464,27 +464,24 @@ impl PlatformWindow for CrossWindow {
     ) -> Option<WgpuSurfaceHandle> {
         let ctx = &self.0.wgpu_context;
         let registry = ctx.surface_registry.clone();
-        let surface_id = registry.create(&ctx.device, width, height, format);
+        let window_id = self.0.winit_window.get().map(|w| w.id());
+        let surface_id = registry.create(&ctx.device, width, height, format, window_id);
 
         // Build the present trigger: sends a CrossEvent to wake the event loop
         // and request a redraw for this window.
         let proxy = self.0.event_loop_proxy.clone();
-        let window_id = self.0.winit_window.get().map(|w| w.id());
         let present_trigger: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
             if let Some(wid) = window_id {
                 let _ = proxy.send_event(CrossEvent::SurfacePresent(wid));
             }
         });
 
-        // capture winit window Arc so handle can request redraw directly
-        let winit_arc = self.0.winit_window.get().cloned();
         Some(WgpuSurfaceHandle::new(
             ctx.device.clone(),
             ctx.queue.clone(),
             surface_id,
             registry,
             present_trigger,
-            winit_arc,
             width,
             height,
             format,
