@@ -12,6 +12,8 @@ adaptations and smithay-clipboard adaptations carry scoped MIT texts in
 src/platform/; bundled Lucide/Feather icons carry ISC/MIT terms in
 crates/wgpui-kit-assets/LICENSE-LUCIDE. Base/Component/Kit retain their
 upstream Longbridge attribution and Apache notices in their directories.
+The legacy Dragon illustration retains CC-BY-SA-3.0, credited separately in
+examples/legacy/svg/NOTICE.txt; it is not Apache-2.0 artwork.
 This file does not replace those notices or relicense third-party materials.
 
 Zed / gpui-pre original notice and Apache-2.0 terms

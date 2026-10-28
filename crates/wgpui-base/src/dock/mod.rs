@@ -139,7 +139,7 @@
 //! ```ignore
 //! use std::rc::Rc;
 //! use gpui::{px, Context, Window};
-//! use gpui_base::dock::{DockArea, DockLayout, DockPlacement};
+//! use wgpui_base::dock::{DockArea, DockLayout, DockPlacement};
 //!
 //! let area = cx.new(|cx| {
 //!     DockArea::new("workspace", Some(1), window, cx).with_renderer(Rc::new(MySkin))

@@ -59,8 +59,8 @@ pub trait WindowExt: Sized {
     ///
     /// ```ignore
     /// use std::cell::Cell;
-    /// use gpui_kit::{AppContext as _, Focusable as _};
-    /// use gpui_kit::component::{WindowExt as _, input::{Input, InputState}};
+    /// use wgpui_kit::{AppContext as _, Focusable as _};
+    /// use wgpui_kit::component::{WindowExt as _, input::{Input, InputState}};
     ///
     /// // Both the input and the one-time focus guard belong to this opening.
     /// let input = cx.new(|cx| InputState::new(window, cx).placeholder("URL"));
@@ -89,7 +89,7 @@ pub trait WindowExt: Sized {
     /// # Examples
     ///
     /// ```ignore
-    /// use gpui_kit::component::{AlertDialog, alert::AlertVariant};
+    /// use wgpui_kit::component::{AlertDialog, alert::AlertVariant};
     ///
     /// window.open_alert_dialog(cx, |alert, _, _| {
     ///     alert.warning()

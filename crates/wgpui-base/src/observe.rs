@@ -14,7 +14,7 @@ pub type ObservedElement<E> = E;
 /// Test-only values cannot override the native control:
 /// ```compile_fail
 /// use gpui::{div, prelude::*};
-/// use gpui_base::TestSupportExt;
+/// use wgpui_base::TestSupportExt;
 /// div().id("input").test_support().test_props(|props| props.value("invented"));
 /// ```
 pub trait TestSupportExt:

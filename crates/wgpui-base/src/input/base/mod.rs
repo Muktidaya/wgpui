@@ -12,7 +12,7 @@ use gpui::{
 /// breaking the menu builders.
 ///
 /// ```
-/// use gpui_base::input::InputContextMenuCapabilities;
+/// use wgpui_base::input::InputContextMenuCapabilities;
 ///
 /// let capabilities = InputContextMenuCapabilities::new()
 ///     .code_editor(true)

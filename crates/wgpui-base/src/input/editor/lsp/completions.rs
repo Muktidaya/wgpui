@@ -117,7 +117,7 @@ fn chars_eq_ignore_case(left: char, right: char) -> bool {
 /// configured separately, on [`super::Lsp::completion_highlighter`].
 ///
 /// ```
-/// use gpui_base::input::CompletionMenuOptions;
+/// use wgpui_base::input::CompletionMenuOptions;
 /// let options = CompletionMenuOptions {
 ///     max_width: gpui::px(480.),
 /// };

@@ -17,7 +17,7 @@ pub use icon::{IconName, IconNamed};
 ///
 /// ```rust,no_run
 /// use wgpui::*;
-/// use wgpui_kit_assets::Assets;
+/// use wwgpui_kit_assets::Assets;
 ///
 /// let app = Application::new().with_assets(Assets);
 /// ```
@@ -56,9 +56,9 @@ pub mod __private {
 /// Embed only the selected icons in a native or WebAssembly application.
 ///
 /// ```ignore
-/// use gpui_kit::assets::{icon_assets, IconName};
+/// use wgpui_kit::assets::{icon_assets, IconName};
 /// icon_assets!(AppAssets, [Search, Check]);
-/// // gpui_kit::application().with_assets(AppAssets)
+/// // wgpui_kit::application().with_assets(AppAssets)
 /// ```
 ///
 /// Unlisted paths return `Ok(None)`. The selected SVG bytes are borrowed from
