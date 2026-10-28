@@ -53,6 +53,9 @@ jobs:
           chmod 700 "$runtime_directory"
           echo "XDG_RUNTIME_DIR=$runtime_directory" >> "$GITHUB_ENV"
           XDG_RUNTIME_DIR="$runtime_directory" vulkaninfo --summary
+      - name: Native Windows text conformance
+        if: runner.os == 'Windows'
+        run: cargo test --locked -p wgpui --all-features --lib platform::windows_text_system::tests -- --test-threads=1
       - run: cargo check --locked --workspace --all-targets
       - run: cargo test --locked --workspace --all-features --lib --tests
       - name: Real offscreen Kit rendering

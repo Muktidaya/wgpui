@@ -93,9 +93,11 @@ struct State {
 
 impl DirectWriteTextSystem {
     pub(crate) fn new() -> Result<Self> {
-        let factory: IDWriteFactory5 = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
+        let factory: IDWriteFactory5 = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }
+            .context("Creating the native DirectWrite factory")?;
         let mut system_fonts = None;
-        unsafe { factory.GetSystemFontCollection(false, &mut system_fonts, true) }?;
+        unsafe { factory.GetSystemFontCollection(false, &mut system_fonts, true) }
+            .context("Reading the native DirectWrite system font collection")?;
         let system_fonts =
             system_fonts.context("DirectWrite returned no system font collection")?;
         let mut locale = [0_u16; 85];
@@ -105,9 +107,12 @@ impl DirectWriteTextSystem {
             .get(..usize::try_from(count - 1)?)
             .context("Windows locale exceeded its buffer")?;
         let locale = HSTRING::from_wide(locale);
-        let ui_family = system_ui_family(&factory, &locale)?;
-        let mono_family = system_monospace_family(&factory, &locale)?;
-        let registry = FontRegistry::new(&factory)?;
+        let ui_family =
+            system_ui_family(&factory, &locale).context("Resolving the Windows system UI font")?;
+        let mono_family = system_monospace_family(&factory, &locale)
+            .context("Resolving the Windows system monospace font")?;
+        let registry =
+            FontRegistry::new(&factory).context("Creating the native application font registry")?;
         Ok(Self(Mutex::new(State {
             fonts: Vec::new(),
             selections: HashMap::default(),
@@ -506,19 +511,136 @@ fn localized_name(names: &IDWriteLocalizedStrings, locale: &HSTRING) -> Result<S
     )
     .context("Native font name is invalid UTF-16")
 }
-fn logical_font_family(
-    factory: &IDWriteFactory5,
-    locale: &HSTRING,
-    logical: &LOGFONTW,
-) -> Result<String> {
-    let interop = unsafe { factory.GetGdiInterop() }?;
-    let native = unsafe { interop.CreateFontFromLOGFONT(logical) }?;
+fn font_family(native: &IDWriteFont, locale: &HSTRING) -> Result<String> {
     localized_name(
         &unsafe { native.GetFontFamily()?.GetFamilyNames() }?,
         locale,
     )
 }
-fn system_ui_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Result<String> {
+
+fn valid_gdi_object(object: HGDIOBJ) -> bool {
+    !object.0.is_null() && object.0 as isize != -1
+}
+
+struct MappedSystemFont {
+    context: HDC,
+    font: HFONT,
+    previous: HGDIOBJ,
+}
+
+impl Drop for MappedSystemFont {
+    fn drop(&mut self) {
+        if !self.context.0.is_null() {
+            if valid_gdi_object(self.previous)
+                && !valid_gdi_object(unsafe { SelectObject(self.context, self.previous) })
+            {
+                log::warn!("Could not restore the native system-font device context");
+            }
+            if !unsafe { DeleteDC(self.context) }.as_bool() {
+                log::warn!("Could not release the native system-font device context");
+            }
+        }
+        if !self.font.0.is_null() && !unsafe { DeleteObject(self.font.into()) }.as_bool() {
+            log::warn!("Could not release the mapped native system font");
+        }
+    }
+}
+
+fn outline_system_font(logical: &LOGFONTW, monospace: bool) -> Result<LOGFONTW> {
+    let mut mapping = MappedSystemFont {
+        context: unsafe { CreateCompatibleDC(None) },
+        font: HFONT::default(),
+        previous: HGDIOBJ::default(),
+    };
+    ensure!(
+        !mapping.context.0.is_null(),
+        "Could not create the system-font device context"
+    );
+    let mut physical = *logical;
+    // GDI stock faces can be bitmap-only; retain the OS mapping while requesting an outline face.
+    physical.lfOutPrecision = OUT_TT_ONLY_PRECIS;
+    if monospace {
+        physical.lfPitchAndFamily = FIXED_PITCH.0 | FF_MODERN.0;
+    }
+    mapping.font = unsafe { CreateFontIndirectW(&physical) };
+    ensure!(
+        !mapping.font.0.is_null(),
+        "Windows could not map its system font to an outline font"
+    );
+    mapping.previous = unsafe { SelectObject(mapping.context, mapping.font.into()) };
+    ensure!(
+        valid_gdi_object(mapping.previous),
+        "Could not select the mapped system font"
+    );
+    let mut metrics = TEXTMETRICW::default();
+    ensure!(
+        unsafe { GetTextMetricsW(mapping.context, &mut metrics) }.as_bool(),
+        "Could not read the mapped system-font metrics"
+    );
+    ensure!(
+        metrics.tmPitchAndFamily.contains(TMPF_TRUETYPE),
+        "Windows did not map its system font to a TrueType face"
+    );
+    if monospace {
+        // Despite its name, TMPF_FIXED_PITCH is set for variable-pitch physical fonts.
+        ensure!(
+            !metrics.tmPitchAndFamily.contains(TMPF_FIXED_PITCH),
+            "Windows mapped its monospace role to a proportional font"
+        );
+    }
+    let mut face = [0_u16; 32];
+    ensure!(
+        unsafe { GetTextFaceW(mapping.context, Some(&mut face)) } > 0,
+        "Windows did not return the mapped system-font face"
+    );
+    let length = face
+        .iter()
+        .position(|character| *character == 0)
+        .context("Mapped system-font face exceeds LOGFONT capacity")?;
+    ensure!(length > 0, "Mapped system-font face is empty");
+    physical.lfFaceName = face;
+    Ok(physical)
+}
+
+fn native_system_font(
+    factory: &IDWriteFactory,
+    logical: &LOGFONTW,
+    monospace: bool,
+) -> Result<IDWriteFont> {
+    let role = if monospace { "monospace" } else { "UI" };
+    let length = logical
+        .lfFaceName
+        .iter()
+        .position(|character| *character == 0)
+        .context("Windows system font exceeds LOGFONT capacity")?;
+    let requested = String::from_utf16(&logical.lfFaceName[..length])?;
+    let interop = unsafe { factory.GetGdiInterop() }
+        .with_context(|| format!("Creating GDI interop for the {role} font"))?;
+    let native = match unsafe { interop.CreateFontFromLOGFONT(logical) } {
+        Ok(native) => native,
+        Err(error) if error.code() == DWRITE_E_NOFONT => {
+            let physical = outline_system_font(logical, monospace).with_context(|| {
+                format!("Realizing the OS {role} font {requested:?} as an outline face")
+            })?;
+            unsafe { interop.CreateFontFromLOGFONT(&physical) }.with_context(|| {
+                format!("Resolving the realized OS {role} font for {requested:?}")
+            })?
+        }
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("Resolving the OS {role} LOGFONT {requested:?}"));
+        }
+    };
+    if monospace {
+        ensure!(
+            unsafe { native.cast::<IDWriteFont1>()?.IsMonospacedFont() }.as_bool(),
+            "The native Windows monospace role resolved to a proportional face"
+        );
+    }
+    Ok(native)
+}
+
+pub(crate) fn system_ui_font(factory: &IDWriteFactory) -> Result<IDWriteFont> {
     let mut metrics = NONCLIENTMETRICSW {
         cbSize: u32::try_from(std::mem::size_of::<NONCLIENTMETRICSW>())?,
         ..Default::default()
@@ -530,10 +652,12 @@ fn system_ui_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Result<Strin
             Some((&mut metrics as *mut NONCLIENTMETRICSW).cast()),
             SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS::default(),
         )
-    }?;
-    logical_font_family(factory, locale, &metrics.lfMessageFont)
+    }
+    .context("Reading the OS UI font descriptor")?;
+    native_system_font(factory, &metrics.lfMessageFont, false)
 }
-fn system_monospace_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Result<String> {
+
+pub(crate) fn system_monospace_font(factory: &IDWriteFactory) -> Result<IDWriteFont> {
     let stock = unsafe { GetStockObject(ANSI_FIXED_FONT) };
     ensure!(
         !stock.0.is_null(),
@@ -545,7 +669,15 @@ fn system_monospace_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Resul
         unsafe { GetObjectW(stock, bytes, Some((&mut logical as *mut LOGFONTW).cast())) } == bytes,
         "Windows did not return its fixed-pitch font descriptor"
     );
-    logical_font_family(factory, locale, &logical)
+    native_system_font(factory, &logical, true)
+}
+
+fn system_ui_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Result<String> {
+    font_family(&system_ui_font(factory)?, locale)
+}
+
+fn system_monospace_family(factory: &IDWriteFactory5, locale: &HSTRING) -> Result<String> {
+    font_family(&system_monospace_font(factory)?, locale)
 }
 fn apply_features(typography: &IDWriteTypography, features: &FontFeatures) -> Result<()> {
     for (tag, value) in features.tag_value_list() {
@@ -1577,6 +1709,46 @@ mod tests {
                 font_id: id,
             }],
         )
+    }
+
+    #[test]
+    fn missing_logical_system_face_maps_to_an_installed_monospace_outline() -> Result<()> {
+        let factory: IDWriteFactory = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
+        let mut logical = LOGFONTW {
+            lfPitchAndFamily: FIXED_PITCH.0 | FF_MODERN.0,
+            ..Default::default()
+        };
+        let missing = "WGPUI-System-Mono-Fixture"
+            .encode_utf16()
+            .collect::<Vec<_>>();
+        logical
+            .lfFaceName
+            .get_mut(..missing.len())
+            .context("Fixture family exceeds LOGFONT capacity")?
+            .copy_from_slice(&missing);
+        let native = native_system_font(&factory, &logical, true)?;
+        assert!(unsafe { native.cast::<IDWriteFont1>()?.IsMonospacedFont() }.as_bool());
+        let face = unsafe { native.CreateFontFace() }?;
+        let mut glyphs = [0_u16; 2];
+        unsafe {
+            face.GetGlyphIndices(
+                [u32::from('i'), u32::from('W')].as_ptr(),
+                2,
+                glyphs.as_mut_ptr(),
+            )
+        }?;
+        assert!(glyphs.iter().all(|glyph| *glyph != 0));
+        let mut advances = [0_i32; 2];
+        unsafe {
+            face.cast::<IDWriteFontFace1>()?.GetDesignGlyphAdvances(
+                2,
+                glyphs.as_ptr(),
+                advances.as_mut_ptr(),
+                false,
+            )
+        }?;
+        assert_eq!(advances[0], advances[1]);
+        Ok(())
     }
 
     #[test]

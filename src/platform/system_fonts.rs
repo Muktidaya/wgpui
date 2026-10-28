@@ -132,22 +132,13 @@ mod macos {
 #[cfg(target_os = "windows")]
 mod windows {
     use super::*;
-    use ::windows::Win32::{
-        Graphics::{
-            DirectWrite::{DWRITE_FACTORY_TYPE_SHARED, DWriteCreateFactory, IDWriteFactory},
-            Gdi::{ANSI_FIXED_FONT, GetObjectW, GetStockObject, LOGFONTW},
-        },
-        UI::WindowsAndMessaging::{
-            NONCLIENTMETRICSW, SPI_GETNONCLIENTMETRICS, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS,
-            SystemParametersInfoW,
-        },
+    use crate::platform::windows_text_system::{system_monospace_font, system_ui_font};
+    use ::windows::Win32::Graphics::DirectWrite::{
+        DWRITE_FACTORY_TYPE_SHARED, DWriteCreateFactory, IDWriteFactory, IDWriteFont,
     };
     use anyhow::{Context as _, Result, ensure};
 
-    fn family(logical_font: &LOGFONTW) -> Result<String> {
-        let factory: IDWriteFactory = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
-        let interop = unsafe { factory.GetGdiInterop() }?;
-        let font = unsafe { interop.CreateFontFromLOGFONT(logical_font) }?;
+    fn family(font: &IDWriteFont) -> Result<String> {
         let family = unsafe { font.GetFontFamily() }?;
         let names = unsafe { family.GetFamilyNames() }?;
         ensure!(
@@ -167,32 +158,13 @@ mod windows {
     }
 
     fn ui_family() -> Result<String> {
-        let mut metrics = NONCLIENTMETRICSW {
-            cbSize: u32::try_from(std::mem::size_of::<NONCLIENTMETRICSW>())?,
-            ..Default::default()
-        };
-        unsafe {
-            SystemParametersInfoW(
-                SPI_GETNONCLIENTMETRICS,
-                metrics.cbSize,
-                Some((&raw mut metrics).cast()),
-                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS::default(),
-            )
-        }?;
-        family(&metrics.lfMessageFont)
+        let factory: IDWriteFactory = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
+        family(&system_ui_font(&factory)?)
     }
 
     fn mono_family() -> Result<String> {
-        let stock = unsafe { GetStockObject(ANSI_FIXED_FONT) };
-        ensure!(
-            !stock.0.is_null(),
-            "Could not obtain the OS fixed-pitch font"
-        );
-        let mut font = LOGFONTW::default();
-        let size = i32::try_from(std::mem::size_of::<LOGFONTW>())?;
-        let copied = unsafe { GetObjectW(stock, size, Some((&raw mut font).cast())) };
-        ensure!(copied == size, "Could not read the OS fixed-pitch font");
-        family(&font)
+        let factory: IDWriteFactory = unsafe { DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED) }?;
+        family(&system_monospace_font(&factory)?)
     }
 
     pub(super) fn configure(database: &mut Database) {
