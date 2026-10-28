@@ -24,7 +24,7 @@ jobs:
             python3 scripts/check-public-boundary.py
           fi
   workspace:
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 60 || 90 }}
     strategy:
       fail-fast: false
       matrix:
