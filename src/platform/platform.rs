@@ -1168,9 +1168,8 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                 let touch_phase = match phase {
                     winit::event::TouchPhase::Started => crate::TouchPhase::Started,
                     winit::event::TouchPhase::Moved => crate::TouchPhase::Moved,
-                    winit::event::TouchPhase::Ended | winit::event::TouchPhase::Cancelled => {
-                        crate::TouchPhase::Ended
-                    }
+                    winit::event::TouchPhase::Ended => crate::TouchPhase::Ended,
+                    winit::event::TouchPhase::Cancelled => crate::TouchPhase::Cancelled,
                 };
 
                 let platform_event = PlatformInput::Pinch(crate::PinchEvent {
