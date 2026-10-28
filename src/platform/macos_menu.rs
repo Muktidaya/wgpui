@@ -120,7 +120,13 @@ pub(crate) fn with_action<R>(
     // Released before the action runs, which may rebuild the menus.
     let action = MENU_RUNTIME.with(|runtime| {
         let runtime = runtime.borrow();
-        Some(runtime.as_ref()?.actions.get(action_identifier)?.boxed_clone())
+        Some(
+            runtime
+                .as_ref()?
+                .actions
+                .get(action_identifier)?
+                .boxed_clone(),
+        )
     })?;
     Some(f(action.as_ref()))
 }

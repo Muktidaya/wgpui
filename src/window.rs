@@ -6220,6 +6220,51 @@ mod touch_dispatch_tests {
         InputEvent, IntoElement, LongPressEvent, TestAppContext, TouchDragEvent, TouchEvent,
         TouchId, TouchPhase, canvas,
     };
+    struct PinchListener(Rc<RefCell<Vec<crate::PinchEvent>>>);
+
+    impl Render for PinchListener {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let events = self.0.clone();
+            canvas(
+                |_, _, _| {},
+                move |_, _, window, _| {
+                    window.on_mouse_event(move |event: &crate::PinchEvent, phase, _, _| {
+                        if phase == DispatchPhase::Bubble {
+                            events.borrow_mut().push(event.clone());
+                        }
+                    });
+                },
+            )
+        }
+    }
+
+    #[crate::test]
+    fn pinch_dispatch_retains_cancellation_modifiers_and_pointer_anchor(cx: &mut TestAppContext) {
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let (_, cx) = cx.add_window_view(|_, _| PinchListener(events.clone()));
+        for touch_phase in [
+            TouchPhase::Started,
+            TouchPhase::Moved,
+            TouchPhase::Cancelled,
+        ] {
+            cx.simulate_event(crate::PinchEvent {
+                position: point(px(7.), px(9.)),
+                delta: 0.25,
+                modifiers: Modifiers {
+                    shift: true,
+                    ..Default::default()
+                },
+                touch_phase,
+            });
+        }
+        let events = events.borrow();
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[2].touch_phase, TouchPhase::Cancelled);
+        assert!(events.iter().all(|event| event.modifiers.shift
+            && event.position == point(px(7.), px(9.))
+            && event.delta == 0.25));
+    }
+
     struct TouchDragListener {
         events: Rc<RefCell<Vec<(TouchPhase, Pixels)>>>,
     }

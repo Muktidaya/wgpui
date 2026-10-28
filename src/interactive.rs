@@ -773,6 +773,7 @@ impl PlatformInput {
             Self::TouchDrag(_) => "touch_drag",
             Self::LongPress(_) => "long_press",
             Self::BackGesture(_) => "back_gesture",
+            Self::Pinch(_) => "pinch",
             Self::FileDrop(_) => "file_drop",
         }
     }

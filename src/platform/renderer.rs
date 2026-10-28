@@ -1566,6 +1566,10 @@ fn pack_capture_rows(mapped: &[u8], padded_row_bytes: u32, width: u32, height: u
     bytes
 }
 
+fn capture_surface_usage(supported: wgpu::TextureUsages) -> wgpu::TextureUsages {
+    wgpu::TextureUsages::RENDER_ATTACHMENT | (supported & wgpu::TextureUsages::COPY_SRC)
+}
+
 fn configure_retry_delay(failures: u32) -> std::time::Duration {
     std::time::Duration::from_millis((16_u64 << failures.min(4)).min(250))
 }
@@ -1640,8 +1644,7 @@ impl WgpuRenderer {
             // per-capture toggle, and its one cost — `CAMetalLayer.framebufferOnly` becomes
             // false on Metal — is paid whether or not a capture is ever requested. No copy is
             // encoded unless a capture was requested.
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | (surface_capabilities.usages & wgpu::TextureUsages::COPY_SRC),
+            usage: capture_surface_usage(surface_capabilities.usages),
             format,
             color_space: wgpu::SurfaceColorSpace::Auto,
             width,
@@ -1806,13 +1809,13 @@ impl WgpuRenderer {
     /// Configure the surface, keeping a failure for a retry rather than
     /// panicking on it. Returns whether it is configured.
     fn configure_surface(&self) -> bool {
+        let Some(surface) = &self.surface else {
+            return true;
+        };
         let scope = self
             .context
             .device
             .push_error_scope(wgpu::ErrorFilter::Validation);
-        let Some(surface) = &self.surface else {
-            return true;
-        };
         surface.configure(&self.context.device, &self.surface_configuration);
         let error = pollster::block_on(scope.pop());
         if let Some(error) = &error {
@@ -2752,6 +2755,181 @@ mod offscreen_tests {
     use super::*;
     use crate::{Bounds, ContentMask, PlatformHeadlessRenderer, point, rgb, size};
 
+    fn rectangle(x: f32, width: f32) -> Bounds<ScaledPixels> {
+        Bounds::new(
+            point(ScaledPixels(x), ScaledPixels(0.)),
+            size(ScaledPixels(width), ScaledPixels(16.)),
+        )
+    }
+
+    #[test]
+    #[ignore = "requires a usable WGPU adapter"]
+    fn separated_path_batches_keep_their_geometry() -> anyhow::Result<()> {
+        let mut renderer = WgpuRenderer::new_headless()?;
+        let mut scene = Scene::default();
+        for (x, color) in [(2., 0xff0000), (22., 0x00ff00), (42., 0x0000ff)] {
+            let mut builder = crate::PathBuilder::fill();
+            builder.move_to(point(crate::px(x), crate::px(2.)));
+            builder.line_to(point(crate::px(x + 12.), crate::px(2.)));
+            builder.line_to(point(crate::px(x + 12.), crate::px(14.)));
+            builder.line_to(point(crate::px(x), crate::px(14.)));
+            builder.close();
+            let mut path = builder.build()?.scale(1.);
+            path.content_mask = ContentMask {
+                bounds: rectangle(0., 64.),
+            };
+            path.color = rgb(color).into();
+            scene.insert_primitive(path);
+            scene.insert_primitive(Quad {
+                bounds: rectangle(0., 64.),
+                content_mask: ContentMask {
+                    bounds: rectangle(0., 64.),
+                },
+                ..Default::default()
+            });
+        }
+        scene.finish();
+        assert_eq!(
+            scene
+                .batches()
+                .filter(|batch| matches!(batch, PrimitiveBatch::Paths(_)))
+                .count(),
+            3
+        );
+        let image =
+            renderer.render_scene_to_image(&scene, size(DevicePixels(64), DevicePixels(16)))?;
+        for (x, expected) in [
+            (8, [255, 0, 0, 255]),
+            (28, [0, 255, 0, 255]),
+            (48, [0, 0, 255, 255]),
+        ] {
+            assert_eq!(image.get_pixel(x, 8).0, expected);
+        }
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "requires a usable WGPU adapter"]
+    fn surfaces_and_repeated_placements_keep_independent_bounds() -> anyhow::Result<()> {
+        let mut renderer = WgpuRenderer::new_headless()?;
+        let registry = renderer.context.surface_registry.clone();
+        let mut identifiers = Vec::new();
+        for color in [wgpu::Color::RED, wgpu::Color::BLUE] {
+            let id = registry.create(
+                &renderer.context.device,
+                4,
+                4,
+                wgpu::TextureFormat::Rgba8Unorm,
+                None,
+            );
+            let view = registry.back_view(id).expect("surface back buffer");
+            let mut encoder = renderer
+                .context
+                .device
+                .create_command_encoder(&Default::default());
+            {
+                let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(color),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    ..Default::default()
+                });
+            }
+            renderer.context.queue.submit([encoder.finish()]);
+            registry.swap_buffers(id);
+            identifiers.push(id);
+        }
+        let mut scene = Scene::default();
+        for (x, id) in [
+            (0., identifiers[0]),
+            (20., identifiers[1]),
+            (40., identifiers[0]),
+        ] {
+            scene.insert_primitive(crate::scene::PaintSurface {
+                order: 0,
+                bounds: rectangle(x, 16.),
+                content_mask: ContentMask {
+                    bounds: rectangle(0., 64.),
+                },
+                content: crate::scene::SurfaceContent::Wgpu(id),
+            });
+        }
+        scene.finish();
+        let image =
+            renderer.render_scene_to_image(&scene, size(DevicePixels(64), DevicePixels(16)))?;
+        for (x, expected) in [
+            (8, [255, 0, 0, 255]),
+            (28, [0, 0, 255, 255]),
+            (48, [255, 0, 0, 255]),
+        ] {
+            assert_eq!(image.get_pixel(x, 8).0, expected);
+        }
+        assert_eq!(renderer.surface_bind_groups.lock().len(), 3);
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "requires a usable WGPU adapter"]
+    fn requested_capture_reads_one_complete_frame_and_respects_busy_state() -> anyhow::Result<()> {
+        let mut renderer = WgpuRenderer::new_headless()?;
+        let mut scene = Scene::default();
+        scene.insert_primitive(Quad {
+            bounds: rectangle(0., 13.),
+            content_mask: ContentMask {
+                bounds: rectangle(0., 13.),
+            },
+            background: rgb(0xff0000).into(),
+            ..Default::default()
+        });
+        scene.finish();
+        let receiver = renderer.request_frame_capture();
+        renderer.render_scene_to_image(&scene, size(DevicePixels(13), DevicePixels(16)))?;
+        let capture = pollster::block_on(receiver)??;
+        assert_eq!(
+            (capture.width, capture.height, capture.format),
+            (13, 16, wgpu::TextureFormat::Rgba8Unorm)
+        );
+        assert!(
+            capture
+                .bytes
+                .chunks_exact(4)
+                .all(|pixel| pixel == [255, 0, 0, 255])
+        );
+        renderer
+            .frame_capture_requests
+            .in_flight
+            .store(true, std::sync::atomic::Ordering::Release);
+        let permit = CapturePermit(renderer.frame_capture_requests.in_flight.clone());
+        assert!(matches!(
+            pollster::block_on(renderer.request_frame_capture())?,
+            Err(FrameCaptureError::Busy)
+        ));
+        drop(permit);
+        assert!(
+            !renderer
+                .frame_capture_requests
+                .in_flight
+                .load(std::sync::atomic::Ordering::Acquire)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn configure_retries_back_off_and_cap_their_delay() {
+        let delays: Vec<_> = [0, 1, 2, 3, 4, 5, u32::MAX]
+            .map(configure_retry_delay)
+            .into_iter()
+            .map(|delay| delay.as_millis())
+            .collect();
+        assert_eq!(delays, [16, 32, 64, 128, 250, 250, 250]);
+    }
+
     #[test]
     #[ignore = "requires a usable WGPU adapter"]
     fn offscreen_readback_preserves_pixels_padding_and_resize() -> anyhow::Result<()> {
@@ -2794,6 +2972,18 @@ mod offscreen_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn capture_capability_does_not_disable_rendering_on_restricted_surfaces() {
+        assert_eq!(
+            capture_surface_usage(wgpu::TextureUsages::RENDER_ATTACHMENT),
+            wgpu::TextureUsages::RENDER_ATTACHMENT
+        );
+        assert_eq!(
+            capture_surface_usage(wgpu::TextureUsages::all()),
+            wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC
+        );
+    }
 
     #[test]
     fn a_capture_request_is_served_by_exactly_one_frame() {

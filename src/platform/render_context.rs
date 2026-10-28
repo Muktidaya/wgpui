@@ -24,8 +24,8 @@ pub struct WgpuContext {
 /// Format-only features: each makes a texture format usable without altering
 /// anything that already works, so requesting them needs no decision from the
 /// application that cannot reach this constructor.
-const OPTIONAL_TEXTURE_FEATURES: wgpu::Features = wgpu::Features::TEXTURE_FORMAT_16BIT_NORM
-    .union(wgpu::Features::FLOAT32_FILTERABLE);
+const OPTIONAL_TEXTURE_FEATURES: wgpu::Features =
+    wgpu::Features::TEXTURE_FORMAT_16BIT_NORM.union(wgpu::Features::FLOAT32_FILTERABLE);
 
 /// Timestamp queries, for an application that times its own GPU work: they
 /// cost nothing until it makes a query set.

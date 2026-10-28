@@ -129,15 +129,7 @@ impl CrossWindow {
     /// This mirrors the take/call/put-back discipline `Window` already uses around
     /// `dispatch_input`, `accepts_text_input` and `selected_bounds`.
     pub(crate) fn with_input_handler(&self, f: impl FnOnce(&mut PlatformInputHandler)) {
-        let taken = self.0.state.input_handler.borrow_mut().take();
-        let Some(mut handler) = taken else {
-            return;
-        };
-        f(&mut handler);
-        let mut input_handler = self.0.state.input_handler.borrow_mut();
-        if input_handler.is_none() {
-            *input_handler = Some(handler);
-        }
+        with_taken_handler(&self.0.state.input_handler, f);
     }
 
     pub(crate) fn initialize(
@@ -541,5 +533,42 @@ impl raw_window_handle::HasWindowHandle for CrossWindow {
         &self,
     ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
         self.window().window_handle()
+    }
+}
+
+// Reentrant view updates can install a newer handler while the old one is in use.
+fn with_taken_handler<T>(slot: &RefCell<Option<T>>, callback: impl FnOnce(&mut T)) {
+    let Some(mut handler) = slot.borrow_mut().take() else {
+        return;
+    };
+    callback(&mut handler);
+    let mut current = slot.borrow_mut();
+    if current.is_none() {
+        *current = Some(handler);
+    }
+}
+
+#[cfg(test)]
+mod reentrant_handler_tests {
+    use super::*;
+
+    #[test]
+    fn text_application_releases_borrow_and_preserves_nested_replacement() {
+        let slot = RefCell::new(Some(String::from("old")));
+        with_taken_handler(&slot, |handler| {
+            handler.push_str(" text");
+            assert!(slot.borrow().is_none());
+            *slot.borrow_mut() = Some(String::from("new focused handler"));
+        });
+        assert_eq!(slot.borrow().as_deref(), Some("new focused handler"));
+    }
+
+    #[test]
+    fn text_application_restores_updated_handler_without_replacement() {
+        let slot = RefCell::new(Some(String::new()));
+        with_taken_handler(&slot, |handler| handler.push_str("é👩‍💻"));
+        assert_eq!(slot.borrow().as_deref(), Some("é👩‍💻"));
+        *slot.borrow_mut() = None;
+        with_taken_handler(&slot, |_| panic!("absent handler must not run"));
     }
 }

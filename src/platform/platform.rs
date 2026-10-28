@@ -1570,17 +1570,11 @@ fn portal_file_paths(uris: &[ashpd::Uri]) -> Result<Vec<std::path::PathBuf>> {
 }
 
 fn handle_ime(window: &CrossWindow, ime: winit::event::Ime) {
-    let Some(mut handler) = window.0.state.input_handler.borrow_mut().take() else {
-        return;
-    };
-    if let Err(error) = handler.handle_ime_event(ime) {
-        log::error!("failed to dispatch native IME event: {error:#}");
-    }
-    // Updating an input entity can paint and install its next handler.
-    let mut input_handler = window.0.state.input_handler.borrow_mut();
-    if input_handler.is_none() {
-        *input_handler = Some(handler);
-    }
+    window.with_input_handler(|handler| {
+        if let Err(error) = handler.handle_ime_event(ime) {
+            log::error!("failed to dispatch native IME event: {error:#}");
+        }
+    });
 }
 
 fn cursor_icon(style: crate::CursorStyle) -> winit::window::CursorIcon {
