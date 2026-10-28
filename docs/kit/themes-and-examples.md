@@ -7,10 +7,15 @@ application-owned theme directory through `ThemeRegistry::watch_dir`. The curren
 `ThemeSet`/`ThemeConfig` Rust types define compatibility; old mutable upstream
 schema links were removed from the copied catalog.
 
-Catalog validation parses every set, checks its color keys and values, and loads
-it through the production registry. New theme roles may use current defaults
-when an older catalog does not supply them. Theme attribution and the retained
-Apache license are in the catalog README and license file.
+Source catalog validation parses all 21 sets, checks color keys and values, and
+loads them through the production registry. Cargo source archives contain 13
+catalogs with the same strict validation in a package-safe test. Eight catalogs
+remain in Git/source only while their license scope is reviewed; the
+[catalog index](../../crates/wgpui-component/themes/catalog-index.json) identifies
+both rosters. No missing-file skip or relaxed schema check is used. New theme roles may use current defaults
+when an older catalog does not supply them. Theme attribution, applicable source-specific terms and open findings are in the
+[catalog notices](../../crates/wgpui-component/themes/SOURCE-NOTICES.md); the
+retained Apache notice does not relicense the underlying palettes.
 
 Two native examples were selected from the retired snapshot and adapted to Kit's
 current window/root setup:

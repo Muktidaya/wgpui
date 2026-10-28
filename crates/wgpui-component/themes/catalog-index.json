@@ -1,0 +1,28 @@
+{
+  "published": [
+    "aurora",
+    "ayu",
+    "catppuccin",
+    "everforest",
+    "fahrenheit",
+    "flexoki",
+    "harper",
+    "jellybeans",
+    "macos-classic",
+    "mellifluous",
+    "solarized",
+    "spaceduck",
+    "tokyonight"
+  ],
+  "source_only": [
+    "adventure",
+    "alduin",
+    "asciinema",
+    "gruvbox",
+    "hybrid",
+    "kibble",
+    "molokai",
+    "twilight"
+  ],
+  "source_only_reason": "Retained for individual license-scope review; omitted from Cargo source archives, preserved in Git and source snapshots. No palette is automatically loaded."
+}

@@ -9,7 +9,20 @@ repository = "https://github.com/Muktidaya/wgpui"
 readme = "README.md"
 version = "0.8.1"
 publish = true
-exclude = ["AGENTS.md"]
+exclude = [
+    "AGENTS.md",
+    # Retained in Git/source pending individual palette license-scope review.
+    "themes/adventure.json",
+    "themes/alduin.json",
+    "themes/asciinema.json",
+    "themes/gruvbox.json",
+    "themes/hybrid.json",
+    "themes/kibble.json",
+    "themes/molokai.json",
+    "themes/twilight.json",
+    # Requires the complete source-only catalog; packaged validation stays included.
+    "tests/source_theme_catalog.rs",
+]
 edition.workspace = true
 rust-version.workspace = true
 

@@ -44,7 +44,7 @@ An `OR` alternative is not a requirement to apply every offered license.
 ## Open release-audit findings
 
 The exact locked source archives for `dispatch 0.2.0`, `mac 0.1.1`,
-`seahash 4.1.0` and `simd_helpers 0.1.0` contain license declarations but no
+and `seahash 4.1.0` contain license declarations but no
 complete license/permission text located by the audit. Available source headers
 and upstream revisions were checked; these remain notice/provenance questions,
 not findings of incompatibility.
@@ -71,3 +71,23 @@ qualified mirrored-history evidence, rather than primary GitLab verification.
 A copyright notice from another Ticki project must not be substituted for a
 missing SeaHash notice. The pinned archive's missing text and primary-source
 verification question remain recorded separately.
+
+### simd_helpers notice resolution
+
+The complete [MIT notice](licensing-notices/simd_helpers-MIT.txt), copyright
+2019 Luca Barbato, is preserved from the primary upstream commit
+[82040194cd05affb060bf94d6f19f82a771d07fb](https://github.com/lu-zero/simd_helpers/commit/82040194cd05affb060bf94d6f19f82a771d07fb).
+Its parent is the exact locked source revision
+`ca1a2f84aa386d758e98f8a609d990263932fb85`, and its sole change adds this
+license file. The production source is unchanged. The published 0.1.0 archive
+omits that file; locating the original notice does not change dependency versions
+or imply the dependency source is vendored in WGPUI.
+
+### Optional catalog packaging
+
+The eight catalogs with qualified or unresolved scopes remain in Git/source
+and retain their notices, but their JSON files are omitted from Cargo source
+archives. The catalog index and tests distinguish 13 shipped catalogs from the
+full 21 source catalogs. GitHub source snapshots remain inclusive; default
+themes and explicit application loading APIs are unchanged. Other outstanding
+dependency-notice and mixed-content representation questions remain open.
