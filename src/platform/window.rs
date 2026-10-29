@@ -509,25 +509,18 @@ impl PlatformWindow for CrossWindow {
         }
         let ctx = &self.0.wgpu_context;
         let registry = ctx.surface_registry.clone();
-        let window_id = self.0.winit_window.get().map(|w| w.id());
-        let surface_id = registry.create(
-            &ctx.device,
-            width,
-            height,
-            format,
-            self.0.surface_owner.get().copied(),
-        )?;
+        let window_id = self.0.winit_window.get()?.id();
+        let owner = *self.0.surface_owner.get()?;
+        let surface_id = registry.create(&ctx.device, width, height, format, Some(owner))?;
 
         // Build the present trigger: sends a CrossEvent to wake the event loop
         // and request a redraw for this window.
         let proxy = self.0.event_loop_proxy.clone();
         let delivery_registry = registry.clone();
         let present_trigger: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
-            if let Some(wid) = window_id {
-                if let Err(error) = proxy.send_event(CrossEvent::SurfacePresent(wid)) {
-                    log::warn!("Surface presentation event could not be delivered: {error}");
-                    delivery_registry.shutdown();
-                }
+            if let Err(error) = proxy.send_event(CrossEvent::SurfacePresent(window_id)) {
+                log::warn!("Surface presentation event could not be delivered: {error}");
+                delivery_registry.shutdown();
             }
         });
 

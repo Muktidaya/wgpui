@@ -181,7 +181,8 @@ impl SurfaceRegistry {
         }
     }
 
-    /// Create a new double-buffered surface. Returns its `SurfaceId`.
+    /// Create buffers only while the registry and exact owner lifetime remain open.
+    /// Returns `None` after closure without allocating GPU resources.
     pub fn create(
         &self,
         device: &wgpu::Device,
@@ -329,7 +330,13 @@ impl SurfaceRegistry {
     /// Return whether an earlier request is pending, or this surface is closed.
     /// Closed/missing surfaces never schedule another compositor callback.
     pub fn set_present_pending(&self, id: SurfaceId) -> bool {
-        self.presentation(id).request().unwrap_or(true)
+        self.surfaces
+            .lock()
+            .unwrap()
+            .surfaces
+            .get(&id)
+            .and_then(|surface| surface.presentation.request())
+            .unwrap_or(true)
     }
 
     pub fn is_present_pending(&self, id: SurfaceId) -> bool {
@@ -350,7 +357,9 @@ impl SurfaceRegistry {
 
     /// Consume a frame without reopening a terminally closed presentation state.
     pub fn clear_present_pending(&self, id: SurfaceId) {
-        self.presentation(id).clear();
+        if let Some(surface) = self.surfaces.lock().unwrap().surfaces.get(&id) {
+            surface.presentation.clear();
+        }
     }
 
     fn create_double_buffer(
