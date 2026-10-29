@@ -106,12 +106,41 @@
           noto-fonts-cjk-sans
           noto-fonts-color-emoji
         ];
+        # Keep packaged substitutions without user/local font or cache discovery rules.
+        linuxFontRules = pkgs.runCommand "wgpui-fontconfig-conf.d" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          python3 - "${pkgs.fontconfig.out}/etc/fonts/conf.d" "$out" <<'PYTHON'
+          from pathlib import Path
+          import shutil
+          import sys
+          import xml.etree.ElementTree as ET
+
+          source, output = map(Path, sys.argv[1:])
+          rules = sorted(path for path in source.iterdir()
+                         if path.name.endswith(".conf")
+                         and path.name not in {"50-user.conf", "51-local.conf"})
+          if len(rules) != 20:
+              raise SystemExit("Expected the 20 pinned packaged fontconfig rules")
+          forbidden = {"dir", "include", "cachedir", "reset-dirs", "remap-dir"}
+          for rule in rules:
+              if not rule.is_file():
+                  raise SystemExit(f"Not a fontconfig rule file: {rule.name}")
+              if any(node.tag.rsplit("}", 1)[-1] in forbidden
+                     for node in ET.parse(rule).iter()):
+                  raise SystemExit(f"Source-bearing fontconfig rule: {rule.name}")
+          output.mkdir()
+          for rule in rules:
+              shutil.copyfile(rule, output / rule.name)
+          PYTHON
+        '';
+
         linuxFontConfig =
           let
             config = pkgs.makeFontsConf {
               fontDirectories = linuxFonts;
               impureFontDirectories = [ ];
-              includes = [ ];
+              includes = [ linuxFontRules ];
             };
           in
           pkgs.runCommand "wgpui-fonts.conf" { } ''
