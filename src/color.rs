@@ -26,7 +26,7 @@ pub fn rgba(hex: u32) -> Rgba {
 pub(crate) fn unpremultiply_rgba(bytes: &mut [u8]) {
     for pixel in bytes.chunks_exact_mut(4) {
         let alpha = u32::from(pixel[3]);
-        if alpha > 0 {
+        if let Some(alpha) = std::num::NonZeroU32::new(alpha) {
             for channel in pixel.iter_mut().take(3) {
                 *channel = (u32::from(*channel) * 255 / alpha).min(255) as u8;
             }

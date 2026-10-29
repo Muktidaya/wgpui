@@ -54,10 +54,26 @@ pub struct TraceGuard {
     _private: (),
 }
 
+fn update_trace_state(mut update: impl FnMut(u64) -> Option<u64>) -> Result<u64, u64> {
+    let mut state = TRACE_STATE.load(Ordering::Acquire);
+    while let Some(next_state) = update(state) {
+        match TRACE_STATE.compare_exchange_weak(
+            state,
+            next_state,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(previous_state) => return Ok(previous_state),
+            Err(observed_state) => state = observed_state,
+        }
+    }
+    Err(state)
+}
+
 /// Starts an independent, nestable trace collection scope.
 pub fn trace_scope() -> TraceGuard {
-    let incremented = TRACE_STATE.fetch_update(Ordering::AcqRel, Ordering::Acquire, |state| {
-        (state & TRACE_SCOPE_COUNT_MASK < TRACE_SCOPE_COUNT_MASK).then_some(state + 1)
+    let incremented = update_trace_state(|state| {
+        (state & TRACE_SCOPE_COUNT_MASK < TRACE_SCOPE_COUNT_MASK).then(|| state + 1)
     });
     assert!(incremented.is_ok(), "too many active profiler trace scopes");
     TraceGuard { _private: () }
@@ -66,9 +82,7 @@ pub fn trace_scope() -> TraceGuard {
 impl Drop for TraceGuard {
     fn drop(&mut self) {
         let previous_state =
-            TRACE_STATE.fetch_update(Ordering::AcqRel, Ordering::Acquire, |state| {
-                (state & TRACE_SCOPE_COUNT_MASK > 0).then_some(state - 1)
-            });
+            update_trace_state(|state| (state & TRACE_SCOPE_COUNT_MASK > 0).then(|| state - 1));
         match previous_state {
             Ok(1) => clear_trace_buffers(),
             Ok(_) => {}
