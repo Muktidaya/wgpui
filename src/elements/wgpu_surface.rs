@@ -172,6 +172,7 @@ impl WgpuSurfaceHandle {
 
     /// Block until the frame is consumed or the owning window closes.
     /// A closed handle returns immediately, including after later `present()` calls.
+    /// Wait from a producer thread so the event loop can continue consuming or closing frames.
     pub fn wait_for_present(&self) {
         if Self::benchmark_mode() {
             return;
