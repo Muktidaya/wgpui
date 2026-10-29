@@ -80,12 +80,19 @@ struct PlatformCallbacks {
 
 struct AppState {
     windows: FxHashMap<winit::window::WindowId, CrossWindow>,
+    surface_registry: Arc<crate::platform::surface_registry::SurfaceRegistry>,
     on_finish_launching: Cell<Option<Box<dyn 'static + FnOnce()>>>,
     main_rx: PriorityQueueReceiver<RunnableVariant>,
     current_modifiers: Modifiers,
     pressed_button: Option<MouseButton>,
     click_state: ClickState,
     hover_paths: Vec<std::path::PathBuf>,
+}
+
+impl Drop for AppState {
+    fn drop(&mut self) {
+        self.surface_registry.shutdown();
+    }
 }
 
 struct ClickState {
@@ -213,6 +220,7 @@ impl Platform for CrossPlatform {
 
         let mut app_state = AppState {
             windows: Default::default(),
+            surface_registry: self.wgpu_context.surface_registry.clone(),
             on_finish_launching: Cell::new(Some(on_finish_launching)),
             main_rx: self.main_rx.clone(),
             current_modifiers: Modifiers::default(),
@@ -227,10 +235,10 @@ impl Platform for CrossPlatform {
         };
 
         ACTIVE_PLATFORM.with(|platform| platform.set(Some(self as *const CrossPlatform)));
-        event_loop
-            .run_app(&mut app_state)
-            .expect("Failed to run App");
+        let result = event_loop.run_app(&mut app_state);
+        self.wgpu_context.surface_registry.shutdown();
         ACTIVE_PLATFORM.with(|platform| platform.set(None));
+        result.expect("Failed to run App");
     }
 
     fn quit(&self) {
@@ -752,8 +760,13 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         // A window removed by the app (`Window::remove_window`) dropped its
         // `CrossWindow`, but the clone here kept the winit window, and so the
         // native one, on screen, never drawn again. Release it too.
-        self.windows
-            .retain(|_, window| Rc::strong_count(&window.0) > 1);
+        self.windows.retain(|_, window| {
+            let retain = Rc::strong_count(&window.0) > 1;
+            if !retain {
+                window.close_surfaces();
+            }
+            retain
+        });
 
         // Do NOT unconditionally request_redraw() here. Rendering is driven
         // by three sources:
@@ -786,7 +799,12 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         crate::profiler::record_power_interruption();
     }
 
-    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {}
+    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
+        self.surface_registry.shutdown();
+        for window in self.windows.values() {
+            window.close_surfaces();
+        }
+    }
 
     fn memory_warning(&mut self, _event_loop: &ActiveEventLoop) {}
 
@@ -893,6 +911,14 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .invoke_mut(&window.0.state.callbacks.on_appearance_changed, |cb| cb());
             }
 
+            winit::event::WindowEvent::Destroyed => {
+                window.close_surfaces();
+                if let Some(callback) = window.0.state.callbacks.on_close.take() {
+                    callback();
+                }
+                self.windows.remove(&window_id);
+            }
+
             winit::event::WindowEvent::CloseRequested => {
                 let should_close = window
                     .0
@@ -908,6 +934,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .unwrap_or(true);
 
                 if should_close {
+                    window.close_surfaces();
                     if let Some(cb) = window.0.state.callbacks.on_close.take() {
                         cb();
                     }

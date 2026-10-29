@@ -1645,6 +1645,7 @@ impl Window {
 
     /// Close this window.
     pub fn remove_window(&mut self) {
+        self.platform_window.close_surface_presentations();
         self.removed = true;
     }
 

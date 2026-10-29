@@ -5,7 +5,7 @@ use refineable::Refineable as _;
 use crate::{
     App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement, LayoutId,
     Pixels, Style, StyleRefinement, Styled, Window,
-    platform::surface_registry::{SurfaceId, SurfaceRegistry},
+    platform::surface_registry::{SurfaceId, SurfacePresentation, SurfaceRegistry},
 };
 
 /// Inner state shared across clones of `WgpuSurfaceHandle`.
@@ -13,6 +13,7 @@ use crate::{
 struct WgpuSurfaceHandleInner {
     surface_id: SurfaceId,
     registry: Arc<SurfaceRegistry>,
+    presentation: Arc<SurfacePresentation>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     present_trigger: Arc<dyn Fn() + Send + Sync>,
@@ -79,6 +80,7 @@ impl WgpuSurfaceHandle {
         Self {
             inner: Arc::new(WgpuSurfaceHandleInner {
                 surface_id,
+                presentation: registry.presentation(surface_id),
                 registry,
                 device,
                 queue,
@@ -124,7 +126,15 @@ impl WgpuSurfaceHandle {
     /// Request the window to re-present its scene without a full layout/paint.
     /// The renderer will pick up the current front buffer texture.
     pub fn request_present(&self) {
-        (self.inner.present_trigger)();
+        if !self.is_closed() {
+            (self.inner.present_trigger)();
+        }
+    }
+
+    /// Whether this surface's window has closed or its event loop has shut down.
+    /// Closure is terminal: presentation becomes a no-op and buffer views are unavailable.
+    pub fn is_closed(&self) -> bool {
+        self.inner.presentation.is_closed()
     }
 
     /// Convenience: swap buffers and immediately request a present.
@@ -160,14 +170,13 @@ impl WgpuSurfaceHandle {
             .is_present_pending(self.inner.surface_id)
     }
 
-    /// Block until the pending flag clears, yielding the thread.
+    /// Block until the frame is consumed or the owning window closes.
+    /// A closed handle returns immediately, including after later `present()` calls.
     pub fn wait_for_present(&self) {
         if Self::benchmark_mode() {
             return;
         }
-        while self.is_present_pending() {
-            std::thread::sleep(std::time::Duration::from_micros(50));
-        }
+        self.inner.presentation.wait();
     }
 
     /// The texture format used by this surface's buffers.

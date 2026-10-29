@@ -28,6 +28,23 @@ pub(crate) struct CrossWindowInner {
     pub(crate) hovered: Cell<bool>,
     pub(crate) accessibility_adapter: OnceCell<RefCell<accesskit_winit::Adapter>>,
     pub(crate) state: CrossWindowState,
+    surfaces_closed: Cell<bool>,
+    surface_owner: OnceCell<crate::platform::surface_registry::SurfaceOwner>,
+}
+
+impl CrossWindowInner {
+    fn close_surfaces(&self) {
+        if !self.surfaces_closed.replace(true) {
+            if let Some(owner) = self.surface_owner.get() {
+                self.wgpu_context.surface_registry.close_owner(*owner);
+            }
+        }
+    }
+}
+impl Drop for CrossWindowInner {
+    fn drop(&mut self) {
+        self.close_surfaces();
+    }
 }
 
 #[derive(Default)]
@@ -94,7 +111,13 @@ impl CrossWindow {
             hovered: Cell::new(false),
             accessibility_adapter: OnceCell::new(),
             state: CrossWindowState::default(),
+            surfaces_closed: Cell::new(false),
+            surface_owner: OnceCell::new(),
         }))
+    }
+
+    pub(crate) fn close_surfaces(&self) {
+        self.0.close_surfaces();
     }
 
     pub(crate) fn configure_retry_deadline(&self) -> Option<std::time::Instant> {
@@ -143,6 +166,15 @@ impl CrossWindow {
         event_loop: &winit::event_loop::ActiveEventLoop,
     ) {
         let initial_size = winit_window.inner_size();
+        let owner = self
+            .0
+            .wgpu_context
+            .surface_registry
+            .open_owner(winit_window.id());
+        assert!(
+            self.0.surface_owner.set(owner).is_ok(),
+            "surface owner already initialized"
+        );
 
         self.0
             .winit_window
@@ -462,23 +494,40 @@ impl PlatformWindow for CrossWindow {
         }
     }
 
+    fn close_surface_presentations(&self) {
+        self.close_surfaces();
+    }
+
     fn create_wgpu_surface(
         &self,
         width: u32,
         height: u32,
         format: wgpu::TextureFormat,
     ) -> Option<WgpuSurfaceHandle> {
+        if self.0.surfaces_closed.get() {
+            return None;
+        }
         let ctx = &self.0.wgpu_context;
         let registry = ctx.surface_registry.clone();
         let window_id = self.0.winit_window.get().map(|w| w.id());
-        let surface_id = registry.create(&ctx.device, width, height, format, window_id);
+        let surface_id = registry.create(
+            &ctx.device,
+            width,
+            height,
+            format,
+            self.0.surface_owner.get().copied(),
+        )?;
 
         // Build the present trigger: sends a CrossEvent to wake the event loop
         // and request a redraw for this window.
         let proxy = self.0.event_loop_proxy.clone();
+        let delivery_registry = registry.clone();
         let present_trigger: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
             if let Some(wid) = window_id {
-                let _ = proxy.send_event(CrossEvent::SurfacePresent(wid));
+                if let Err(error) = proxy.send_event(CrossEvent::SurfacePresent(wid)) {
+                    log::warn!("Surface presentation event could not be delivered: {error}");
+                    delivery_registry.shutdown();
+                }
             }
         });
 

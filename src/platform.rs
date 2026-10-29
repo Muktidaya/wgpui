@@ -669,6 +669,9 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
 
     /// Create a double-buffered WGPU surface handle for external rendering.
     /// Returns `None` on platforms that don't use the WGPU renderer.
+    /// Close presentation lifetimes before the logical window is removed.
+    fn close_surface_presentations(&self) {}
+
     fn create_wgpu_surface(
         &self,
         _width: u32,

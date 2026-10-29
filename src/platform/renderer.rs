@@ -2917,13 +2917,15 @@ mod offscreen_tests {
         let registry = renderer.context.surface_registry.clone();
         let mut identifiers = Vec::new();
         for color in [wgpu::Color::RED, wgpu::Color::BLUE] {
-            let id = registry.create(
-                &renderer.context.device,
-                4,
-                4,
-                wgpu::TextureFormat::Rgba8Unorm,
-                None,
-            );
+            let id = registry
+                .create(
+                    &renderer.context.device,
+                    4,
+                    4,
+                    wgpu::TextureFormat::Rgba8Unorm,
+                    None,
+                )
+                .expect("open headless surface registry");
             let view = registry.back_view(id).expect("surface back buffer");
             let mut encoder = renderer
                 .context
