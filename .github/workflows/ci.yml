@@ -63,8 +63,10 @@ jobs:
       - name: Isolated native macOS clipboard
         if: runner.os == 'macOS'
         run: cargo test --locked -p wgpui --all-features --lib platform::macos_clipboard::tests -- --ignored --test-threads=1
-      - run: cargo test --locked -p wgpui-kit --features test-support --lib --tests
-      - run: cargo check --locked -p wgpui-kit --all-features
+      - if: runner.os != 'Windows'
+        run: cargo test --locked -p wgpui-kit --features test-support --lib --tests
+      - if: runner.os != 'Windows'
+        run: cargo check --locked -p wgpui-kit --all-features
       - name: Strict workspace lint
         if: runner.os == 'macOS'
         run: ./scripts/clippy --workspace
@@ -87,16 +89,25 @@ jobs:
       CARGO_BUILD_JOBS: '1'
       RUST_TEST_THREADS: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: consumer_checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+      - id: consumer_toolchain
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: ${{ matrix.toolchain }}
       - name: Linux native libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libfontconfig1-dev libpango1.0-dev libcairo2-dev libharfbuzz-dev fonts-dejavu-core fonts-noto-cjk fonts-noto-color-emoji libssl-dev libvulkan-dev libegl1 libgl1-mesa-dri mesa-vulkan-drivers vulkan-tools libdbus-1-dev libasound2-dev pkg-config cmake lld
       - name: Fetch locked consumer dependency sources
+        id: consumer_fetch
         run: cargo fetch --locked
       - name: Ordinary external macro consumers
         run: python scripts/check-kit-consumers.py
+      - name: Windows Kit default-feature contract
+        if: ${{ !cancelled() && runner.os == 'Windows' && steps.consumer_checkout.outcome == 'success' && steps.consumer_toolchain.outcome == 'success' && steps.consumer_fetch.outcome == 'success' }}
+        run: cargo test --locked -p wgpui-kit --features test-support --lib --tests
+      - name: Windows Kit all-feature check
+        if: ${{ !cancelled() && runner.os == 'Windows' && steps.consumer_checkout.outcome == 'success' && steps.consumer_toolchain.outcome == 'success' && steps.consumer_fetch.outcome == 'success' }}
+        run: cargo check --locked -p wgpui-kit --all-features
