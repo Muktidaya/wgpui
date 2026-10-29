@@ -19,7 +19,7 @@ xcuserdata/
 *.pyc
 .pytest_cache
 
-# Nix
+# Local development environments
 **/.direnv
 .envrc
 /result

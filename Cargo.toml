@@ -25,8 +25,6 @@ exclude = [
     ".github/",
     "AGENTS.md",
     "STATUS.md",
-    "flake.lock",
-    "flake.nix",
     "scripts/",
     "crates/",
     "docs/kit-migration-plan.md",
