@@ -77,7 +77,7 @@ jobs:
   consumers:
     needs: workspace
     if: ${{ !cancelled() }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && 120 || 60 }}
     strategy:
       fail-fast: false
       matrix:
