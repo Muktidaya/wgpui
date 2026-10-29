@@ -3,7 +3,7 @@ use wgpui_kit::component::{Root, button::Button, menu::DropdownMenu};
 use wgpui_kit::test::{TestAppContextExt, TestSupportExt, TestWindowExt};
 use wgpui_kit::{AppContext, Context, TestAppContext, Window, actions, div, prelude::*, px, size};
 
-actions!(menu_test, [Save, Unavailable]);
+actions!(framework_menu_test, [Save, Unavailable]);
 struct Commands {
     saved: bool,
     focus: wgpui_kit::FocusHandle,

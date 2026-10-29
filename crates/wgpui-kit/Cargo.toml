@@ -83,65 +83,23 @@ chrono = "0.4.45"
 lsp-types.workspace = true
 wgpui = { workspace = true, features = ["test-support"] }
 
-[[test]]
-name = "assets"
-required-features = ["assets"]
 
-[[test]]
-name = "window"
-required-features = ["test-support"]
 
-[[test]]
-name = "lifecycle"
-required-features = ["test-support"]
 
-[[test]]
-name = "components"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "input"
-required-features = ["test-support", "component"]
 
 [[test]]
 name = "ui"
 required-features = ["test-support", "component"]
 
-[[test]]
-name = "controls"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "interactions"
-required-features = ["test-support"]
 
-[[test]]
-name = "disclosure"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "overlays"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "menu"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "collections"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "date_picker"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "dock"
-required-features = ["test-support", "component"]
 
-[[test]]
-name = "search"
-required-features = ["assets", "test-support", "component"]
 
 [[test]]
 name = "parity_ui"
