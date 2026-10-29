@@ -1,9 +1,9 @@
 use anyhow::anyhow;
-use gpui::{AssetSource, Result, SharedString};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
+use wgpui::{AssetSource, Result, SharedString};
 
 /// WASM implementation - download assets on-demand
 pub struct Assets {

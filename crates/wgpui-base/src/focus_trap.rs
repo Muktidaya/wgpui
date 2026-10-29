@@ -1,9 +1,9 @@
-use gpui::{
+use std::collections::HashMap;
+use wgpui::{
     AnyElement, App, Bounds, Element, ElementId, FocusHandle, Global, GlobalElementId,
     InteractiveElement, Interactivity, IntoElement, LayoutId, ParentElement, Pixels,
     StatefulInteractiveElement, StyleRefinement, Styled, WeakFocusHandle, Window,
 };
-use std::collections::HashMap;
 
 /// Initialize the focus trap manager as a global
 pub fn init(cx: &mut App) {
@@ -82,16 +82,25 @@ impl FocusTrapManager {
 
     /// Find which focus trap contains the currently focused element
     fn find_active_trap(window: &Window, cx: &App) -> Option<FocusHandle> {
-        for (_id, container_handle) in Self::global(cx).traps.iter() {
+        let mut active: Option<FocusHandle> = None;
+        for container_handle in Self::global(cx).traps.values() {
             let Some(container) = container_handle.upgrade() else {
                 continue;
             };
 
-            if container.contains_focused(window, cx) {
-                return Some(container.clone());
+            if container.contains_focused(window, cx)
+                && active
+                    .as_ref()
+                    .is_none_or(|current| current.contains(&container, window))
+            {
+                // A child scope must confine navigation even if its ancestor
+                // was registered first (or visited first by the HashMap).
+                // Use the rendered focus tree so closing and reopening a
+                // retained scope cannot leave registration order in control.
+                active = Some(container);
             }
         }
-        None
+        active
     }
 
     /// Cleanup any traps with dropped handles
@@ -173,10 +182,38 @@ impl<E: InteractiveElement + ParentElement + Styled + Element + 'static> Element
         None
     }
 
+    fn a11y_role(&self) -> Option<wgpui::Role> {
+        self.base.a11y_role()
+    }
+
+    fn take_a11y_actions(&mut self) -> Vec<(wgpui::accesskit::Action, wgpui::A11yActionListener)> {
+        self.base.take_a11y_actions()
+    }
+
+    fn a11y_focus_handle(&self) -> Option<wgpui::FocusHandle> {
+        self.base.a11y_focus_handle()
+    }
+
+    fn a11y_reports_active_descendant(&self) -> bool {
+        self.base.a11y_reports_active_descendant()
+    }
+
+    fn write_a11y_info(&self, node: &mut wgpui::accesskit::Node) {
+        self.base.write_a11y_info(node);
+    }
+
+    fn a11y_synthetic_children(
+        &mut self,
+        prepaint: &mut Self::PrepaintState,
+        builder: &mut wgpui::A11ySubtreeBuilder,
+    ) {
+        self.base.a11y_synthetic_children(prepaint, builder);
+    }
+
     fn request_layout(
         &mut self,
-        global_id: Option<&gpui::GlobalElementId>,
-        _inspector_id: Option<&gpui::InspectorElementId>,
+        global_id: Option<&wgpui::GlobalElementId>,
+        _inspector_id: Option<&wgpui::InspectorElementId>,
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
@@ -188,8 +225,8 @@ impl<E: InteractiveElement + ParentElement + Styled + Element + 'static> Element
 
     fn prepaint(
         &mut self,
-        global_id: Option<&gpui::GlobalElementId>,
-        inspector_id: Option<&gpui::InspectorElementId>,
+        global_id: Option<&wgpui::GlobalElementId>,
+        inspector_id: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         window: &mut Window,
@@ -201,8 +238,8 @@ impl<E: InteractiveElement + ParentElement + Styled + Element + 'static> Element
 
     fn paint(
         &mut self,
-        global_id: Option<&gpui::GlobalElementId>,
-        inspector_id: Option<&gpui::InspectorElementId>,
+        global_id: Option<&wgpui::GlobalElementId>,
+        inspector_id: Option<&wgpui::InspectorElementId>,
         bounds: Bounds<Pixels>,
         request_layout: &mut Self::RequestLayoutState,
         prepaint: &mut Self::PrepaintState,
@@ -225,4 +262,38 @@ impl<E: InteractiveElement + ParentElement + Styled + Element + 'static> Element
 #[doc(hidden)]
 pub fn active_focus_trap(window: &Window, cx: &App) -> Option<FocusHandle> {
     FocusTrapManager::find_active_trap(window, cx)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::TestSupportExt as _;
+    use wgpui::{Role, TestAppContext, accesskit, div};
+
+    #[wgpui::test]
+    fn trap_exports_inner_semantics_through_the_outer_native_hooks(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            for (role, name) in [
+                (Role::Dialog, "Edit server"),
+                (Role::AlertDialog, "Delete server?"),
+            ] {
+                let trap = div()
+                    .id("inner-host")
+                    .test_support()
+                    .role(role)
+                    .aria_label(name)
+                    .aria_description("Server settings")
+                    .focus_trap("outer-trap", &cx.focus_handle());
+                // GPUI calls hooks on the outer Element. An observed inner
+                // div alone can claim these semantics while the real element
+                // silently drops them. Check the exact native boundary.
+                assert_eq!(Element::id(&trap), Some("outer-trap".into()));
+                assert_eq!(trap.a11y_role(), Some(role));
+                let mut node = accesskit::Node::new(role);
+                trap.write_a11y_info(&mut node);
+                assert_eq!(node.label(), Some(name));
+                assert_eq!(node.description(), Some("Server settings"));
+            }
+        });
+    }
 }

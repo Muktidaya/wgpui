@@ -5,7 +5,7 @@
 //! the resize-handle chrome and collapsed/expanded presentation live in
 //! `crates/component`.
 
-use gpui::{Bounds, Pixels, Point, px};
+use wgpui::{Bounds, Pixels, Point, px};
 
 use crate::PANEL_MIN_SIZE;
 
@@ -114,6 +114,7 @@ pub struct Dock {
     open: bool,
     collapsible: bool,
     size: Pixels,
+    live_size: Option<Pixels>,
     resizing: bool,
 }
 
@@ -123,6 +124,7 @@ impl Dock {
             open: true,
             collapsible: true,
             size,
+            live_size: None,
             resizing: false,
         }
     }
@@ -157,6 +159,17 @@ impl Dock {
         self.size = size.max(PANEL_MIN_SIZE);
     }
 
+    /// A size below [`PANEL_MIN_SIZE`] that a drag in progress is showing.
+    /// It is never persisted: the drag's release settles it into either a
+    /// closed dock or one at the minimum.
+    pub(crate) fn live_size(&self) -> Option<Pixels> {
+        self.live_size
+    }
+
+    pub(crate) fn set_live_size(&mut self, size: Option<Pixels>) {
+        self.live_size = size;
+    }
+
     pub fn is_resizing(&self) -> bool {
         self.resizing
     }
@@ -169,7 +182,7 @@ impl Dock {
 #[cfg(test)]
 mod dock_tests {
     use super::*;
-    use gpui::{point, size};
+    use wgpui::{point, size};
 
     #[test]
     fn a_left_dock_cannot_squeeze_past_the_right_dock() {

@@ -6,8 +6,8 @@
 /// - Automatic projection updates on text/layout changes
 use std::ops::Range;
 
-use gpui::{App, Font, Pixels};
 use ropey::Rope;
+use wgpui::{App, Font, Pixels};
 
 use super::fold_map::FoldMap;
 use super::folding::FoldRange;
@@ -182,7 +182,9 @@ impl DisplayMap {
         }
 
         let edit_start_line = old_text.offset_to_point(range.start).row;
-        let edit_end_line = old_text.offset_to_point(range.end.min(old_text.len())).row;
+        let edit_end_line = old_text
+            .offset_to_point(range.end.min(old_text.len_bytes()))
+            .row;
 
         let old_lines_in_range = edit_end_line.saturating_sub(edit_start_line);
         let new_lines_in_range = new_text.chars().filter(|c| *c == '\n').count();
@@ -204,7 +206,7 @@ impl DisplayMap {
     ) {
         let new_start_line = new_text.offset_to_point(edit_byte_range.start).row;
         let new_end_line = new_text
-            .offset_to_point(edit_byte_range.end.min(new_text.len()))
+            .offset_to_point(edit_byte_range.end.min(new_text.len_bytes()))
             .row;
 
         let new_candidates = extract_fold_ranges(edit_byte_range, new_text);
@@ -226,6 +228,15 @@ impl DisplayMap {
     }
 
     /// Update layout parameters (wrap width or font)
+    pub(crate) fn set_inline_metrics(
+        &mut self,
+        metrics: std::rc::Rc<[(std::ops::Range<usize>, Pixels)]>,
+        cx: &mut App,
+    ) {
+        self.wrap_map.set_inline_metrics(metrics, cx);
+        self.rebuild_fold_projection();
+    }
+
     pub fn on_layout_changed(&mut self, wrap_width: Option<Pixels>, cx: &mut App) {
         self.wrap_map.on_layout_changed(wrap_width, cx);
         self.rebuild_fold_projection();
@@ -235,6 +246,13 @@ impl DisplayMap {
     pub fn set_wrapping_indent(&mut self, wrapping_indent: WrappingIndent, cx: &mut App) {
         self.wrap_map.set_wrapping_indent(wrapping_indent, cx);
         self.rebuild_fold_projection();
+    }
+
+    /// Set the number of spaces per tab stop.
+    pub(crate) fn set_tab_size(&mut self, tab_size: usize, cx: &mut App) {
+        if self.wrap_map.set_tab_size(tab_size, cx) {
+            self.rebuild_fold_projection();
+        }
     }
 
     /// Set font parameters
@@ -291,6 +309,13 @@ impl DisplayMap {
         self.wrap_map
             .wrapper()
             .offset_to_display_point_with_affinity(offset, line_end_affinity)
+    }
+
+    /// Resolve the caret's visual row through both wrapping and folded regions.
+    pub(crate) fn offset_to_display_row(&self, offset: usize, line_end_affinity: bool) -> usize {
+        let point = self.offset_to_wrap_display_point_with_affinity(offset, line_end_affinity);
+        self.wrap_row_to_display_row(point.row)
+            .unwrap_or_else(|| self.nearest_visible_display_row(point.row))
     }
 
     /// Convert wrap display point to byte offset.

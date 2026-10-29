@@ -1,4 +1,4 @@
-use gpui::{AppContext, Context, TestAppContext, Window, div, prelude::*, px, size};
+use wgpui::{AppContext, Context, TestAppContext, Window, div, prelude::*, px, size};
 use wgpui_kit::test::{TestSupportExt, TestWindowExt};
 
 struct Example {
@@ -35,7 +35,7 @@ impl Render for Example {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn finds_completed_layout_and_dispatches_click(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| Example { open: false });
     cx.update_window(handle.into(), |_, window, cx| {
@@ -99,7 +99,7 @@ impl Render for Geometry {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn visibility_and_resize_use_resolved_geometry(cx: &mut TestAppContext) {
     let handle = cx.open_window(size(px(600.), px(500.)), |_, _| Geometry);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -120,7 +120,7 @@ fn visibility_and_resize_use_resolved_geometry(cx: &mut TestAppContext) {
     .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn windows_and_owned_snapshots_are_independent(cx: &mut TestAppContext) {
     let first = cx.add_window(|_, _| Example { open: false });
     let second = cx.add_window(|_, _| Example { open: true });
@@ -158,7 +158,7 @@ impl Render for Duplicate {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 #[should_panic(expected = "ambiguous ElementId")]
 fn duplicate_local_ids_fail_clearly(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| Duplicate);
@@ -170,17 +170,17 @@ fn duplicate_local_ids_fail_clearly(cx: &mut TestAppContext) {
 }
 
 struct Cached {
-    child: gpui::Entity<Example>,
+    child: wgpui::Entity<Example>,
 }
 impl Render for Cached {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
-            .child(self.child.clone().cached(gpui::StyleRefinement::default()))
+            .child(self.child.clone().cached(wgpui::StyleRefinement::default()))
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn cached_paint_keeps_identity_and_accessibility_label(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, cx| Cached {
         child: cx.new(|_| Example { open: true }),
@@ -219,12 +219,12 @@ impl Render for Covered {
                     .left_0()
                     .size(px(100.))
                     .occlude()
-                    .on_mouse_down(gpui::MouseButton::Left, |_, _, cx| cx.stop_propagation()),
+                    .on_mouse_down(wgpui::MouseButton::Left, |_, _, cx| cx.stop_propagation()),
             )
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn click_obeys_occlusion_instead_of_calling_callback(cx: &mut TestAppContext) {
     let clicks = std::rc::Rc::new(std::cell::Cell::new(0));
     let handle = cx.add_window(|_, _| Covered {
@@ -239,7 +239,7 @@ fn click_obeys_occlusion_instead_of_calling_callback(cx: &mut TestAppContext) {
     assert_eq!(clicks.get(), 0);
 }
 
-#[gpui::test]
+#[wgpui::test]
 #[should_panic(expected = "missing ElementId")]
 fn clicking_missing_target_reports_identity(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| Example { open: false });
@@ -247,7 +247,7 @@ fn clicking_missing_target_reports_identity(cx: &mut TestAppContext) {
         .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 #[should_panic(expected = "is not visible")]
 fn clicking_hidden_target_is_rejected(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| Geometry);
@@ -256,7 +256,7 @@ fn clicking_hidden_target_is_rejected(cx: &mut TestAppContext) {
 }
 
 struct FocusedView {
-    focus: gpui::FocusHandle,
+    focus: wgpui::FocusHandle,
 }
 impl Render for FocusedView {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
@@ -268,7 +268,7 @@ impl Render for FocusedView {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn focus_is_from_the_completed_frame(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, cx| FocusedView {
         focus: cx.focus_handle(),
@@ -286,8 +286,8 @@ fn focus_is_from_the_completed_frame(cx: &mut TestAppContext) {
 }
 
 struct KeyCapture {
-    focus: gpui::FocusHandle,
-    keys: std::rc::Rc<std::cell::RefCell<Vec<gpui::Keystroke>>>,
+    focus: wgpui::FocusHandle,
+    keys: std::rc::Rc<std::cell::RefCell<Vec<wgpui::Keystroke>>>,
 }
 impl Render for KeyCapture {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
@@ -301,7 +301,7 @@ impl Render for KeyCapture {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn typed_characters_follow_gpui_keystroke_semantics(cx: &mut TestAppContext) {
     let keys = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let handle = cx.add_window(|_, cx| KeyCapture {
@@ -347,7 +347,7 @@ impl Render for CenteredLayout {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn resolved_bounds_support_centering_containment_and_overlap_assertions(cx: &mut TestAppContext) {
     let handle = cx.open_window(size(px(600.), px(400.)), |_, _| CenteredLayout);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -355,7 +355,7 @@ fn resolved_bounds_support_centering_containment_and_overlap_assertions(cx: &mut
         let dialog = window.find("dialog").bounds();
         let left = window.find("left").bounds();
         let right = window.find("right").bounds();
-        assert_eq!(dialog.center(), gpui::point(px(300.), px(200.)));
+        assert_eq!(dialog.center(), wgpui::point(px(300.), px(200.)));
         assert!(left.left() >= dialog.left() && left.right() <= dialog.right());
         assert!(left.top() >= dialog.top() && left.bottom() <= dialog.bottom());
         assert!(!left.intersects(&right));
@@ -364,7 +364,7 @@ fn resolved_bounds_support_centering_containment_and_overlap_assertions(cx: &mut
     .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn observations_do_not_cross_app_contexts(cx: &mut TestAppContext) {
     let mut other = cx.new_app();
     let first = cx.add_window(|_, _| Example { open: false });
@@ -405,7 +405,7 @@ impl Render for NativeElement {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn native_elements_require_explicit_observation(cx: &mut TestAppContext) {
     let handle = cx.add_window(|_, _| NativeElement);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -422,7 +422,7 @@ impl Render for RepeatedObservation {
             .id("refined")
             .test_support()
             .aria_label("Original")
-            .aria_toggled(gpui::accesskit::Toggled::False)
+            .aria_toggled(wgpui::accesskit::Toggled::False)
             .aria_selected(true)
             .test_support()
             .size(px(40.))
@@ -450,11 +450,11 @@ impl Render for NativeProperties {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .id("native-properties")
-            .role(gpui::Role::CheckBox)
+            .role(wgpui::Role::CheckBox)
             .aria_toggled(if self.checked {
-                gpui::accesskit::Toggled::True
+                wgpui::accesskit::Toggled::True
             } else {
-                gpui::accesskit::Toggled::False
+                wgpui::accesskit::Toggled::False
             })
             .aria_selected(self.checked)
             .aria_expanded(!self.checked)
@@ -475,7 +475,7 @@ fn native_properties_follow_rendered_changes(cx: &mut TestAppContext) {
     cx.update_window(handle.into(), |_, window, cx| {
         window.render_frame(cx);
         let before = window.find("native-properties");
-        assert_eq!(before.role(), Some(gpui::Role::CheckBox));
+        assert_eq!(before.role(), Some(wgpui::Role::CheckBox));
         assert_eq!(before.checked(), Some(false));
         assert_eq!(before.indeterminate(), Some(false));
         assert_eq!(before.selected(), Some(false));
@@ -533,7 +533,7 @@ fn missing_native_properties_stay_unknown(cx: &mut TestAppContext) {
 }
 
 struct LateObservation {
-    focus: gpui::FocusHandle,
+    focus: wgpui::FocusHandle,
 }
 impl Render for LateObservation {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
@@ -561,7 +561,7 @@ fn focus_query_diagnoses_observation_after_track_focus(cx: &mut TestAppContext) 
 }
 
 struct FocusParts {
-    handles: Vec<gpui::FocusHandle>,
+    handles: Vec<wgpui::FocusHandle>,
 }
 impl Render for FocusParts {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
@@ -614,7 +614,7 @@ fn native_parts_forward_their_public_focus_binding(cx: &mut TestAppContext) {
 }
 
 struct RenamedFocus {
-    focus: gpui::FocusHandle,
+    focus: wgpui::FocusHandle,
 }
 impl Render for RenamedFocus {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {

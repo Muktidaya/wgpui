@@ -3,6 +3,7 @@ name = "wgpui-perf"
 version = "0.1.0"
 publish = false
 edition.workspace = true
+rust-version.workspace = true
 license = "Apache-2.0"
 description = "A tool for measuring WGPUI test performance"
 

@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum MaskToken {
@@ -110,7 +110,7 @@ impl MaskPattern {
     /// - `(999)999-9999` - US phone number: (123)456-7890
     /// - `99999-9999` - ZIP code: 12345-6789
     /// - `AAAA-99-####` - Custom pattern: ABCD-12-3AB4
-    /// - `*999*` - Custom pattern: (123) or [123]
+    /// - `*999*` - Custom pattern: `(123)` or `[123]`
     pub fn new(pattern: &str) -> Self {
         let tokens = pattern
             .chars()
@@ -188,7 +188,7 @@ impl MaskPattern {
                         text_index += 1;
                     }
                 }
-                text_index == mask_text.len()
+                text_index == mask_text_chars.len()
             }
             Self::Number { separator, .. } => {
                 if mask_text.is_empty() {
@@ -575,6 +575,18 @@ mod tests {
         let unmasked_text = mask.unmask(&masked_text);
         assert_eq!(unmasked_text, "123456A(111)");
         assert_eq!(mask.is_valid(&masked_text), true);
+    }
+
+    #[test]
+    fn test_is_valid_with_non_ascii_text() {
+        let mask = MaskPattern::new("9999年99月");
+        assert_eq!(mask.is_valid("2024年"), true);
+        assert_eq!(mask.is_valid("2024年12月"), true);
+        assert_eq!(mask.is_valid("2024年1x"), false);
+
+        let mask = MaskPattern::new("*999");
+        assert_eq!(mask.is_valid("€"), true);
+        assert_eq!(mask.is_valid("€123"), true);
     }
 
     #[test]

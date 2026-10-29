@@ -13,8 +13,8 @@ pub(crate) use string::*;
 pub use element::SettingFieldElement;
 pub use number::NumberFieldOptions;
 
-use gpui::{AnyElement, App, IntoElement, SharedString, StyleRefinement, Styled, Window};
 use std::{any::Any, rc::Rc};
+use wgpui::{AnyElement, App, IntoElement, SharedString, StyleRefinement, Styled, Window};
 
 use crate::setting::RenderOptions;
 

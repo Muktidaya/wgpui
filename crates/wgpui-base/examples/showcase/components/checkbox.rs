@@ -1,6 +1,6 @@
 use super::*;
-use gpui::{Image, ImageFormat, img};
 use std::sync::Arc;
+use wgpui::{Image, ImageFormat, img};
 
 const CHECK_SVG: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none"><path d="m3.25 8.25 3 3 6.5-7" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>"#;
 

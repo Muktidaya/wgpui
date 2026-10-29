@@ -1,14 +1,14 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, InteractiveElement, Interactivity, IntoElement,
     MouseButton, ParentElement, Refineable as _, RenderOnce, Role, SharedString,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
     relative,
 };
-use smallvec::SmallVec;
 
-use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
+use crate::{StateStyle, StyledExt as _, TestSupportExt as _, a11y_disabled::A11yDisabledExt as _};
 
 type ClickHandler = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>;
 
@@ -179,6 +179,7 @@ impl RenderOnce for Tab {
             )
             .children(self.children)
             .refine_style(&style)
+            .a11y_disabled(disabled)
     }
 }
 
@@ -189,7 +190,7 @@ impl RenderOnce for Tab {
 /// context hierarchy or new keyboard behavior.
 #[derive(IntoElement)]
 pub struct Tabs {
-    base: gpui::Stateful<Div>,
+    base: wgpui::Stateful<Div>,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -243,7 +244,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, Modifiers, Render, Role, VisualTestContext, accesskit, canvas, hsla,
         point, px,
     };
@@ -264,7 +265,7 @@ mod tests {
     }
 
     fn harness(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
         disabled: bool,
     ) -> (&mut VisualTestContext, Rc<Cell<usize>>) {
         let clicks = Rc::new(Cell::new(0));
@@ -276,8 +277,8 @@ mod tests {
         (cx, clicks)
     }
 
-    #[gpui::test]
-    fn pointer_activation_and_disabled_gating_match_tabs(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pointer_activation_and_disabled_gating_match_tabs(cx: &mut wgpui::TestAppContext) {
         let (cx, clicks) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         assert_eq!(clicks.get(), 1);
@@ -287,12 +288,12 @@ mod tests {
         assert_eq!(clicks.get(), 0);
     }
 
-    #[gpui::test]
-    fn fixed_height_tab_centers_ordinary_child_geometry(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn fixed_height_tab_centers_ordinary_child_geometry(cx: &mut wgpui::TestAppContext) {
         type Captured = Arc<
             Mutex<(
-                Option<gpui::Bounds<gpui::Pixels>>,
-                Option<gpui::Bounds<gpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
             )>,
         >;
 
@@ -333,8 +334,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn exposes_tab_accessibility_state(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn exposes_tab_accessibility_state(cx: &mut wgpui::TestAppContext) {
         type Captured = Arc<Mutex<Option<(accesskit::Node, accesskit::Node)>>>;
 
         struct Probe(Captured);
@@ -379,8 +380,8 @@ mod tests {
         assert!(!disabled.supports_action(accesskit::Action::Click));
     }
 
-    #[gpui::test]
-    fn semantic_styles_preserve_the_legacy_state_priority(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn semantic_styles_preserve_the_legacy_state_priority(_cx: &mut wgpui::TestAppContext) {
         let expected = hsla(0.3, 0.4, 0.5, 1.0);
         let mut tab = Tab::new("tab")
             .selected(true)
@@ -397,8 +398,8 @@ mod tests {
         assert_eq!(tab.resolved_style().background, Some(expected.into()));
     }
 
-    #[gpui::test]
-    fn tabs_exposes_tab_list_role(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn tabs_exposes_tab_list_role(cx: &mut wgpui::TestAppContext) {
         type Captured = Arc<Mutex<Option<accesskit::Node>>>;
         struct Probe(Captured);
 

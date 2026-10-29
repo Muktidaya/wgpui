@@ -1,4 +1,4 @@
-use gpui::relative;
+use wgpui::relative;
 
 use super::*;
 
@@ -65,7 +65,7 @@ impl BaseShowcase {
                                 .border_color(super::example_rgb(0x171717))
                                 .child(
                                     div()
-                                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                                        .font_weight(wgpui::FontWeight::SEMIBOLD)
                                         .child("Settings"),
                                 )
                                 .child(
@@ -104,8 +104,8 @@ impl BaseShowcase {
                                             .flex()
                                             .items_center()
                                             .justify_center()
-                                            .bg(gpui::black())
-                                            .text_color(gpui::white())
+                                            .bg(wgpui::black())
+                                            .text_color(wgpui::white())
                                             .child("Done")
                                             .on_click({
                                                 let entity = entity.clone();

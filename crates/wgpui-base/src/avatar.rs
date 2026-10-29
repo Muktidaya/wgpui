@@ -1,8 +1,8 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Div, ImageSource, InteractiveElement, Interactivity, IntoElement,
     ParentElement, RenderOnce, StyleRefinement, Styled, Window, div, img,
 };
-use smallvec::SmallVec;
 
 use crate::StyledExt as _;
 
@@ -67,7 +67,7 @@ impl RenderOnce for Avatar {
 /// An unstyled avatar image slot.
 #[derive(IntoElement)]
 pub struct AvatarImage {
-    image: gpui::Img,
+    image: wgpui::Img,
     style: StyleRefinement,
 }
 
@@ -143,7 +143,7 @@ impl RenderOnce for AvatarFallback {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, prelude::FluentBuilder as _, px};
+    use wgpui::{Context, Render, prelude::FluentBuilder as _, px};
 
     struct Harness {
         image: bool,
@@ -169,16 +169,16 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn image_slot_takes_precedence_over_fallback(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn image_slot_takes_precedence_over_fallback(cx: &mut wgpui::TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| Harness { image: true });
         cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("avatar-image").is_some());
         assert!(cx.debug_bounds("avatar-fallback").is_none());
     }
 
-    #[gpui::test]
-    fn fallback_renders_without_an_image(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn fallback_renders_without_an_image(cx: &mut wgpui::TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| Harness { image: false });
         cx.update(|window, cx| window.draw(cx).clear());
         assert!(cx.debug_bounds("avatar-image").is_none());

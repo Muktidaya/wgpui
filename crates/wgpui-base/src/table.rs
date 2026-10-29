@@ -1,5 +1,5 @@
 use crate::TestSupportExt as _;
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
     RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement, StyleRefinement, Styled,
     Window, div, prelude::FluentBuilder as _,
@@ -45,7 +45,7 @@ macro_rules! table_part {
                 self.base.interactivity()
             }
 
-            fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+            fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
                 self.base = self.base.track_focus(handle);
                 self
             }
@@ -127,7 +127,7 @@ impl InteractiveElement for Table {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -195,7 +195,7 @@ impl InteractiveElement for TableRow {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -253,7 +253,7 @@ macro_rules! table_cell {
                 self.base.interactivity()
             }
 
-            fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+            fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
                 self.base = self.base.track_focus(handle);
                 self
             }
@@ -316,7 +316,7 @@ impl InteractiveElement for TableCaption {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -333,10 +333,10 @@ impl RenderOnce for TableCaption {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Element as _, Modifiers, Render, TestAppContext, accesskit, point, px};
     use std::{cell::Cell, rc::Rc};
+    use wgpui::{Context, Element as _, Modifiers, Render, TestAppContext, accesskit, point, px};
 
-    #[gpui::test]
+    #[wgpui::test]
     fn table_projects_its_accessible_name(cx: &mut TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
@@ -351,7 +351,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn row_and_cells_project_accessibility_indices(cx: &mut TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
@@ -401,7 +401,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn table_forwards_children_instance_style_and_pointer_interaction(cx: &mut TestAppContext) {
         let clicks = Rc::new(Cell::new(0));
         let (_, cx) = cx.add_window_view({

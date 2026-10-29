@@ -3,14 +3,15 @@ use std::rc::Rc;
 use crate::{
     ActiveTheme, Icon, IconName, InteractiveElementExt as _, Sizable as _, StyledExt, h_flex,
 };
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Background, ClickEvent, Context, Decorations, Hsla, InteractiveElement,
     IntoElement, MouseButton, ParentElement, Pixels, Render, RenderOnce, Rgba,
     StatefulInteractiveElement as _, StyleRefinement, Styled, TitlebarOptions, Window,
     WindowControlArea, WindowOptions, div, linear_color_stop, linear_gradient,
     prelude::FluentBuilder as _, px,
 };
-use smallvec::SmallVec;
+use wgpui_base::TestSupportExt as _;
 
 pub const TITLE_BAR_HEIGHT: Pixels = px(34.);
 #[cfg(target_os = "macos")]
@@ -60,7 +61,7 @@ impl TitleBar {
         TitlebarOptions {
             title: None,
             appears_transparent: true,
-            traffic_light_position: Some(gpui::point(px(9.0), px(9.0))),
+            traffic_light_position: Some(wgpui::point(px(9.0), px(9.0))),
         }
     }
 
@@ -70,9 +71,9 @@ impl TitleBar {
     /// [`crate::TitleBar`], so the title bar owns dragging and double clicking itself:
     ///
     /// ```no_run
-    /// # mod gpui_kit { pub use gpui::*; pub extern crate gpui_component as component; }
-    /// # use gpui_kit::WindowOptions;
-    /// # use gpui_kit::component::TitleBar;
+    /// # mod wgpui_kit { pub use wgpui::*; pub extern crate wgpui_component as component; }
+    /// # use wgpui_kit::WindowOptions;
+    /// # use wgpui_kit::component::TitleBar;
     /// let options = WindowOptions {
     ///     window_min_size: None,
     ///     ..TitleBar::window_options()
@@ -207,6 +208,7 @@ impl RenderOnce for ControlIcon {
 
         div()
             .id(self.id())
+            .test_support()
             .flex()
             .w(TITLE_BAR_HEIGHT)
             .h_full()
@@ -252,7 +254,7 @@ struct WindowControls {
 impl RenderOnce for WindowControls {
     fn render(self, window: &mut Window, _: &mut App) -> impl IntoElement {
         if cfg!(target_os = "macos") || cfg!(target_family = "wasm") {
-            return div().id("window-controls");
+            return div().id("window-controls").test_support();
         }
 
         // Under server-side decorations the window manager already renders
@@ -266,7 +268,7 @@ impl RenderOnce for WindowControls {
         // title bar's window-menu overlay.
         #[cfg(target_os = "linux")]
         if !matches!(window.window_decorations(), Decorations::Client { .. }) {
-            return div().id("window-controls");
+            return div().id("window-controls").test_support();
         }
 
         // The window manager declares which controls it can honor; a tiling
@@ -276,6 +278,7 @@ impl RenderOnce for WindowControls {
 
         h_flex()
             .id("window-controls")
+            .test_support()
             .items_center()
             .flex_shrink_0()
             .h_full()
@@ -294,7 +297,7 @@ impl RenderOnce for WindowControls {
 }
 
 impl Styled for TitleBar {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -347,6 +350,8 @@ impl RenderOnce for TitleBar {
                 .when(is_macos, |this| {
                     this.on_double_click(|_, window, _| window.titlebar_double_click())
                 })
+                // After `on_double_click`, which is implemented for `Stateful` only.
+                .test_support()
                 .on_mouse_down_out(window.listener_for(&state, |state, _, _, _| {
                     state.should_move = false;
                 }))
@@ -407,7 +412,7 @@ impl RenderOnce for TitleBar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Rgba, linear_color_stop, linear_gradient};
+    use wgpui::{Rgba, linear_color_stop, linear_gradient};
 
     #[test]
     fn test_default_title_bar_background() {

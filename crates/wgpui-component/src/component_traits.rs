@@ -1,2 +1,2 @@
-pub use gpui_base::component_traits::Collapsible;
-pub use gpui_base::{Disableable, Selectable};
+pub use wgpui_base::component_traits::Collapsible;
+pub use wgpui_base::{Disableable, Selectable};

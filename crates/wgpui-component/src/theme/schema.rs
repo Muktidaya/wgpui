@@ -1,8 +1,8 @@
 use std::{rc::Rc, sync::Arc};
 
-use gpui::{Background, BoxShadow, FontWeight, Hsla, SharedString, px};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{Background, BoxShadow, FontWeight, Hsla, SharedString, px};
 
 use crate::highlighter::{HighlightTheme, HighlightThemeStyle};
 
@@ -49,14 +49,8 @@ pub struct ThemeConfig {
     /// The base font family, default is system font: `.SystemUIFont`.
     #[serde(rename = "font.family")]
     pub font_family: Option<SharedString>,
-    /// The monospace font family, default is platform specific:
-    /// - macOS: `Menlo`
-    /// - Windows: `Consolas`
-    /// - Linux: `DejaVu Sans Mono`
-    ///
-    /// The default falls back to an installed monospace font, then to
-    /// `.SystemUIFont`, when the machine lacks it. A family named here is used
-    /// as-is, so name one that is installed or embedded with `add_fonts`.
+    /// The monospace family; defaults to the OS family through
+    /// `.SystemMonospaceFont`. An explicit family overrides that default.
     #[serde(rename = "mono_font.family")]
     pub mono_font_family: Option<SharedString>,
     /// The monospace font size, default is 13.
@@ -77,7 +71,7 @@ pub struct ThemeConfig {
     pub colors: ThemeConfigColors,
     /// The highlight theme, this part is combilbility with `style` section in Zed theme.
     ///
-    /// https://github.com/zed-industries/zed/blob/f50041779dcfd7a76c8aec293361c60c53f02d51/assets/themes/ayu/ayu.json#L9
+    /// <https://github.com/zed-industries/zed/blob/f50041779dcfd7a76c8aec293361c60c53f02d51/assets/themes/ayu/ayu.json#L9>
     pub highlight: Option<HighlightThemeStyle>,
 }
 
@@ -237,7 +231,7 @@ impl SemanticThemeConfig {
     }
 }
 
-fn apply_text_style(config: &SemanticTextStyleConfig, token: &mut gpui_base::TextStyleToken) {
+fn apply_text_style(config: &SemanticTextStyleConfig, token: &mut wgpui_base::TextStyleToken) {
     if let Some(value) = config.size {
         token.size = px(value);
     }
@@ -378,11 +372,14 @@ pub struct ThemeConfigColors {
     #[serde(rename = "chart.5")]
     pub chart_5: Option<SharedString>,
     /// Bullish color for candlestick charts (upward price movement).
-    #[serde(rename = "chart_bullish")]
+    #[serde(rename = "chart.bullish")]
     pub chart_bullish: Option<SharedString>,
     /// Bearish color for candlestick charts (downward price movement).
-    #[serde(rename = "chart_bearish")]
+    #[serde(rename = "chart.bearish")]
     pub chart_bearish: Option<SharedString>,
+    /// Chart grid line color.
+    #[serde(rename = "chart.grid")]
+    pub chart_grid: Option<SharedString>,
     /// Danger background color.
     #[serde(rename = "danger.background")]
     pub danger: Option<SharedString>,
@@ -614,9 +611,6 @@ pub struct ThemeConfigColors {
     /// StatusBar border color.
     #[serde(rename = "status_bar.border")]
     pub status_bar_border: Option<SharedString>,
-    /// Background color for Tiles.
-    #[serde(rename = "tiles.background")]
-    pub tiles: Option<SharedString>,
     /// Warning background color.
     #[serde(rename = "warning.background")]
     pub warning: Option<SharedString>,
@@ -700,7 +694,7 @@ impl ThemeColor {
             };
             // With fallback
             ($config_field:ident, fallback = $fallback:expr) => {
-                let fallback: gpui::Hsla = ($fallback).into();
+                let fallback: wgpui::Hsla = ($fallback).into();
                 if let Some(value) = &colors.$config_field {
                     self.$config_field = try_parse_color(value).unwrap_or(fallback);
                 } else {
@@ -786,7 +780,7 @@ impl ThemeColor {
         // Button colors
         let active_darken = if config.mode.is_dark() { 0.2 } else { 0.1 };
         let hover_opacity = 0.9;
-        let transparent = gpui::transparent_black();
+        let transparent = wgpui::transparent_black();
         let button_background = if config.mode.is_dark() {
             self.input.mix_oklab(transparent, 0.3)
         } else {
@@ -925,6 +919,7 @@ impl ThemeColor {
         apply_color!(chart_5, fallback = self.blue.darken(0.4));
         apply_color!(chart_bullish, fallback = self.green);
         apply_color!(chart_bearish, fallback = self.red);
+        apply_color!(chart_grid, fallback = self.border.opacity(0.6));
         apply_background_color!(danger, fallback = self.red);
         apply_background_color!(danger_active, fallback = self.danger.darken(active_darken));
         apply_color!(danger_foreground, fallback = self.primary_foreground);
@@ -1016,7 +1011,6 @@ impl ThemeColor {
         apply_color!(title_bar_border, fallback = self.border);
         apply_background_color!(status_bar, fallback = tokens.title_bar);
         apply_color!(status_bar_border, fallback = self.title_bar_border);
-        apply_background_color!(tiles, fallback = tokens.background);
         apply_background_color!(overlay);
         apply_color!(window_border, fallback = self.border);
 
@@ -1037,19 +1031,19 @@ impl ThemeColor {
         };
 
         (self.list_active, tokens.list_active) = clamp_alpha(
-            colors.list_active.as_deref().map(|v| &**v),
+            colors.list_active.as_deref(),
             self.list_active,
             tokens.list_active.background,
             0.2,
         );
         (self.table_active, tokens.table_active) = clamp_alpha(
-            colors.table_active.as_deref().map(|v| &**v),
+            colors.table_active.as_deref(),
             self.table_active,
             tokens.table_active.background,
             0.2,
         );
         (self.selection, tokens.selection) = clamp_alpha(
-            colors.selection.as_deref().map(|v| &**v),
+            colors.selection.as_deref(),
             self.selection,
             tokens.selection.background,
             0.3,
@@ -1111,9 +1105,9 @@ impl Theme {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{linear_color_stop, linear_gradient, px};
+    use wgpui::{linear_color_stop, linear_gradient, px};
 
-    use crate::{Theme, ThemeConfig, ThemeMode, ThemeSet, try_parse_color};
+    use crate::{Colorize as _, Theme, ThemeConfig, ThemeMode, ThemeSet, try_parse_color};
 
     #[test]
     fn test_semantic_theme_config_parses_and_roundtrips() {
@@ -1140,20 +1134,11 @@ mod tests {
         let reparsed: super::SemanticThemeConfigFile = serde_json::from_str(&serialized).unwrap();
         let semantic = reparsed.tokens;
 
-        assert_eq!(
-            semantic.colors.surface.as_deref().map(|s| s.as_ref()),
-            Some("#111827")
-        );
-        assert_eq!(
-            semantic.colors.destructive.as_deref().map(|s| s.as_ref()),
-            Some("#dc2626")
-        );
+        assert_eq!(semantic.colors.surface.as_deref(), Some("#111827"));
+        assert_eq!(semantic.colors.destructive.as_deref(), Some("#dc2626"));
         assert_eq!(semantic.radius.lg, Some(10.0));
         assert_eq!(semantic.spacing.xl, Some(24.0));
-        assert_eq!(
-            semantic.typography.sans.as_deref().map(|s| s.as_ref()),
-            Some("Inter")
-        );
+        assert_eq!(semantic.typography.sans.as_deref(), Some("Inter"));
         assert_eq!(semantic.typography.md.line_height, Some(22.0));
 
         let mut theme = Theme::default();
@@ -1198,6 +1183,41 @@ mod tests {
         assert_eq!(theme.primary, try_parse_color("#7c3aed").unwrap());
         assert_eq!(theme.radius, px(7.));
         assert_eq!(theme.semantic_tokens().spacing, Default::default());
+    }
+
+    #[test]
+    fn test_apply_config_reads_the_chart_colors() {
+        let config = serde_json::from_value::<ThemeConfig>(serde_json::json!({
+            "name": "Palette",
+            "mode": "light",
+            "colors": {
+                "chart.1": "#111111",
+                "chart.2": "not a color",
+                "chart.3": "#333333",
+                "chart.bullish": "#00ff00",
+                "chart.bearish": "#ff0000",
+                "chart.grid": "#eeeeee"
+            }
+        }))
+        .unwrap();
+
+        let mut theme = Theme::default();
+        theme.apply_config(&std::rc::Rc::new(config));
+
+        // The keys match the fields; an unparsable or missing one falls back
+        // to the ramp of the base blue.
+        assert_eq!(theme.chart_1, try_parse_color("#111111").unwrap());
+        assert_eq!(theme.chart_2, theme.blue.lighten(0.2));
+        assert_eq!(theme.chart_3, try_parse_color("#333333").unwrap());
+        assert_eq!(theme.chart_4, theme.blue.darken(0.2));
+        assert_eq!(theme.chart_5, theme.blue.darken(0.4));
+        assert_eq!(theme.tokens.chart_3.color, theme.chart_3);
+        assert_eq!(theme.chart_bullish, try_parse_color("#00ff00").unwrap());
+        assert_eq!(theme.chart_bearish, try_parse_color("#ff0000").unwrap());
+        assert_eq!(theme.chart_grid, try_parse_color("#eeeeee").unwrap());
+
+        theme.apply_config(&std::rc::Rc::new(ThemeConfig::default()));
+        assert_eq!(theme.chart_grid, theme.border.opacity(0.6));
     }
 
     #[test]

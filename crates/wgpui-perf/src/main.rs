@@ -154,10 +154,13 @@ fn parse_mdata(t_bin: &str, mdata_fn: &str) -> Result<TestMdata, FailKind> {
     let mut iterations = None;
     let mut importance = Importance::default();
     let mut weight = consts::WEIGHT_DEFAULT;
-    for line in stdout
-        .lines()
-        .filter_map(|l| l.strip_prefix(consts::MDATA_LINE_PREF))
-    {
+    let test_caption = format!("test {mdata_fn} ... ");
+    for line in stdout.lines().filter_map(|line| {
+        // Serial libtest output places its test caption before the first print.
+        line.strip_prefix(&test_caption)
+            .unwrap_or(line)
+            .strip_prefix(consts::MDATA_LINE_PREF)
+    }) {
         let mut items = line.split_whitespace();
         // For v0, we know the ident always comes first, then one field.
         match items.next().ok_or(FailKind::BadMetadata)? {
@@ -349,7 +352,9 @@ fn get_tests(t_bin: &str) -> impl ExactSizeIterator<Item = (String, String)> {
     );
 
     let out = test_list
-        .chunks_exact_mut(2)
+        .as_chunks_mut::<2>()
+        .0
+        .iter_mut()
         .map(|pair| {
             // Be resilient against changes to these constants.
             if consts::SUF_NORMAL < consts::SUF_MDATA {

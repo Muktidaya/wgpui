@@ -1,15 +1,15 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled,
     Window,
 };
-use gpui_base::spring;
+use wgpui_base::spring;
 
 use crate::{ActiveTheme as _, StyledExt};
 
 /// An interactive element which expands/collapses.
 #[derive(IntoElement)]
 pub struct Collapsible {
-    base: gpui_base::Collapsible,
+    base: wgpui_base::Collapsible,
     style: StyleRefinement,
     motion_id: Option<ElementId>,
     open: bool,
@@ -19,7 +19,7 @@ impl Collapsible {
     /// Creates a new `Collapsible` instance.
     pub fn new() -> Self {
         Self {
-            base: gpui_base::Collapsible::new(),
+            base: wgpui_base::Collapsible::new(),
             style: StyleRefinement::default(),
             motion_id: None,
             open: false,
@@ -81,7 +81,7 @@ impl RenderOnce for Collapsible {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Context, InteractiveElement as _, Render, TestAppContext, div, px};
+    use wgpui::{Context, InteractiveElement as _, Render, TestAppContext, div, px};
 
     use super::*;
     use crate::Theme;
@@ -105,7 +105,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_preserves_vertical_layout_and_visibility(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_, _| Harness(true));
         cx.update(|window, cx| window.draw(cx).clear());
@@ -119,7 +119,7 @@ mod tests {
         assert!(cx.debug_bounds("collapsible-content").is_none());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn motion_id_keeps_closed_content_mounted_for_reversible_reveal(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_global(Theme::default()));
 

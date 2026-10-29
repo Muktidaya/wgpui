@@ -1,7 +1,7 @@
 use anyhow::Result;
-use gpui::{App, Context, Entity, SharedString, Task, Window};
 use lsp_types::CodeAction;
 use std::ops::Range;
+use wgpui::{App, Context, Entity, SharedString, Task, Window};
 
 use crate::input::{EditorMode, EditorState, InputBaseState, ToggleCodeActions};
 
@@ -13,7 +13,7 @@ pub trait CodeActionProvider {
     ///
     /// textDocument/codeAction
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeAction
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeAction>
     fn code_actions(
         &self,
         state: Entity<EditorState>,
@@ -82,6 +82,7 @@ impl InputBaseState<EditorMode> {
                 editor.update(cx, |editor, cx| {
                     editor.extras.context_menu_content.code_action.open = false;
                     editor.extras.context_menu_content.code_action.items.clear();
+                    editor.extras.context_menu_content.code_action.bump();
                     cx.notify();
                 })?;
                 return Ok(());
@@ -99,6 +100,9 @@ impl InputBaseState<EditorMode> {
                         .code_action
                         .items
                         .is_empty();
+                    // The overlay rebuilds on a new revision, so a refresh
+                    // while the menu is already open must bump it too.
+                    editor.extras.context_menu_content.code_action.bump();
 
                     cx.notify();
                 })

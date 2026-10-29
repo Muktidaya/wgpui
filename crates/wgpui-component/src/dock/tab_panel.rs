@@ -1,6 +1,6 @@
 //! The gpui-component appearance for a tab group.
 //!
-//! `gpui_base::dock::TabGroup` owns the behavior — membership, the displayed
+//! `wgpui_base::dock::TabGroup` owns the behavior — membership, the displayed
 //! tab, drag hit-testing, the zoom flag — and draws none of it. Everything
 //! visible is here: the tab bar, the toolbar, the ellipsis menu, the dock
 //! collapse affordances, the drop placeholder, and the styled drag preview.
@@ -12,25 +12,28 @@ use std::{
     sync::Arc,
 };
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     Anchor, AnyElement, AnyView, App, AppContext as _, Context, Div, Empty,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
     Stateful, StatefulInteractiveElement as _, StyleRefinement, Styled as _, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::{
+use wgpui_base::{
     dock::{
         AnyDrag, DockPlacement, DragPanel, DropIndicator, NodeId, PaneNode, PaneRef, PanelId,
         TabGroupContext, TabGroupRenderer,
     },
     spring,
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme as _, IconName, Selectable as _, Sizable as _,
-    button::{Button, ButtonVariants as _},
-    dock::{ClosePanel, PanelControl, PanelHandle, PanelStyle, SkinShared, ToggleZoom},
+    button::{Button, ButtonCustomVariant, ButtonVariants as _},
+    dock::{
+        ClosePanel, PanelControl, PanelHandle, PanelStyle, SkinShared, ToggleZoom,
+        toggle_dock_by_user,
+    },
     h_flex,
     menu::DropdownMenu as _,
     tab::{Tab, TabBar},
@@ -40,16 +43,29 @@ use crate::{
 /// a really-drawn frame whether the control was offered.
 const ZOOM_CONTROL_SELECTOR: &str = "dock-tab-bar-zoom-control";
 
+/// Debug-bounds selector for a tab's close (X) button, for tests.
+const CLOSE_BUTTON_SELECTOR: &str = "dock-tab-close-button";
+
+/// Debug-bounds selector prefix for a tab, suffixed with its panel index.
+const TAB_SELECTOR: &str = "dock-tab";
+
+/// The toolbar occupies space that is not part of the scrollable tab viewport.
+const TAB_TOOLBAR_SELECTOR: &str = "dock-tab-toolbar";
+
+/// Debug-bounds selector prefix for a dock's collapse button, suffixed with
+/// its placement.
+const DOCK_TOGGLE_SELECTOR: &str = "dock-toggle";
+
 /// The size the styled drag preview occupies, reported to base so a drop
 /// placeholder knows where to fly in from.
-const DRAG_PREVIEW_SIZE: gpui::Size<gpui::Pixels> = gpui::size(px(96.), px(30.));
+const DRAG_PREVIEW_SIZE: wgpui::Size<wgpui::Pixels> = wgpui::size(px(96.), px(30.));
 
 /// The preview that follows the cursor while a panel is dragged.
 ///
-/// `gpui_base::dock::DragPanel` is the payload and draws nothing; this is the
+/// `wgpui_base::dock::DragPanel` is the payload and draws nothing; this is the
 /// appearance half, reintroduced here.
 pub struct DragPanelPreview {
-    panel: Arc<dyn gpui_base::dock::PanelView>,
+    panel: Arc<dyn wgpui_base::dock::PanelView>,
 }
 
 impl Render for DragPanelPreview {
@@ -75,7 +91,7 @@ impl Render for DragPanelPreview {
 /// A panel's title, or its registered name when it reached base without this
 /// crate's handle and so carries no presentation. See [`PanelHandle::of`].
 pub(crate) fn panel_title(
-    panel: &Arc<dyn gpui_base::dock::PanelView>,
+    panel: &Arc<dyn wgpui_base::dock::PanelView>,
     window: &mut Window,
     cx: &mut App,
 ) -> AnyElement {
@@ -105,7 +121,7 @@ thread_local! {
 /// presentation handle. Silent otherwise, and visual-only: the panel docks,
 /// drags and persists, it just has no title. The shorter method is the wrong
 /// one — `DockLayout::panel` and `DockArea::add_panel` accept a
-/// `gpui_component::dock::Panel` and store the bare entity — so this says
+/// `wgpui_component::dock::Panel` and store the bare entity — so this says
 /// which panel and what to call instead.
 fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
     if !WARNED_UNWRAPPED.with(|warned| warned.borrow_mut().insert(panel)) {
@@ -115,7 +131,7 @@ fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
         panel = name,
         "dock panel reached the skin without its presentation handle, so it \
          draws its panel name instead of its title; install it with \
-         `gpui_component::dock::panel_handle(..)` and `DockLayout::panel_view` \
+         `wgpui_component::dock::panel_handle(..)` and `DockLayout::panel_view` \
          / `DockArea::add_panel_view` rather than `DockLayout::panel` / \
          `DockArea::add_panel`"
     );
@@ -125,7 +141,7 @@ fn warn_unwrapped_once(panel: PanelId, name: &'static str) {
 /// when there is none to offer.
 ///
 /// Two questions, and both have to be asked. [`Panel::zoom_control`] says
-/// *where* the control appears; [`gpui_base::dock::Panel::zoomable`] says
+/// *where* the control appears; [`wgpui_base::dock::Panel::zoomable`] says
 /// whether zooming happens at all, and base refuses a zoom that fails it. The
 /// old dock had a single `zoomable() -> Option<PanelControl>` that could not
 /// disagree with itself; split across the seam it can, and a panel answering
@@ -160,7 +176,6 @@ fn left_top_group(node: &PaneNode) -> Option<NodeId> {
     match node.kind() {
         PaneRef::Tabs { .. } => Some(node.id()),
         PaneRef::Split { children, .. } => children.first().and_then(left_top_group),
-        PaneRef::Tiles { .. } => None,
     }
 }
 
@@ -171,11 +186,10 @@ fn right_top_group(node: &PaneNode) -> Option<NodeId> {
     match node.kind() {
         PaneRef::Tabs { .. } => Some(node.id()),
         PaneRef::Split { axis, children, .. } => match axis {
-            gpui::Axis::Vertical => children.first(),
-            gpui::Axis::Horizontal => children.last(),
+            wgpui::Axis::Vertical => children.first(),
+            wgpui::Axis::Horizontal => children.last(),
         }
         .and_then(right_top_group),
-        PaneRef::Tiles { .. } => None,
     }
 }
 
@@ -190,7 +204,7 @@ pub(crate) struct TabGroupSkin {
     /// The displayed tab the last frame drew, so a change scrolls the new tab
     /// into view. The old dock recorded this at the moment of selection; the
     /// group now owns selection, so the skin notices instead of being told.
-    last_active_ix: Cell<Option<usize>>,
+    last_active_ix: Rc<Cell<Option<usize>>>,
 }
 
 impl TabGroupSkin {
@@ -198,7 +212,7 @@ impl TabGroupSkin {
         Self {
             shared,
             scroll_handle: ScrollHandle::default(),
-            last_active_ix: Cell::new(None),
+            last_active_ix: Rc::new(Cell::new(None)),
         }
     }
 
@@ -260,8 +274,11 @@ impl TabGroupSkin {
                     true => t!("Dock.Collapse"),
                     false => t!("Dock.Expand"),
                 })
+                .debug_selector(move || format!("{DOCK_TOGGLE_SELECTOR}-{placement:?}"))
                 .on_click(move |_, window, cx| {
-                    _ = area.update(cx, |area, cx| area.toggle_dock(placement, window, cx));
+                    _ = area.update(cx, |area, cx| {
+                        toggle_dock_by_user(area, placement, window, cx)
+                    });
                 }),
         )
     }
@@ -457,6 +474,11 @@ impl TabGroupSkin {
                 .position(|panel| panel.panel_id(cx) == displayed)
         });
 
+        #[cfg(test)]
+        if let Some(diagnostics) = cx.try_global::<tests::DockTabScrollDiagnostics>() {
+            diagnostics.record(group.node(), &self.scroll_handle);
+        }
+
         // Bring a newly displayed tab into view. The group owns selection now,
         // so the skin notices the change rather than being told about it.
         if self.last_active_ix.replace(Some(active_ix)) != Some(active_ix) {
@@ -494,11 +516,58 @@ impl TabGroupSkin {
 
                         Tab::new()
                             .ix(ix)
+                            .debug_selector(move || format!("{TAB_SELECTOR}-{ix}"))
                             .tab_bar_prefix(has_leading)
                             .map(|this| match handle.and_then(|handle| handle.tab_name(cx)) {
                                 Some(tab_name) => this.child(tab_name),
                                 None => this.child(panel_title(panel, window, cx)),
                             })
+                            // Per-tab close (X) button. The gate mirrors
+                            // `TabGroup::close_panel`, plus `!collapsed`, since a
+                            // collapsed strip is a way back in, not a place to
+                            // close. Stops propagation so the click closes by id
+                            // without also selecting the tab.
+                            .when(
+                                !collapsed
+                                    && self.shared.close_button_visible.get()
+                                    && group.is_panel_closable(panel.panel_id(cx), cx),
+                                |this| {
+                                    this.suffix(
+                                        Button::new(("close-tab", ix))
+                                            .icon(IconName::Close)
+                                            .xsmall()
+                                            // The regular ghost hover matches the
+                                            // inactive tab bar background in the
+                                            // default theme. Use a stronger theme
+                                            // surface while keeping a transparent
+                                            // idle background and no border.
+                                            .custom(
+                                                ButtonCustomVariant::new(cx)
+                                                    .foreground(cx.theme().secondary_foreground)
+                                                    .hover(*cx.theme().tokens.secondary_hover)
+                                                    .active(*cx.theme().tokens.secondary_active),
+                                            )
+                                            // The 20px XS button has a 12px icon:
+                                            // 4px inside plus 8px outside matches
+                                            // the label's 12px leading padding.
+                                            // Offset the label's own 12px right
+                                            // padding and the tab's 4px gap so the
+                                            // text-to-icon distance is also 12px.
+                                            .ml(-px(8.))
+                                            .mr_2()
+                                            .tab_stop(false)
+                                            .debug_selector(|| CLOSE_BUTTON_SELECTOR.to_string())
+                                            .on_click({
+                                                let group = group.clone();
+                                                let panel_id = panel.panel_id(cx);
+                                                move |_, window, cx| {
+                                                    cx.stop_propagation();
+                                                    group.close(panel_id, window, cx);
+                                                }
+                                            }),
+                                    )
+                                },
+                            )
                             // A collapsed group shows no tab as active: the
                             // strip is a way back in, not a selection. The
                             // comparison is against the panel on screen, not
@@ -508,14 +577,23 @@ impl TabGroupSkin {
                             .on_click({
                                 let group = group.clone();
                                 let area = self.shared.area().clone();
+                                let last_active_ix = self.last_active_ix.clone();
                                 move |_, window, cx| {
+                                    // The tab bar reveals a clicked tab itself,
+                                    // so the change must not snap it into view.
+                                    last_active_ix.set(Some(ix));
                                     group.select_tab(ix, window, cx);
 
                                     // Clicking the strip of a collapsed bottom
                                     // dock is how it is opened again.
                                     if is_bottom_dock && collapsed {
                                         _ = area.update(cx, |area, cx| {
-                                            area.toggle_dock(DockPlacement::Bottom, window, cx)
+                                            toggle_dock_by_user(
+                                                area,
+                                                DockPlacement::Bottom,
+                                                window,
+                                                cx,
+                                            )
                                         });
                                     }
                                 }
@@ -608,6 +686,7 @@ impl TabGroupSkin {
             .when(!collapsed, |this| {
                 this.suffix(
                     h_flex()
+                        .debug_selector(|| TAB_TOOLBAR_SELECTOR.to_string())
                         .items_center()
                         .top_0()
                         .right_0()
@@ -705,6 +784,11 @@ impl TabGroupRenderer for TabGroupSkin {
         match visible.as_slice() {
             [] => Empty.into_any_element(),
             [ix] if self.shared.panel_style() == PanelStyle::Auto => {
+                // A panel that draws its own chrome declines the title bar.
+                let panel = &group.panels()[*ix];
+                if PanelHandle::of(panel).is_some_and(|handle| !handle.title_bar(cx)) {
+                    return Empty.into_any_element();
+                }
                 self.render_title(group, *ix, window, cx)
             }
             _ => self.render_tabs(group, window, cx),
@@ -777,21 +861,80 @@ impl TabGroupRenderer for TabGroupSkin {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
+    use std::{
+        cell::{Cell, RefCell},
+        sync::Arc,
+    };
 
-    use gpui::{
-        Entity, EventEmitter, FocusHandle, Focusable, Pixels, TestAppContext, VisualTestContext,
+    use wgpui::{
+        Entity, EventEmitter, FocusHandle, Focusable, Modifiers, MouseButton, Pixels,
+        TestAppContext, VisualTestContext,
     };
-    use gpui_base::dock::{
-        DockArea, DockAreaRenderer, DockLayout, DockPlacement, PanelEvent, TileContext,
-        TilesRenderer,
-    };
+    use wgpui_base::dock::{DockArea, DockAreaRenderer, DockLayout, DockPlacement, PanelEvent};
 
     use super::*;
-    use crate::dock::{
-        DockSkin, Panel, panel_handle,
-        test_support::{HideableProbe, MeasuredProbe},
+    use crate::{
+        ElementExt as _,
+        dock::{
+            DockSkin, Panel, panel_handle,
+            test_support::{HideableProbe, MeasuredProbe},
+        },
     };
+
+    #[derive(Default)]
+    pub(super) struct DockTabScrollDiagnostics {
+        handles: RefCell<Vec<(NodeId, ScrollHandle)>>,
+    }
+
+    impl wgpui::Global for DockTabScrollDiagnostics {}
+
+    impl DockTabScrollDiagnostics {
+        pub(super) fn record(&self, node: NodeId, handle: &ScrollHandle) {
+            let mut handles = self.handles.borrow_mut();
+            if let Some((_, current)) = handles.iter_mut().find(|(id, _)| *id == node) {
+                *current = handle.clone();
+            } else {
+                handles.push((node, handle.clone()));
+            }
+        }
+    }
+
+    fn tab_reveal_diagnostics(area: &Entity<DockArea>, cx: &mut VisualTestContext) -> String {
+        let suffix = cx.debug_bounds(TAB_TOOLBAR_SELECTOR);
+        let tabs = (0..8)
+            .map(|index| {
+                let selector = format!("{TAB_SELECTOR}-{index}").leak();
+                (index, cx.debug_bounds(selector))
+            })
+            .collect::<Vec<_>>();
+        cx.update(|window, cx| {
+            let diagnostics = cx.global::<DockTabScrollDiagnostics>();
+            let strips = diagnostics.handles.borrow().iter().map(|(node, handle)| {
+                let bounds = handle.bounds();
+                let maximum = handle.max_offset();
+                let children = (0..).map_while(|index| handle.bounds_for_item(index)).collect::<Vec<_>>();
+                let child_span = children.first().zip(children.last())
+                    .map(|(first, last)| last.right() - first.left());
+                let selected_index = area.read(cx).layout(DockPlacement::Center)
+                    .and_then(|tree| tree.find_node(*node))
+                    .and_then(|node| match node.kind() {
+                        PaneRef::Tabs { active_ix, .. } => Some(active_ix),
+                        PaneRef::Split { .. } => None,
+                    });
+                format!(
+                    "node={node:?}, viewport={bounds:?}, offset={:?}, max_offset={maximum:?}, \
+                     content_extent_width={}, indexed_child_span_width={child_span:?}, selected_index={selected_index:?}, indexed_children={children:#?}",
+                    handle.offset(), bounds.size.width + maximum.width,
+                )
+            }).collect::<Vec<_>>().join("\n");
+            format!(
+                "window_bounds={:?}, viewport_size={:?}, visual_viewport={:?}, scale={}, \
+                 dock_bounds={:?}, tab_strips:\n{strips}\nsuffix={suffix:?}, tabs={tabs:#?}",
+                window.bounds(), window.viewport_size(), window.visual_viewport_bounds(),
+                window.scale_factor(), area.read(cx).bounds(),
+            )
+        })
+    }
 
     struct Probe {
         focus_handle: FocusHandle,
@@ -805,7 +948,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for Probe {
+    impl wgpui_base::dock::Panel for Probe {
         fn panel_name(&self) -> &'static str {
             "Probe"
         }
@@ -853,24 +996,12 @@ mod tests {
         }
     }
 
-    impl TilesRenderer for Recorder {
-        fn render_drag_bar(&self, _: &TileContext, _: &mut Window, _: &mut App) -> AnyElement {
-            Empty.into_any_element()
-        }
-    }
-
     impl DockAreaRenderer for Recorder {
         fn frame(&self, _: &mut Window, _: &mut App) -> Stateful<Div> {
             div().id("recorder").size_full()
         }
 
         fn tab_group_renderer(&self) -> Rc<dyn TabGroupRenderer> {
-            Rc::new(Recorder {
-                log: self.log.clone(),
-            })
-        }
-
-        fn tiles_renderer(&self) -> Rc<dyn TilesRenderer> {
             Rc::new(Recorder {
                 log: self.log.clone(),
             })
@@ -898,7 +1029,7 @@ mod tests {
     /// The gate carried forward from the old `TabPanel::render`, which wrapped
     /// `on_drag` in `.when(state.draggable, ..)`. Base does not enforce it:
     /// `TabGroupContext::drag_panel` answers for any tab in range.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_last_group_in_a_dock_offers_no_drag(cx: &mut TestAppContext) {
         let (area, log, cx) = recording_area(cx);
 
@@ -918,7 +1049,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_group_beside_another_offers_a_drag(cx: &mut TestAppContext) {
         let (area, log, cx) = recording_area(cx);
 
@@ -959,7 +1090,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for ToolbarZoomProbe {
+    impl wgpui_base::dock::Panel for ToolbarZoomProbe {
         fn panel_name(&self) -> &'static str {
             "ToolbarZoomProbe"
         }
@@ -999,7 +1130,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for NoControlProbe {
+    impl wgpui_base::dock::Panel for NoControlProbe {
         fn panel_name(&self) -> &'static str {
             "NoControlProbe"
         }
@@ -1031,7 +1162,7 @@ mod tests {
         focus_handle: FocusHandle,
     }
 
-    impl gpui_base::dock::Panel for UnzoomableProbe {
+    impl wgpui_base::dock::Panel for UnzoomableProbe {
         fn panel_name(&self) -> &'static str {
             "UnzoomableProbe"
         }
@@ -1069,7 +1200,7 @@ mod tests {
     /// itself would pass with the bug in place.
     fn drew_zoom_control(
         cx: &mut TestAppContext,
-        panel: impl FnOnce(&mut App) -> Arc<dyn gpui_base::dock::PanelView>,
+        panel: impl FnOnce(&mut App) -> Arc<dyn wgpui_base::dock::PanelView>,
     ) -> bool {
         cx.update(|cx| {
             crate::init(cx);
@@ -1091,7 +1222,7 @@ mod tests {
     /// The two halves of the old `zoomable()` can now disagree, and base is
     /// the one that decides. A control drawn against base's refusal is dead:
     /// pressing it does nothing.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_base_will_not_zoom_gets_no_zoom_control(cx: &mut TestAppContext) {
         let drew = drew_zoom_control(cx, |cx| {
             panel_handle(cx.new(|cx| UnzoomableProbe {
@@ -1108,7 +1239,7 @@ mod tests {
     /// The other half: a panel that allows zoom and asks for a toolbar control
     /// gets one drawn. Without this the test above would also pass a skin that
     /// never draws a zoom control at all.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_zoomable_panel_gets_its_zoom_control(cx: &mut TestAppContext) {
         let drew = drew_zoom_control(cx, |cx| panel_handle(ToolbarZoomProbe::new(cx)));
 
@@ -1127,7 +1258,7 @@ mod tests {
     /// `split_frame` of both `size_full` and `flex_1` and every panel here
     /// measures zero. It does not pin *which* of the two does the work —
     /// either alone passes.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_centre_and_the_bottom_dock_share_the_column(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1203,7 +1334,7 @@ mod tests {
     /// Every subset is covered because the defect is positional: only the
     /// cases that hide the trailing slot fail, and a test that hid one fixed
     /// slot would pass against a fix that only special-cased that slot.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_split_fills_its_container_whichever_slots_are_hidden(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1300,7 +1431,7 @@ mod tests {
     /// The old dock installed `ToggleZoom` and `ClosePanel` on the tab panel
     /// itself; base installs neither, so the skin's `frame` is the only place
     /// the keybindings reach.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_zoom_action_reaches_the_group_through_the_skin(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1341,7 +1472,7 @@ mod tests {
     /// the skin's `frame` — so a doc claiming the action gets through anyway
     /// would send a panel author looking for a second switch that does not
     /// exist.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_zoom_action_refuses_a_panel_that_offers_no_control(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1374,7 +1505,7 @@ mod tests {
 
     /// The tab group's own frame has to be a flex column.
     ///
-    /// gpui's default display is Block, and block layout ignores a child's
+    /// WGPUI's default display is Block, and block layout ignores a child's
     /// `flex_grow`. With a plain `div()` frame the content region's `flex_1`
     /// does nothing, `#tab-content` sizes to its content, and its only child
     /// is the panel view positioned absolutely by `cached` — which
@@ -1386,7 +1517,7 @@ mod tests {
     /// difference: it is the panel not rendering at all, and no behavioral
     /// test in this crate can see it. `set_active` still fires, the layout
     /// still round-trips, and the window still opens.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_panel_content_region_gets_the_height_below_the_tab_bar(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1427,7 +1558,7 @@ mod tests {
     ///
     /// The bottom dock, not a side one: a closed left or right dock draws
     /// nothing at all, so it would pass this whether or not the gate exists.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_collapsed_dock_ignores_the_zoom_action(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1458,6 +1589,577 @@ mod tests {
             cx.read(|cx| area.read(cx).is_zoomed()),
             false,
             "a collapsed group installs no action handler"
+        );
+    }
+
+    /// A panel that carries its own chrome declines the one-panel title bar
+    /// and gets the whole group.
+    #[wgpui::test]
+    fn a_panel_without_a_title_bar_gets_the_whole_group(cx: &mut TestAppContext) {
+        struct Chromeless {
+            focus_handle: FocusHandle,
+            height: Rc<Cell<Pixels>>,
+        }
+
+        impl wgpui_base::dock::Panel for Chromeless {
+            fn panel_name(&self) -> &'static str {
+                "Chromeless"
+            }
+        }
+
+        impl Panel for Chromeless {
+            fn title_bar(&self, _: &App) -> bool {
+                false
+            }
+        }
+
+        impl EventEmitter<PanelEvent> for Chromeless {}
+
+        impl Focusable for Chromeless {
+            fn focus_handle(&self, _: &App) -> FocusHandle {
+                self.focus_handle.clone()
+            }
+        }
+
+        impl Render for Chromeless {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                let height = self.height.clone();
+                div()
+                    .size_full()
+                    .on_prepaint(move |bounds, _, _| height.set(bounds.size.height))
+            }
+        }
+
+        cx.update(|cx| crate::init(cx));
+
+        let measure = |cx: &mut TestAppContext, chromeless: bool| -> Pixels {
+            let height = Rc::new(Cell::new(px(0.)));
+            let (area, cx) = cx.add_window_view(|window, cx| {
+                let skin = DockSkin::new(cx);
+                DockArea::new("skin", None, window, cx).with_renderer(skin)
+            });
+            let measured = height.clone();
+            cx.update(|window, cx| {
+                let panel: Arc<dyn wgpui_base::dock::PanelView> = if chromeless {
+                    panel_handle(cx.new(|cx| Chromeless {
+                        focus_handle: cx.focus_handle(),
+                        height: measured,
+                    }))
+                } else {
+                    panel_handle(MeasuredProbe::new(measured, cx))
+                };
+                let layout = DockLayout::tabs().panel_view(panel, cx);
+                area.update(cx, |area, cx| area.set_center(layout, window, cx));
+            });
+            cx.run_until_parked();
+            cx.update(|window, cx| window.draw(cx).clear());
+            height.get()
+        };
+
+        let with_title = measure(cx, false);
+        let without = measure(cx, true);
+        assert!(with_title > px(0.), "the probe must have been drawn");
+        assert_eq!(
+            without,
+            with_title + px(30.),
+            "the 30px the title bar took go to the panel instead"
+        );
+    }
+
+    /// Panel with a chosen `closable` that records whether it was made active.
+    struct TabProbe {
+        focus_handle: FocusHandle,
+        closable: bool,
+        activated: Rc<Cell<bool>>,
+    }
+
+    impl TabProbe {
+        fn new(closable: bool, cx: &mut App) -> Entity<Self> {
+            cx.new(|cx| Self {
+                focus_handle: cx.focus_handle(),
+                closable,
+                activated: Rc::new(Cell::new(false)),
+            })
+        }
+    }
+
+    impl wgpui_base::dock::Panel for TabProbe {
+        fn panel_name(&self) -> &'static str {
+            "TabProbe"
+        }
+
+        fn closable(&self, _: &App) -> bool {
+            self.closable
+        }
+
+        fn set_active(&mut self, active: bool, _: &mut Window, _: &mut Context<Self>) {
+            if active {
+                self.activated.set(true);
+            }
+        }
+    }
+
+    impl Panel for TabProbe {}
+
+    impl EventEmitter<PanelEvent> for TabProbe {}
+
+    impl Focusable for TabProbe {
+        fn focus_handle(&self, _: &App) -> FocusHandle {
+            self.focus_handle.clone()
+        }
+    }
+
+    impl Render for TabProbe {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            Empty
+        }
+    }
+
+    /// Render a two-tab group through the real [`DockSkin`] and report whether
+    /// the first tab drew a close button. The second tab is a non-closable
+    /// filler (a lone panel draws no tab bar) that never draws one, so the
+    /// probe is unambiguous.
+    fn drew_close_button(cx: &mut TestAppContext, closable: bool, enabled: bool) -> bool {
+        cx.update(|cx| crate::init(cx));
+        let mut skin = None;
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            let renderer = DockSkin::new(cx);
+            skin = Some(renderer.clone());
+            DockArea::new("skin", None, window, cx).with_renderer(renderer)
+        });
+        let skin = skin.expect("skin constructed with the area");
+        if enabled {
+            cx.update(|_, cx| skin.set_close_button_visible(true, cx));
+        }
+        cx.update(|window, cx| {
+            let under_test = TabProbe::new(closable, cx);
+            let filler = TabProbe::new(false, cx);
+            let layout = DockLayout::tabs()
+                .panel_view(panel_handle(under_test), cx)
+                .panel_view(panel_handle(filler), cx);
+            area.update(cx, |area, cx| area.set_center(layout, window, cx));
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+        let button = cx.debug_bounds(CLOSE_BUTTON_SELECTOR);
+        if enabled && closable {
+            assert_eq!(
+                button.as_ref().map(|bounds| bounds.size.width),
+                Some(px(20.)),
+                "the close button keeps the standard XS hover target"
+            );
+        }
+        button.is_some()
+    }
+
+    /// A closable panel's tab carries a close (X) button.
+    #[wgpui::test]
+    fn a_closable_panel_gets_a_close_button(cx: &mut TestAppContext) {
+        assert!(
+            drew_close_button(cx, true, true),
+            "a closable panel's tab must draw a close button"
+        );
+    }
+
+    /// A non-closable panel draws no close button (the gate is real).
+    #[wgpui::test]
+    fn a_non_closable_panel_gets_no_close_button(cx: &mut TestAppContext) {
+        assert!(
+            !drew_close_button(cx, false, true),
+            "a panel that reports itself non-closable must draw no close button"
+        );
+    }
+
+    #[wgpui::test]
+    fn close_buttons_are_off_by_default(cx: &mut TestAppContext) {
+        assert!(!drew_close_button(cx, true, false));
+    }
+
+    #[wgpui::test]
+    fn close_button_visibility_updates_after_the_skin_setting_changes(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let mut skin = None;
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            let renderer = DockSkin::new(cx);
+            skin = Some(renderer.clone());
+            DockArea::new("skin", None, window, cx).with_renderer(renderer)
+        });
+        let skin = skin.expect("skin constructed with the area");
+        cx.update(|window, cx| {
+            let panel = TabProbe::new(true, cx);
+            let filler = TabProbe::new(false, cx);
+            area.update(cx, |area, cx| {
+                area.set_center(
+                    DockLayout::tabs()
+                        .panel_view(panel_handle(panel), cx)
+                        .panel_view(panel_handle(filler), cx),
+                    window,
+                    cx,
+                )
+            });
+        });
+
+        for (visible, expected) in [(false, false), (true, true), (false, false)] {
+            cx.update(|_, cx| skin.set_close_button_visible(visible, cx));
+            cx.run_until_parked();
+            cx.update(|window, cx| window.draw(cx).clear());
+            assert_eq!(cx.debug_bounds(CLOSE_BUTTON_SELECTOR).is_some(), expected);
+        }
+    }
+
+    /// Clicking a non-active tab's close button removes that panel by id and
+    /// does not select it (`stop_propagation`). The displayed tab is a
+    /// non-closable filler, so the only close button is the one under test.
+    #[wgpui::test]
+    fn clicking_a_close_button_removes_only_that_tab(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let mut skin = None;
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            let renderer = DockSkin::new(cx);
+            skin = Some(renderer.clone());
+            DockArea::new("skin", None, window, cx).with_renderer(renderer)
+        });
+        cx.update(|_, cx| skin.unwrap().set_close_button_visible(true, cx));
+
+        let (closable_id, filler_id, activated) = cx.update(|window, cx| {
+            let filler = TabProbe::new(false, cx);
+            let closable = TabProbe::new(true, cx);
+            let activated = closable.read(cx).activated.clone();
+            let filler_handle = panel_handle(filler);
+            let closable_handle = panel_handle(closable);
+            let ids = (closable_handle.panel_id(cx), filler_handle.panel_id(cx));
+            // Filler at ix 0 is the displayed tab; the closable tab at ix 1 is
+            // never active, so its close button is the only one drawn.
+            let layout = DockLayout::tabs()
+                .panel_view(filler_handle, cx)
+                .panel_view(closable_handle, cx);
+            area.update(cx, |area, cx| area.set_center(layout, window, cx));
+            (ids.0, ids.1, activated)
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+
+        assert!(
+            cx.update(|_, cx| area.read(cx).panel(closable_id).is_some()),
+            "the closable tab starts owned by the area"
+        );
+
+        let button = cx
+            .debug_bounds(CLOSE_BUTTON_SELECTOR)
+            .expect("the non-active closable tab draws a close button");
+        cx.simulate_mouse_down(button.center(), MouseButton::Left, Modifiers::none());
+        cx.simulate_mouse_up(button.center(), MouseButton::Left, Modifiers::none());
+        cx.run_until_parked();
+
+        assert!(
+            cx.update(|_, cx| area.read(cx).panel(closable_id).is_none()),
+            "the close click removes exactly the tab it belongs to"
+        );
+        assert!(
+            cx.update(|_, cx| area.read(cx).panel(filler_id).is_some()),
+            "the displayed filler tab is untouched"
+        );
+        assert!(
+            !activated.get(),
+            "stop_propagation keeps the close click from also selecting the tab"
+        );
+    }
+
+    /// A click is left to the tab bar's animated reveal: the skin's own snap
+    /// for a changed tab would land the strip on the first frame and cut the
+    /// animation short.
+    #[wgpui::test]
+    fn a_clicked_tab_is_revealed_by_the_tab_bar_not_snapped(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            crate::init(cx);
+            cx.set_reduce_motion(false);
+            cx.set_global(DockTabScrollDiagnostics::default());
+        });
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            DockArea::new("skin", None, window, cx).with_renderer(DockSkin::new(cx))
+        });
+        cx.simulate_resize(wgpui::size(px(300.), px(300.)));
+        cx.update(|window, cx| {
+            let layout = (0..8).fold(DockLayout::tabs(), |layout, _| {
+                layout.panel_view(panel_handle(Probe::new(cx)), cx)
+            });
+            area.update(cx, |area, cx| area.set_center(layout, window, cx));
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+
+        // `debug_bounds` takes a `'static` selector.
+        let tab = |cx: &mut VisualTestContext, ix: usize| {
+            cx.debug_bounds(format!("{TAB_SELECTOR}-{ix}").leak())
+                .unwrap()
+        };
+        let (tab_group_node, scroll_handle) = cx.update(|_, cx| {
+            cx.global::<DockTabScrollDiagnostics>()
+                .handles
+                .borrow()
+                .first()
+                .cloned()
+                .expect("the fixture draws a tab group")
+        });
+        let viewport = scroll_handle.bounds();
+        let boundary_tab = (0..8)
+            .map(|index| tab(cx, index))
+            .find(|bounds| bounds.left() < viewport.right() && bounds.right() >= viewport.right())
+            .expect("a tab reaches the strip's trailing edge");
+        // An exact tab boundary has no clipped target. Place the measured
+        // viewport edge inside that tab while retaining the toolbar's width.
+        let window_size = cx.update(|window, _| window.viewport_size());
+        let adjustment = viewport.right() - boundary_tab.center().x;
+        cx.simulate_resize(wgpui::size(
+            window_size.width - adjustment,
+            window_size.height,
+        ));
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+
+        let first_left = |cx: &mut VisualTestContext| tab(cx, 0).left();
+        let start = first_left(cx);
+        let viewport = scroll_handle.bounds();
+        let tab_bounds = (0..8)
+            .map(|index| (index, tab(cx, index)))
+            .collect::<Vec<_>>();
+        let (clipped_index, clipped) = tab_bounds
+            .into_iter()
+            .find(|(_, bounds)| {
+                bounds.left() < viewport.right() && bounds.right() > viewport.right()
+            })
+            .unwrap_or_else(|| {
+                panic!(
+                    "a partially visible tab at the measured viewport edge; {}",
+                    tab_reveal_diagnostics(&area, cx)
+                )
+            });
+
+        cx.simulate_click(
+            wgpui::point((clipped.left() + viewport.right()) / 2., clipped.center().y),
+            Modifiers::none(),
+        );
+        let selected_index = cx.update(|_, cx| {
+            area.read(cx)
+                .layout(DockPlacement::Center)
+                .and_then(|tree| tree.find_node(tab_group_node))
+                .and_then(|node| match node.kind() {
+                    PaneRef::Tabs { active_ix, .. } => Some(active_ix),
+                    PaneRef::Split { .. } => None,
+                })
+        });
+        assert_eq!(
+            selected_index,
+            Some(clipped_index),
+            "the visible tab received the click; {}",
+            tab_reveal_diagnostics(&area, cx)
+        );
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(
+            first_left(cx),
+            start,
+            "the first frame has not snapped; {}",
+            tab_reveal_diagnostics(&area, cx)
+        );
+
+        let mut lefts = Vec::new();
+        for _ in 0..60 {
+            cx.executor()
+                .advance_clock(std::time::Duration::from_millis(16));
+            cx.update(|window, cx| {
+                window.simulate_next_frame(cx);
+                window.draw(cx).clear();
+            });
+            lefts.push(first_left(cx));
+        }
+        let end = *lefts.last().unwrap();
+        assert!(
+            end < start,
+            "the strip scrolled; {}",
+            tab_reveal_diagnostics(&area, cx)
+        );
+        assert!(
+            lefts.iter().any(|left| *left < start && *left > end),
+            "the strip slid rather than jumped: {lefts:?}; {}",
+            tab_reveal_diagnostics(&area, cx)
+        );
+        let revealed = tab(cx, clipped_index);
+        let viewport = scroll_handle.bounds();
+        assert!(
+            revealed.left() >= viewport.left() && revealed.right() <= viewport.right(),
+            "the clicked tab is fully revealed; {}",
+            tab_reveal_diagnostics(&area, cx)
+        );
+    }
+
+    /// The collapse button reports the user's toggle; a toggle made by code
+    /// does not.
+    #[wgpui::test]
+    fn the_collapse_button_reports_the_toggle(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            DockArea::new("toggle", None, window, cx).with_renderer(DockSkin::new(cx))
+        });
+        cx.simulate_resize(wgpui::size(px(800.), px(600.)));
+        let events = Rc::new(RefCell::new(Vec::new()));
+        cx.update(|window, cx| {
+            let center = DockLayout::tabs().panel_view(panel_handle(Probe::new(cx)), cx);
+            let left = DockLayout::tabs().panel_view(panel_handle(Probe::new(cx)), cx);
+            area.update(cx, |area, cx| {
+                area.set_center(center, window, cx);
+                area.set_dock(DockPlacement::Left, left, window, cx);
+            });
+            let events = events.clone();
+            cx.subscribe(&area, move |_, event: &crate::dock::DockToggleEvent, _| {
+                events
+                    .borrow_mut()
+                    .push((event.placement(), event.is_open()));
+            })
+            .detach();
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+
+        let selector = format!("{DOCK_TOGGLE_SELECTOR}-{:?}", DockPlacement::Left).leak();
+        let button = cx
+            .debug_bounds(selector)
+            .expect("the left dock offers a toggle");
+        cx.simulate_click(button.center(), Modifiers::none());
+        cx.run_until_parked();
+        assert!(!cx.read(|cx| area.read(cx).is_dock_open(DockPlacement::Left)));
+        assert_eq!(*events.borrow(), vec![(DockPlacement::Left, false)]);
+
+        cx.update(|window, cx| {
+            area.update(cx, |area, cx| {
+                area.toggle_dock(DockPlacement::Left, window, cx)
+            });
+        });
+        cx.run_until_parked();
+        assert_eq!(
+            events.borrow().len(),
+            1,
+            "a toggle made by code is not reported"
+        );
+    }
+
+    /// Clicking a tab on a collapsed bottom dock's strip opens the dock and
+    /// reports it.
+    #[wgpui::test]
+    fn opening_the_bottom_strip_reports_the_toggle(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            DockArea::new("strip", None, window, cx).with_renderer(DockSkin::new(cx))
+        });
+        cx.simulate_resize(wgpui::size(px(800.), px(600.)));
+        let events = Rc::new(RefCell::new(Vec::new()));
+        cx.update(|window, cx| {
+            // Two panels: a group with one panel draws its title, not a tab bar.
+            let layout = DockLayout::tabs()
+                .panel_view(panel_handle(Probe::new(cx)), cx)
+                .panel_view(panel_handle(Probe::new(cx)), cx);
+            area.update(cx, |area, cx| {
+                area.set_dock(DockPlacement::Bottom, layout, window, cx);
+                area.toggle_dock(DockPlacement::Bottom, window, cx);
+            });
+            let events = events.clone();
+            cx.subscribe(&area, move |_, event: &crate::dock::DockToggleEvent, _| {
+                events
+                    .borrow_mut()
+                    .push((event.placement(), event.is_open()));
+            })
+            .detach();
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert!(!cx.read(|cx| area.read(cx).is_dock_open(DockPlacement::Bottom)));
+
+        let tab = cx
+            .debug_bounds(format!("{TAB_SELECTOR}-0").leak())
+            .expect("the collapsed strip still draws its tab");
+        cx.simulate_click(tab.center(), Modifiers::none());
+        cx.run_until_parked();
+        assert_eq!(*events.borrow(), vec![(DockPlacement::Bottom, true)]);
+    }
+
+    /// A dock that refuses to close is not reported as toggled.
+    #[wgpui::test]
+    fn a_refused_toggle_is_not_reported(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            DockArea::new("refuse", None, window, cx).with_renderer(DockSkin::new(cx))
+        });
+        let events = Rc::new(RefCell::new(Vec::new()));
+        cx.update(|window, cx| {
+            let layout = DockLayout::tabs().panel_view(panel_handle(Probe::new(cx)), cx);
+            area.update(cx, |area, cx| {
+                area.set_dock(DockPlacement::Left, layout, window, cx);
+                area.set_dock_collapsible(DockPlacement::Left, false, window, cx);
+            });
+            let events = events.clone();
+            cx.subscribe(&area, move |_, event: &crate::dock::DockToggleEvent, _| {
+                events
+                    .borrow_mut()
+                    .push((event.placement(), event.is_open()));
+            })
+            .detach();
+        });
+        cx.update(|window, cx| {
+            area.update(cx, |area, cx| {
+                toggle_dock_by_user(area, DockPlacement::Left, window, cx)
+            });
+        });
+        cx.run_until_parked();
+        assert!(cx.read(|cx| area.read(cx).is_dock_open(DockPlacement::Left)));
+        assert!(events.borrow().is_empty());
+    }
+
+    /// A collapsed group offers no close button, though the same group does
+    /// while open. Before/after collapse isolates `!collapsed`; nothing else
+    /// changes.
+    #[wgpui::test]
+    fn a_collapsed_group_draws_no_close_button(cx: &mut TestAppContext) {
+        cx.update(|cx| crate::init(cx));
+        let mut skin = None;
+        let (area, cx) = cx.add_window_view(|window, cx| {
+            let renderer = DockSkin::new(cx);
+            skin = Some(renderer.clone());
+            DockArea::new("skin", None, window, cx).with_renderer(renderer)
+        });
+        cx.update(|_, cx| skin.unwrap().set_close_button_visible(true, cx));
+        // Two closable panels so the group is draggable (not on its last
+        // visible panel) and offers close buttons while open.
+        cx.update(|window, cx| {
+            let a = TabProbe::new(true, cx);
+            let b = TabProbe::new(true, cx);
+            let layout = DockLayout::tabs()
+                .panel_view(panel_handle(a), cx)
+                .panel_view(panel_handle(b), cx);
+            area.update(cx, |area, cx| {
+                area.set_dock(DockPlacement::Bottom, layout, window, cx);
+                if !area.is_dock_open(DockPlacement::Bottom) {
+                    area.toggle_dock(DockPlacement::Bottom, window, cx);
+                }
+            });
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert!(
+            cx.debug_bounds(CLOSE_BUTTON_SELECTOR).is_some(),
+            "an open group with two closable panels offers a close button"
+        );
+
+        // Collapse the bottom dock: its strip stays clickable, but the close
+        // buttons on it must not.
+        cx.update(|window, cx| {
+            area.update(cx, |area, cx| {
+                area.toggle_dock(DockPlacement::Bottom, window, cx)
+            });
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert!(
+            cx.debug_bounds(CLOSE_BUTTON_SELECTOR).is_none(),
+            "a collapsed group must not offer a close button"
         );
     }
 }

@@ -1,9 +1,14 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, relative,
 };
 
-use crate::{ActiveTheme as _, StyledExt as _, button::Button, dialog::Confirm, h_flex};
+use crate::{
+    ActiveTheme as _, StyledExt as _,
+    button::Button,
+    dialog::{Confirm, DialogDispatchAnchor},
+    h_flex,
+};
 
 /// Footer section of a dialog, typically contains action buttons.
 ///
@@ -46,7 +51,7 @@ impl RenderOnce for DialogFooter {
         h_flex()
             .gap_2()
             .justify_end()
-            .line_height(relative(1.))
+            .line_height(relative(1.25))
             .rounded_b(cx.theme().radius_lg)
             .refine_style(&self.style)
             .children(self.children)
@@ -64,13 +69,13 @@ pub trait DialogFooterButton {
 }
 #[derive(IntoElement)]
 pub struct DialogClose {
-    base: gpui_base::DialogClose,
+    base: wgpui_base::DialogClose,
 }
 
 impl DialogClose {
     pub fn new() -> Self {
         Self {
-            base: gpui_base::DialogClose::new(),
+            base: wgpui_base::DialogClose::new(),
         }
     }
 
@@ -115,12 +120,14 @@ impl ParentElement for DialogAction {
 }
 
 impl RenderOnce for DialogAction {
-    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let anchor = DialogDispatchAnchor::new("dialog-action-anchor", window, cx);
         div()
             .size_full()
             .id("dialog-action")
+            .child(anchor.element())
             .on_click(move |_, window, cx| {
-                window.dispatch_action(Box::new(Confirm { secondary: false }), cx)
+                anchor.dispatch(&Confirm { secondary: false }, window, cx)
             })
             .children(self.children)
     }

@@ -1,9 +1,9 @@
 use crate::theme::ActiveTheme;
-use gpui::{
+use wgpui::{
     AnyElement, App, Entity, FocusHandle, Focusable, InteractiveElement as _,
     StatefulInteractiveElement as _, Window, div, px,
 };
-use gpui::{
+use wgpui::{
     IntoElement, ParentElement, RenderOnce, SharedString, StyleRefinement, Styled, TextAlign,
     prelude::FluentBuilder as _,
 };
@@ -12,9 +12,9 @@ use crate::{Disableable, Icon, IconName, Sizable, Size, StyleSized as _, StyledE
 
 use super::{Input, InputState, input::input_style};
 use crate::ThemeStyled as _;
-use gpui_base::NumberInput as BaseNumberInput;
-pub use gpui_base::{NumberInputEvent, NumberStep, StepAction};
 use rust_i18n::t;
+use wgpui_base::NumberInput as BaseNumberInput;
+pub use wgpui_base::{NumberInputEvent, NumberStep, StepAction};
 
 /// A number input element with increment and decrement buttons.
 #[derive(IntoElement)]
@@ -27,6 +27,7 @@ pub struct NumberInput {
     appearance: bool,
     focus_ring_enabled: bool,
     disabled: bool,
+    accessibility_label: Option<SharedString>,
     style: StyleRefinement,
 }
 
@@ -42,6 +43,7 @@ impl NumberInput {
             appearance: true,
             focus_ring_enabled: true,
             disabled: false,
+            accessibility_label: None,
             style: StyleRefinement::default(),
         }
     }
@@ -67,6 +69,16 @@ impl NumberInput {
     /// Set the appearance of the number input, if false will no border and background.
     pub fn appearance(mut self, appearance: bool) -> Self {
         self.appearance = appearance;
+        self
+    }
+
+    /// Set the name a screen reader announces.
+    ///
+    /// A number input has no visible text of its own to be named by, so set
+    /// this whenever it is shown without one, for example next to a separate
+    /// label. This does not change what is displayed.
+    pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.accessibility_label = Some(label.into());
         self
     }
 }
@@ -132,6 +144,9 @@ impl RenderOnce for NumberInput {
         let base_state = self.state.clone();
         let content = BaseNumberInput::new(&base_state)
             .disabled(self.disabled)
+            .when_some(self.accessibility_label, |this, label| {
+                this.accessibility_label(label)
+            })
             .size_full()
             .decrement_button(move |this| {
                 this.accessibility_label(t!("Input.Decrement"))
@@ -213,7 +228,7 @@ impl RenderOnce for NumberInput {
 #[cfg(test)]
 mod tests {
     use super::StepAction;
-    use gpui_base::step_value;
+    use wgpui_base::step_value;
 
     // `test_number_step` lives in `state::tests` because `NumberStep::value`
     // now needs a `Context<InputState>` to invoke the `by_value` closure.

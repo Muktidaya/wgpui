@@ -1,0 +1,14 @@
+Dragon clip art.svg
+Author: Ebaychatter0
+Source publication: 2 October 2012
+Source: https://commons.wikimedia.org/wiki/File:Dragon_clip_art.svg
+License: Creative Commons Attribution-ShareAlike 3.0 Unported (CC-BY-SA-3.0)
+License URI and terms: https://creativecommons.org/licenses/by-sa/3.0/
+Legal code: https://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+The illustration in dragon.svg retains that license, independently of the
+Apache-2.0 framework code. This audit adds attribution/header notices; it does
+not change the vector artwork. Earlier import history remains in Git. No
+endorsement by the original author is implied. Retain this attribution and
+license URI when redistributing the illustration; adaptations remain subject
+to the applicable share-alike terms.

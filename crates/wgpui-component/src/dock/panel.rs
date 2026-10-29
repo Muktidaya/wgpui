@@ -1,14 +1,14 @@
 //! The presentation half of a dockable panel, and the concrete handle that
 //! carries it back across the renderer seam.
 //!
-//! `gpui-base` owns panel *behavior*: [`gpui_base::dock::Panel`] and its
+//! `gpui-base` owns panel *behavior*: [`wgpui_base::dock::Panel`] and its
 //! object-safe mirror answer for the name, the id, closability, visibility,
 //! and the activation callbacks. Everything a tab bar actually draws — the
 //! title, the tab name, the toolbar, the ellipsis menu — is presentation and
 //! lives here.
 //!
 //! A sub-trait alone cannot join the two. Base hands a skin
-//! `Arc<dyn gpui_base::dock::PanelView>`; `Arc<dyn PanelView>` coerces *to*
+//! `Arc<dyn wgpui_base::dock::PanelView>`; `Arc<dyn PanelView>` coerces *to*
 //! that, and Rust has no coercion back, so a renderer holding base's handle
 //! can never reach a presentation method through it. What does work is a
 //! *concrete* type: [`PanelHandle`] wraps `Arc<dyn PanelView>` and implements
@@ -18,12 +18,12 @@
 
 use std::{any::Any, sync::Arc};
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AnyElement, AnyView, App, Context, Entity, FocusHandle, Hsla, IntoElement, SharedString,
     WeakEntity, Window,
 };
-use gpui_base::dock::{PanelId, PanelState, TabGroup};
-use rust_i18n::t;
+use wgpui_base::dock::{PanelId, PanelState, TabGroup};
 
 use crate::{button::Button, menu::PopupMenu};
 
@@ -62,13 +62,13 @@ impl PanelControl {
     }
 }
 
-/// What a panel draws, on top of the behavior [`gpui_base::dock::Panel`]
+/// What a panel draws, on top of the behavior [`wgpui_base::dock::Panel`]
 /// defines.
 ///
 /// Everything here has a default, so a panel that only implements base's trait
 /// plus this one gets an unnamed title and no chrome.
 #[allow(unused_variables)]
-pub trait Panel: gpui_base::dock::Panel {
+pub trait Panel: wgpui_base::dock::Panel {
     /// The short name shown when a tab bar has no room for the full title.
     ///
     /// Used by an already-collapsed tab group, where only the strip of tabs is
@@ -94,7 +94,7 @@ pub trait Panel: gpui_base::dock::Panel {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Option<impl IntoElement> {
-        None::<gpui::Div>
+        None::<wgpui::Div>
     }
 
     /// Buttons for the title bar's toolbar.
@@ -125,7 +125,7 @@ pub trait Panel: gpui_base::dock::Panel {
     /// the control while zoomed would otherwise strand the user with no way
     /// back.
     ///
-    /// [`gpui_base::dock::Panel::zoomable`] is the other half: it decides
+    /// [`wgpui_base::dock::Panel::zoomable`] is the other half: it decides
     /// whether zooming happens at all, and base refuses a zoom that fails it
     /// however the zoom was asked for.
     fn zoom_control(&self, cx: &App) -> Option<PanelControl> {
@@ -137,11 +137,20 @@ pub trait Panel: gpui_base::dock::Panel {
     fn inner_padding(&self, cx: &App) -> bool {
         true
     }
+
+    /// Whether the tab group draws a title bar above this panel when it is
+    /// the only panel in its group.
+    ///
+    /// `false` for a panel that carries its own chrome. A group holding
+    /// several panels still draws its tabs, so every panel stays reachable.
+    fn title_bar(&self, cx: &App) -> bool {
+        true
+    }
 }
 
 /// Object-safe counterpart of [`Panel`], and the presentation half of the
 /// handle a skin holds.
-pub trait PanelView: gpui_base::dock::PanelView {
+pub trait PanelView: wgpui_base::dock::PanelView {
     fn tab_name(&self, cx: &App) -> Option<SharedString>;
     fn title(&self, window: &mut Window, cx: &mut App) -> AnyElement;
     fn title_style(&self, cx: &App) -> Option<TitleStyle>;
@@ -150,6 +159,7 @@ pub trait PanelView: gpui_base::dock::PanelView {
     fn dropdown_menu(&self, menu: PopupMenu, window: &mut Window, cx: &mut App) -> PopupMenu;
     fn zoom_control(&self, cx: &App) -> Option<PanelControl>;
     fn inner_padding(&self, cx: &App) -> bool;
+    fn title_bar(&self, cx: &App) -> bool;
 }
 
 impl<T: Panel> PanelView for Entity<T> {
@@ -187,13 +197,17 @@ impl<T: Panel> PanelView for Entity<T> {
     fn inner_padding(&self, cx: &App) -> bool {
         self.read(cx).inner_padding(cx)
     }
+
+    fn title_bar(&self, cx: &App) -> bool {
+        self.read(cx).title_bar(cx)
+    }
 }
 
 /// The panel handle `gpui-base` holds on this crate's behalf.
 ///
 /// Concrete on purpose. Base stores it as
-/// `Arc<dyn gpui_base::dock::PanelView>`, and every renderer hook — the tab
-/// bar, the tile drag bar — gets it back with [`Self::of`], which is an `Any`
+/// `Arc<dyn wgpui_base::dock::PanelView>`, and every renderer hook — the tab
+/// bar most of all — gets it back with [`Self::of`], which is an `Any`
 /// downcast to this one type. That is the only recovery Rust offers: the
 /// sub-trait object `Arc<dyn PanelView>` cannot be reconstructed from base's
 /// handle, but a concrete wrapper around it can be.
@@ -212,11 +226,11 @@ impl PanelHandle {
 
     /// Recover the handle behind one of base's, or `None` when base is
     /// holding a panel this crate did not wrap — a bare `Entity<P>` handed
-    /// straight to [`gpui_base::dock::DockLayout::panel`], say. A skin must
+    /// straight to [`wgpui_base::dock::DockLayout::panel`], say. A skin must
     /// draw something for that case; base's own
-    /// [`gpui_base::dock::PanelView::panel_name`] is the fallback with no
+    /// [`wgpui_base::dock::PanelView::panel_name`] is the fallback with no
     /// obligations on the panel author.
-    pub fn of(panel: &Arc<dyn gpui_base::dock::PanelView>) -> Option<&Self> {
+    pub fn of(panel: &Arc<dyn wgpui_base::dock::PanelView>) -> Option<&Self> {
         panel.as_any().downcast_ref::<Self>()
     }
 
@@ -242,7 +256,7 @@ impl std::ops::Deref for PanelHandle {
     }
 }
 
-impl gpui_base::dock::PanelView for PanelHandle {
+impl wgpui_base::dock::PanelView for PanelHandle {
     fn panel_name(&self, cx: &App) -> &'static str {
         self.0.panel_name(cx)
     }
@@ -300,17 +314,15 @@ impl gpui_base::dock::PanelView for PanelHandle {
 ///
 /// This is what every entry point into the dock wants:
 /// `DockLayout::tabs().panel_view(panel_handle(story), cx)`,
-/// `DockLayout::tiles().tile_view(panel_handle(story), bounds, cx)`,
-/// `DockArea::add_panel_view(panel_handle(story), ..)`,
-/// `DockArea::add_tile_view(panel_handle(story), ..)`, and the closure a
-/// [`register_panel`](gpui_base::dock::register_panel) builder returns.
+/// `DockArea::add_panel_view(panel_handle(story), ..)`, and the closure a
+/// [`register_panel`](wgpui_base::dock::register_panel) builder returns.
 ///
-/// Base's own `DockLayout::panel` / `tile` and `DockArea::add_panel` /
-/// `add_tile` also accept a panel — a `gpui_component::dock::Panel` is a
-/// `gpui_base::dock::Panel` — but they store the bare entity, and a skin
+/// Base's own `DockLayout::panel` and `DockArea::add_panel` also accept a
+/// panel — a `wgpui_component::dock::Panel` is a
+/// `wgpui_base::dock::Panel` — but they store the bare entity, and a skin
 /// cannot recover presentation from one. Such a panel still docks, drags and
 /// persists; it just draws its `panel_name` where its title would be.
-pub fn panel_handle<P: Panel>(panel: Entity<P>) -> Arc<dyn gpui_base::dock::PanelView> {
+pub fn panel_handle<P: Panel>(panel: Entity<P>) -> Arc<dyn wgpui_base::dock::PanelView> {
     Arc::new(PanelHandle::new(panel))
 }
 
@@ -318,13 +330,12 @@ pub fn panel_handle<P: Panel>(panel: Entity<P>) -> Arc<dyn gpui_base::dock::Pane
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use gpui::{
-        AppContext as _, Bounds, Div, Empty, EventEmitter, Focusable, InteractiveElement as _,
-        ParentElement as _, Render, Stateful, Styled as _, TestAppContext, div, point, px, size,
+    use wgpui::{
+        AppContext as _, Div, Empty, EventEmitter, Focusable, InteractiveElement as _,
+        ParentElement as _, Render, Stateful, Styled as _, TestAppContext, div,
     };
-    use gpui_base::dock::{
+    use wgpui_base::dock::{
         DockArea, DockAreaRenderer, DockLayout, PanelEvent, TabGroupContext, TabGroupRenderer,
-        TileContext, TilesRenderer,
     };
 
     use super::*;
@@ -344,7 +355,7 @@ mod tests {
         }
     }
 
-    impl gpui_base::dock::Panel for Probe {
+    impl wgpui_base::dock::Panel for Probe {
         fn panel_name(&self) -> &'static str {
             "Probe"
         }
@@ -378,8 +389,6 @@ mod tests {
         /// What the tab bar read off each panel while it drew, or `None` for a
         /// panel it could not recover.
         tab_names: Vec<Option<SharedString>>,
-        /// The same, read by the tiles drag bar rather than the tab bar.
-        drag_bar_names: Vec<Option<SharedString>>,
         /// A read the tab bar deferred, the way an ellipsis menu defers
         /// building its items.
         deferred: Option<DeferredRead>,
@@ -426,38 +435,12 @@ mod tests {
         }
     }
 
-    impl TilesRenderer for Skin {
-        fn render_drag_bar(
-            &self,
-            tile: &TileContext,
-            window: &mut Window,
-            cx: &mut App,
-        ) -> AnyElement {
-            let handle = PanelHandle::of(tile.panel());
-            self.recovered
-                .borrow_mut()
-                .drag_bar_names
-                .push(handle.and_then(|handle| handle.tab_name(cx)));
-
-            match handle {
-                Some(handle) => div().child(handle.title(window, cx)).into_any_element(),
-                None => Empty.into_any_element(),
-            }
-        }
-    }
-
     impl DockAreaRenderer for Skin {
         fn frame(&self, _: &mut Window, _: &mut App) -> Stateful<Div> {
             div().id("skin-dock-area").size_full()
         }
 
         fn tab_group_renderer(&self) -> Rc<dyn TabGroupRenderer> {
-            Rc::new(Skin {
-                recovered: self.recovered.clone(),
-            })
-        }
-
-        fn tiles_renderer(&self) -> Rc<dyn TilesRenderer> {
             Rc::new(Skin {
                 recovered: self.recovered.clone(),
             })
@@ -469,12 +452,12 @@ mod tests {
     /// as a handle it can read presentation off.
     ///
     /// Nothing in `TabGroupContext` is typed to this crate — the renderer
-    /// holds `Arc<dyn gpui_base::dock::PanelView>` — so if the `Any` downcast
+    /// holds `Arc<dyn wgpui_base::dock::PanelView>` — so if the `Any` downcast
     /// stopped working the recorded name would be `None` and this fails.
-    #[gpui::test]
+    #[wgpui::test]
     fn the_tab_bar_recovers_presentation_from_a_base_panel_handle(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let _ = gpui_base::Theme::global_mut(cx);
+            let _ = wgpui_base::Theme::global_mut(cx);
         });
         let recovered = Rc::new(RefCell::new(Recovered::default()));
         let skin = Rc::new(Skin {
@@ -508,13 +491,13 @@ mod tests {
     }
 
     /// A panel rebuilt from persisted state is recoverable too. This needs no
-    /// new entry point: [`gpui_base::dock::register_panel`] already takes a
-    /// builder returning `Arc<dyn gpui_base::dock::PanelView>`, so the skin's
+    /// new entry point: [`wgpui_base::dock::register_panel`] already takes a
+    /// builder returning `Arc<dyn wgpui_base::dock::PanelView>`, so the skin's
     /// builder returns a [`PanelHandle`] and base stores that handle as-is.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_rebuilt_from_persisted_state_is_recoverable(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let _ = gpui_base::Theme::global_mut(cx);
+            let _ = wgpui_base::Theme::global_mut(cx);
         });
         let recovered = Rc::new(RefCell::new(Recovered::default()));
         let skin = Rc::new(Skin {
@@ -526,9 +509,9 @@ mod tests {
         });
 
         cx.update(|window, cx| {
-            gpui_base::dock::register_panel(cx, "Probe", |_, _, cx| {
+            wgpui_base::dock::register_panel(cx, "Probe", |_, _, cx| {
                 Arc::new(PanelHandle::new(Probe::new("Restored Tab", cx)))
-                    as Arc<dyn gpui_base::dock::PanelView>
+                    as Arc<dyn wgpui_base::dock::PanelView>
             });
             let panel = PanelHandle::new(Probe::new("Probe Tab", cx));
             let layout = DockLayout::tabs().panel_view(Arc::new(panel), cx);
@@ -549,53 +532,13 @@ mod tests {
         );
     }
 
-    /// A tile's drag bar is its title bar, so it has to reach the same
-    /// presentation the tab bar does. It does: [`TileContext::panel`] hands
-    /// over the same base handle, and the same downcast recovers it.
-    ///
-    /// This also exercises `DockLayout::tile_view`, the tiles half of the new
-    /// entry points.
-    #[gpui::test]
-    fn a_tile_drag_bar_reaches_the_same_presentation(cx: &mut TestAppContext) {
-        cx.update(|cx| {
-            let _ = gpui_base::Theme::global_mut(cx);
-        });
-        let recovered = Rc::new(RefCell::new(Recovered::default()));
-        let skin = Rc::new(Skin {
-            recovered: recovered.clone(),
-        });
-
-        let (area, cx) = cx.add_window_view(|window, cx| {
-            DockArea::new("seam", None, window, cx).with_renderer(skin)
-        });
-
-        cx.update(|window, cx| {
-            let panel = PanelHandle::new(Probe::new("Tile Tab", cx));
-            let bounds = Bounds {
-                origin: point(px(0.), px(0.)),
-                size: size(px(200.), px(150.)),
-            };
-            let layout = DockLayout::tiles().tile_view(Arc::new(panel), bounds, cx);
-            area.update(cx, |area, cx| area.set_center(layout, window, cx));
-        });
-        cx.run_until_parked();
-        recovered.borrow_mut().drag_bar_names.clear();
-        cx.update(|window, cx| window.draw(cx).clear());
-
-        assert_eq!(
-            recovered.borrow().drag_bar_names,
-            vec![Some(SharedString::from("Tile Tab"))],
-            "the drag bar can draw a title and a menu off the panel"
-        );
-    }
-
     /// The other half of [`PanelHandle::of`]'s contract: a panel base was
     /// handed directly is not this crate's handle, and the skin is told so
     /// rather than being handed something wrong.
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_base_was_handed_directly_is_not_recoverable(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let _ = gpui_base::Theme::global_mut(cx);
+            let _ = wgpui_base::Theme::global_mut(cx);
         });
         let recovered = Rc::new(RefCell::new(Recovered::default()));
         let skin = Rc::new(Skin {

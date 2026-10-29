@@ -5,7 +5,7 @@ use std::{
     time::Instant,
 };
 
-use gpui::{SpringConfig, SpringState};
+use wgpui::{SpringConfig, SpringState};
 use wgpui_base::{Easing, Keyframe, Keyframes, Stagger, StaggerOrigin, Timing};
 
 const BATCHES: usize = 31;

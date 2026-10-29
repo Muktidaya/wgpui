@@ -1,9 +1,9 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, ClickEvent, InteractiveElement as _, IntoElement, ParentElement, Pixels,
     RenderOnce, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use gpui_base::TestSupportExt as _;
+use wgpui_base::TestSupportExt as _;
 
 use crate::{ActiveTheme as _, AxisExt, Icon, Size, StyleSized, StyledExt as _, ThemeStyled as _};
 

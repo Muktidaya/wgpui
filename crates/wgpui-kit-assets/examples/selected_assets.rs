@@ -1,4 +1,4 @@
-use gpui::AssetSource;
+use wgpui::AssetSource;
 wgpui_kit_assets::icon_assets!(AppAssets, [Search, Check]);
 fn main() {
     let path = std::env::args()

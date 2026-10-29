@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, DefiniteLength, IntoElement, ParentElement, RenderOnce, SharedString,
     Styled, Window, div, prelude::FluentBuilder as _, px, relative,
 };
@@ -248,7 +248,7 @@ impl Sizable for DescriptionList {
 }
 
 impl RenderOnce for DescriptionList {
-    fn render(self, _: &mut Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
+    fn render(self, _: &mut Window, cx: &mut wgpui::App) -> impl wgpui::IntoElement {
         let base_gap = match self.size {
             Size::XSmall | Size::Small => px(2.),
             Size::Medium => px(4.),

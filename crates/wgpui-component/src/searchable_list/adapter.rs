@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, Context, IntoElement, ParentElement as _, Styled as _, Window, div};
+use wgpui::{AnyElement, App, Context, IntoElement, ParentElement as _, Styled as _, Window, div};
 
 use crate::{
     ActiveTheme, Disableable as _, Icon, IconName, IndexPath, Sizable as _, Size, StyleSized as _,
@@ -104,7 +104,7 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
         window: &mut Window,
         cx: &mut Context<ListState<Self>>,
     ) -> Option<Self::Item> {
-        use gpui::IntoElement as _;
+        use wgpui::IntoElement as _;
 
         let item = self.delegate.item(ix)?;
         // Read check state from the snapshot — never from an external entity, which would panic
@@ -130,7 +130,8 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
             .unwrap_or_else(|| Icon::new(IconName::Check));
 
         let content = div()
-            .whitespace_nowrap()
+            .min_w_0()
+            .truncate()
             .child(item.render(window, cx).into_any_element());
 
         Some(
@@ -149,6 +150,15 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
     }
 
     fn confirm(&mut self, secondary: bool, window: &mut Window, cx: &mut Context<ListState<Self>>) {
+        let Some(ix) = self.selected_index else {
+            return;
+        };
+        let Some(item) = self.delegate.item(ix) else {
+            return;
+        };
+        if !self.delegate.is_item_enabled(ix, item, cx) {
+            return;
+        }
         (self.on_confirm)(self.selected_index, secondary, window, cx);
     }
 
@@ -157,7 +167,7 @@ impl<D: SearchableListDelegate + 'static> ListDelegate for SearchableListAdapter
         query: &str,
         window: &mut Window,
         cx: &mut Context<ListState<Self>>,
-    ) -> gpui::Task<()> {
+    ) -> wgpui::Task<()> {
         self.delegate.perform_search(query, window, cx)
     }
 

@@ -1,5 +1,5 @@
 //! Registers native elements without accepting a second description of their state.
-use gpui::{Element, Hitbox, InteractiveElement};
+use wgpui::{Element, Hitbox, InteractiveElement};
 
 #[doc(hidden)]
 #[cfg(feature = "test-support")]
@@ -13,8 +13,8 @@ pub type ObservedElement<E> = E;
 ///
 /// Test-only values cannot override the native control:
 /// ```compile_fail
-/// use gpui::{div, prelude::*};
-/// use gpui_base::TestSupportExt;
+/// use wgpui::{div, prelude::*};
+/// use wgpui_base::TestSupportExt;
 /// div().id("input").test_support().test_props(|props| props.value("invented"));
 /// ```
 pub trait TestSupportExt:
@@ -40,13 +40,13 @@ impl<E: Element<PrepaintState = Option<Hitbox>> + InteractiveElement> TestSuppor
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::div;
+    use wgpui::div;
 
     #[test]
     fn observation_preserves_identity_and_native_type_in_normal_builds() {
         let element = div().id("target").test_support().test_support();
         assert_eq!(Element::id(&element), Some("target".into()));
         #[cfg(not(feature = "test-support"))]
-        let _: gpui::Stateful<gpui::Div> = element;
+        let _: wgpui::Stateful<wgpui::Div> = element;
     }
 }

@@ -2,7 +2,6 @@
 mod macos {
     use std::{cell::RefCell, collections::HashMap, mem, ptr, sync::Once};
 
-    use gpui::Window;
     use objc2::{
         ffi, msg_send,
         rc::Retained,
@@ -11,6 +10,7 @@ mod macos {
     };
     use objc2_foundation::NSString;
     use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    use wgpui::Window;
 
     static INSTALL_TEXT_CONTENT: Once = Once::new();
 
@@ -107,7 +107,7 @@ mod macos {
 #[cfg(target_os = "macos")]
 pub use macos::set_text_content_type;
 
-use gpui::SharedString;
+use wgpui::SharedString;
 
 /// Presentation-independent context-menu model produced by the editor.
 #[derive(Default)]
@@ -120,7 +120,7 @@ pub enum NativeMenuItem {
     Action {
         label: SharedString,
         disabled: bool,
-        action: Box<dyn gpui::Action>,
+        action: Box<dyn wgpui::Action>,
     },
 }
 
@@ -129,7 +129,7 @@ impl NativeMenu {
         Self::default()
     }
 
-    pub fn menu(self, label: impl Into<SharedString>, action: Box<dyn gpui::Action>) -> Self {
+    pub fn menu(self, label: impl Into<SharedString>, action: Box<dyn wgpui::Action>) -> Self {
         self.menu_with_disabled(label, false, action)
     }
 
@@ -137,7 +137,7 @@ impl NativeMenu {
         mut self,
         label: impl Into<SharedString>,
         disabled: bool,
-        action: Box<dyn gpui::Action>,
+        action: Box<dyn wgpui::Action>,
     ) -> Self {
         self.items.push(NativeMenuItem::Action {
             label: label.into(),

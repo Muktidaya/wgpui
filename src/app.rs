@@ -47,6 +47,16 @@ use crate::{
     hash, init_app_menus,
 };
 
+#[cfg(feature = "bench-support")]
+mod bench_context;
+#[cfg(feature = "bench-support")]
+pub use bench_context::*;
+
+#[cfg(any(test, feature = "test-support"))]
+mod headless_app_context;
+#[cfg(any(test, feature = "test-support"))]
+pub use headless_app_context::*;
+
 mod async_context;
 mod context;
 mod entity_map;
@@ -589,6 +599,7 @@ pub struct App {
     pub(crate) this: Weak<AppCell>,
     pub(crate) platform: Rc<dyn Platform>,
     pub(crate) mode: GpuiMode,
+    reduce_motion: bool,
     text_system: Arc<TextSystem>,
     flushing_effects: bool,
     pending_updates: usize,
@@ -668,6 +679,7 @@ impl App {
                 platform: platform.clone(),
                 text_system,
                 mode: GpuiMode::Production,
+                reduce_motion: false,
                 actions: Rc::new(ActionRegistry::default()),
                 flushing_effects: false,
                 pending_updates: 0,
@@ -779,6 +791,23 @@ impl App {
         self.entities.ref_counts_drop_handle()
     }
 
+    /// The operating system and target whose input conventions apply.
+    pub fn platform_info(&self) -> crate::PlatformInfo {
+        self.platform.platform_info()
+    }
+
+    /// Captures the identities of entities with live strong handles.
+    #[cfg(any(test, feature = "leak-detection"))]
+    pub fn leak_detector_snapshot(&self) -> crate::LeakDetectorSnapshot {
+        self.entities.leak_detector_snapshot()
+    }
+
+    /// Fails if newly created entities retain strong handles after cleanup.
+    #[cfg(any(test, feature = "leak-detection"))]
+    pub fn assert_no_new_leaks(&self, snapshot: &crate::LeakDetectorSnapshot) {
+        self.entities.assert_no_new_leaks(snapshot);
+    }
+
     /// Get the id of the current keyboard layout
     pub fn keyboard_layout(&self) -> &dyn PlatformKeyboardLayout {
         self.keyboard_layout.as_ref()
@@ -803,6 +832,14 @@ impl App {
         );
         activate();
         subscription
+    }
+
+    /// The WGPU instance, adapter, device and queue every window renders
+    /// with, for presenting to a surface of the application's own (a window
+    /// or layer it made, which must use the instance its device came from).
+    /// `None` without the WGPU renderer.
+    pub fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        self.platform.wgpu_gpu()
     }
 
     /// Gracefully quit the application via the platform's standard routine.
@@ -994,7 +1031,14 @@ impl App {
 
     /// Returns a handle to the window that is currently focused at the platform level, if one exists.
     pub fn active_window(&self) -> Option<AnyWindowHandle> {
-        self.platform.active_window()
+        self.platform.active_window().or_else(|| {
+            // Native menu callbacks can run outside the platform event-loop context.
+            // Retain routing to the window whose OS focus notification we received.
+            self.windows
+                .values()
+                .filter_map(Option::as_ref)
+                .find_map(|window| window.is_window_active().then(|| window.window_handle()))
+        })
     }
 
     /// Opens a new window with the given option and the root view returned by the given function.
@@ -1086,6 +1130,11 @@ impl App {
     /// Reads data from the platform clipboard.
     pub fn read_from_clipboard(&self) -> Option<ClipboardItem> {
         self.platform.read_from_clipboard()
+    }
+
+    /// Reads the clipboard asynchronously, preserving platform errors.
+    pub fn read_from_clipboard_async(&self) -> Task<Result<Option<ClipboardItem>>> {
+        self.platform.read_from_clipboard_async()
     }
 
     /// Writes credentials to the platform keychain.
@@ -1488,19 +1537,14 @@ impl App {
         &self.background_executor
     }
 
-    /// Whether the user prefers reduced motion. Stub: always `false` until platform wiring lands.
+    /// Returns the application's reduced-motion preference.
     pub fn reduce_motion(&self) -> bool {
-        #[cfg(any(test, feature = "test-support"))]
-        if let Some(value) = self.try_global::<TestReduceMotion>() {
-            return value.0;
-        }
-        false
+        self.reduce_motion
     }
 
-    #[cfg(any(test, feature = "test-support"))]
-    /// Overrides the motion preference for deterministic component tests.
+    /// Sets the motion preference used by animations and refreshes the windows.
     pub fn set_reduce_motion(&mut self, value: bool) {
-        self.set_global(TestReduceMotion(value));
+        self.reduce_motion = value;
         self.refresh_windows();
     }
 
@@ -2113,6 +2157,12 @@ impl App {
         self.prompt_builder = Some(PromptBuilder::Default);
     }
 
+    /// Reports whether an asset is loading or cached without starting a load.
+    pub fn has_asset<A: Asset>(&self, source: &A::Source) -> bool {
+        self.loading_assets
+            .contains_key(&(TypeId::of::<A>(), hash(source)))
+    }
+
     /// Remove an asset from WGPUI's cache
     pub fn remove_asset<A: Asset>(&mut self, source: &A::Source) {
         let asset_id = (TypeId::of::<A>(), hash(source));
@@ -2207,11 +2257,13 @@ impl App {
 
     /// Registers a renderer specific to an inspector state.
     #[cfg(any(feature = "inspector", debug_assertions))]
-    pub fn register_inspector_element<T: 'static, R: crate::IntoElement>(
+    pub fn register_inspector_element<T: 'static, R: crate::IntoElement, F>(
         &mut self,
-        f: impl 'static + Fn(crate::InspectorElementId, &T, &mut Window, &mut App) -> R,
-    ) {
-        self.inspector_element_registry.register(f);
+        factory: impl 'static + Fn(&mut Window, &mut App) -> F,
+    ) where
+        F: 'static + FnMut(crate::InspectorElementId, &T, &mut Window, &mut App) -> R,
+    {
+        self.inspector_element_registry.register(factory);
     }
 
     /// Initializes wgpui's default colors for the application.
@@ -2577,8 +2629,3 @@ mod test {
         assert_eq!(*observation_count.borrow(), 2);
     }
 }
-
-#[cfg(any(test, feature = "test-support"))]
-struct TestReduceMotion(bool);
-#[cfg(any(test, feature = "test-support"))]
-impl crate::Global for TestReduceMotion {}

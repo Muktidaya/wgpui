@@ -6,21 +6,21 @@ use std::time::Duration;
 #[path = "../shared/palette.rs"]
 mod palette;
 
-#[cfg(target_family = "wasm")]
-use gpui::ApplicationHandle;
-#[cfg(not(target_family = "wasm"))]
-use gpui::WindowBounds;
-use gpui::{
-    App, AppContext as _, Application, AsyncApp, Context, IntoElement, ParentElement as _, Render,
-    Styled as _, Window, WindowOptions, div, prelude::FluentBuilder as _, px,
-};
-use gpui_base::{
-    Button, Easing, IterationCount, Keyframe, Keyframes, Presence, Spring, Stagger, StaggerOrigin,
-    Timing, Transition, animate_keyframes, spring, transition,
-};
 use palette::{activate as activate_palette, canvas as example_canvas, example_rgb};
 #[cfg(target_family = "wasm")]
 use std::borrow::Cow;
+#[cfg(target_family = "wasm")]
+use wgpui::ApplicationHandle;
+#[cfg(not(target_family = "wasm"))]
+use wgpui::WindowBounds;
+use wgpui::{
+    App, AppContext as _, Application, AsyncApp, Context, IntoElement, ParentElement as _, Render,
+    Styled as _, Window, WindowOptions, div, prelude::FluentBuilder as _, px,
+};
+use wgpui_base::{
+    Button, Easing, IterationCount, Keyframe, Keyframes, Presence, Spring, Stagger, StaggerOrigin,
+    Timing, Transition, animate_keyframes, spring, transition,
+};
 
 const START_MINUTES: u32 = 8 * 60;
 const END_MINUTES: u32 = 20 * 60;
@@ -71,7 +71,7 @@ pub struct MotionExample {
     demo: Demo,
     minutes: u32,
     digit_targets: [f32; 4],
-    playback: Option<gpui::Task<()>>,
+    playback: Option<wgpui::Task<()>>,
     spring_selected: bool,
     present: bool,
     stagger_generation: usize,
@@ -165,7 +165,7 @@ impl MotionExample {
                     .flex()
                     .items_center()
                     .text_size(px(30.))
-                    .font_weight(gpui::FontWeight::MEDIUM)
+                    .font_weight(wgpui::FontWeight::MEDIUM)
                     .children(
                         self.digit_targets[..2]
                             .iter()
@@ -338,7 +338,7 @@ impl MotionExample {
                             .child(
                                 div()
                                     .text_sm()
-                                    .font_weight(gpui::FontWeight::MEDIUM)
+                                    .font_weight(wgpui::FontWeight::MEDIUM)
                                     .child("Background task"),
                             )
                             .child(
@@ -475,7 +475,7 @@ impl Render for MotionExample {
                     .child(
                         div()
                             .text_lg()
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .font_weight(wgpui::FontWeight::SEMIBOLD)
                             .child("Motion examples"),
                     )
                     .child(div().flex().flex_wrap().gap_1().children(
@@ -512,7 +512,7 @@ impl Render for MotionExample {
                                 div()
                                     .px_4()
                                     .text_sm()
-                                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                                     .child(self.demo.label()),
                             )
                             .child(
@@ -535,7 +535,7 @@ impl Render for MotionExample {
     }
 }
 
-fn clock_digit(value: i32, top: f32) -> gpui::Div {
+fn clock_digit(value: i32, top: f32) -> wgpui::Div {
     div()
         .absolute()
         .top(px(top))
@@ -565,9 +565,9 @@ fn advance_digit(current: f32, digit: u8) -> f32 {
 
 #[cfg(not(target_family = "wasm"))]
 pub fn run() {
-    let app: Application = gpui_platform::application();
+    let app: Application = wgpui_platform::application();
     app.run(|cx: &mut App| {
-        gpui_base::init(cx);
+        wgpui_base::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
                 cx.quit();
@@ -576,7 +576,7 @@ pub fn run() {
         .detach();
         cx.open_window(
             WindowOptions {
-                window_bounds: Some(WindowBounds::centered(gpui::size(px(820.), px(620.)), cx)),
+                window_bounds: Some(WindowBounds::centered(wgpui::size(px(820.), px(620.)), cx)),
                 ..Default::default()
             },
             |_, cx| cx.new(|_| MotionExample::new()),
@@ -589,7 +589,7 @@ pub fn run() {
 #[cfg(target_family = "wasm")]
 pub fn run_embedded(app: Application) -> ApplicationHandle {
     app.run_embedded(|cx: &mut App| {
-        gpui_base::init(cx);
+        wgpui_base::init(cx);
         cx.text_system()
             .add_fonts(vec![Cow::Borrowed(
                 include_bytes!("../../../story-web/fonts/Inter-Regular.ttf").as_slice(),

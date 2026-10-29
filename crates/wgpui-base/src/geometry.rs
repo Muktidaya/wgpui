@@ -1,9 +1,9 @@
 // crates/component/src/geometry.rs
 use std::fmt::{self, Debug, Display, Formatter};
 
-use gpui::{AbsoluteLength, Axis, Length, Pixels};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{AbsoluteLength, Axis, Length, Pixels};
 
 /// A enum for defining the placement of the element.
 ///
@@ -57,7 +57,7 @@ impl Placement {
     }
 }
 
-// The local Anchor enum has been removed. Use gpui::Anchor instead.
+// The local Anchor enum has been removed. Use wgpui::Anchor instead.
 
 /// A enum for defining the side of the element.
 ///
@@ -121,7 +121,7 @@ impl LengthExt for Length {
 
 /// A struct for defining the edges of an element.
 ///
-/// A extend version of [`gpui::Edges`] to serialize/deserialize.
+/// A extend version of [`wgpui::Edges`] to serialize/deserialize.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema, Eq, PartialEq)]
 #[repr(C)]
 pub struct Edges<T: Clone + Debug + Default + PartialEq> {

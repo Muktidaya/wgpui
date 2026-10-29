@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ClickEvent, Context, DismissEvent, Edges, ElementId, Entity,
     EventEmitter, FocusHandle, Focusable, Hsla, InteractiveElement, IntoElement, Length,
     MouseDownEvent, ParentElement, Pixels, Render, RenderOnce, SharedString,
@@ -20,9 +20,10 @@ use crate::{
         SearchableListAdapter, SearchableListChange, SearchableListDelegate, SearchableListItem,
         SearchableListState,
     },
+    sizing::DROPDOWN_LIST_PADDING,
     v_flex,
 };
-use gpui_base::{Combobox as BaseCombobox, GlobalState};
+use wgpui_base::{Combobox as BaseCombobox, GlobalState};
 
 // MARK: ComboboxTriggerContext
 
@@ -705,7 +706,7 @@ where
                             dismiss_handler,
                             cx,
                         ))
-                        .with_priority(gpui_base::POPUP_PRIORITY),
+                        .with_priority(wgpui_base::POPUP_PRIORITY),
                     )
                 }),
         )
@@ -1049,7 +1050,7 @@ fn render_popup_shell<D: SearchableListDelegate + 'static>(
         v_flex()
             .occlude()
             .map(|this| match menu_width {
-                Length::Auto => this.w(bounds.size.width + px(2.)),
+                Length::Auto => this.w(bounds.size.width),
                 Length::Definite(w) => this.w(w),
             })
             .popover_style(cx)
@@ -1060,7 +1061,7 @@ fn render_popup_shell<D: SearchableListDelegate + 'static>(
                     })
                     .with_size(size)
                     .max_h(menu_max_h)
-                    .paddings(Edges::all(px(4.))),
+                    .paddings(Edges::all(DROPDOWN_LIST_PADDING)),
             )
             .when(has_footer, |this| {
                 this.child(
@@ -1083,7 +1084,7 @@ fn render_popup_shell<D: SearchableListDelegate + 'static>(
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, Bounds, Context, Entity, Modifiers, MouseButton, MouseDownEvent, Pixels,
         Point, Subscription, TestAppContext, point, px, size,
     };
@@ -1123,7 +1124,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_builder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1134,15 +1135,15 @@ mod tests {
             let _cb = Combobox::new(&state)
                 .placeholder("Select language")
                 .search_placeholder("Search...")
-                .menu_width(gpui::px(300.))
-                .menu_max_h(gpui::rems(15.))
+                .menu_width(wgpui::px(300.))
+                .menu_max_h(wgpui::rems(15.))
                 .cleanable(true)
                 .disabled(false)
                 .appearance(true);
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_search_filters_items(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1181,7 +1182,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_set_query_updates_text_and_filters_items(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1206,7 +1207,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_combo_box_builder(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1221,7 +1222,7 @@ mod tests {
             let _cb = Combobox::new(&state)
                 .placeholder("Select frameworks")
                 .search_placeholder("Search...")
-                .menu_width(gpui::px(300.))
+                .menu_width(wgpui::px(300.))
                 .cleanable(true)
                 .disabled(false);
 
@@ -1229,7 +1230,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_set_selected_values_uses_current_delegate(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1301,7 +1302,7 @@ mod tests {
 
     /// A value projected in from outside is not a position in the filtered view,
     /// so an active search must not decide which values can be selected.
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_set_selected_values_keeps_values_hidden_by_the_search(
         cx: &mut TestAppContext,
     ) {
@@ -1337,7 +1338,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_set_selected_values_does_not_emit_events(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1358,7 +1359,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_initial_selection_seeds_cursor(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1378,7 +1379,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_combo_box_toggle(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1397,7 +1398,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_combo_box_search_selection_uses_value_identity(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1438,7 +1439,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_combo_box_search_deselects_by_value(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1464,7 +1465,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_searchable_list_default_change_uses_value_identity(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1491,7 +1492,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_multi_combo_box_clear(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1513,7 +1514,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_single_combo_box_mode(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1561,7 +1562,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_on_will_change_veto(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1593,7 +1594,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn test_combo_box_dismiss_ignores_press_on_trigger(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();

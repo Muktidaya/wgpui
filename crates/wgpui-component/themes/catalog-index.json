@@ -1,0 +1,28 @@
+{
+  "published": [
+    "aurora",
+    "ayu",
+    "catppuccin",
+    "everforest",
+    "fahrenheit",
+    "flexoki",
+    "harper",
+    "jellybeans",
+    "macos-classic",
+    "mellifluous",
+    "solarized",
+    "spaceduck",
+    "tokyonight"
+  ],
+  "history_only": [
+    "adventure",
+    "alduin",
+    "asciinema",
+    "gruvbox",
+    "hybrid",
+    "kibble",
+    "molokai",
+    "twilight"
+  ],
+  "history_only_reason": "Removed from the release working tree pending individual license-scope review; recoverable in Git history. Scoped notices remain. No catalog is automatically loaded."
+}

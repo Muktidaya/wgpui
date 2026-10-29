@@ -1,14 +1,14 @@
-use gpui_base::TestSupportExt as _;
 use std::rc::Rc;
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     AbsoluteLength, AnyElement, App, AppContext as _, AvailableSpace, Context, Entity, FocusHandle,
     Focusable, FontFallbacks, FontFeatures, FontStyle, FontWeight, InteractiveElement, IntoElement,
-    KeyBinding, ListSizingBehavior, ParentElement, Pixels, Render, Role, ScrollStrategy,
+    KeyBinding, Keystroke, ListSizingBehavior, ParentElement, Pixels, Render, Role, ScrollStrategy,
     SharedString, Size, StatefulInteractiveElement as _, StyleRefinement, Styled, Subscription,
     TextOverflow, WhiteSpace, Window, div, prelude::FluentBuilder as _, px, size,
 };
-use rust_i18n::t;
 
 use crate::{
     ActiveTheme as _, ElementExt as _, Icon, IconName, IndexPath, StyledExt as _,
@@ -123,6 +123,10 @@ pub struct CommandState {
     row_sizes: Rc<Vec<Size<Pixels>>>,
     list_measurement_key: Option<ListMeasurementKey>,
     needs_measure: bool,
+    /// The keybinding hint each matched item showed when the rows were last
+    /// measured. Hints are looked up on every render, so a keymap change can
+    /// resize a row while the model stays the same.
+    measured_bindings: Vec<Option<Keystroke>>,
     matched: Vec<MatchedItem>,
     selected_index: Option<usize>,
     preserve_no_selection: bool,
@@ -154,6 +158,7 @@ impl CommandState {
             row_sizes: Rc::new(Vec::new()),
             list_measurement_key: None,
             needs_measure: true,
+            measured_bindings: Vec::new(),
             matched: Vec::new(),
             selected_index: None,
             preserve_no_selection: false,
@@ -166,10 +171,32 @@ impl CommandState {
         }
     }
 
+    /// Apply the presentation of the latest [`crate::command::Command`] render.
+    pub(crate) fn set_options(&mut self, options: CommandOptions) {
+        if self.options.style.text != options.style.text {
+            self.needs_measure = true;
+        }
+        self.options = options;
+    }
+
     pub(crate) fn install_model(&mut self, model: CommandModel, cx: &mut Context<Self>) {
         let selected_index_path = self.selected_index();
+        // The model reinstalls on every host re-render, usually unchanged.
+        // Keep the rows and their measured sizes then: measuring lays out
+        // every row, not only the visible ones.
+        let same_layout = self.model.searchable == model.searchable
+            && self.model.filterable == model.filterable
+            && self.model.entries.len() == model.entries.len()
+            && self
+                .model
+                .entries
+                .iter()
+                .zip(&model.entries)
+                .all(|(entry, other)| entry.same_layout(other));
         self.model = model;
-        self.update_matches(cx);
+        if !same_layout {
+            self.update_matches(cx);
+        }
 
         let preserved_selection = selected_index_path.and_then(|selected_index_path| {
             self.matched
@@ -193,8 +220,6 @@ impl CommandState {
         } else {
             self.reset_selection();
         }
-
-        self.needs_measure = true;
     }
 
     /// The current search query.
@@ -473,6 +498,7 @@ impl CommandState {
     fn set_list_measurement_key(
         &mut self,
         measurement_key: ListMeasurementKey,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         if self.list_measurement_key.as_ref() == Some(&measurement_key) {
@@ -480,8 +506,15 @@ impl CommandState {
         }
 
         self.list_measurement_key = Some(measurement_key);
+        self.measure_on_next_frame(window, cx);
+    }
+
+    /// Measure the rows again on the next frame. Called while the list is
+    /// drawn, where a plain notify schedules no new frame.
+    fn measure_on_next_frame(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.needs_measure = true;
-        cx.notify();
+        let entity_id = cx.entity_id();
+        window.on_next_frame(move |_, cx| cx.notify(entity_id));
     }
 
     // MARK: Actions
@@ -607,7 +640,7 @@ impl CommandState {
 
     /// Measure each row before passing the sizes to the virtual list. Custom
     /// item elements can have independent intrinsic heights.
-    fn measure_row_sizes(&self, window: &mut Window, cx: &mut Context<Self>) -> Vec<Size<Pixels>> {
+    fn measure_rows(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let available = size(
             self.list_measurement_key
                 .as_ref()
@@ -618,22 +651,33 @@ impl CommandState {
         );
         let mut text_style = StyleRefinement::default();
         text_style.text = self.options.style.text.clone();
+        let mut bindings = vec![None; self.matched.len()];
 
-        self.rows
+        let row_sizes = self
+            .rows
             .iter()
             .enumerate()
-            .map(|(row_ix, row)| match row {
-                CommandRow::Separator => size(px(0.), px(SEPARATOR_ROW_HEIGHT)),
-                CommandRow::Heading(_) | CommandRow::Item(_) => {
-                    let row_size = div()
-                        .refine_style(&text_style)
-                        .child(self.render_row(row_ix, window, cx))
-                        .into_any_element()
-                        .layout_as_root(available, window, cx);
-                    size(px(0.), row_size.height)
-                }
+            .map(|(row_ix, row)| {
+                let row = match row {
+                    CommandRow::Separator => return size(px(0.), px(SEPARATOR_ROW_HEIGHT)),
+                    CommandRow::Heading(_) => self.render_row(row_ix, window, cx),
+                    CommandRow::Item(matched_ix) => {
+                        let binding = self.item_binding(*matched_ix, window, cx);
+                        bindings[*matched_ix] = binding.as_ref().map(|kbd| kbd.keystroke().clone());
+                        self.render_item_with_binding(*matched_ix, binding, window, cx)
+                    }
+                };
+                let row_size = div()
+                    .refine_style(&text_style)
+                    .child(row)
+                    .into_any_element()
+                    .layout_as_root(available, window, cx);
+                size(px(0.), row_size.height)
             })
-            .collect()
+            .collect::<Vec<_>>();
+
+        self.row_sizes = Rc::new(row_sizes);
+        self.measured_bindings = bindings;
     }
 
     // MARK: Rendering
@@ -656,9 +700,28 @@ impl CommandState {
         });
     }
 
+    /// Row corner radius, concentric with the frame: the list's `p_1` (plus the
+    /// border when bordered) sits between a row and the frame's corner. A
+    /// borderless command without its own radius keeps the theme radius, since
+    /// its frame belongs to the host.
+    fn item_radius(&self, window: &Window, cx: &App) -> Pixels {
+        let theme = cx.theme();
+        let rem_size = window.rem_size();
+        let own_radius = self.options.style.corner_radii.top_left;
+        let (outer, border) = match (self.options.bordered, own_radius) {
+            (true, radius) => (
+                radius.map_or(theme.radius_lg, |r| r.to_pixels(rem_size)),
+                px(1.),
+            ),
+            (false, Some(radius)) => (radius.to_pixels(rem_size), px(0.)),
+            (false, None) => return theme.radius,
+        };
+        (outer - rem_size * 0.25 - border).max(px(0.))
+    }
+
     /// The frame every item row shares, so that the measured height matches the
     /// rendered one.
-    fn item_row(&self, selected: bool, cx: &App) -> gpui::Div {
+    fn item_row(&self, selected: bool, window: &Window, cx: &App) -> wgpui::Div {
         div()
             .flex()
             .flex_row()
@@ -668,14 +731,14 @@ impl CommandState {
             .px_2()
             .py_1p5()
             .text_sm()
-            .rounded(cx.theme().radius)
+            .rounded(self.item_radius(window, cx))
             .when(selected, |this| {
                 this.bg(cx.theme().accent)
                     .text_color(cx.theme().accent_foreground)
             })
     }
 
-    fn heading_row(&self, heading: SharedString, cx: &App) -> gpui::Div {
+    fn heading_row(&self, heading: SharedString, cx: &App) -> wgpui::Div {
         div()
             .w_full()
             .px_2()
@@ -701,9 +764,57 @@ impl CommandState {
         }
     }
 
+    /// Render a row the virtual list shows. When an item's keybinding hint no
+    /// longer matches the one it was measured with, measure the rows again.
+    fn render_visible_row(
+        &mut self,
+        row_ix: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let Some(&CommandRow::Item(matched_ix)) = self.rows.get(row_ix) else {
+            return self.render_row(row_ix, window, cx);
+        };
+
+        let binding = self.item_binding(matched_ix, window, cx);
+        let measured = self
+            .measured_bindings
+            .get(matched_ix)
+            .and_then(Option::as_ref);
+        if !self.needs_measure && measured != binding.as_ref().map(Kbd::keystroke) {
+            self.measure_on_next_frame(window, cx);
+        }
+
+        self.render_item_with_binding(matched_ix, binding, window, cx)
+    }
+
+    /// The keybinding hint an item shows in its trailing slot. A custom child
+    /// owns its complete presentation, so it has none.
+    fn item_binding(&self, matched_ix: usize, window: &Window, cx: &App) -> Option<Kbd> {
+        let item = self.item_at(matched_ix)?;
+        if item.content.is_some() {
+            return None;
+        }
+
+        let action = item.action.as_ref()?;
+        Kbd::binding_for_action_in(action.as_ref(), &self.focus_handle(cx), window)
+            .or_else(|| Kbd::binding_for_action(action.as_ref(), None, window))
+    }
+
     fn render_item(
         &self,
         matched_ix: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let binding = self.item_binding(matched_ix, window, cx);
+        self.render_item_with_binding(matched_ix, binding, window, cx)
+    }
+
+    fn render_item_with_binding(
+        &self,
+        matched_ix: usize,
+        binding: Option<Kbd>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -719,15 +830,6 @@ impl CommandState {
         } else {
             muted_foreground
         };
-        let binding = if item.content.is_none() {
-            item.action.as_ref().and_then(|action| {
-                Kbd::binding_for_action_in(action.as_ref(), &self.focus_handle(cx), window)
-                    .or_else(|| Kbd::binding_for_action(action.as_ref(), None, window))
-            })
-        } else {
-            None
-        };
-
         let content = match &item.content {
             Some(render) => render(window, cx),
             None => h_flex()
@@ -741,7 +843,7 @@ impl CommandState {
                 .into_any_element(),
         };
 
-        self.item_row(selected, cx)
+        self.item_row(selected, window, cx)
             .id(self.matched[matched_ix].index_path)
             .test_support()
             .role(Role::ListBoxOption)
@@ -804,7 +906,7 @@ impl Render for CommandState {
 
         if self.needs_measure {
             self.needs_measure = false;
-            self.row_sizes = Rc::new(self.measure_row_sizes(window, cx));
+            self.measure_rows(window, cx);
         }
 
         if let Some(row_ix) = self.pending_scroll.take() {
@@ -865,8 +967,9 @@ impl Render for CommandState {
                     // The rows carry their inset on the virtual list itself so
                     // that a mid-scroll clip edge sits flush against the
                     // surrounding dividers; only the empty slot needs the
-                    // container padding.
-                    .when(rows_count == 0, |this| this.p_1())
+                    // container padding, and only while it is shown, so a
+                    // loading list leaves no blank strip under the query.
+                    .when(rows_count == 0 && !self.loading, |this| this.p_1())
                     .on_prepaint({
                         let measure_state = command_state.clone();
                         move |bounds, window, cx| {
@@ -895,6 +998,7 @@ impl Render for CommandState {
                                             line_clamp: text_style.line_clamp,
                                         },
                                     },
+                                    window,
                                     cx,
                                 )
                             })
@@ -915,7 +1019,7 @@ impl Render for CommandState {
                                 row_sizes,
                                 move |this, visible_range, window, cx| {
                                     visible_range
-                                        .map(|row_ix| this.render_row(row_ix, window, cx))
+                                        .map(|row_ix| this.render_visible_row(row_ix, window, cx))
                                         .collect::<Vec<_>>()
                                 },
                             )
@@ -925,7 +1029,17 @@ impl Render for CommandState {
                             // list edge.
                             .p_1()
                             .with_sizing_behavior(ListSizingBehavior::Infer)
-                            .track_scroll(&self.scroll_handle),
+                            .track_scroll(&self.scroll_handle)
+                            .map(|list| {
+                                wgpui_base::ScrollBounce::new(
+                                    "command-scroll-bounce",
+                                    &self.scroll_handle,
+                                    list,
+                                )
+                                .when_some(self.options.scroll_bounce, |bounce, on| {
+                                    bounce.enabled(on)
+                                })
+                            }),
                         )
                         .child(Scrollbar::vertical(&self.scroll_handle))
                     }),
@@ -945,7 +1059,7 @@ mod tests {
         rc::Rc,
     };
 
-    use gpui::{
+    use wgpui::{
         AppContext as _, AvailableSpace, Entity, InteractiveElement as _, IntoElement, KeyBinding,
         Modifiers, ParentElement as _, Pixels, Render, Styled as _, TestAppContext, Window,
         actions, div, point, prelude::FluentBuilder as _, px,
@@ -953,7 +1067,7 @@ mod tests {
 
     use super::{CONTEXT, CommandModel, CommandRow, CommandState, SEPARATOR_ROW_HEIGHT};
     use crate::{
-        Disableable as _, IndexPath,
+        Disableable as _, Icon, IconName, IndexPath,
         actions::{Cancel, Confirm, SelectDown},
         command::{Command, CommandEntry, CommandGroup, CommandItem},
     };
@@ -969,7 +1083,7 @@ mod tests {
     }
 
     impl Render for CommandActionsHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             let action_events = self.events.clone();
             let propagated_cancel_events = self.events.clone();
             let query_events = self.events.clone();
@@ -1027,7 +1141,7 @@ mod tests {
     }
 
     impl Render for ReentrantCallbackHarness {
-        fn render(&mut self, _: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, cx: &mut wgpui::Context<Self>) -> impl IntoElement {
             let select_owner = cx.weak_entity();
             let query_owner = cx.weak_entity();
             let confirm_owner = cx.weak_entity();
@@ -1060,7 +1174,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn query_and_selection_callbacks_run_after_the_state_lease_in_defined_order(
         cx: &mut TestAppContext,
     ) {
@@ -1086,7 +1200,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn actionless_confirm_callback_runs_after_the_state_lease(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| ReentrantCallbackHarness {
@@ -1117,7 +1231,7 @@ mod tests {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             let width = self.width.clone();
             let item = self.state.update(cx, |state, cx| {
@@ -1130,7 +1244,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn action_that_removes_command_state_still_confirms_after_dispatch(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let events = Rc::new(RefCell::new(Vec::new()));
@@ -1176,7 +1290,7 @@ mod tests {
         assert_eq!(events.borrow().as_slice(), ["action", "confirm:0:0"]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn command_actions_and_callbacks_follow_defined_order(cx: &mut TestAppContext) {
         cx.update(|cx| {
             crate::init(cx);
@@ -1299,7 +1413,7 @@ mod tests {
     }
 
     impl Render for CommandOwnedEntriesHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             Command::new(&self.state)
                 .searchable(false)
                 .item(CommandItem::new().label("alpha"))
@@ -1317,7 +1431,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn command_owns_entries_and_lazy_item_content(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| CommandOwnedEntriesHarness {
@@ -1374,7 +1488,7 @@ mod tests {
 
     fn command_state(
         window: &mut Window,
-        cx: &mut gpui::Context<CommandState>,
+        cx: &mut wgpui::Context<CommandState>,
         entries: impl IntoIterator<Item = CommandEntry>,
     ) -> CommandState {
         let mut state = CommandState::new(window, cx);
@@ -1390,7 +1504,7 @@ mod tests {
 
     fn command_state_with_options(
         window: &mut Window,
-        cx: &mut gpui::Context<CommandState>,
+        cx: &mut wgpui::Context<CommandState>,
         entries: impl IntoIterator<Item = CommandEntry>,
         searchable: bool,
     ) -> CommandState {
@@ -1423,7 +1537,7 @@ mod tests {
         ]
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn query_hides_the_groups_that_have_no_match(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1471,7 +1585,86 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    fn custom_entries() -> Vec<CommandEntry> {
+        vec![CommandEntry::Item(
+            CommandItem::new().label("Custom").child(|_, _| div()),
+        )]
+    }
+
+    #[wgpui::test]
+    fn reinstalling_an_unchanged_model_keeps_the_measured_rows(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let cx = cx.add_empty_window();
+
+        cx.update(|window, cx| {
+            let state = cx.new(|cx| command_state(window, cx, suggestion_entries()));
+
+            state.update(cx, |state, cx| {
+                // A host re-render rebuilds an equal model: nothing to lay out again.
+                state.needs_measure = false;
+                state.install_model(
+                    CommandModel {
+                        entries: suggestion_entries(),
+                        ..CommandModel::default()
+                    },
+                    cx,
+                );
+                assert!(!state.needs_measure);
+                assert_eq!(state.matched_count(), 5);
+
+                // A custom child can read state outside the item, so it is
+                // always measured again.
+                state.install_model(
+                    CommandModel {
+                        entries: custom_entries(),
+                        ..CommandModel::default()
+                    },
+                    cx,
+                );
+                assert!(state.needs_measure);
+                assert_eq!(state.matched_count(), 1);
+
+                // Even when the host clones entries it built once, which
+                // keeps the same closure.
+                state.needs_measure = false;
+                let entries = state.model.entries.clone();
+                state.install_model(
+                    CommandModel {
+                        entries,
+                        ..CommandModel::default()
+                    },
+                    cx,
+                );
+                assert!(state.needs_measure);
+
+                // A changed label or icon style changes how the label wraps,
+                // and a changed disabled flag changes what can be highlighted.
+                let item = || CommandItem::new().label("Renamed");
+                let icon = || Icon::new(IconName::Check);
+                for entries in [
+                    vec![CommandEntry::Item(item())],
+                    vec![CommandEntry::Item(item().icon(icon()))],
+                    vec![CommandEntry::Item(item().icon(icon().ml_2()))],
+                    vec![CommandEntry::Item(
+                        item().icon(icon().ml_2()).disabled(true),
+                    )],
+                ] {
+                    state.needs_measure = false;
+                    state.install_model(
+                        CommandModel {
+                            entries,
+                            ..CommandModel::default()
+                        },
+                        cx,
+                    );
+                    assert!(state.needs_measure);
+                }
+                assert_eq!(state.selected_index(), None);
+            });
+        });
+    }
+
+    #[wgpui::test]
     fn a_query_that_matches_nothing_leaves_no_rows(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1490,7 +1683,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn filterable_off_keeps_every_item_and_resets_the_highlight(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1523,7 +1716,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn keywords_match_when_the_label_does_not(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1548,7 +1741,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_keeps_every_item(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1571,7 +1764,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_uses_frame_focus(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let confirmed = Rc::new(RefCell::new(None));
@@ -1603,7 +1796,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(1).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn filtered_ungrouped_item_keeps_its_input_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let confirmed = Rc::new(RefCell::new(None));
@@ -1637,7 +1830,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(2).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn initially_rendered_disabled_first_item_selects_and_confirms_the_first_enabled_item(
         cx: &mut TestAppContext,
     ) {
@@ -1672,7 +1865,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), Some(IndexPath::new(1).section(0)));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn initially_rendered_all_disabled_items_have_no_selected_index_and_ignore_enter(
         cx: &mut TestAppContext,
     ) {
@@ -1704,7 +1897,7 @@ mod tests {
         assert_eq!(*confirmed.borrow(), None);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn non_searchable_command_cancels_without_clearing_a_hidden_query(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cancelled = Rc::new(Cell::new(false));
@@ -1743,7 +1936,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_the_highlight_skips_disabled_items_and_wraps(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1775,7 +1968,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn owner_can_set_and_clear_selection_by_original_index_path(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1820,7 +2013,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn confirming_a_disabled_item_does_nothing(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1849,7 +2042,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_checked_item_uses_an_xsmall_trailing_check_icon(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let cx = cx.add_empty_window();
@@ -1887,14 +2080,14 @@ mod tests {
         });
 
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| unchecked.into_any_element(),
         );
 
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| checked.into_any_element(),
         );
 
@@ -1906,14 +2099,14 @@ mod tests {
 
     struct CheckIconWidthHarness {
         state: Entity<CommandState>,
-        width: Rc<Cell<Option<gpui::Pixels>>>,
+        width: Rc<Cell<Option<wgpui::Pixels>>>,
     }
 
     impl Render for CheckIconWidthHarness {
         fn render(
             &mut self,
             window: &mut Window,
-            cx: &mut gpui::Context<Self>,
+            cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             let width = self.width.clone();
             let item = self.state.update(cx, |state, cx| {
@@ -1933,14 +2126,14 @@ mod tests {
     }
 
     impl Render for Harness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div()
                 .size_full()
                 .child((self.command)(&self.state).max_h(px(200.)))
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn header_and_footer_render_with_current_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let header_calls = Rc::new(Cell::new(0));
@@ -1975,7 +2168,7 @@ mod tests {
         assert_eq!(footer_matched_count, Some(2));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn custom_empty_slot_renders_with_current_state(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let empty_calls = Rc::new(Cell::new(0));
@@ -1988,7 +2181,7 @@ mod tests {
                 let calls = calls.clone();
                 let matched_count = matched_count.clone();
                 Command::new(state).empty(
-                    move |state: &CommandState, _: &mut Window, _: &mut gpui::App| {
+                    move |state: &CommandState, _: &mut Window, _: &mut wgpui::App| {
                         calls.set(calls.get() + 1);
                         matched_count.set(Some(state.matched_count()));
                         div().child("Custom empty")
@@ -2041,7 +2234,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn first_enabled_selection_resets_scroll_to_its_late_row(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let (harness, cx) = cx.add_window_view(|window, cx| Harness {
@@ -2080,7 +2273,7 @@ mod tests {
     }
 
     impl Render for HeaderFooterHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             let header_calls = self.header_calls.clone();
             let header_matched_count = self.header_matched_count.clone();
             let footer_calls = self.footer_calls.clone();
@@ -2112,7 +2305,7 @@ mod tests {
     }
 
     impl Render for PaddedHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div().size_full().child(
                 Command::new(&self.state)
                     .item(
@@ -2133,7 +2326,7 @@ mod tests {
     }
 
     impl Render for WrappingHarness {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             div().size_full().child(
                 div().w(self.width).child(
                     Command::new(&self.state)
@@ -2149,7 +2342,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_for_the_list_content_width(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2184,7 +2377,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_when_rem_size_changes(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2217,7 +2410,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn wrapping_rows_remeasure_when_inherited_typography_changes(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2249,7 +2442,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn outer_command_padding_does_not_inflate_measured_row_heights(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2266,7 +2459,7 @@ mod tests {
         assert_eq!(height, px(44.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn custom_rows_keep_independent_heights(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2304,7 +2497,7 @@ mod tests {
         assert_eq!(row_sizes[4].height, px(84.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reinstalling_a_model_preserves_selection_by_index_path_and_remeasures_rows(
         cx: &mut TestAppContext,
     ) {
@@ -2373,7 +2566,7 @@ mod tests {
         assert_eq!(row_sizes[1].height, px(44.));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_state_redraw_reuses_the_installed_custom_row_measurement(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let renders = Rc::new(Cell::new(0));
@@ -2396,27 +2589,27 @@ mod tests {
 
         let first_state = state.clone();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| first_state.into_any_element(),
         );
         let settled_state = state.clone();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| settled_state.into_any_element(),
         );
         let after_first_draw = renders.get();
         cx.draw(
-            gpui::point(px(0.), px(0.)),
-            gpui::AvailableSpace::min_size(),
+            wgpui::point(px(0.), px(0.)),
+            wgpui::AvailableSpace::min_size(),
             move |_, _| state.into_any_element(),
         );
 
         assert_eq!(renders.get() - after_first_draw, 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn moving_past_the_visible_rows_scrolls_the_list(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -2458,7 +2651,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_reinstalled_model_does_not_scroll_a_preserved_selection(cx: &mut TestAppContext) {
         cx.update(crate::init);
 

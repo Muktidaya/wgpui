@@ -1,6 +1,6 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
-use gpui::{
+use wgpui::{
     AnyView, App, Context, Entity, EventEmitter, FocusHandle, Focusable, Render, WeakEntity, Window,
 };
 
@@ -16,7 +16,7 @@ pub enum PanelEvent {
 }
 
 /// Behavior a dockable panel provides. Presentation lives in the layer above:
-/// `gpui_component::dock::Panel` extends this with titles, toolbars, and menus.
+/// `wgpui_component::dock::Panel` extends this with titles, toolbars, and menus.
 #[allow(unused_variables)]
 pub trait Panel: EventEmitter<PanelEvent> + Render + Focusable {
     /// Identifies the panel in persisted layouts. Once chosen, never change it.
@@ -248,7 +248,7 @@ impl PanelSource for LivePanels<'_> {
 mod tests {
     use super::super::state::PanelInfo;
     use super::*;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Empty, EventEmitter, FocusHandle, Focusable, IntoElement, Render,
         TestAppContext, Window,
     };
@@ -280,7 +280,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn a_panel_entity_answers_through_the_object_safe_view(cx: &mut TestAppContext) {
         let panel = cx.new(|cx| Probe {
             focus_handle: cx.focus_handle(),
@@ -295,7 +295,7 @@ mod tests {
         });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn the_default_dump_records_only_the_panel_name(cx: &mut TestAppContext) {
         let panel = cx.new(|cx| Probe {
             focus_handle: cx.focus_handle(),

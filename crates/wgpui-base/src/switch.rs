@@ -1,14 +1,14 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, MouseButton, ParentElement, Refineable as _, RenderOnce, Role, SharedString,
     Stateful, StatefulInteractiveElement, StyleRefinement, Styled, Toggled, Window, div,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
-use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
+use crate::{StateStyle, StyledExt as _, TestSupportExt as _, a11y_disabled::A11yDisabledExt as _};
 
 type ChangeHandler = Rc<dyn Fn(bool, &ClickEvent, &mut Window, &mut App)>;
 
@@ -31,6 +31,7 @@ pub struct Switch {
     accessibility_label: Option<SharedString>,
     tab_index: isize,
     tab_stop: bool,
+    provided_focus_handle: Option<FocusHandle>,
 }
 
 /// Semantic root styles supported by [`Switch`].
@@ -254,6 +255,7 @@ impl Switch {
             accessibility_label: None,
             tab_index: 0,
             tab_stop: true,
+            provided_focus_handle: None,
         }
     }
 
@@ -297,6 +299,9 @@ impl Switch {
     }
 
     /// Sets the name exposed to accessibility clients.
+    ///
+    /// A switch without text children has no accessible name, so set this
+    /// whenever it is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
         self
@@ -314,11 +319,19 @@ impl Switch {
         self
     }
 
+    /// Uses a caller-owned focus handle instead of creating keyed state.
+    pub fn track_focus(mut self, focus_handle: &FocusHandle) -> Self {
+        self.provided_focus_handle = Some(focus_handle.clone());
+        self
+    }
+
     fn focus_handle(&self, window: &mut Window, cx: &mut App) -> FocusHandle {
-        window
-            .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
-            .read(cx)
-            .clone()
+        self.provided_focus_handle.clone().unwrap_or_else(|| {
+            window
+                .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
+                .read(cx)
+                .clone()
+        })
     }
 }
 
@@ -382,6 +395,7 @@ impl RenderOnce for Switch {
             )
             .children(self.children)
             .refine_style(&style)
+            .a11y_disabled(disabled)
     }
 }
 
@@ -394,16 +408,16 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         TestAppContext, VisualTestContext, accesskit, canvas, point, px,
     };
 
     #[test]
     fn track_projects_checked_disabled_and_instance_style_priority() {
-        let normal_color = gpui::hsla(0.0, 0.0, 0.2, 1.0);
-        let checked_color = gpui::hsla(0.6, 0.7, 0.5, 1.0);
-        let disabled_color = gpui::hsla(0.6, 0.7, 0.5, 0.5);
+        let normal_color = wgpui::hsla(0.0, 0.0, 0.2, 1.0);
+        let checked_color = wgpui::hsla(0.6, 0.7, 0.5, 1.0);
+        let disabled_color = wgpui::hsla(0.6, 0.7, 0.5, 0.5);
         let track = |checked, disabled| {
             SwitchTrack::new(("track", usize::from(checked) * 2 + usize::from(disabled)))
                 .checked(checked)
@@ -453,23 +467,23 @@ mod tests {
         let second = track("second-switch");
 
         assert_eq!(
-            gpui::Element::id(&first.base),
+            wgpui::Element::id(&first.base),
             Some((ElementId::from("first-switch"), "track").into())
         );
         assert_eq!(
-            gpui::Element::id(&second.base),
+            wgpui::Element::id(&second.base),
             Some((ElementId::from("second-switch"), "track").into())
         );
         assert_ne!(
-            gpui::Element::id(&first.base),
-            gpui::Element::id(&second.base)
+            wgpui::Element::id(&first.base),
+            wgpui::Element::id(&second.base)
         );
     }
 
     #[test]
     fn thumb_projects_checked_disabled_and_instance_style_priority() {
-        let checked_color = gpui::hsla(0.6, 0.7, 0.5, 1.0);
-        let disabled_color = gpui::hsla(0.1, 0.2, 0.3, 0.5);
+        let checked_color = wgpui::hsla(0.6, 0.7, 0.5, 1.0);
+        let disabled_color = wgpui::hsla(0.1, 0.2, 0.3, 0.5);
         let thumb = |checked, disabled| {
             SwitchThumb::new(checked)
                 .disabled(disabled)
@@ -568,7 +582,8 @@ mod tests {
     }
 
     fn activate_key(cx: &mut VisualTestContext, key: &str) {
-        let keystroke = Keystroke::parse(key).unwrap();
+        let keystroke =
+            cx.update(|_, cx| Keystroke::parse_with_os(key, cx.platform_info().os).unwrap());
         cx.simulate_event(KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,
@@ -577,7 +592,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_reports_the_next_value_once(cx: &mut TestAppContext) {
         let (cx, toggles, keyboard_events, last_value, _) = harness(cx, false, false);
 
@@ -588,7 +603,7 @@ mod tests {
         assert!(last_value.get());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_and_space_report_one_native_keyboard_activation_each(cx: &mut TestAppContext) {
         let (cx, toggles, keyboard_events, last_value, _) = harness(cx, false, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -606,7 +621,7 @@ mod tests {
         assert!(last_value.get());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_switch_is_inert_and_blocks_parent_activation(cx: &mut TestAppContext) {
         let (cx, toggles, _, _, parent_clicks) = harness(cx, false, true);
 
@@ -667,7 +682,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_exposes_switch_role_label_and_toggled_state(cx: &mut TestAppContext) {
         type Captured = Arc<Mutex<Option<(accesskit::Node, accesskit::Node)>>>;
 
@@ -722,8 +737,7 @@ mod tests {
         assert_eq!(disabled.role(), Role::Switch);
         assert_eq!(disabled.toggled(), Some(Toggled::False));
         assert!(!disabled.supports_action(accesskit::Action::Click));
-        // GPUI currently has no aria-disabled setter. Keep the limitation
-        // explicit instead of claiming an AccessKit disabled state.
-        assert!(!disabled.is_disabled());
+        assert!(!enabled.is_disabled());
+        assert!(disabled.is_disabled());
     }
 }

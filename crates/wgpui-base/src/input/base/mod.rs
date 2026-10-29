@@ -1,5 +1,5 @@
 use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
-use gpui::{
+use wgpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
     Refineable as _, RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
@@ -12,7 +12,7 @@ use gpui::{
 /// breaking the menu builders.
 ///
 /// ```
-/// use gpui_base::input::InputContextMenuCapabilities;
+/// use wgpui_base::input::InputContextMenuCapabilities;
 ///
 /// let capabilities = InputContextMenuCapabilities::new()
 ///     .code_editor(true)
@@ -125,7 +125,7 @@ impl InputContextMenuCapabilities {
 /// normal children. Applications remain responsible for all presentation.
 #[derive(IntoElement)]
 pub struct InputBase {
-    base: crate::ObservedElement<gpui::Stateful<Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     style: StyleRefinement,
     semantic_styles: InputStyles,
     children: Vec<AnyElement>,
@@ -159,6 +159,37 @@ impl InputBase {
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
+    }
+
+    /// Exposes an editor's native semantics through this frame's component ID.
+    ///
+    /// `editor` must identify the input, textarea or editor state rendered below
+    /// this frame, without intervening element IDs. Anonymous layout wrappers
+    /// are allowed. ID queries retain the frame's path, bounds and visibility.
+    /// Role, label, value, checked/indeterminate, selected, expanded, disabled
+    /// and focus facts come from the editor's existing native node and observed
+    /// focus scope, not independently focusable addon controls. Native snapshot
+    /// enumeration is unchanged, so role/label queries do not duplicate editors.
+    ///
+    /// This only declares an observation relationship with `test-support`; it
+    /// never adds a native accessibility node or registers a focus handle. The
+    /// relationship follows the frame's GPUI element-state lifetime.
+    pub fn semantic_owner(self, editor: wgpui::EntityId) -> Self {
+        #[cfg(feature = "test-support")]
+        {
+            Self {
+                base: self.base.semantic_owner([
+                    ElementId::View(editor),
+                    super::state::EDITOR_ELEMENT_ID.into(),
+                ]),
+                ..self
+            }
+        }
+        #[cfg(not(feature = "test-support"))]
+        {
+            let _ = editor;
+            self
+        }
     }
 
     pub fn styles(mut self, build: impl FnOnce(InputStyles) -> InputStyles) -> Self {
@@ -217,7 +248,7 @@ impl ParentElement for InputBase {
 }
 
 impl InteractiveElement for InputBase {
-    fn track_focus(mut self, focus: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, focus: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(focus);
         self
     }
@@ -263,9 +294,9 @@ mod tests {
     fn semantic_state_styles_override_the_normal_style() {
         let focused = InputBase::new("focused")
             .focused(true)
-            .border_color(gpui::red())
-            .styles(|styles| styles.focused(|style| style.border_color(gpui::blue())));
-        assert_eq!(focused.resolved_style().border_color, Some(gpui::blue()));
+            .border_color(wgpui::red())
+            .styles(|styles| styles.focused(|style| style.border_color(wgpui::blue())));
+        assert_eq!(focused.resolved_style().border_color, Some(wgpui::blue()));
 
         let disabled = InputBase::new("disabled")
             .focused(true)

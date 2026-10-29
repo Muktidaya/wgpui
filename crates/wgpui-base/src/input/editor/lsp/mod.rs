@@ -1,7 +1,7 @@
 use anyhow::Result;
-use gpui::{App, Context, Hsla, SharedString, Task, Window};
 use ropey::Rope;
 use std::rc::Rc;
+use wgpui::{App, Context, Hsla, SharedString, Task, Window};
 
 use crate::input::{EditorMode, InputBaseState, RopeExt};
 
@@ -24,7 +24,7 @@ pub use semantic_tokens::*;
 /// Host hook to show a document when following an LSP location
 /// (Go to Definition), modeled after the `window/showDocument` request.
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument>
 ///
 /// Called before the built-in behavior. Return `true` if the host has shown
 /// the document (e.g. opened a docs window for a virtual/external URI);
@@ -35,7 +35,7 @@ pub type ShowDocumentHandler =
 
 /// LSP ServerCapabilities
 ///
-/// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#serverCapabilities
+/// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#serverCapabilities>
 pub struct Lsp {
     /// The completion provider.
     pub completion_provider: Option<Rc<dyn CompletionProvider>>,
@@ -52,11 +52,17 @@ pub struct Lsp {
     /// Optional host hook to show documents for Go to Definition locations,
     /// following the `window/showDocument` request (see [`ShowDocumentHandler`]).
     ///
-    /// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument
+    /// <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#window_showDocument>
     pub show_document: Option<ShowDocumentHandler>,
 
     /// Display options for the completion popover.
     pub completion_menu: CompletionMenuOptions,
+
+    /// Decides which bytes of each completion label the menu paints.
+    ///
+    /// Defaults to [`highlight_prefix`]. Replace it to paint a contiguous
+    /// match, a character-by-character match, or ranges the host computed.
+    completion_highlighter: Rc<CompletionHighlighter>,
 
     pub(crate) document_colors: Vec<(lsp_types::Range, Hsla)>,
     /// Cached semantic tokens as absolute position ranges + theme token-type
@@ -64,6 +70,7 @@ pub struct Lsp {
     /// take effect without a refetch.
     pub(crate) semantic_tokens: Vec<(lsp_types::Range, SharedString)>,
     pub(crate) _hover_task: Task<Result<()>>,
+    pub(crate) _definition_task: Task<Result<()>>,
     pub(crate) _document_color_task: Task<()>,
     pub(crate) _semantic_tokens_task: Task<()>,
 }
@@ -77,11 +84,13 @@ impl Default for Lsp {
             definition_provider: None,
             document_color_provider: None,
             completion_menu: CompletionMenuOptions::default(),
+            completion_highlighter: Rc::new(highlight_prefix),
             semantic_tokens_provider: None,
             show_document: None,
             document_colors: vec![],
             semantic_tokens: vec![],
             _hover_task: Task::ready(Ok(())),
+            _definition_task: Task::ready(Ok(())),
             _document_color_task: Task::ready(()),
             _semantic_tokens_task: Task::ready(()),
         }
@@ -89,6 +98,24 @@ impl Default for Lsp {
 }
 
 impl Lsp {
+    /// Set the completion label highlighter when constructing the LSP configuration.
+    pub fn with_completion_highlighter(mut self, highlighter: Rc<CompletionHighlighter>) -> Self {
+        self.set_completion_highlighter(highlighter);
+        self
+    }
+
+    /// Return the completion label highlighter.
+    pub fn completion_highlighter(&self) -> &Rc<CompletionHighlighter> {
+        &self.completion_highlighter
+    }
+
+    /// Replace the completion label highlighter.
+    ///
+    /// Notify the editor after updating its LSP configuration to repaint an open menu.
+    pub fn set_completion_highlighter(&mut self, highlighter: Rc<CompletionHighlighter>) {
+        self.completion_highlighter = highlighter;
+    }
+
     /// Update the LSP when the text changes.
     pub(crate) fn update(
         &mut self,
@@ -105,6 +132,7 @@ impl Lsp {
         self.document_colors.clear();
         self.semantic_tokens.clear();
         self._hover_task = Task::ready(Ok(()));
+        self._definition_task = Task::ready(Ok(()));
         self._document_color_task = Task::ready(());
         self._semantic_tokens_task = Task::ready(());
     }
@@ -125,5 +153,21 @@ impl InputBaseState<EditorMode> {
             let range_utf16 = self.range_to_utf16(&(start..end));
             self.replace_text_in_range_silent(Some(range_utf16), &edit.new_text, window, cx);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lsp_builder() {
+        let highlighter: Rc<CompletionHighlighter> = Rc::new(highlight_contains);
+        let mut lsp = Lsp::default().with_completion_highlighter(highlighter.clone());
+        assert!(Rc::ptr_eq(lsp.completion_highlighter(), &highlighter));
+
+        let replacement: Rc<CompletionHighlighter> = Rc::new(highlight_characters);
+        lsp.set_completion_highlighter(replacement.clone());
+        assert!(Rc::ptr_eq(lsp.completion_highlighter(), &replacement));
     }
 }

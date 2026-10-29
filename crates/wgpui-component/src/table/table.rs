@@ -1,9 +1,9 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, InteractiveElement as _, IntoElement, ParentElement, Pixels, RenderOnce,
     SharedString, StyleRefinement, Styled, TextAlign, Window, div, prelude::FluentBuilder as _, px,
     relative,
 };
-use gpui_base::{
+use wgpui_base::{
     Table as BaseTable, TableBody as BaseTableBody, TableCaption as BaseTableCaption,
     TableCell as BaseTableCell, TableHead as BaseTableHead, TableHeader as BaseTableHeader,
     TableRow as BaseTableRow,
@@ -15,7 +15,7 @@ const MIN_CELL_WIDTH: Pixels = px(100.);
 
 /// A basic table component for directly rendering tabular data.
 ///
-/// Unlike [`DataTable`], this is a simple, stateless, composable table
+/// Unlike [`DataTable`](crate::table::DataTable), this is a simple, stateless, composable table
 /// without virtual scrolling or column management.
 ///
 /// Size set via [`Sizable`] is automatically propagated to all children.
@@ -132,7 +132,7 @@ mod tests {
 
         let named = Table::new().accessibility_label("Recent invoices");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Recent invoices")
         );
     }

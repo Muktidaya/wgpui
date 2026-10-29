@@ -1,7 +1,21 @@
 mod app_menu;
 mod keystroke;
 #[cfg(target_os = "macos")]
+mod macos_clipboard;
+#[cfg(target_os = "macos")]
 mod macos_menu;
+#[cfg(target_os = "macos")]
+mod macos_text_system;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+mod pango_text_system;
+#[cfg(target_os = "linux")]
+mod wayland_clipboard;
+#[cfg(target_os = "windows")]
+mod windows_clipboard;
+#[cfg(target_os = "windows")]
+mod windows_text_system;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+mod x11_clipboard;
 
 #[cfg(any(test, feature = "test-support"))]
 mod test;
@@ -10,10 +24,11 @@ pub(crate) mod atlas;
 pub(crate) mod dispatcher;
 pub(crate) mod keyboard;
 pub(crate) mod platform;
-mod priority_pool;
+pub(crate) mod priority_pool;
 pub(crate) mod render_context;
 pub(crate) mod renderer;
 pub(crate) mod surface_registry;
+pub(crate) mod system_fonts;
 pub(crate) mod text_system;
 pub(crate) mod window;
 
@@ -21,10 +36,11 @@ use crate::platform::platform::CrossPlatform;
 use crate::{
     Action, AnyWindowHandle, App, AsyncWindowContext, BackgroundExecutor, Bounds,
     DEFAULT_WINDOW_SIZE, DevicePixels, DispatchEventResult, Font, FontId, FontMetrics, FontRun,
-    ForegroundExecutor, GlyphId, GpuSpecs, ImageSource, Keymap, LineLayout, Pixels, PlatformInput,
-    Point, Priority, RenderGlyphParams, RenderImage, RenderImageParams, RenderSvgParams,
-    RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString, Size, SvgRenderer, SystemWindowTab,
-    Task, TaskTiming, ThreadTaskTimings, Window, WindowControlArea, hash, point, px, size,
+    ForegroundExecutor, FrameCapture, FrameCaptureError, GlyphId, GpuSpecs, ImageSource, Keymap,
+    LineLayout, Pixels, PlatformInput, Point, Priority, RenderGlyphParams, RenderImage,
+    RenderImageParams, RenderSvgParams, RunnableMeta, Scene, ShapedGlyph, ShapedRun, SharedString,
+    Size, SvgRenderer, SystemWindowTab, Task, TaskTiming, ThreadTaskTimings, Window,
+    WindowControlArea, hash, point, px, size,
 };
 use anyhow::Result;
 use async_task::Runnable;
@@ -55,6 +71,9 @@ pub use app_menu::*;
 pub use keyboard::*;
 pub use keystroke::*;
 
+/// A native input-method event. Preedit cursor offsets are UTF-8 byte offsets.
+pub use winit::event::Ime as ImeEvent;
+
 #[cfg(any(test, feature = "test-support"))]
 pub(crate) use test::*;
 
@@ -66,13 +85,160 @@ pub fn background_executor() -> BackgroundExecutor {
     current_platform(true).background_executor()
 }
 
+/// Creates the native font discovery, text shaping and glyph rasterization service.
+/// This service does not create an event loop, window or GPU device.
+pub fn current_platform_text_system() -> Arc<dyn PlatformTextSystem> {
+    text_system::new()
+}
+
+/// Creates the native text service and reports OS font-service initialization failures.
+pub fn try_current_platform_text_system() -> Result<Arc<dyn PlatformTextSystem>> {
+    text_system::try_new()
+}
+
 pub(crate) fn current_platform(_headless: bool) -> Rc<dyn Platform> {
     // TODO(mdeand): Support headless
     // TODO(mdeand): Monomorphize Platform and its associated types.
     Rc::new(CrossPlatform::new().expect("Failed to initialize platform"))
 }
 
+/// The host operating system and the kind of application delivering the UI.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PlatformInfo {
+    /// The operating system whose input conventions the application follows.
+    pub os: OperatingSystem,
+    /// How the application is delivered, independently of its host OS.
+    pub target: PlatformTarget,
+}
+
+/// The host operating system, including when the application runs in a browser.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum OperatingSystem {
+    /// Apple's desktop operating system.
+    Mac,
+    /// Microsoft Windows.
+    Windows,
+    /// Linux, including browser hosts running ChromeOS.
+    Linux,
+    /// FreeBSD.
+    FreeBsd,
+    /// iOS and iPadOS.
+    Ios,
+    /// Android.
+    Android,
+    /// The backend could not identify the host operating system.
+    Unknown,
+}
+
+/// The kind of application delivering the UI, independently of its host OS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PlatformTarget {
+    /// A native application, including headless execution.
+    Native,
+    /// An application running in a browser.
+    Web,
+}
+
+impl PlatformInfo {
+    /// Whether the host operating system is macOS.
+    pub fn is_mac(self) -> bool {
+        self.os == OperatingSystem::Mac
+    }
+}
+
+impl Default for PlatformInfo {
+    fn default() -> Self {
+        let os = if cfg!(target_os = "macos") {
+            OperatingSystem::Mac
+        } else if cfg!(target_os = "windows") {
+            OperatingSystem::Windows
+        } else if cfg!(target_os = "linux") {
+            OperatingSystem::Linux
+        } else if cfg!(target_os = "freebsd") {
+            OperatingSystem::FreeBsd
+        } else if cfg!(target_os = "ios") {
+            OperatingSystem::Ios
+        } else if cfg!(target_os = "android") {
+            OperatingSystem::Android
+        } else {
+            OperatingSystem::Unknown
+        };
+        Self {
+            os,
+            target: PlatformTarget::Native,
+        }
+    }
+}
+
+/// Platform text-assistance preferences for the focused text region.
+///
+/// Returned by [`InputHandler::text_input_configuration`] and forwarded to the
+/// platform whenever it changes; the platform maps the fields onto its native
+/// input-session attributes (on web, DOM attributes of the hidden editable
+/// element such as `autocorrect` and `enterkeyhint`).
+///
+/// The default disables all text assistance and requests no particular action
+/// key presentation.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TextInputConfiguration {
+    /// Whether the platform may automatically correct entered text.
+    pub autocorrect: bool,
+    /// How software keyboards automatically capitalize entered text.
+    pub autocapitalize: Autocapitalize,
+    /// Whether software keyboards may offer word suggestions and spellcheck.
+    pub suggestions: bool,
+    /// The action advertised on a software keyboard's confirm ("enter") key.
+    pub input_action: TextInputAction,
+}
+
+/// Automatic capitalization applied by software keyboards.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Autocapitalize {
+    /// No automatic capitalization.
+    #[default]
+    None,
+    /// Capitalize the first letter of each word.
+    Words,
+    /// Capitalize the first letter of each sentence.
+    Sentences,
+    /// Capitalize every letter.
+    Characters,
+}
+
+/// The action a software keyboard advertises on its confirm ("enter") key.
+///
+/// This affects only how the key is presented (icon or label); pressing it is
+/// still delivered as ordinary input.
+///
+/// The variants are the HTML `enterkeyhint` attribute's value set
+/// (<https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-enterkeyhint-attribute>),
+/// which also maps onto Android's `IME_ACTION_*` constants and iOS's
+/// `UIReturnKeyType`; [`TextInputAction::Unspecified`] means "emit no hint".
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TextInputAction {
+    /// Let the platform choose its default presentation.
+    #[default]
+    Unspecified,
+    /// Inserting a line break.
+    Enter,
+    /// Committing the field's value.
+    Done,
+    /// Navigating to the typed target.
+    Go,
+    /// Moving to the next field.
+    Next,
+    /// Moving to the previous field.
+    Previous,
+    /// Executing a search.
+    Search,
+    /// Sending a message.
+    Send,
+}
+
 pub(crate) trait Platform: 'static {
+    fn platform_info(&self) -> PlatformInfo {
+        PlatformInfo::default()
+    }
     fn background_executor(&self) -> BackgroundExecutor;
     fn foreground_executor(&self) -> ForegroundExecutor;
     fn text_system(&self) -> Arc<dyn PlatformTextSystem>;
@@ -143,6 +309,11 @@ pub(crate) trait Platform: 'static {
     fn compositor_name(&self) -> &'static str {
         ""
     }
+    /// The WGPU objects every window renders with, for an application that
+    /// presents to a surface of its own. `None` without the WGPU renderer.
+    fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        None
+    }
     fn app_path(&self) -> Result<PathBuf>;
     fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf>;
 
@@ -151,6 +322,9 @@ pub(crate) trait Platform: 'static {
 
     fn write_to_clipboard(&self, item: ClipboardItem);
     fn read_from_clipboard(&self) -> Option<ClipboardItem>;
+    fn read_from_clipboard_async(&self) -> Task<Result<Option<ClipboardItem>>> {
+        Task::ready(Ok(self.read_from_clipboard()))
+    }
 
     fn write_credentials(&self, url: &str, username: &str, password: &[u8]) -> Task<Result<()>>;
     fn read_credentials(&self, url: &str) -> Task<Result<Option<(String, Vec<u8>)>>>;
@@ -186,6 +360,11 @@ pub(crate) trait Platform: 'static {
 
 /// A handle to a platform's display, e.g. a monitor or laptop screen.
 pub trait PlatformDisplay: Send + Sync + Debug {
+    /// The period reported by the connected monitor, when known.
+    fn refresh_interval(&self) -> Option<Duration> {
+        None
+    }
+
     /// Get the ID for this display
     fn id(&self) -> DisplayId;
 
@@ -383,8 +562,20 @@ pub(crate) struct RequestFrameOptions {
 }
 
 pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
+    fn is_a11y_active(&self) -> bool;
+    fn update_a11y(&self, update: accesskit::TreeUpdate);
+    fn on_accessibility_event(&self, callback: Box<dyn FnMut(accesskit_winit::WindowEvent)>);
     fn bounds(&self) -> Bounds<Pixels>;
     fn is_maximized(&self) -> bool;
+    fn is_resizable(&self) -> bool;
+    fn is_visible(&self) -> bool;
+    fn visual_viewport_bounds(&self) -> Bounds<Pixels> {
+        Bounds::new(Point::default(), self.content_size())
+    }
+    fn on_visual_viewport_changed(&self, callback: Box<dyn FnMut()>);
+    fn set_text_input_configuration(&self, configuration: &TextInputConfiguration);
+    fn show_soft_keyboard(&self);
+    fn hide_soft_keyboard(&self);
     fn window_bounds(&self) -> WindowBounds;
     fn content_size(&self) -> Size<Pixels>;
     fn resize(&mut self, size: Size<Pixels>);
@@ -417,6 +608,7 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
     fn on_active_status_change(&self, callback: Box<dyn FnMut(bool)>);
     fn on_hover_status_change(&self, callback: Box<dyn FnMut(bool)>);
     fn on_resize(&self, callback: Box<dyn FnMut(Size<Pixels>, f32)>);
+    fn on_visibility_change(&self, callback: Box<dyn FnMut(bool)>);
     fn on_moved(&self, callback: Box<dyn FnMut()>);
     fn on_should_close(&self, callback: Box<dyn FnMut() -> bool>);
     fn on_hit_test_window_control(&self, callback: Box<dyn FnMut() -> Option<WindowControlArea>>);
@@ -470,9 +662,16 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
     fn gpu_specs(&self) -> Option<GpuSpecs>;
 
     fn update_ime_position(&self, _bounds: Bounds<Pixels>);
+    #[cfg(any(test, feature = "test-support"))]
+    fn render_to_image(&self, _scene: &Scene) -> Result<image::RgbaImage> {
+        anyhow::bail!("no real headless renderer is configured")
+    }
+
+    /// Close presentation lifetimes before the logical window is removed.
+    fn close_surface_presentations(&self) {}
 
     /// Create a double-buffered WGPU surface handle for external rendering.
-    /// Returns `None` on platforms that don't use the WGPU renderer.
+    /// Returns `None` when unsupported, uninitialized, or the presentation lifetime is closed.
     fn create_wgpu_surface(
         &self,
         _width: u32,
@@ -482,10 +681,42 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
         None
     }
 
+    /// Request one capture of the next complete-scene frame this window composes.
+    ///
+    /// Returns `None` on platforms that don't use the WGPU compositor. Implementations ask
+    /// for the redraw that composes the frame and deliver the readback through the receiver
+    /// once that frame has been presented.
+    fn request_frame_capture(
+        &self,
+    ) -> Option<oneshot::Receiver<Result<FrameCapture, FrameCaptureError>>> {
+        None
+    }
+
     #[cfg(any(test, feature = "test-support"))]
     fn as_test(&mut self) -> Option<&mut TestWindow> {
         None
     }
+}
+
+/// A renderer for headless windows that can produce real rendered output.
+#[cfg(any(test, feature = "test-support", feature = "bench-support"))]
+pub trait PlatformHeadlessRenderer {
+    /// Render a scene and return the result as an RGBA image.
+    fn render_scene_to_image(
+        &mut self,
+        scene: &Scene,
+        size: Size<DevicePixels>,
+    ) -> Result<image::RgbaImage>;
+
+    /// Render a scene to an offscreen target without reading the result back.
+    ///
+    /// This is the headless analogue of presenting a frame: it performs the
+    /// same CPU-side scene encoding and GPU submission as drawing to a real
+    /// window, but doesn't block on GPU completion or copy pixels back.
+    fn render_scene(&mut self, scene: &Scene, size: Size<DevicePixels>) -> Result<()>;
+
+    /// Returns the sprite atlas used by this renderer.
+    fn sprite_atlas(&self) -> Arc<dyn PlatformAtlas>;
 }
 
 /// This type is public so that our test macro can generate and use it, but it should not
@@ -676,7 +907,7 @@ impl PlatformTextSystem for NoopTextSystem {
 
 // Adapted from https://github.com/microsoft/terminal/blob/1283c0f5b99a2961673249fa77c6b986efb5086c/src/renderer/atlas/dwrite.cpp
 // Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+// Licensed under the MIT license; full terms in platform/microsoft_terminal_license.txt.
 #[allow(dead_code)]
 pub(crate) fn get_gamma_correction_ratios(gamma: f32) -> [f32; 4] {
     const GAMMA_INCORRECT_TARGET_RATIOS: [[f32; 4]; 13] = [
@@ -710,7 +941,9 @@ pub(crate) fn get_gamma_correction_ratios(gamma: f32) -> [f32; 4] {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub(crate) enum AtlasKey {
+#[doc(hidden)]
+#[allow(missing_docs)]
+pub enum AtlasKey {
     Glyph(RenderGlyphParams),
     Svg(RenderSvgParams),
     Image(RenderImageParams),
@@ -754,7 +987,9 @@ impl From<RenderImageParams> for AtlasKey {
     }
 }
 
-pub(crate) trait PlatformAtlas: Send + Sync {
+#[doc(hidden)]
+#[allow(missing_docs)]
+pub trait PlatformAtlas: Send + Sync {
     fn get_or_insert_with<'a>(
         &self,
         key: &AtlasKey,
@@ -800,7 +1035,8 @@ impl<T> AtlasTextureList<T> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub(crate) struct AtlasTile {
+#[doc(hidden)]
+pub struct AtlasTile {
     pub(crate) texture_id: AtlasTextureId,
     pub(crate) tile_id: TileId,
     pub(crate) padding: u32,
@@ -851,6 +1087,19 @@ pub(crate) struct PlatformInputHandler {
 impl PlatformInputHandler {
     pub fn new(cx: AsyncWindowContext, handler: Box<dyn InputHandler>) -> Self {
         Self { cx, handler }
+    }
+
+    pub(crate) fn handle_ime_event(&mut self, event: ImeEvent) -> Result<()> {
+        self.cx
+            .update(|window, cx| dispatch_ime_event(self.handler.as_mut(), event, window, cx))
+    }
+
+    pub(crate) fn text_input_configuration(
+        &mut self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> TextInputConfiguration {
+        self.handler.text_input_configuration(window, cx)
     }
 
     pub(crate) fn selected_text_range(
@@ -985,6 +1234,15 @@ pub struct UTF16Selection {
 ///
 /// <https://developer.apple.com/documentation/appkit/nstextinputclient>
 pub trait InputHandler: 'static {
+    /// Text assistance requested by the focused input region.
+    fn text_input_configuration(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut App,
+    ) -> TextInputConfiguration {
+        TextInputConfiguration::default()
+    }
+
     /// Get the range of the user's currently selected text, if any
     /// Corresponds to [selectedRange()](https://developer.apple.com/documentation/appkit/nstextinputclient/1438242-selectedrange)
     ///
@@ -1041,6 +1299,19 @@ pub trait InputHandler: 'static {
         cx: &mut App,
     );
 
+    /// Clears existing preedit text without ending its composition transaction.
+    ///
+    /// The insertion anchor must remain available until [`Self::replace_text_in_range`]
+    /// commits a candidate or [`Self::unmark_text`] ends the composition. Native input
+    /// methods can send an empty preedit immediately before committing the candidate.
+    /// Editors with undo history should override this method to keep both events in
+    /// the same transaction. An empty preedit must not delete an ordinary selection.
+    fn clear_marked_text(&mut self, window: &mut Window, cx: &mut App) {
+        if self.marked_text_range(window, cx).is_some() {
+            self.replace_and_mark_text_in_range(None, "", Some(0..0), window, cx);
+        }
+    }
+
     /// Remove the IME 'composing' state from the document
     /// Corresponds to [unmarkText()](https://developer.apple.com/documentation/appkit/nstextinputclient/1438239-unmarktext)
     fn unmark_text(&mut self, window: &mut Window, cx: &mut App);
@@ -1079,6 +1350,46 @@ pub trait InputHandler: 'static {
     fn accepts_text_input(&mut self, _window: &mut Window, _cx: &mut App) -> bool {
         true
     }
+}
+
+fn dispatch_ime_event(
+    handler: &mut dyn InputHandler,
+    event: ImeEvent,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    match event {
+        ImeEvent::Enabled => {}
+        ImeEvent::Preedit(text, cursor) => {
+            if text.is_empty() {
+                if handler.marked_text_range(window, cx).is_some() {
+                    handler.clear_marked_text(window, cx);
+                }
+            } else {
+                let selected = cursor.map(|(start, end)| {
+                    byte_offset_to_utf16(&text, start)..byte_offset_to_utf16(&text, end)
+                });
+                handler.replace_and_mark_text_in_range(None, &text, selected, window, cx);
+            }
+        }
+        ImeEvent::Commit(text) => {
+            handler.replace_text_in_range(None, &text, window, cx);
+            handler.unmark_text(window, cx);
+        }
+        ImeEvent::Disabled => {
+            if handler.marked_text_range(window, cx).is_some() {
+                handler.clear_marked_text(window, cx);
+            }
+            handler.unmark_text(window, cx);
+        }
+    }
+}
+
+fn byte_offset_to_utf16(text: &str, byte: usize) -> usize {
+    text.char_indices()
+        .take_while(|(offset, character)| offset + character.len_utf8() <= byte)
+        .map(|(_, character)| character.len_utf16())
+        .sum()
 }
 
 /// The variables that can be configured when creating a new window
@@ -1479,7 +1790,8 @@ pub enum CursorStyle {
 /// A clipboard item that should be copied to the clipboard
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClipboardItem {
-    entries: Vec<ClipboardEntry>,
+    /// The entries in this clipboard item.
+    pub entries: Vec<ClipboardEntry>,
 }
 
 /// Either a ClipboardString or a ClipboardImage
@@ -1747,13 +2059,7 @@ impl Image {
             bytes: &[u8],
             format: image::ImageFormat,
         ) -> Result<SmallVec<[Frame; 1]>> {
-            let mut data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
-
-            // Convert from RGBA to BGRA.
-            for pixel in data.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-            }
-
+            let data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
             Ok(SmallVec::from_elem(Frame::new(data), 1))
         }
 
@@ -1763,12 +2069,7 @@ impl Image {
                 let mut frames = SmallVec::new();
 
                 for frame in decoder.into_frames() {
-                    let mut frame = frame?;
-                    // Convert from RGBA to BGRA.
-                    for pixel in frame.buffer_mut().chunks_exact_mut(4) {
-                        pixel.swap(0, 2);
-                    }
-                    frames.push(frame);
+                    frames.push(frame?);
                 }
 
                 frames
@@ -1858,5 +2159,273 @@ impl From<String> for ClipboardString {
             text: value,
             metadata: None,
         }
+    }
+}
+
+/// Creates the WGPU offscreen renderer used by rendering acceptance tests.
+#[cfg(any(test, feature = "test-support"))]
+pub fn current_headless_renderer() -> Result<Option<Box<dyn PlatformHeadlessRenderer>>> {
+    Ok(Some(Box::new(renderer::WgpuRenderer::new_headless()?)))
+}
+
+#[cfg(test)]
+mod ime_protocol_tests {
+    use super::*;
+    use crate::{Empty, TestAppContext};
+
+    struct Editor {
+        text: Vec<u16>,
+        selection: Range<usize>,
+        marked: Option<Range<usize>>,
+    }
+
+    impl Editor {
+        fn new(text: &str, selection: Range<usize>) -> Self {
+            Self {
+                text: text.encode_utf16().collect(),
+                selection,
+                marked: None,
+            }
+        }
+
+        fn text(&self) -> String {
+            String::from_utf16(&self.text).expect("test editor contains valid UTF-16")
+        }
+
+        fn replace(&mut self, range: Option<Range<usize>>, text: &str) -> Range<usize> {
+            let range = range
+                .or_else(|| self.marked.clone())
+                .unwrap_or_else(|| self.selection.clone());
+            let text: Vec<_> = text.encode_utf16().collect();
+            let inserted = range.start..range.start + text.len();
+            drop(self.text.splice(range, text));
+            self.selection = inserted.end..inserted.end;
+            inserted
+        }
+    }
+
+    impl InputHandler for Editor {
+        fn selected_text_range(
+            &mut self,
+            _: bool,
+            _: &mut Window,
+            _: &mut App,
+        ) -> Option<UTF16Selection> {
+            Some(UTF16Selection {
+                range: self.selection.clone(),
+                reversed: false,
+            })
+        }
+
+        fn marked_text_range(&mut self, _: &mut Window, _: &mut App) -> Option<Range<usize>> {
+            self.marked.clone()
+        }
+
+        fn text_for_range(
+            &mut self,
+            range: Range<usize>,
+            _: &mut Option<Range<usize>>,
+            _: &mut Window,
+            _: &mut App,
+        ) -> Option<String> {
+            self.text
+                .get(range)
+                .and_then(|text| String::from_utf16(text).ok())
+        }
+
+        fn replace_text_in_range(
+            &mut self,
+            range: Option<Range<usize>>,
+            text: &str,
+            _: &mut Window,
+            _: &mut App,
+        ) {
+            self.replace(range, text);
+            self.marked = None;
+        }
+
+        fn replace_and_mark_text_in_range(
+            &mut self,
+            range: Option<Range<usize>>,
+            text: &str,
+            selected: Option<Range<usize>>,
+            _: &mut Window,
+            _: &mut App,
+        ) {
+            let inserted = self.replace(range, text);
+            if let Some(selected) = selected {
+                self.selection = inserted.start + selected.start..inserted.start + selected.end;
+            }
+            self.marked = Some(inserted);
+        }
+
+        fn unmark_text(&mut self, _: &mut Window, _: &mut App) {
+            self.marked = None;
+        }
+
+        fn bounds_for_range(
+            &mut self,
+            _: Range<usize>,
+            _: &mut Window,
+            _: &mut App,
+        ) -> Option<Bounds<Pixels>> {
+            None
+        }
+
+        fn character_index_for_point(
+            &mut self,
+            _: Point<Pixels>,
+            _: &mut Window,
+            _: &mut App,
+        ) -> Option<usize> {
+            None
+        }
+    }
+
+    fn apply(editor: &mut Editor, events: impl IntoIterator<Item = ImeEvent>) {
+        let mut context = TestAppContext::single();
+        let window = context.add_window(|_, _| Empty);
+        window
+            .update(&mut context, |_, window, cx| {
+                for event in events {
+                    dispatch_ime_event(editor, event, window, cx);
+                }
+            })
+            .expect("dispatch test IME transcript");
+    }
+
+    #[test]
+    fn documented_dead_key_and_candidate_transcripts_commit_once() {
+        let mut dead_key = Editor::new("", 0..0);
+        apply(
+            &mut dead_key,
+            [
+                ImeEvent::Enabled,
+                ImeEvent::Preedit("`".into(), Some((0, 0))),
+                ImeEvent::Preedit("".into(), None),
+                ImeEvent::Commit("é".into()),
+            ],
+        );
+        assert_eq!(dead_key.text(), "é");
+        assert_eq!(dead_key.marked, None);
+
+        let mut candidate = Editor::new("", 0..0);
+        apply(
+            &mut candidate,
+            [
+                ImeEvent::Enabled,
+                ImeEvent::Preedit("a".into(), Some((1, 1))),
+                ImeEvent::Preedit("a b".into(), Some((3, 3))),
+                ImeEvent::Preedit("a b".into(), Some((1, 1))),
+                ImeEvent::Preedit("啊b".into(), Some((3, 3))),
+                ImeEvent::Preedit("".into(), None),
+                ImeEvent::Commit("啊不".into()),
+            ],
+        );
+        assert_eq!(candidate.text(), "啊不");
+        assert_eq!(candidate.selection, 2..2);
+        assert_eq!(candidate.marked, None);
+    }
+
+    #[test]
+    fn clearing_preedit_retains_its_replacement_anchor_until_commit() {
+        let mut editor = Editor::new("left OLD right", 5..8);
+        apply(
+            &mut editor,
+            [
+                ImeEvent::Preedit("ni".into(), Some((2, 2))),
+                ImeEvent::Preedit("".into(), None),
+                ImeEvent::Preedit("".into(), None),
+            ],
+        );
+        assert_eq!(editor.text(), "left  right");
+        assert_eq!(editor.marked, Some(5..5));
+        apply(&mut editor, [ImeEvent::Commit("你".into())]);
+        assert_eq!(editor.text(), "left 你 right");
+        assert_eq!(editor.marked, None);
+    }
+
+    #[test]
+    fn empty_or_disabled_preedit_preserves_unmarked_selection_and_clears_transient_text() {
+        let mut editor = Editor::new("abc", 1..2);
+        apply(
+            &mut editor,
+            [
+                ImeEvent::Enabled,
+                ImeEvent::Preedit("".into(), None),
+                ImeEvent::Disabled,
+            ],
+        );
+        assert_eq!(editor.text(), "abc");
+        assert_eq!(editor.selection, 1..2);
+        apply(
+            &mut editor,
+            [
+                ImeEvent::Enabled,
+                ImeEvent::Preedit("ni".into(), Some((2, 2))),
+                ImeEvent::Disabled,
+            ],
+        );
+        assert_eq!(editor.text(), "ac");
+        assert_eq!(editor.marked, None);
+    }
+
+    #[test]
+    fn native_utf8_cursor_offsets_become_utf16_selection_offsets() {
+        let mut editor = Editor::new("[]", 1..1);
+        apply(
+            &mut editor,
+            [ImeEvent::Preedit("a😀éz".into(), Some((1, 5)))],
+        );
+        assert_eq!(editor.text(), "[a😀éz]");
+        assert_eq!(editor.selection, 2..4);
+        assert_eq!(editor.marked, Some(1..6));
+        assert_eq!(byte_offset_to_utf16("a😀éz", 0), 0);
+        assert_eq!(byte_offset_to_utf16("a😀éz", 2), 1);
+        assert_eq!(byte_offset_to_utf16("a😀éz", 6), 3);
+        assert_eq!(byte_offset_to_utf16("a😀éz", usize::MAX), 5);
+    }
+}
+
+#[cfg(test)]
+mod color_image_tests {
+    use super::{Image, ImageFormat};
+    use crate::SvgRenderer;
+    use std::sync::Arc;
+
+    #[test]
+    fn svg_image_buffers_match_resource_rgba_encoding() -> crate::Result<()> {
+        let bytes = br##"<svg xmlns="http://www.w3.org/2000/svg" width="9" height="3"><rect width="3" height="3" fill="#fb250d"/><rect x="3" width="3" height="3" fill="#fb250d" fill-opacity="0.5019607843"/><rect x="6" width="3" height="3" fill="#0d25fb"/></svg>"##;
+        let renderer = SvgRenderer::new(Arc::new(()));
+        let resource = renderer.render_single_frame(bytes, 1.0, true)?;
+        let image = Image::from_bytes(ImageFormat::Svg, bytes.to_vec()).to_image_data(renderer)?;
+        assert_eq!(image.frame_count(), resource.frame_count());
+        assert_eq!(image.size(0), resource.size(0));
+        assert_eq!(image.scale_factor, resource.scale_factor);
+        assert_eq!(
+            image.as_bytes(0),
+            resource.as_bytes(0),
+            "Both public SVG decoding paths must produce the same straight-alpha RGBA pixels"
+        );
+        let width = usize::try_from(image.size(0).width.0)?;
+        let row = usize::try_from(image.size(0).height.0)? / 2;
+        for (column, expected) in [
+            (width / 6, [251_u8, 37, 13, 255]),
+            (width / 2, [251_u8, 37, 13, 128]),
+            (width * 5 / 6, [13_u8, 37, 251, 255]),
+        ] {
+            let offset = (row * width + column) * 4;
+            let actual = image
+                .as_bytes(0)
+                .and_then(|bytes| bytes.get(offset..offset + 4))
+                .ok_or_else(|| anyhow::anyhow!("SVG buffer is shorter than its declared size"))?;
+            for (actual, expected) in actual.iter().copied().zip(expected) {
+                assert!(
+                    actual.abs_diff(expected) <= 1,
+                    "SVG buffers must expose straight-alpha RGBA: {actual} versus {expected}"
+                );
+            }
+        }
+        Ok(())
     }
 }

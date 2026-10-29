@@ -1,14 +1,17 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, ParentElement, Refineable as _, RenderOnce, Role, SharedString, Stateful,
     StatefulInteractiveElement, StyleRefinement, Styled, Toggled, Window, div,
     prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
-use crate::{RoleOverride, StateStyle, StyledExt as _, TestSupportExt as _};
+use crate::{
+    RoleOverride, StateStyle, StyledExt as _, TestSupportExt as _,
+    a11y_disabled::A11yDisabledExt as _,
+};
 
 type ChangeHandler = Rc<dyn Fn(CheckboxState, &ClickEvent, &mut Window, &mut App)>;
 
@@ -126,6 +129,9 @@ impl Checkbox {
     }
 
     /// Sets the label exposed to accessibility clients.
+    ///
+    /// A checkbox without text children has no accessible name, so set this
+    /// whenever it is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
         self
@@ -395,6 +401,7 @@ impl RenderOnce for Checkbox {
             )
             .children(self.children)
             .refine_style(&style)
+            .a11y_disabled(disabled)
     }
 }
 
@@ -407,15 +414,15 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         TestAppContext, VisualTestContext, accesskit, canvas, point, px,
     };
 
     #[test]
     fn indicator_projects_state_styles_over_the_instance_layer() {
-        let checked_color = gpui::hsla(0.6, 0.7, 0.5, 1.0);
-        let disabled_color = gpui::hsla(0.1, 0.2, 0.3, 0.5);
+        let checked_color = wgpui::hsla(0.6, 0.7, 0.5, 1.0);
+        let disabled_color = wgpui::hsla(0.1, 0.2, 0.3, 0.5);
 
         let indicator = |state, disabled| {
             CheckboxIndicator::new()
@@ -507,21 +514,21 @@ mod tests {
         (cx, changes, parent_clicks)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_activation_emits_the_next_state_once(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, CheckboxState::Unchecked, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         assert_eq!(&*changes.borrow(), &[CheckboxState::Checked]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn indeterminate_activation_becomes_checked(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, CheckboxState::Indeterminate, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         assert_eq!(&*changes.borrow(), &[CheckboxState::Checked]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_and_space_each_emit_once(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, CheckboxState::Checked, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -547,7 +554,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_checkbox_is_inert_and_allows_pointer_events_to_bubble(cx: &mut TestAppContext) {
         let (cx, changes, parent_clicks) = harness(cx, CheckboxState::Unchecked, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -617,7 +624,7 @@ mod tests {
             Some(0.5)
         );
 
-        let checked_color = gpui::hsla(0.6, 0.7, 0.5, 1.0);
+        let checked_color = wgpui::hsla(0.6, 0.7, 0.5, 1.0);
         let combined = Checkbox::new("combined")
             .checked(true)
             .disabled(true)
@@ -639,7 +646,7 @@ mod tests {
         assert_eq!(state_over_instance.resolved_style().opacity, Some(0.5));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_exposes_role_label_and_all_toggle_states(cx: &mut TestAppContext) {
         type Captured = Arc<Mutex<Option<[accesskit::Node; 4]>>>;
 

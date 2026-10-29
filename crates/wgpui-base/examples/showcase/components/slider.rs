@@ -1,5 +1,5 @@
 use super::*;
-use gpui::relative;
+use wgpui::relative;
 
 impl BaseShowcase {
     pub(in super::super) fn slider(&self, cx: &mut Context<Self>) -> impl IntoElement {

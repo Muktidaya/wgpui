@@ -1,5 +1,5 @@
-use gpui::{IntoElement, ParentElement as _, Styled as _, div, px};
-use gpui_base::{Progress, ProgressIndicator, ProgressTrack};
+use wgpui::{IntoElement, ParentElement as _, Styled as _, div, px};
+use wgpui_base::{Progress, ProgressIndicator, ProgressTrack};
 
 use super::super::BaseShowcase;
 

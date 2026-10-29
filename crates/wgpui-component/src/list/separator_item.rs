@@ -1,5 +1,5 @@
-use gpui::{AnyElement, ParentElement, RenderOnce, StyleRefinement};
 use smallvec::SmallVec;
+use wgpui::{AnyElement, ParentElement, RenderOnce, StyleRefinement};
 
 use crate::{Selectable, StyledExt, list::ListItem};
 
@@ -34,7 +34,7 @@ impl Selectable for ListSeparatorItem {
 }
 
 impl RenderOnce for ListSeparatorItem {
-    fn render(self, _: &mut gpui::Window, _: &mut gpui::App) -> impl gpui::IntoElement {
+    fn render(self, _: &mut wgpui::Window, _: &mut wgpui::App) -> impl wgpui::IntoElement {
         ListItem::new("separator")
             .refine_style(&self.style)
             .children(self.children)

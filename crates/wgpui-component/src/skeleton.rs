@@ -1,9 +1,9 @@
 use crate::{ActiveTheme, StyledExt};
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Animation, AnimationExt, IntoElement, RenderOnce, StyleRefinement, Styled, bounce, div,
     ease_in_out,
 };
-use instant::Duration;
 
 /// A skeleton loading placeholder element.
 #[derive(IntoElement)]
@@ -29,13 +29,13 @@ impl Skeleton {
 }
 
 impl Styled for Skeleton {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl RenderOnce for Skeleton {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl IntoElement {
         div()
             .w_full()
             .h_4()

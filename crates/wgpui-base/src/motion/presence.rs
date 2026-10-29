@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use gpui::{App, ElementId, Window};
+use wgpui::{App, ElementId, Window};
 
 use super::{MotionStatus, Transition, TransitionId};
 
@@ -88,7 +88,10 @@ impl Presence {
             } else {
                 1.0
             };
-            let duration = self.transition.duration.mul_f64(f64::from(reversing_factor));
+            let duration = self
+                .transition
+                .duration
+                .mul_f64(f64::from(reversing_factor));
             state.update(cx, |state, _| {
                 state.from = sampled;
                 state.target = target;

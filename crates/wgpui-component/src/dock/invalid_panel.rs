@@ -1,39 +1,40 @@
-use gpui::{
+use rust_i18n::t;
+use wgpui::{
     App, Context, EventEmitter, FocusHandle, Focusable, IntoElement, ParentElement as _, Render,
-    SharedString, Styled as _, Window, div,
+    Styled as _, Window, div,
 };
-use gpui_base::dock::{PanelEvent, PanelState};
+use wgpui_base::dock::{PanelEvent, PanelState};
 
 use crate::{ActiveTheme as _, dock::Panel};
 
 /// Stands in for a panel this build cannot construct — one whose
-/// `panel_name` no [`PanelRegistry`](gpui_base::dock::PanelRegistry) builder
+/// `panel_name` no [`PanelRegistry`](wgpui_base::dock::PanelRegistry) builder
 /// answers to.
 ///
 /// It reports the original [`PanelState`] from
-/// [`dump`](gpui_base::dock::Panel::dump), so a layout written by a build that
+/// [`dump`](wgpui_base::dock::Panel::dump), so a layout written by a build that
 /// knows the panel survives a load and a save here rather than losing it.
 pub(crate) struct InvalidPanel {
-    name: SharedString,
     focus_handle: FocusHandle,
     old_state: PanelState,
 }
 
 impl InvalidPanel {
-    pub(crate) fn new(
-        name: impl Into<SharedString>,
-        state: PanelState,
-        cx: &mut Context<Self>,
-    ) -> Self {
+    /// The type name goes to the log rather than the screen: it means
+    /// nothing to the person looking at the panel.
+    pub(crate) fn new(state: PanelState, cx: &mut Context<Self>) -> Self {
+        tracing::warn!(
+            "the `{}` panel type is not registered in PanelRegistry",
+            state.panel_name
+        );
         Self {
             focus_handle: cx.focus_handle(),
-            name: name.into(),
             old_state: state,
         }
     }
 }
 
-impl gpui_base::dock::Panel for InvalidPanel {
+impl wgpui_base::dock::Panel for InvalidPanel {
     fn panel_name(&self) -> &'static str {
         "InvalidPanel"
     }
@@ -63,9 +64,6 @@ impl Render for InvalidPanel {
             .items_center()
             .justify_center()
             .text_color(cx.theme().muted_foreground)
-            .child(format!(
-                "The `{}` panel type is not registered in PanelRegistry.",
-                self.name.clone()
-            ))
+            .child(t!("Dock.Unavailable Panel"))
     }
 }

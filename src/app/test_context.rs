@@ -122,10 +122,23 @@ impl AppContext for TestAppContext {
 impl TestAppContext {
     /// Creates a new `TestAppContext`. Usually you can rely on `#[wgpui::test]` to do this for you.
     pub fn build(dispatcher: TestDispatcher, fn_name: Option<&'static str>) -> Self {
+        Self::build_with_text_system(dispatcher, fn_name, Arc::new(crate::NoopTextSystem))
+    }
+
+    /// Builds a test application using the supplied platform text service.
+    pub fn build_with_text_system(
+        dispatcher: TestDispatcher,
+        fn_name: Option<&'static str>,
+        text_system: Arc<dyn crate::PlatformTextSystem>,
+    ) -> Self {
         let arc_dispatcher = Arc::new(dispatcher.clone());
         let background_executor = BackgroundExecutor::new(arc_dispatcher.clone());
         let foreground_executor = ForegroundExecutor::new(arc_dispatcher);
-        let platform = TestPlatform::new(background_executor.clone(), foreground_executor.clone());
+        let platform = TestPlatform::with_text_system(
+            background_executor.clone(),
+            foreground_executor.clone(),
+            text_system,
+        );
         let asset_source = Arc::new(());
         let http_client = http_client::FakeHttpClient::with_404_response();
         let text_system = Arc::new(TextSystem::new(platform.text_system()));
@@ -221,12 +234,22 @@ impl TestAppContext {
     /// Adds a new window. The Window will always be backed by a `TestWindow` which
     /// can be retrieved with `self.test_window(handle)`
     pub fn open_window<F, V>(&mut self, size: Size<Pixels>, build_window: F) -> WindowHandle<V>
-    where F: FnOnce(&mut Window, &mut Context<V>) -> V, V: 'static + Render {
+    where
+        F: FnOnce(&mut Window, &mut Context<V>) -> V,
+        V: 'static + Render,
+    {
         let mut cx = self.app.borrow_mut();
-        cx.open_window(WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(Bounds { origin: Point::default(), size })),
-            ..Default::default()
-        }, |window, cx| cx.new(|cx| build_window(window, cx))).expect("test window")
+        cx.open_window(
+            WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(Bounds {
+                    origin: Point::default(),
+                    size,
+                })),
+                ..Default::default()
+            },
+            |window, cx| cx.new(|cx| build_window(window, cx)),
+        )
+        .expect("test window")
     }
 
     /// Adds a test-backed window using the test display bounds.
@@ -353,6 +376,16 @@ impl TestAppContext {
             .simulate_system_notification_response(response);
     }
 
+    /// Simulates a display scale change while preserving logical viewport size.
+    pub fn simulate_window_scale_factor_change(
+        &self,
+        window_handle: AnyWindowHandle,
+        scale_factor: f32,
+    ) {
+        self.test_window(window_handle)
+            .simulate_scale_factor_change(scale_factor);
+    }
+
     /// Returns true if there's an alert dialog open.
     pub fn has_pending_prompt(&self) -> bool {
         self.test_platform.has_pending_prompt()
@@ -368,9 +401,30 @@ impl TestAppContext {
         self.test_platform.opened_url.borrow().clone()
     }
 
+    /// Overrides the host conventions used by this test application.
+    pub fn set_platform_info(&mut self, platform_info: crate::PlatformInfo) {
+        self.test_platform.platform_info.set(platform_info);
+    }
+
+    /// Simulates showing or hiding a window and delivers its actual visibility callback.
+    pub fn simulate_window_visibility_change(&self, window_handle: AnyWindowHandle, visible: bool) {
+        self.test_window(window_handle)
+            .simulate_visibility_change(visible);
+    }
+
     /// Simulates the user resizing the window to the new size.
     pub fn simulate_window_resize(&self, window_handle: AnyWindowHandle, size: Size<Pixels>) {
         self.test_window(window_handle).simulate_resize(size);
+    }
+
+    /// Simulates visible viewport changes without resizing the window's layout area.
+    pub fn simulate_window_visual_viewport_change(
+        &self,
+        window_handle: AnyWindowHandle,
+        bounds: Bounds<Pixels>,
+    ) {
+        self.test_window(window_handle)
+            .simulate_visual_viewport_change(bounds);
     }
 
     /// Returns true if there's an alert dialog open.
@@ -481,6 +535,18 @@ impl TestAppContext {
         }
 
         self.background_executor.run_until_parked()
+    }
+
+    /// Sends a native IME event through the focused input handler's platform protocol.
+    /// Preedit cursor offsets use UTF-8 bytes, as they do for native window events.
+    pub fn simulate_ime_event(
+        &mut self,
+        window: AnyWindowHandle,
+        event: crate::ImeEvent,
+    ) -> Result<()> {
+        self.test_window(window).simulate_ime_event(event)?;
+        self.background_executor.run_until_parked();
+        Ok(())
     }
 
     /// dispatches a single Keystroke (see also `simulate_keystrokes` and `simulate_input`)
@@ -765,6 +831,11 @@ impl VisualTestContext {
         self.cx.simulate_input(self.window, input)
     }
 
+    /// Sends a native IME event through the focused input handler's platform protocol.
+    pub fn simulate_ime_event(&mut self, event: crate::ImeEvent) -> Result<()> {
+        self.cx.simulate_ime_event(self.window, event)
+    }
+
     /// Simulate a mouse move event to the given point
     pub fn simulate_mouse_move(
         &mut self,
@@ -843,9 +914,38 @@ impl VisualTestContext {
         })
     }
 
+    /// Simulates the window moving to a display with a different scale factor.
+    pub fn simulate_scale_factor_change(&self, scale_factor: f32) {
+        self.simulate_window_scale_factor_change(self.window, scale_factor);
+    }
+
     /// Simulates the user resizing the window to the new size.
     pub fn simulate_resize(&self, size: Size<Pixels>) {
         self.simulate_window_resize(self.window, size)
+    }
+
+    /// Activates accessibility through the same request callback as a native screen reader.
+    pub fn activate_accessibility(&mut self) {
+        self.test_window(self.window)
+            .simulate_accessibility_event(accesskit_winit::WindowEvent::InitialTreeRequested);
+        self.update(|window, cx| window.draw(cx).clear());
+    }
+
+    /// Returns the real semantic tree from the most recently completed accessibility draw.
+    pub fn accessibility_tree(&mut self) -> Option<accesskit::TreeUpdate> {
+        self.test_window(self.window)
+            .0
+            .lock()
+            .accessibility_tree
+            .clone()
+    }
+
+    /// Dispatches an assistive-technology action through the native foreground callback path.
+    pub fn simulate_a11y_action(&mut self, request: accesskit::ActionRequest) {
+        self.test_window(self.window)
+            .simulate_accessibility_event(accesskit_winit::WindowEvent::ActionRequested(request));
+        self.background_executor.run_until_parked();
+        self.update(|window, cx| window.draw(cx).clear());
     }
 
     /// debug_bounds returns the bounds of the element with the given selector.
@@ -1086,5 +1186,33 @@ impl AnyWindowHandle {
     ) -> Entity<V> {
         self.update(cx, |_, window, cx| cx.new(|cx| build_view(window, cx)))
             .unwrap()
+    }
+}
+
+#[cfg(test)]
+mod native_menu_routing_tests {
+    use super::*;
+
+    #[test]
+    fn active_window_survives_missing_platform_callback_context() {
+        let mut context = TestAppContext::single();
+        let window = context.add_window(|_, _| Empty);
+        window
+            .update(&mut context, |_, window, _| window.activate_window())
+            .expect("activate test window");
+        context.run_until_parked();
+        let platform_window = context
+            .test_platform
+            .active_window
+            .borrow_mut()
+            .take()
+            .expect("focused test window");
+        context.update(|application| {
+            assert!(application.platform.active_window().is_none());
+            assert!(application.active_window() == Some(window.into()));
+        });
+        platform_window.simulate_active_status_change(false);
+        context.run_until_parked();
+        context.update(|application| assert!(application.active_window().is_none()));
     }
 }

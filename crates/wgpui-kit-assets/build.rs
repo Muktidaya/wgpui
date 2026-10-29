@@ -51,7 +51,7 @@ fn main() {
     }
     assert!(!icons.is_empty(), "bundled icons must not be empty");
     let mut code = String::from(
-        "/// Names of all bundled Lucide and GPUI Kit icons.\n#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, gpui::IntoElement)]\npub enum IconName {\n",
+        "/// Names of all bundled Lucide and GPUI Kit icons.\n#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, wgpui::IntoElement)]\npub enum IconName {\n",
     );
     for variant in icons.keys() {
         writeln!(code, "    {variant},").unwrap();
@@ -60,7 +60,7 @@ fn main() {
     for variant in icons.keys() {
         writeln!(code, "        Self::{variant},").unwrap();
     }
-    code.push_str("    ];\n    /// The path understood by the bundled asset source.\n    pub fn path(self) -> gpui::SharedString {\n        match self {\n");
+    code.push_str("    ];\n    /// The path understood by the bundled asset source.\n    pub fn path(self) -> wgpui::SharedString {\n        match self {\n");
     for (variant, path) in &icons {
         writeln!(code, "            Self::{variant} => {path:?},").unwrap();
     }
@@ -95,10 +95,10 @@ fn main() {
     // Exported only to cross the assets/component crate boundary, not as a
     // supported extension point for applications or other crates.
     code.push_str(concat!(
-        "/// Internal compatibility macro exclusively for `gpui-component`.\n",
+        "/// Internal compatibility macro exclusively for `wgpui-component`.\n",
         "///\n",
         "/// This is not a supported public API and may change or be removed\n",
-        "/// without notice. Crates other than `gpui-component` must not use it.\n",
+        "/// without notice. Crates other than `wgpui-component` must not use it.\n",
         "/// Use the public `wgpui_kit_assets::IconName` API instead.\n",
     ));
     code.push_str("#[doc(hidden)]\n#[macro_export]\nmacro_rules! __component_icon_names {\n    ($callback:ident) => { $callback! {\n");

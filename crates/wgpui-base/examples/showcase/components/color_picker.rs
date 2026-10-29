@@ -1,5 +1,5 @@
 use super::*;
-use gpui::{Focusable as _, Hsla, MouseButton};
+use wgpui::{Focusable as _, Hsla, MouseButton};
 
 impl BaseShowcase {
     pub(in super::super) fn color_picker(

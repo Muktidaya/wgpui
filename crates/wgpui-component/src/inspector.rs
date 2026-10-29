@@ -1,17 +1,17 @@
-use std::{cell::OnceCell, collections::HashMap, fmt::Write as _, rc::Rc, sync::OnceLock};
+use std::{collections::HashMap, fmt::Write as _, rc::Rc, sync::OnceLock};
 
 use anyhow::Result;
-use gpui::{
-    AnyElement, App, AppContext, Context, DivInspectorState, Entity, Inspector, InspectorElementId,
-    InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Refineable as _, Render,
-    SharedString, StyleRefinement, Styled, Subscription, Task, Window, actions, div,
-    inspector_reflection::FunctionReflection, prelude::FluentBuilder, px,
-};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionResponse, CompletionTextEdit, Diagnostic,
     DiagnosticSeverity, Position, TextEdit,
 };
 use ropey::Rope;
+use wgpui::{
+    AnyElement, App, AppContext, Context, DivInspectorState, Entity, Inspector, InspectorElementId,
+    InteractiveElement as _, IntoElement, KeyBinding, ParentElement as _, Refineable as _, Render,
+    SharedString, StyleRefinement, Styled, Subscription, Task, Window, actions, div,
+    inspector_reflection::FunctionReflection, prelude::FluentBuilder, px,
+};
 
 use crate::{
     ActiveTheme, IconName, Selectable, Sizable, TITLE_BAR_HEIGHT,
@@ -42,19 +42,22 @@ pub(crate) fn init(cx: &mut App) {
         };
 
         cx.defer(move |cx| {
-            _ = active_window.update(cx, |_, window, cx| {
+            if let Err(error) = active_window.update(cx, |_, window, cx| {
                 window.toggle_inspector(cx);
-            });
+            }) {
+                tracing::debug!("Window closed before toggling the inspector: {error}");
+            }
         });
     });
 
-    let inspector_el = OnceCell::new();
-    cx.register_inspector_element(move |id, state: &DivInspectorState, window, cx| {
-        let el = inspector_el.get_or_init(|| cx.new(|cx| DivInspector::new(window, cx)));
-        el.update(cx, |this, cx| {
-            this.update_inspected_element(id, state.clone(), window, cx);
-            this.render(window, cx).into_any_element()
-        })
+    cx.register_inspector_element(|window, cx| {
+        let div_inspector = cx.new(|cx| DivInspector::new(window, cx));
+        move |id, state: &DivInspectorState, window: &mut Window, cx: &mut App| {
+            div_inspector.update(cx, |this, cx| {
+                this.update_inspected_element(id, state.clone(), window, cx);
+                this.render(window, cx).into_any_element()
+            })
+        }
     });
 
     cx.set_inspector_renderer(Box::new(render_inspector));
@@ -278,13 +281,13 @@ fn style_to_json(style: &StyleRefinement) -> String {
 }
 
 /// Tailwind spacing/layout helpers live in `wgpui_derive` macros. WGPUI's
-/// inspector reflection expander only inlines `wgpui_macros::…` / unprefixed
+/// inspector reflection expander only inlines `wgpui_derive::…` / unprefixed
 /// names, so `wgpui_derive::p_1` never enters `styled_reflection`. Re-expand
 /// them here under those names so the inspector can parse `.p_1()` / `.mx_2()`.
 mod token_styled {
-    use gpui::*;
+    use wgpui::*;
 
-    #[gpui_macros::derive_inspector_reflection]
+    #[wgpui_derive::derive_inspector_reflection]
     pub trait TokenStyled: Sized {
         fn style(&mut self) -> &mut StyleRefinement;
 
@@ -316,8 +319,8 @@ impl StyleMethods {
         static STYLE_METHODS: OnceLock<StyleMethods> = OnceLock::new();
         STYLE_METHODS.get_or_init(|| {
             let table: Vec<_> = [
-                gpui_base::styled_ext_reflection_methods::<StyleRefinement>(),
-                gpui::styled_reflection::methods::<StyleRefinement>(),
+                wgpui_base::styled_ext_reflection_methods::<StyleRefinement>(),
+                wgpui::styled_reflection::methods::<StyleRefinement>(),
                 token_styled::token_styled_reflection::methods::<StyleRefinement>(),
             ]
             .into_iter()
@@ -363,7 +366,7 @@ fn rust_to_style(mut style: StyleRefinement, source: &str) -> (StyleRefinement, 
     let rope = Rope::from(source);
     let Some(begin) = source.find("div()").map(|i| i + "div()".len()) else {
         let start_pos = Position::new(0, 0);
-        let end_pos = rope.offset_to_position(rope.len());
+        let end_pos = rope.offset_to_position(rope.len_bytes());
 
         return (
             style,
@@ -382,7 +385,7 @@ fn rust_to_style(mut style: StyleRefinement, source: &str) -> (StyleRefinement, 
     let mut method = String::new();
     for line in rope.iter_lines() {
         if line.to_string().trim().starts_with("//") {
-            offset += line.len() + 1;
+            offset += line.len_bytes() + 1;
             continue;
         }
 
@@ -468,7 +471,7 @@ impl Render for DivInspector {
                                 .gap_y_1()
                                 .font_family(cx.theme().mono_font_family.clone())
                                 .text_size(cx.theme().mono_font_size)
-                                .child(Editor::new(&self.rust_state.state).h(gpui::relative(1.)))
+                                .child(Editor::new(&self.rust_state.state).h(wgpui::relative(1.)))
                                 .when_some(self.rust_state.error.clone(), |this, err| {
                                     this.child(Alert::error("rust-error", err).text_xs())
                                 }),
@@ -496,7 +499,7 @@ impl Render for DivInspector {
                                 .gap_y_1()
                                 .font_family(cx.theme().mono_font_family.clone())
                                 .text_size(cx.theme().mono_font_size)
-                                .child(Editor::new(&self.json_state.state).h(gpui::relative(1.)))
+                                .child(Editor::new(&self.json_state.state).h(wgpui::relative(1.)))
                                 .when_some(self.json_state.error.clone(), |this, err| {
                                     this.child(Alert::error("json-error", err).text_xs())
                                 }),
@@ -615,7 +618,7 @@ impl CompletionProvider for LspProvider {
             left_offset += 1;
         }
         let start = offset.saturating_sub(left_offset);
-        let trigger_character = rope.slice(start..offset).to_string();
+        let trigger_character = rope.byte_slice(start..offset).to_string();
         if !trigger_character.starts_with('.') {
             return Task::ready(Ok(CompletionResponse::Array(vec![])));
         }
@@ -665,9 +668,9 @@ impl CompletionProvider for LspProvider {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{AbsoluteLength, DefiniteLength, Length, rems};
     use indoc::indoc;
     use lsp_types::Position;
+    use wgpui::{AbsoluteLength, DefiniteLength, Length, rems};
 
     #[test]
     fn test_rust_to_style() {

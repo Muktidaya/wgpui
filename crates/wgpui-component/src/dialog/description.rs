@@ -1,7 +1,7 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
 };
-use gpui_base::DialogDescription as BaseDialogDescription;
+use wgpui_base::DialogDescription as BaseDialogDescription;
 
 use crate::{ActiveTheme as _, StyledExt as _};
 

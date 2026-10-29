@@ -51,7 +51,7 @@ impl BaseShowcase {
                                 .justify_between()
                                 .child(
                                     div()
-                                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                                        .font_weight(wgpui::FontWeight::SEMIBOLD)
                                         .child("Changes saved"),
                                 )
                                 .child(

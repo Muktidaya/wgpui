@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use ropey::{LineType, Rope, RopeSlice};
+use ropey::{Rope, RopeSlice};
 use sum_tree::Bias;
 
 /// Parser-independent byte/row/column position used for incremental edits.
@@ -77,14 +77,23 @@ impl<'a> Iterator for RopeLines<'a> {
 impl std::iter::ExactSizeIterator for RopeLines<'_> {}
 impl std::iter::FusedIterator for RopeLines<'_> {}
 
-/// An extension trait for [`Rope`] to provide additional utility methods.
+/// Byte-oriented editing and LF-only coordinates over stable Ropey storage.
+///
+/// These offsets differ from Ropey's inherent character-indexed edit methods.
+/// Positions count Unicode scalar values, points count UTF-8 bytes, and the
+/// explicit UTF-16 conversions count code units. Only `\n` starts a new row,
+/// including when another dependency enables Ropey's Unicode line features.
+/// Those additional features require scanning for LF boundaries instead of
+/// using Ropey's line index; byte and UTF-16 conversions retain indexed lookups.
 pub trait RopeExt {
+    /// Whether a byte offset lies on a UTF-8 boundary, including the end of the text.
+    fn is_char_boundary(&self, offset: usize) -> bool;
     /// Start offset of the line at the given row (0-based) index.
     ///
     /// # Example
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     ///
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.line_start_offset(0), 0);
@@ -97,7 +106,7 @@ pub trait RopeExt {
     /// Return the end of the rope if the row is out of bounds.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.line_end_offset(0), 5); // "Hello\n"
     /// assert_eq!(rope.line_end_offset(1), 12); // "World\r\n"
@@ -107,7 +116,7 @@ pub trait RopeExt {
     /// Return a line slice at the given row (0-based) index. including `\r` if present, but not `\n`.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.slice_line(0).to_string(), "Hello");
     /// assert_eq!(rope.slice_line(1).to_string(), "World\r");
@@ -121,7 +130,7 @@ pub trait RopeExt {
     /// If the range is out of bounds, it will be clamped to the valid range.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.slice_lines(0..2).to_string(), "Hello\nWorld\r");
     /// assert_eq!(rope.slice_lines(1..3).to_string(), "World\r\nThis is a test 中文");
@@ -136,7 +145,7 @@ pub trait RopeExt {
     /// Each line slice includes `\r` if present, but not `\n`.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// let lines: Vec<_> = rope.iter_lines().map(|r| r.to_string()).collect();
     /// assert_eq!(lines, vec!["Hello", "World\r", "This is a test 中文", "Rope"]);
@@ -146,18 +155,18 @@ pub trait RopeExt {
     /// Return the number of lines in the rope.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.lines_len(), 4);
     /// ```
     fn lines_len(&self) -> usize;
 
-    /// Return the length of the row (0-based) in characters, including `\r` if present, but not `\n`.
+    /// Return the byte length of the row (0-based), including `\r` if present, but not `\n`.
     ///
     /// If the row is out of bounds, return 0.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// assert_eq!(rope.line_len(0), 5); // "Hello"
     /// assert_eq!(rope.line_len(1), 6); // "World\r"
@@ -168,13 +177,11 @@ pub trait RopeExt {
 
     /// Replace the text in the given byte range with new text.
     ///
-    /// # Panics
-    ///
-    /// - If the range is not on char boundary.
-    /// - If the range is out of bounds.
+    /// Out-of-bounds endpoints are clamped, and endpoints inside a character
+    /// expand to include that character.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let mut rope = Rope::from("Hello\nWorld\r\nThis is a test 中文\nRope");
     /// rope.replace(6..11, "Universe");
     /// assert_eq!(rope.to_string(), "Hello\nUniverse\r\nThis is a test 中文\nRope");
@@ -183,7 +190,7 @@ pub trait RopeExt {
 
     /// Get char at the given offset (byte).
     ///
-    /// - If the offset is in the middle of a multi-byte character will panic.
+    /// - If the offset is in the middle of a multi-byte character, return None.
     /// - If the offset is out of bounds, return None.
     fn char_at(&self, offset: usize) -> Option<char>;
 
@@ -230,7 +237,7 @@ pub trait RopeExt {
     /// - Otherwise return the ix.
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// use sum_tree::Bias;
     ///
     /// let rope = Rope::from("Hello 中文🎉 test\nRope");
@@ -248,7 +255,7 @@ pub trait RopeExt {
     /// # Example
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("a 中文🎉 test\nRope");
     /// assert_eq!(rope.char_index_to_offset(0), 0);
     /// assert_eq!(rope.char_index_to_offset(1), 1);
@@ -264,7 +271,7 @@ pub trait RopeExt {
     /// # Example
     ///
     /// ```
-    /// use gpui_base::input::{Rope, RopeExt};
+    /// use wgpui_base::input::{Rope, RopeExt};
     /// let rope = Rope::from("a 中文🎉 test\nRope");
     /// assert_eq!(rope.offset_to_char_index(0), 0);
     /// assert_eq!(rope.offset_to_char_index(1), 1);
@@ -275,27 +282,26 @@ pub trait RopeExt {
 }
 
 impl RopeExt for Rope {
+    fn is_char_boundary(&self, offset: usize) -> bool {
+        offset == self.len_bytes()
+            || self
+                .get_byte(offset)
+                .is_some_and(|byte| byte & 0xc0 != 0x80)
+    }
+
     fn slice_line(&self, row: usize) -> RopeSlice<'_> {
-        let total_lines = self.lines_len();
-        if row >= total_lines {
-            return self.slice(0..0);
+        let start = self.line_start_offset(row);
+        let mut end = self.line_start_offset(row.saturating_add(1));
+        if end > start && self.get_byte(end - 1) == Some(b'\n') {
+            end -= 1;
         }
-
-        let line = self.line(row, LineType::LF);
-        if line.len() > 0 {
-            let line_end = line.len() - 1;
-            if line.is_char_boundary(line_end) && line.char(line_end) == '\n' {
-                return line.slice(..line_end);
-            }
-        }
-
-        line
+        self.byte_slice(start..end)
     }
 
     fn slice_lines(&self, rows_range: Range<usize>) -> RopeSlice<'_> {
         let start = self.line_start_offset(rows_range.start);
         let end = self.line_end_offset(rows_range.end.saturating_sub(1));
-        self.slice(start..end)
+        self.byte_slice(start..end)
     }
 
     fn iter_lines(&self) -> RopeLines<'_> {
@@ -303,73 +309,109 @@ impl RopeExt for Rope {
     }
 
     fn line_len(&self, row: usize) -> usize {
-        self.slice_line(row).len()
+        self.slice_line(row).len_bytes()
     }
 
     fn line_start_offset(&self, row: usize) -> usize {
-        self.point_to_offset(Point::new(row, 0))
+        if native_lines_are_lf_only() {
+            return self.line_to_byte(row.min(self.len_lines()));
+        }
+
+        if row == 0 {
+            return 0;
+        }
+        let mut remaining = row;
+        let mut chunk_start = 0;
+        for chunk in self.chunks() {
+            for (index, byte) in chunk.bytes().enumerate() {
+                if byte == b'\n' {
+                    remaining -= 1;
+                    if remaining == 0 {
+                        return chunk_start + index + 1;
+                    }
+                }
+            }
+            chunk_start += chunk.len();
+        }
+        self.len_bytes()
     }
 
     fn offset_to_point(&self, offset: usize) -> Point {
         let offset = self.clip_offset(offset, Bias::Left);
-        let row = self.byte_to_line_idx(offset, LineType::LF);
-        let line_start = self.line_to_byte_idx(row, LineType::LF);
+        if native_lines_are_lf_only() {
+            let row = self.byte_to_line(offset);
+            return Point::new(row, offset - self.line_to_byte(row));
+        }
+
+        let mut row = 0;
+        let mut line_start = 0;
+        let mut chunk_start = 0;
+        for chunk in self.byte_slice(..offset).chunks() {
+            for (index, byte) in chunk.bytes().enumerate() {
+                if byte == b'\n' {
+                    row += 1;
+                    line_start = chunk_start + index + 1;
+                }
+            }
+            chunk_start += chunk.len();
+        }
         let column = offset.saturating_sub(line_start);
         Point::new(row, column)
     }
 
     fn point_to_offset(&self, point: Point) -> usize {
         if point.row >= self.lines_len() {
-            return self.len();
+            return self.len_bytes();
         }
-
-        let line_start = self.line_to_byte_idx(point.row, LineType::LF);
-        line_start + point.column
+        let line_start = self.line_start_offset(point.row);
+        line_start.saturating_add(point.column)
     }
 
     fn position_to_offset(&self, pos: &Position) -> usize {
         let line = self.slice_line(pos.line as usize);
         // Clamp out-of-range columns, then use Ropey's index to avoid rescanning long lines.
         self.line_start_offset(pos.line as usize)
-            + line.char_to_byte_idx((pos.character as usize).min(line.len_chars()))
+            + line.char_to_byte((pos.character as usize).min(line.len_chars()))
     }
 
     fn offset_to_position(&self, offset: usize) -> Position {
         let point = self.offset_to_point(offset);
         let line = self.slice_line(point.row);
-        let offset = line.utf16_to_byte_idx(line.byte_to_utf16_idx(point.column));
-        let character = line.slice(..offset).chars().count();
+        let character = line.byte_to_char(point.column);
         Position::new(point.row as u32, character as u32)
     }
 
     fn line_end_offset(&self, row: usize) -> usize {
         if row > self.lines_len() {
-            return self.len();
+            return self.len_bytes();
         }
 
         self.line_start_offset(row) + self.line_len(row)
     }
 
     fn lines_len(&self) -> usize {
-        self.len_lines(LineType::LF)
+        if native_lines_are_lf_only() {
+            self.len_lines()
+        } else {
+            self.bytes().filter(|byte| *byte == b'\n').count() + 1
+        }
     }
 
     fn char_at(&self, offset: usize) -> Option<char> {
-        if offset > self.len() {
+        if !self.is_char_boundary(offset) {
             return None;
         }
-
-        self.get_char(offset).ok()
+        self.get_char(self.byte_to_char(offset))
     }
 
     fn word_range(&self, offset: usize) -> Option<Range<usize>> {
-        if offset >= self.len() {
+        if offset >= self.len_bytes() {
             return None;
         }
 
         let mut left = String::new();
         let offset = self.clip_offset(offset, Bias::Left);
-        for c in self.chars_at(offset).reversed() {
+        for c in self.chars_at(self.byte_to_char(offset)).reversed() {
             if c.is_alphanumeric() || c == '_' {
                 left.insert(0, c);
             } else {
@@ -379,7 +421,7 @@ impl RopeExt for Rope {
         let start = offset.saturating_sub(left.len());
 
         let right = self
-            .chars_at(offset)
+            .chars_at(self.byte_to_char(offset))
             .take_while(|c| c.is_alphanumeric() || *c == '_')
             .collect::<String>();
 
@@ -390,7 +432,7 @@ impl RopeExt for Rope {
 
     fn word_at(&self, offset: usize) -> String {
         if let Some(range) = self.word_range(offset) {
-            self.slice(range).to_string()
+            self.byte_slice(range).to_string()
         } else {
             String::new()
         }
@@ -398,53 +440,50 @@ impl RopeExt for Rope {
 
     #[inline]
     fn offset_utf16_to_offset(&self, offset_utf16: usize) -> usize {
-        if offset_utf16 > self.len_utf16() {
-            return self.len();
-        }
-
-        self.utf16_to_byte_idx(offset_utf16)
+        let offset_utf16 = offset_utf16.min(self.len_utf16_cu());
+        self.char_to_byte(self.utf16_cu_to_char(offset_utf16))
     }
 
     #[inline]
     fn offset_to_offset_utf16(&self, offset: usize) -> usize {
-        if offset > self.len() {
-            return self.len_utf16();
-        }
-
-        self.byte_to_utf16_idx(offset)
+        self.char_to_utf16_cu(self.byte_to_char(offset.min(self.len_bytes())))
     }
 
     fn replace(&mut self, range: Range<usize>, new_text: &str) {
-        let range =
-            self.clip_offset(range.start, Bias::Left)..self.clip_offset(range.end, Bias::Right);
-        self.remove(range.clone());
-        self.insert(range.start, new_text);
+        let start = self.byte_to_char(self.clip_offset(range.start, Bias::Left));
+        let end = self.byte_to_char(self.clip_offset(range.end, Bias::Right));
+        self.remove(start..end);
+        self.insert(start, new_text);
     }
 
     fn clip_offset(&self, offset: usize, bias: Bias) -> usize {
-        if offset > self.len() {
-            return self.len();
-        }
-
-        if self.is_char_boundary(offset) {
-            return offset;
-        }
-
-        if bias == Bias::Left {
-            self.floor_char_boundary(offset)
+        let offset = offset.min(self.len_bytes());
+        let character = self.byte_to_char(offset);
+        let boundary = self.char_to_byte(character);
+        if bias == Bias::Right && boundary < offset {
+            self.char_to_byte(character + 1)
         } else {
-            self.ceil_char_boundary(offset)
+            boundary
         }
     }
 
     fn char_index_to_offset(&self, char_offset: usize) -> usize {
-        self.chars().take(char_offset).map(|c| c.len_utf8()).sum()
+        self.char_to_byte(char_offset.min(self.len_chars()))
     }
 
     fn offset_to_char_index(&self, offset: usize) -> usize {
         let offset = self.clip_offset(offset, Bias::Right);
-        self.slice(..offset).chars().count()
+        self.byte_to_char(offset)
     }
+}
+
+fn native_lines_are_lf_only() -> bool {
+    // Downstream feature unification can enable Ropey's extra line metrics.
+    // Use its indexed operations only when they match the editor's LF contract.
+    static LF_ONLY: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
+        Rope::from("\r\u{b}\u{c}\u{85}\u{2028}\u{2029}").len_lines() == 1
+    });
+    *LF_ONLY
 }
 
 #[cfg(test)]
@@ -635,7 +674,7 @@ mod tests {
         assert_eq!(rope.offset_utf16_to_offset(7), "hello 中".len());
         assert_eq!(rope.offset_utf16_to_offset(8), "hello 中文".len());
         assert_eq!(rope.offset_utf16_to_offset(10), "hello 中文🎉".len());
-        assert_eq!(rope.offset_utf16_to_offset(100), rope.len());
+        assert_eq!(rope.offset_utf16_to_offset(100), rope.len_bytes());
     }
 
     #[test]
@@ -653,7 +692,7 @@ mod tests {
             "Hi\nUniverse\r\nThis is a test 中文\nRope"
         );
 
-        rope.replace(rope.len() - 4..rope.len(), "String");
+        rope.replace(rope.len_bytes() - 4..rope.len_bytes(), "String");
         assert_eq!(
             rope.to_string(),
             "Hi\nUniverse\r\nThis is a test 中文\nString"
@@ -715,5 +754,69 @@ mod tests {
         assert_eq!(rope.offset_to_char_index(5), 3);
         assert_eq!(rope.offset_to_char_index(6), 4);
         assert_eq!(rope.offset_to_char_index(10), 5);
+    }
+
+    #[test]
+    fn test_lf_coordinates_ignore_other_unicode_line_breaks() {
+        let source = "a\rb\u{b}c\u{c}d\u{85}e\u{2028}f\u{2029}g\n中\r\n🎉\n";
+        let rope = Rope::from(source);
+        let expected_lines: Vec<_> = source.split('\n').collect();
+        assert_eq!(rope.lines_len(), expected_lines.len());
+        assert_eq!(
+            rope.iter_lines()
+                .map(|line| line.to_string())
+                .collect::<Vec<_>>(),
+            expected_lines
+        );
+
+        let mut line_start = 0;
+        for (row, line) in expected_lines.iter().enumerate() {
+            assert_eq!(rope.line_start_offset(row), line_start);
+            assert_eq!(rope.line_end_offset(row), line_start + line.len());
+            assert_eq!(rope.line_len(row), line.len());
+            line_start += line.len() + 1;
+        }
+
+        for offset in 0..=source.len() {
+            let mut clipped = offset;
+            while !source.is_char_boundary(clipped) {
+                clipped -= 1;
+            }
+            let prefix = &source[..clipped];
+            let row = prefix.bytes().filter(|byte| *byte == b'\n').count();
+            let line_start = prefix.rfind('\n').map_or(0, |index| index + 1);
+            let point = Point::new(row, clipped - line_start);
+            assert_eq!(
+                rope.is_char_boundary(offset),
+                source.is_char_boundary(offset)
+            );
+            assert_eq!(rope.offset_to_point(offset), point);
+            assert_eq!(rope.point_to_offset(point), clipped);
+        }
+        assert_eq!(rope.slice_line(usize::MAX).to_string(), "");
+    }
+
+    #[test]
+    fn test_byte_edits_and_utf16_roundtrips_across_chunks() {
+        let source = "a中🎉e\u{301}\r\n".repeat(400);
+        let mut rope = Rope::from(source.as_str());
+        assert!(rope.chunks().count() > 1);
+        for (character, (offset, _)) in source.char_indices().enumerate() {
+            let utf16 = source[..offset].encode_utf16().count();
+            assert_eq!(rope.char_index_to_offset(character), offset);
+            assert_eq!(rope.offset_to_char_index(offset), character);
+            assert_eq!(rope.offset_to_offset_utf16(offset), utf16);
+            assert_eq!(rope.offset_utf16_to_offset(utf16), offset);
+        }
+        assert_eq!(rope.offset_utf16_to_offset(3), "a中".len());
+        rope.replace(2..6, "é");
+        assert_eq!(
+            rope.to_string(),
+            format!("aée\u{301}\r\n{}", "a中🎉e\u{301}\r\n".repeat(399))
+        );
+        assert_eq!(
+            rope.offset_to_point("aée\u{301}\r\n".len()),
+            Point::new(1, 0)
+        );
     }
 }

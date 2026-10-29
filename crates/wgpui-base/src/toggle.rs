@@ -1,14 +1,14 @@
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, FocusHandle, InteractiveElement, Interactivity,
     IntoElement, MouseButton, ParentElement, Refineable as _, RenderOnce, Role, SharedString,
     Stateful, StatefulInteractiveElement, StyleRefinement, Styled, Toggled, Window, div,
     prelude::FluentBuilder as _, relative,
 };
-use smallvec::SmallVec;
 
-use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
+use crate::{StateStyle, StyledExt as _, TestSupportExt as _, a11y_disabled::A11yDisabledExt as _};
 
 type ChangeHandler = Rc<dyn Fn(bool, &ClickEvent, &mut Window, &mut App)>;
 
@@ -208,6 +208,7 @@ impl RenderOnce for Toggle {
             )
             .children(self.children)
             .refine_style(&style)
+            .a11y_disabled(disabled)
     }
 }
 
@@ -221,7 +222,7 @@ mod tests {
         sync::{Arc, Mutex},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         TestAppContext, VisualTestContext, accesskit, canvas, point, px,
     };
@@ -275,7 +276,7 @@ mod tests {
         (cx, changes, keyboard_changes)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn pointer_requests_inverse_controlled_state_once(cx: &mut TestAppContext) {
         for (pressed, expected) in [(false, true), (true, false)] {
             let (cx, changes, _) = harness(cx, pressed, false);
@@ -284,7 +285,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn enter_and_space_use_one_native_keyboard_click_each(cx: &mut TestAppContext) {
         let (cx, changes, keyboard_changes) = harness(cx, false, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -304,7 +305,7 @@ mod tests {
         assert_eq!(keyboard_changes.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn disabled_toggle_is_inert(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, false, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -312,12 +313,12 @@ mod tests {
         assert!(changes.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn fixed_height_toggle_centers_ordinary_child_geometry(cx: &mut TestAppContext) {
         type Captured = Arc<
             Mutex<(
-                Option<gpui::Bounds<gpui::Pixels>>,
-                Option<gpui::Bounds<gpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
+                Option<wgpui::Bounds<wgpui::Pixels>>,
             )>,
         >;
 
@@ -408,7 +409,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn accessibility_exposes_button_role_toggled_state_and_action(cx: &mut TestAppContext) {
         type Captured = Arc<Mutex<Option<(accesskit::Node, accesskit::Node)>>>;
         struct Probe(Captured);

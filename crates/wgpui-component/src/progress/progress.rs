@@ -1,13 +1,13 @@
 use crate::{ActiveTheme, Sizable, Size, StyledExt};
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Animation, AnimationExt as _, App, Background, ElementId, Hsla, IntoElement, IsZero as _,
     ParentElement, RenderOnce, SharedString, StyleRefinement, Styled, Window, ease_in_out,
     prelude::FluentBuilder, px, relative,
 };
-use gpui_base::{
+use wgpui_base::{
     Progress as BaseProgress, ProgressIndicator, ProgressTrack, Transition, transition,
 };
-use instant::Duration;
 
 /// A linear horizontal progress bar element.
 #[derive(IntoElement)]
@@ -182,7 +182,7 @@ mod tests {
 
         let named = Progress::new("upload").accessibility_label("Upload progress");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Upload progress")
         );
     }

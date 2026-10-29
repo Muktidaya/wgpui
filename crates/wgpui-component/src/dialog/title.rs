@@ -1,8 +1,8 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, IntoElement, ParentElement, RenderOnce, StyleRefinement, Styled, Window,
     relative,
 };
-use gpui_base::DialogTitle as BaseDialogTitle;
+use wgpui_base::DialogTitle as BaseDialogTitle;
 
 use crate::StyledExt as _;
 
@@ -41,7 +41,7 @@ impl RenderOnce for DialogTitle {
         self.base
             .text_base()
             .font_semibold()
-            .line_height(relative(1.))
+            .line_height(relative(1.25))
             .refine_style(&self.style)
             .children(self.children)
     }

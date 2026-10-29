@@ -1,25 +1,25 @@
 use std::sync::Arc;
 
 use crate::{ActiveTheme, Sizable, Size};
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext, Context, Entity, Hsla, IntoElement, Pixels, Radians, Render,
     RenderOnce, SharedString, StyleRefinement, Styled, Svg, Transformation, Window,
     prelude::FluentBuilder as _, svg,
 };
-pub use gpui_kit_assets::IconNamed;
+pub use wgpui_kit_assets::IconNamed;
 
 // Preserve the original enum (including exhaustive matches and inherent view)
 // while the complete, shared catalog is owned by gpui-kit-assets.
 macro_rules! component_icon_names {
     ($($name:ident => $path:literal,)*) => {
         /// Default component icon names, retained for source compatibility.
-        /// For the complete Lucide catalog, use `gpui_kit_assets::IconName`.
+        /// For the complete Lucide catalog, use `wgpui_kit_assets::IconName`.
         #[derive(Clone, IntoElement)]
         pub enum IconName {
             $($name,)*
         }
 
-        impl From<IconName> for gpui_kit_assets::IconName {
+        impl From<IconName> for wgpui_kit_assets::IconName {
             fn from(name: IconName) -> Self {
                 match name {
                     $(IconName::$name => Self::$name,)*
@@ -35,10 +35,10 @@ macro_rules! component_icon_names {
     };
 }
 
-gpui_kit_assets::__component_icon_names!(component_icon_names);
+wgpui_kit_assets::__component_icon_names!(component_icon_names);
 
 impl IconName {
-    /// Return the icon as an Entity<Icon>.
+    /// Return the icon as an `Entity<Icon>`.
     pub fn view(self, cx: &mut App) -> Entity<Icon> {
         Icon::build(self).view(cx)
     }
@@ -62,13 +62,13 @@ impl<T: IconNamed> From<T> for Icon {
     }
 }
 
-/// Component view construction for the shared `gpui_kit_assets::IconName`.
+/// Component view construction for the shared `wgpui_kit_assets::IconName`.
 /// The legacy component `IconName` retains its inherent `view` method.
 pub trait IconNameExt {
     fn view(self, cx: &mut App) -> Entity<Icon>;
 }
 
-impl IconNameExt for gpui_kit_assets::IconName {
+impl IconNameExt for wgpui_kit_assets::IconName {
     fn view(self, cx: &mut App) -> Entity<Icon> {
         Icon::build(self).view(cx)
     }
@@ -126,7 +126,7 @@ impl Icon {
     /// Parsing and rendering follow GPUI's SVG behavior.
     ///
     /// ```
-    /// use gpui_component::Icon;
+    /// use wgpui_component::Icon;
     ///
     /// let bytes = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     ///     <path d="M4 12h16" stroke="currentColor"/>
@@ -143,13 +143,19 @@ impl Icon {
         &self.source
     }
 
+    /// Whether `other` takes up exactly the same space as this icon. The
+    /// source, color and transformation change only what it paints.
+    pub(crate) fn same_layout(&self, other: &Self) -> bool {
+        self.style == other.style && self.size == other.size
+    }
+
     /// Create a new view for the icon
     pub fn view(self, cx: &mut App) -> Entity<Icon> {
         cx.new(|_| self)
     }
 
     /// Set the SVG transformation, replacing any previous transformation or rotation.
-    pub fn transform(mut self, transformation: gpui::Transformation) -> Self {
+    pub fn transform(mut self, transformation: wgpui::Transformation) -> Self {
         self.transformation = Some(transformation);
         self
     }
@@ -236,20 +242,20 @@ impl Render for Icon {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{px, size};
+    use wgpui::{px, size};
 
     const SVG: &[u8] = include_bytes!(concat!(env!("GPUI_KIT_DEFAULT_ICONS_DIR"), "/arrow-up.svg"));
 
     #[test]
     fn test_icon_builder_preserves_owned_data_and_transform_on_clone() {
         let transformation = Transformation::scale(size(0.5, 0.5))
-            .with_rotation(gpui::radians(std::f32::consts::FRAC_PI_2));
+            .with_rotation(wgpui::radians(std::f32::consts::FRAC_PI_2));
         let icon = {
             let bytes = SVG.to_vec();
             Icon::default()
                 .data(&bytes)
                 .large()
-                .text_color(gpui::red())
+                .text_color(wgpui::red())
                 .transform(transformation)
         };
         let cloned = icon.clone();
@@ -263,17 +269,17 @@ mod tests {
         assert_eq!(cloned.size, icon.size);
         assert_eq!(cloned.text_color, icon.text_color);
 
-        let mut svg = cloned.into_svg(px(12.), gpui::blue());
+        let mut svg = cloned.into_svg(px(12.), wgpui::blue());
         assert_eq!(
             svg.style().text.as_ref().and_then(|text| text.color),
-            Some(gpui::red())
+            Some(wgpui::red())
         );
-        assert_eq!(svg.style().size.width, Some(gpui::rems(1.5).into()));
+        assert_eq!(svg.style().size.width, Some(wgpui::rems(1.5).into()));
 
-        let rotated = icon.rotate(gpui::radians(std::f32::consts::PI)).clone();
+        let rotated = icon.rotate(wgpui::radians(std::f32::consts::PI)).clone();
         assert_eq!(
             rotated.transformation,
-            Some(Transformation::rotate(gpui::radians(std::f32::consts::PI)))
+            Some(Transformation::rotate(wgpui::radians(std::f32::consts::PI)))
         );
     }
 

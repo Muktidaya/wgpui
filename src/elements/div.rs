@@ -20,10 +20,10 @@ use crate::{
     ClickEvent, DispatchPhase, Display, Element, ElementId, Entity, FocusHandle, Global,
     GlobalElementId, Hitbox, HitboxBehavior, HitboxId, InspectorElementId, IntoElement, IsZero,
     KeyContext, KeyDownEvent, KeyUpEvent, KeyboardButton, KeyboardClickEvent, LayoutId,
-    ModifiersChangedEvent, MouseButton, MouseClickEvent, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, OngoingScroll, Overflow, ParentElement, Pixels, Point, Render, ScrollWheelEvent,
-    SharedString, Size, Style, StyleRefinement, Styled, Task, TooltipId, Visibility, Window,
-    WindowControlArea, point, px, size,
+    ModifiersChangedEvent, MouseButton, MouseClickEvent, MouseDownEvent, MouseExitEvent,
+    MouseMoveEvent, MouseUpEvent, OngoingScroll, Overflow, ParentElement, Pixels, Point, Render,
+    ScrollEvent, ScrollWheelEvent, SharedString, Size, Style, StyleRefinement, Styled, Task,
+    TooltipId, Visibility, Window, WindowControlArea, point, px, size,
 };
 use collections::HashMap;
 use refineable::Refineable;
@@ -313,10 +313,26 @@ impl Interactivity {
         &mut self,
         listener: impl Fn(&ScrollWheelEvent, &mut Window, &mut App) + 'static,
     ) {
+        self.on_scroll(move |event, window, cx| {
+            listener(
+                &ScrollWheelEvent {
+                    position: event.position,
+                    delta: event.delta,
+                    modifiers: event.modifiers,
+                    touch_phase: event.touch_phase,
+                },
+                window,
+                cx,
+            )
+        });
+    }
+
+    /// Binds a callback to scrolling from a pointing device or touch pan during bubbling.
+    pub fn on_scroll(&mut self, listener: impl Fn(&ScrollEvent, &mut Window, &mut App) + 'static) {
         self.scroll_wheel_listeners
             .push(Box::new(move |event, phase, hitbox, window, cx| {
                 if phase == DispatchPhase::Bubble && hitbox.should_handle_scroll(window) {
-                    (listener)(event, window, cx);
+                    listener(event, window, cx);
                 }
             }));
     }
@@ -837,6 +853,15 @@ pub trait InteractiveElement: Sized {
         self
     }
 
+    /// Binds a callback to a mouse-wheel, trackpad or touch scrolling step.
+    fn on_scroll(
+        mut self,
+        listener: impl Fn(&ScrollEvent, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.interactivity().on_scroll(listener);
+        self
+    }
+
     /// Capture the given action, before normal action dispatch can fire.
     /// The fluent API equivalent to [`Interactivity::capture_action`].
     ///
@@ -1191,6 +1216,21 @@ pub trait StatefulInteractiveElement: InteractiveElement {
         self
     }
 
+    /// Reports this descendant as focused to accessibility while its ancestor owns keyboard focus.
+    fn aria_active_descendant(mut self) -> Self {
+        self.interactivity().report_active_descendant_focus = true;
+        self
+    }
+
+    /// Adds accessibility children that are represented by custom element data rather than elements.
+    fn a11y_synthetic_children(
+        mut self,
+        build: impl FnOnce(&mut crate::A11ySubtreeBuilder) + 'static,
+    ) -> Self {
+        self.interactivity().a11y_synthetic_children = Some(Box::new(build));
+        self
+    }
+
     /// Set this element to focusable.
     fn focusable(mut self) -> Self {
         self.interactivity().focusable = true;
@@ -1364,7 +1404,7 @@ pub(crate) type MouseMoveListener =
     Box<dyn Fn(&MouseMoveEvent, DispatchPhase, &Hitbox, &mut Window, &mut App) + 'static>;
 
 pub(crate) type ScrollWheelListener =
-    Box<dyn Fn(&ScrollWheelEvent, DispatchPhase, &Hitbox, &mut Window, &mut App) + 'static>;
+    Box<dyn Fn(&ScrollEvent, DispatchPhase, &Hitbox, &mut Window, &mut App) + 'static>;
 
 pub(crate) type ClickListener = Rc<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>;
 
@@ -1638,7 +1678,37 @@ impl Element for Div {
     }
 
     fn a11y_role(&self) -> Option<accesskit::Role> {
-        self.interactivity.override_role
+        if self.interactivity.base_style.visibility == Some(Visibility::Hidden) {
+            return None;
+        }
+        self.interactivity.override_role.or_else(|| {
+            (self.interactivity.aria.label.is_some()
+                || self.interactivity.aria.value.is_some()
+                || !self.interactivity.a11y_action_listeners.is_empty())
+            .then_some(accesskit::Role::GenericContainer)
+        })
+    }
+
+    fn a11y_reports_active_descendant(&self) -> bool {
+        self.interactivity.report_active_descendant_focus
+    }
+
+    fn take_a11y_actions(&mut self) -> Vec<(accesskit::Action, crate::A11yActionListener)> {
+        mem::take(&mut self.interactivity.a11y_action_listeners)
+    }
+
+    fn a11y_focus_handle(&self) -> Option<FocusHandle> {
+        self.interactivity.tracked_focus_handle.clone()
+    }
+
+    fn a11y_synthetic_children(
+        &mut self,
+        _prepaint: &mut Self::PrepaintState,
+        builder: &mut crate::A11ySubtreeBuilder,
+    ) {
+        if let Some(build) = self.interactivity.a11y_synthetic_children.take() {
+            build(builder);
+        }
     }
 
     fn write_a11y_info(&self, node: &mut accesskit::Node) {
@@ -1787,15 +1857,7 @@ pub struct Interactivity {
     pub(crate) tab_stop: bool,
 
     pub(crate) a11y_action_listeners: Vec<(accesskit::Action, crate::A11yActionListener)>,
-    #[expect(
-        dead_code,
-        reason = "Reserved for native accessibility subtree integration"
-    )]
     pub(crate) a11y_synthetic_children: Option<Box<dyn FnOnce(&mut crate::A11ySubtreeBuilder)>>,
-    #[expect(
-        dead_code,
-        reason = "Reserved for native accessibility subtree integration"
-    )]
     pub(crate) report_active_descendant_focus: bool,
     pub(crate) override_role: Option<accesskit::Role>,
     pub(crate) aria: AriaProperties,
@@ -2074,8 +2136,7 @@ impl Interactivity {
                 if let Some(debug_selector) = &self.debug_selector {
                     window
                         .next_frame
-                        .debug_bounds
-                        .insert(debug_selector.clone(), bounds);
+                        .record_debug_bounds(debug_selector.clone(), bounds);
                 }
 
                 self.paint_hover_group_handler(window, cx);
@@ -2203,12 +2264,12 @@ impl Interactivity {
                     };
                     if self.source_location.is_some()
                         && text_bounds.contains(&window.mouse_position())
-                        && window.modifiers().secondary()
+                        && window.modifiers().secondary(cx)
                     {
-                        let secondary_held = window.modifiers().secondary();
+                        let secondary_held = window.modifiers().secondary(cx);
                         window.on_key_event({
-                            move |e: &crate::ModifiersChangedEvent, _phase, window, _cx| {
-                                if e.modifiers.secondary() != secondary_held
+                            move |e: &crate::ModifiersChangedEvent, _phase, window, cx| {
+                                if e.modifiers.secondary(cx) != secondary_held
                                     && text_bounds.contains(&window.mouse_position())
                                 {
                                     window.refresh();
@@ -2334,7 +2395,7 @@ impl Interactivity {
 
         for listener in self.scroll_wheel_listeners.drain(..) {
             let hitbox = hitbox.clone();
-            window.on_mouse_event(move |event: &ScrollWheelEvent, phase, window, cx| {
+            window.on_mouse_event(move |event: &ScrollEvent, phase, window, cx| {
                 listener(event, phase, &hitbox, window, cx);
             })
         }
@@ -2394,6 +2455,11 @@ impl Interactivity {
         }
 
         if let Some(element_state) = element_state {
+            if (!is_focused || click_listeners.is_empty())
+                && let Some(pending) = &element_state.pending_keyboard_clicks
+            {
+                pending.borrow_mut().clear();
+            }
             if !click_listeners.is_empty() || drag_listener.is_some() {
                 let pending_mouse_down = element_state
                     .pending_mouse_down
@@ -2449,32 +2515,63 @@ impl Interactivity {
                 });
 
                 if is_focused {
-                    // Press enter, space to trigger click, when the element is focused.
+                    let pending_keyboard_clicks = element_state
+                        .pending_keyboard_clicks
+                        .get_or_insert_with(Default::default)
+                        .clone();
+                    window.on_key_event({
+                        let pending_keyboard_clicks = pending_keyboard_clicks.clone();
+                        move |event: &KeyDownEvent, phase, window, _cx| {
+                            if phase.bubble()
+                                && !event.is_held
+                                && !window.default_prevented()
+                                && !event.keystroke.modifiers.modified()
+                            {
+                                let button = match event.keystroke.key.as_str() {
+                                    "enter" => Some(KeyboardButton::Enter),
+                                    "space" => Some(KeyboardButton::Space),
+                                    _ => None,
+                                };
+                                if let Some(button) = button {
+                                    let mut pending = pending_keyboard_clicks.borrow_mut();
+                                    if !pending.contains(&button) {
+                                        pending.push(button);
+                                    }
+                                }
+                            }
+                        }
+                    });
                     window.on_key_event({
                         let click_listeners = click_listeners.clone();
                         let hitbox = hitbox.clone();
                         move |event: &KeyUpEvent, phase, window, cx| {
-                            if phase.bubble() && !window.default_prevented() {
-                                let stroke = &event.keystroke;
-                                let keyboard_button = if stroke.key.eq("enter") {
-                                    Some(KeyboardButton::Enter)
-                                } else if stroke.key.eq("space") {
-                                    Some(KeyboardButton::Space)
-                                } else {
-                                    None
-                                };
-
-                                if let Some(button) = keyboard_button
-                                    && !stroke.modifiers.modified()
-                                {
-                                    let click_event = ClickEvent::Keyboard(KeyboardClickEvent {
-                                        button,
-                                        bounds: hitbox.bounds,
-                                    });
-
-                                    for listener in &click_listeners {
-                                        listener(&click_event, window, cx);
-                                    }
+                            if !phase.bubble() {
+                                return;
+                            }
+                            let button = match event.keystroke.key.as_str() {
+                                "enter" => Some(KeyboardButton::Enter),
+                                "space" => Some(KeyboardButton::Space),
+                                _ => None,
+                            };
+                            let Some(button) = button else {
+                                return;
+                            };
+                            let was_pressed = {
+                                let mut pending = pending_keyboard_clicks.borrow_mut();
+                                let was_pressed = pending.contains(&button);
+                                pending.retain(|pressed| *pressed != button);
+                                was_pressed
+                            };
+                            if was_pressed
+                                && !window.default_prevented()
+                                && !event.keystroke.modifiers.modified()
+                            {
+                                let click_event = ClickEvent::Keyboard(KeyboardClickEvent {
+                                    button,
+                                    bounds: hitbox.bounds,
+                                });
+                                for listener in &click_listeners {
+                                    listener(&click_event, window, cx);
                                 }
                             }
                         }
@@ -2531,21 +2628,39 @@ impl Interactivity {
                     .pending_mouse_down
                     .get_or_insert_with(Default::default)
                     .clone();
-
-                window.on_mouse_event(move |_: &MouseMoveEvent, phase, window, cx| {
-                    if phase != DispatchPhase::Bubble {
-                        return;
-                    }
-                    let is_hovered = has_mouse_down.borrow().is_none()
-                        && !cx.has_active_drag()
-                        && hitbox.is_hovered(window);
-                    let mut was_hovered = was_hovered.borrow_mut();
-
-                    if is_hovered != *was_hovered {
-                        *was_hovered = is_hovered;
-                        drop(was_hovered);
-
+                let hover_listener = Rc::new(hover_listener);
+                let hover_listener_state = was_hovered.clone();
+                let update_hover = move |is_hovered: bool, window: &mut Window, cx: &mut App| {
+                    let mut previous = hover_listener_state.borrow_mut();
+                    if is_hovered != *previous {
+                        *previous = is_hovered;
+                        drop(previous);
                         hover_listener(&is_hovered, window, cx);
+                    }
+                };
+
+                if has_mouse_down.borrow().is_none() {
+                    let is_hovered = !cx.has_active_drag() && hitbox.is_hovered(window);
+                    if is_hovered != *was_hovered.borrow() {
+                        let update_hover = update_hover.clone();
+                        window.defer(cx, move |window, cx| update_hover(is_hovered, window, cx));
+                    }
+                }
+
+                window.on_mouse_event({
+                    let update_hover = update_hover.clone();
+                    move |_: &MouseMoveEvent, phase, window, cx| {
+                        if phase == DispatchPhase::Bubble {
+                            let is_hovered = has_mouse_down.borrow().is_none()
+                                && !cx.has_active_drag()
+                                && hitbox.is_hovered(window);
+                            update_hover(is_hovered, window, cx);
+                        }
+                    }
+                });
+                window.on_mouse_event(move |_: &MouseExitEvent, phase, window, cx| {
+                    if phase == DispatchPhase::Bubble {
+                        update_hover(false, window, cx);
                     }
                 });
             }
@@ -2688,7 +2803,7 @@ impl Interactivity {
             let line_height = window.line_height();
             let hitbox = hitbox.clone();
             let current_view = window.current_view();
-            window.on_mouse_event(move |event: &ScrollWheelEvent, phase, window, cx| {
+            window.on_mouse_event(move |event: &ScrollEvent, phase, window, cx| {
                 if phase == DispatchPhase::Bubble && hitbox.should_handle_scroll(window) {
                     let mut scroll_offset = scroll_offset.borrow_mut();
                     let old_scroll_offset = *scroll_offset;
@@ -2851,6 +2966,7 @@ pub struct InteractiveElementState {
     pub(crate) clicked_state: Option<Rc<RefCell<ElementClickedState>>>,
     pub(crate) hover_state: Option<Rc<RefCell<bool>>>,
     pub(crate) pending_mouse_down: Option<Rc<RefCell<Option<MouseDownEvent>>>>,
+    pub(crate) pending_keyboard_clicks: Option<Rc<RefCell<SmallVec<[KeyboardButton; 2]>>>>,
     pub(crate) scroll_offset: Option<Rc<RefCell<Point<Pixels>>>>,
     pub(crate) active_tooltip: Option<Rc<RefCell<Option<ActiveTooltip>>>>,
 }
@@ -2964,7 +3080,7 @@ pub(crate) fn register_tooltip_mouse_handlers(
 
     window.on_mouse_event({
         let active_tooltip = active_tooltip.clone();
-        move |_: &ScrollWheelEvent, _phase, window: &mut Window, _cx| {
+        move |_: &ScrollEvent, _phase, window: &mut Window, _cx| {
             if !tooltip_id.is_some_and(|tooltip_id| tooltip_id.is_hovered(window)) {
                 clear_active_tooltip_if_not_hoverable(&active_tooltip, window);
             }
@@ -3227,6 +3343,23 @@ where
 
     fn write_a11y_info(&self, node: &mut accesskit::Node) {
         self.element.write_a11y_info(node);
+    }
+    fn a11y_reports_active_descendant(&self) -> bool {
+        self.element.a11y_reports_active_descendant()
+    }
+
+    fn take_a11y_actions(&mut self) -> Vec<(accesskit::Action, crate::A11yActionListener)> {
+        self.element.take_a11y_actions()
+    }
+    fn a11y_focus_handle(&self) -> Option<FocusHandle> {
+        self.element.a11y_focus_handle()
+    }
+    fn a11y_synthetic_children(
+        &mut self,
+        prepaint: &mut Self::PrepaintState,
+        builder: &mut crate::A11ySubtreeBuilder,
+    ) {
+        self.element.a11y_synthetic_children(prepaint, builder);
     }
 
     fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {

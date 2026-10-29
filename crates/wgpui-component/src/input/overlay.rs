@@ -1,13 +1,15 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
-use gpui::{AnyElement, App, Entity, EntityId, Global, IntoElement, WeakEntity, Window};
 use ropey::Rope;
+use wgpui::{AnyElement, App, Entity, EntityId, Global, IntoElement, WeakEntity, Window};
 
 use super::{
     InputBaseState, InputModeKind,
     popovers::{CodeActionMenu, CompletionMenu, DiagnosticPopover, HoverPopover},
     search::SearchPanel,
 };
+use wgpui_base::input::CompletionHighlighter;
 
 struct InputOverlayRegistry<M: OverlayMode> {
     hosts: HashMap<EntityId, (WeakEntity<InputBaseState<M>>, InputOverlayHost<M>)>,
@@ -70,7 +72,12 @@ pub(crate) struct LspOverlays {
     completion_signature: OverlaySignature,
     code_action_signature: OverlaySignature,
     hover_signature: Option<std::ops::Range<usize>>,
-    diagnostic_signature: Option<std::rc::Rc<gpui_base::input::DiagnosticEntry>>,
+    diagnostic_signature: Option<std::rc::Rc<wgpui_base::input::DiagnosticEntry>>,
+    /// Highlighter last copied onto the completion menu.
+    ///
+    /// Compared by `Rc` identity, so swapping the host's closure repaints an
+    /// open menu without rebuilding its items.
+    completion_highlight: Option<Rc<CompletionHighlighter>>,
 }
 
 /// What the state read out of the engine for one sync pass.
@@ -83,7 +90,7 @@ pub(crate) struct LspSnapshot {
     completion_start: Option<usize>,
     code_action: OverlaySignature,
     hover: Option<std::ops::Range<usize>>,
-    diagnostic: Option<std::rc::Rc<gpui_base::input::DiagnosticEntry>>,
+    diagnostic: Option<std::rc::Rc<wgpui_base::input::DiagnosticEntry>>,
     cursor: usize,
 }
 
@@ -148,10 +155,10 @@ impl OverlayMode for crate::input::EditorMode {
                     return false;
                 };
                 match kind {
-                    gpui_base::input::InputOverlayKind::Completion => {
+                    wgpui_base::input::InputOverlayKind::Completion => {
                         completion.update(cx, |menu, cx| menu.handle_action(action, window, cx))
                     }
-                    gpui_base::input::InputOverlayKind::CodeAction => {
+                    wgpui_base::input::InputOverlayKind::CodeAction => {
                         code_actions.update(cx, |menu, cx| menu.handle_action(action, window, cx))
                     }
                 }
@@ -194,6 +201,7 @@ impl OverlayMode for crate::input::EditorMode {
             code_action_signature: OverlaySignature::default(),
             hover_signature: None,
             diagnostic_signature: None,
+            completion_highlight: None,
         })
     }
 
@@ -205,6 +213,17 @@ impl OverlayMode for crate::input::EditorMode {
         cx: &mut App,
     ) {
         let cursor = snapshot.cursor;
+
+        let highlight = state.read(cx).lsp().completion_highlighter().clone();
+        if lsp
+            .completion_highlight
+            .as_ref()
+            .is_none_or(|current| !Rc::ptr_eq(current, &highlight))
+        {
+            lsp.completion_highlight = Some(highlight.clone());
+            lsp.completion
+                .update(cx, |menu, cx| menu.set_highlight(highlight, cx));
+        }
 
         if snapshot.completion != lsp.completion_signature {
             lsp.completion_signature = OverlaySignature {
@@ -319,6 +338,7 @@ impl<M: OverlayMode> InputOverlayHost<M> {
             )
         };
 
+        let panel_replace_mode = self.search.read(cx).replace_mode();
         self.search
             .update(cx, |panel, _| panel.sync_session(&search_session));
 
@@ -330,15 +350,15 @@ impl<M: OverlayMode> InputOverlayHost<M> {
             activation_revision,
         };
         if search_signature != self.search_signature {
-            // The panel writes what the user types back into the session, which
-            // lands here as a changed query on the next frame. Re-showing the
-            // panel for that echo would select the field out from under them, so
-            // recognise it: the same open session, moved only by the query the
-            // panel itself already holds.
+            // The panel writes query and replacement-mode changes back into the
+            // session. Re-showing it for that echo would select the query or steal
+            // focus from replacement, so preserve changes the panel already holds.
+            // External mode changes still move focus out of a hidden replace field.
             let was = &self.search_signature;
             let query_echo = search_open
                 && was.open
-                && was.replace_mode == search_signature.replace_mode
+                && (was.replace_mode == search_signature.replace_mode
+                    || panel_replace_mode == search_signature.replace_mode)
                 && was.anchor_offset == search_signature.anchor_offset
                 && was.activation_revision == search_signature.activation_revision
                 && self.search.read(cx).query(cx) == search_session.query;
@@ -430,10 +450,10 @@ pub(super) fn render_overlays<M: OverlayMode>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, Render, SharedString, div};
-    use gpui_base::input::CodeActionItem;
-    use gpui_base::input::DiagnosticEntry;
     use lsp_types::{CodeAction, CompletionItem, Hover, HoverContents, MarkedString};
+    use wgpui::{AppContext as _, Render, SharedString, div};
+    use wgpui_base::input::CodeActionItem;
+    use wgpui_base::input::DiagnosticEntry;
 
     struct OverlayProbe {
         state: Entity<crate::input::EditorState>,
@@ -443,7 +463,7 @@ mod tests {
         fn render(
             &mut self,
             _window: &mut Window,
-            _cx: &mut gpui::Context<Self>,
+            _cx: &mut wgpui::Context<Self>,
         ) -> impl IntoElement {
             div()
         }
@@ -456,8 +476,8 @@ mod tests {
     /// request: the field keeps whatever caret the user left in it and the
     /// shortcut looks dead. `activation_revision` is what carries the second
     /// request through, and the echo guard below it is what must survive that.
-    #[gpui::test]
-    fn reopening_search_reselects_the_query(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn reopening_search_reselects_the_query(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).searchable(true)),
@@ -509,8 +529,8 @@ mod tests {
     /// Closing and reopening Find keeps the previous occurrence in browsers.
     /// Neither Base reopening the session nor the styled panel echoing its
     /// retained query may reset the current match to zero.
-    #[gpui::test]
-    fn reopening_search_panel_preserves_the_previous_match(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn reopening_search_panel_preserves_the_previous_match(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).searchable(true)),
@@ -549,8 +569,8 @@ mod tests {
     /// It is keyed on a revision the engine bumps when it swaps the content;
     /// forgetting to bump, or comparing the content itself again, both show up
     /// here.
-    #[gpui::test]
-    fn unchanged_content_keeps_the_overlay_signature(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn unchanged_content_keeps_the_overlay_signature(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| crate::input::EditorState::new(window, cx).language("sql")),
@@ -603,8 +623,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn facade_materializes_all_base_overlay_sessions(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn facade_materializes_all_base_overlay_sessions(cx: &mut wgpui::TestAppContext) {
         cx.update(crate::init);
         let (probe, cx) = cx.add_window_view(|window, cx| OverlayProbe {
             state: cx.new(|cx| {

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use gpui::{Rems, rems};
-use gpui_base::{Easing, Spring};
+use wgpui::{Rems, rems};
+use wgpui_base::{Easing, Spring};
 
 /// Semantic motion policy shared by styled components.
 #[derive(Clone, Debug)]

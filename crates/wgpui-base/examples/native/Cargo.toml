@@ -6,9 +6,9 @@ publish = false
 edition.workspace = true
 
 [dependencies]
-gpui.workspace = true
-gpui-base = { path = "../.." }
-gpui_platform.workspace = true
+wgpui.workspace = true
+wgpui-base = { path = "../.." }
+wgpui-platform.workspace = true
 reqwest_client.workspace = true
 syntect.workspace = true
 
@@ -18,4 +18,4 @@ workspace = true
 # The shared showcase is included with `#[path]`, which cargo-machete cannot
 # follow when detecting its `gpui`, `gpui_base`, and `syntect` imports.
 [package.metadata.cargo-machete]
-ignored = ["gpui", "gpui-base", "syntect"]
+ignored = ["wgpui", "wgpui-base", "syntect"]

@@ -1,7 +1,7 @@
+use std::time::Duration;
 use wgpui_kit::component::{Root, button::Button, menu::DropdownMenu};
 use wgpui_kit::test::{TestAppContextExt, TestSupportExt, TestWindowExt};
 use wgpui_kit::{AppContext, Context, TestAppContext, Window, actions, div, prelude::*, px, size};
-use std::time::Duration;
 
 actions!(menu_test, [Save, Unavailable]);
 struct Commands {

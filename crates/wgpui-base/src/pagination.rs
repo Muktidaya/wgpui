@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use gpui::{
+use wgpui::{
     AnyElement, App, ElementId, InteractiveElement, IntoElement, ParentElement, RenderOnce, Role,
     SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
 };
@@ -102,7 +102,7 @@ impl PaginationState {
 /// An unstyled pagination navigation landmark.
 #[derive(IntoElement)]
 pub struct Pagination {
-    base: gpui::Stateful<gpui::Div>,
+    base: wgpui::Stateful<wgpui::Div>,
     state: PaginationState,
     style: StyleRefinement,
     accessibility_label: SharedString,
@@ -143,7 +143,7 @@ impl Styled for Pagination {
 }
 
 impl InteractiveElement for Pagination {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -205,7 +205,7 @@ mod tests {
     use super::*;
     use std::cell::Cell;
 
-    use gpui::{Element as _, accesskit};
+    use wgpui::{Element as _, accesskit};
 
     #[test]
     fn clamps_controlled_values_and_navigation_boundaries() {
@@ -240,8 +240,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn validates_every_page_change_request(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn validates_every_page_change_request(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let requested = Rc::new(Cell::new(None));
@@ -263,8 +263,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn exposes_a_named_navigation_landmark(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn exposes_a_named_navigation_landmark(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let mut node = accesskit::Node::new(Role::Navigation);

@@ -3,17 +3,32 @@ mod derive_app_context;
 mod derive_into_element;
 mod derive_render;
 mod derive_visual_context;
-mod gpui_path;
 mod property_test;
 mod register_action;
 mod styles;
 mod test;
+mod wgpui_path;
 
 #[cfg(any(feature = "inspector", debug_assertions))]
 mod derive_inspector_reflection;
 
 use proc_macro::TokenStream;
 use syn::{DeriveInput, Ident};
+
+/// Runs an explicitly unsafe constructor using WGPUI's dependency path.
+#[proc_macro_attribute]
+pub fn ctor(args: TokenStream, input: TokenStream) -> TokenStream {
+    let wgpui = wgpui_path::wgpui_crate();
+    let args = proc_macro2::TokenStream::from(args);
+    let input = proc_macro2::TokenStream::from(input);
+    let separator = (!args.is_empty()).then(|| quote::quote!(,));
+
+    quote::quote! {
+        #[#wgpui::private::ctor::ctor(crate_path = #wgpui::private::ctor #separator #args)]
+        #input
+    }
+    .into()
+}
 
 /// `Action` derive macro - see the trait documentation for details.
 #[proc_macro_derive(Action, attributes(action))]
@@ -48,7 +63,7 @@ pub fn derive_render(input: TokenStream) -> TokenStream {
 /// Failure to add the attribute causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(AppContext)]
 /// struct MyContext<'a> {
@@ -68,7 +83,7 @@ pub fn derive_app_context(input: TokenStream) -> TokenStream {
 /// Failure to add both attributes causes a compile error:
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
@@ -79,7 +94,7 @@ pub fn derive_app_context(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate wgpui_macros;
+/// # #[macro_use] extern crate wgpui_derive;
 /// # #[macro_use] extern crate wgpui;
 /// #[derive(VisualContext)]
 /// struct MyContext<'a, 'b> {
@@ -179,7 +194,7 @@ pub fn box_shadow_style_methods(input: TokenStream) -> TokenStream {
 /// You can combine `iterations = ...` with `seeds(...)`:
 /// - `#[wgpui::test(iterations = 5, seed = 10)]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10))]`.
 /// - `#[wgpui::test(iterations = 5, seeds(10, 20, 30)]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
-/// - `#[wgpui::test(seeds(10, 20, 30), iterations = 5]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
+/// - `#[wgpui::test(seeds(10, 20, 30), iterations = 5)]` is equivalent to `#[wgpui::test(seeds(0, 1, 2, 3, 4, 10, 20, 30))]`.
 ///
 /// # Environment Variables
 ///
@@ -190,74 +205,24 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
     test::test(args, function)
 }
 
-/// A variant of `#[wgpui::test]` that supports property-based testing.
+/// Legacy property-testing attribute; unsupported by WGPUI 0.4.0.
 ///
-/// A property test, much like a standard WGPUI randomized test, allows testing
-/// claims of the form "for any possible X, Y should hold". For example:
-/// ```
+/// The retained implementation targets an older Proptest scheduler bridge
+/// (`proptest`, `seed_strategy`, and `run_test_once`) that this framework does
+/// not expose. It is not reexported as `wgpui::property_test`; invoking the
+/// derive attribute directly does not restore that missing bridge.
+///
+/// ```compile_fail
 /// #[wgpui::property_test]
-/// fn test_arithmetic(x: i32, y: i32) {
+/// fn arithmetic(x: i32, y: i32) {
 ///     assert!(x == y || x < y || x > y);
 /// }
 /// ```
-/// Standard WGPUI randomized tests provide you with an instance of `StdRng` to
-/// generate random data in a controlled manner. Property-based tests have some
-/// advantages, however:
-/// - Shrinking - the harness also understands a notion of the "complexity" of a
-///   particular value. This allows it to find the "simplest possible value that
-///   causes the test to fail".
-/// - Ergonomics/clarity - the property-testing harness will automatically
-///   generate values, removing the need to fill the test body with generation
-///   logic.
-/// - Failure persistence - if a failing seed is identified, it is stored in a
-///   file, which can be checked in, and future runs will check these cases before
-///   future cases.
 ///
-/// Property tests work best when all inputs can be generated up-front and kept
-/// in a simple data structure. Sometimes, this isn't possible - for example, if
-/// a test needs to make a random decision based on the current state of some
-/// structure. In this case, a standard WGPUI randomized test may be more
-/// suitable.
-///
-/// ## Customizing random values
-///
-/// This macro is based on the [`#[proptest::property_test]`] macro, but handles
-/// some of the same WGPUI-specific arguments as `#[wgpui::test]`. Specifically,
-/// `&{mut,} TestAppContext` and `BackgroundExecutor` work as normal. `StdRng`
-/// arguments are **explicitly forbidden**, since they break shrinking, and are
-/// a common footgun.
-///
-/// All other arguments are forwarded to the underlying proptest macro.
-///
-/// Note: much of the following is copied from the proptest docs, specifically the
-/// [`#[proptest::property_test]`] macro docs.
-///
-/// Random values of type `T` are generated by a `Strategy<Value = T>` object.
-/// Some types have a canonical `Strategy` - these types also implement
-/// `Arbitrary`. Parameters to a `#[wgpui::property_test]`, by default, use a
-/// type's `Arbitrary` implementation. If you'd like to provide a custom
-/// strategy, you can use `#[strategy = ...]` on the argument:
-/// ```
-/// #[wgpui::property_test]
-/// fn int_test(#[strategy = 1..10] x: i32, #[strategy = "[a-zA-Z0-9]{20}"] s: String) {
-///   assert!(s.len() > (x as usize));
-/// }
-/// ```
-///
-/// For more information on writing custom `Strategy` and `Arbitrary`
-/// implementations, see [the proptest book][book], and the [`Strategy`] trait.
-///
-/// ## Scheduler
-///
-/// Similar to `#[wgpui::test]`, this macro will choose random seeds for the test
-/// scheduler. It uses `.no_shrink()` to tell proptest that all seeds are
-/// roughly equivalent in terms of "complexity". If `$SEED` is set, it will
-/// affect **ONLY** the seed passed to the scheduler. To control other values,
-/// use custom `Strategy`s.
-///
-/// [`#[proptest::property_test]`]: https://docs.rs/proptest/latest/proptest/attr.property_test.html
-/// [book]: https://proptest-rs.github.io/proptest/intro.html
-/// [`Strategy`]: https://docs.rs/proptest/latest/proptest/strategy/trait.Strategy.html
+/// Use Proptest directly for pure data properties with an explicit Proptest
+/// dev-dependency. Use `#[wgpui::test]` for WGPUI's deterministic UI scheduler
+/// and enable the framework's `test-support` feature for its public helpers.
+/// See the [Proptest book](https://proptest-rs.github.io/proptest/intro.html).
 #[proc_macro_attribute]
 pub fn property_test(args: TokenStream, function: TokenStream) -> TokenStream {
     property_test::test(args.into(), function.into()).into()
@@ -295,4 +260,41 @@ pub(crate) fn get_simple_attribute_field(ast: &DeriveInput, name: &'static str) 
         syn::Data::Enum(_) => None,
         syn::Data::Union(_) => None,
     }
+}
+
+/// Measures a synchronous UI benchmark through WGPUI's benchmark context.
+#[proc_macro_attribute]
+pub fn bench(args: TokenStream, input: TokenStream) -> TokenStream {
+    if !args.is_empty() {
+        return syn::Error::new(proc_macro2::Span::call_site(), "bench takes no arguments")
+            .to_compile_error()
+            .into();
+    }
+    let function = syn::parse_macro_input!(input as syn::ItemFn);
+    if function.sig.asyncness.is_some() || function.sig.inputs.len() != 1 {
+        return syn::Error::new_spanned(
+            &function.sig,
+            "bench requires one synchronous &mut BenchAppContext argument",
+        )
+        .to_compile_error()
+        .into();
+    }
+    let wgpui = wgpui_path::wgpui_crate();
+    let name = &function.sig.ident;
+    let attributes = &function.attrs;
+    let visibility = &function.vis;
+    let body = &function.block;
+    let parameter = &function.sig.inputs[0];
+    quote::quote! {
+        #(#attributes)*
+        #visibility fn #name(criterion: &mut #wgpui::private::criterion::Criterion) {
+            fn setup(#parameter) #body
+            criterion.bench_function(stringify!(#name), |bencher| {
+                let mut context = #wgpui::BenchAppContext::new(bencher);
+                setup(&mut context);
+                context.teardown();
+            });
+        }
+    }
+    .into()
 }

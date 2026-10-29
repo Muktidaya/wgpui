@@ -22,6 +22,10 @@ struct UndoTransaction {
     /// is one logical edit with one change per cursor. Only a following batch
     /// of the same length can coalesce into this transaction.
     last_batch_len: usize,
+    /// How many changes were recorded into this transaction. A run of
+    /// single-cursor keystrokes is merged into one change, so this, not
+    /// `changes.len()`, decides when the transaction is full.
+    recorded_changes: usize,
     /// The cursors as they stood before this transaction, restored on undo.
     selections_before: Option<Vec<CursorSelection>>,
     /// The cursors as they stood after it, restored on redo.
@@ -97,7 +101,10 @@ impl UndoManager {
         if self.ignoring {
             return false;
         }
-        if change.old_range == change.new_range && change.old_text == change.new_text {
+        if change.token_delta.is_none()
+            && change.old_range == change.new_range
+            && change.old_text == change.new_text
+        {
             self.break_transaction_coalescing();
             return false;
         }
@@ -184,7 +191,7 @@ impl UndoManager {
             && self.undo_transactions.last().is_some_and(|previous| {
                 previous.intent == intent
                     && previous.last_batch_len == changes.len()
-                    && previous.changes.len() + changes.len() <= MAX_CHANGES_PER_TRANSACTION
+                    && previous.recorded_changes + changes.len() <= MAX_CHANGES_PER_TRANSACTION
                     && is_adjacent_batch(intent, previous.trailing_batch(), &changes)
             });
 
@@ -194,6 +201,20 @@ impl UndoManager {
                 .last_mut()
                 .expect("coalescing requires a previous transaction");
             previous.last_batch_len = changes.len();
+            previous.recorded_changes += changes.len();
+            // Adjacent single-cursor keystrokes form one contiguous insertion.
+            // Keep it as one change so undo and redo replay it as a single
+            // edit rather than once per keystroke.
+            if intent == EditIntent::Typing
+                && let [change] = changes.as_slice()
+                && let Some(last) = previous.changes.last_mut()
+            {
+                last.new_text
+                    .truncate(change.old_range.start - last.new_range.start);
+                last.new_text.push_str(&change.new_text);
+                last.new_range.end = change.new_range.end;
+                return;
+            }
             previous.changes.extend(changes);
             return;
         }
@@ -204,6 +225,7 @@ impl UndoManager {
         self.undo_transactions.push(UndoTransaction {
             intent,
             last_batch_len: changes.len(),
+            recorded_changes: changes.len(),
             changes,
             selections_before: None,
             selections_after: None,
@@ -367,6 +389,9 @@ impl UndoTransaction {
 /// Changes that do not form such a chain (multi-cursor batches, for one) always
 /// report `false`, so this only ever collapses the single-region case.
 fn is_noop_batch(changes: &[Change]) -> bool {
+    if changes.iter().any(|c| c.token_delta.is_some()) {
+        return false;
+    }
     let Some(first) = changes.first() else {
         return true;
     };
@@ -412,13 +437,16 @@ fn is_adjacent_batch(intent: EditIntent, previous: &[Change], current: &[Change]
 }
 
 fn is_adjacent(intent: EditIntent, previous: &Change, current: &Change) -> bool {
+    if previous.token_delta.is_some() || current.token_delta.is_some() {
+        return false;
+    }
     match intent {
         EditIntent::Typing => {
             previous.old_range.is_empty()
-                && current.old_range.is_empty()
                 && !previous.new_text.contains(['\n', '\r'])
                 && !current.new_text.contains(['\n', '\r'])
-                && previous.new_range.end == current.old_range.start
+                && previous.new_range.start <= current.old_range.start
+                && previous.new_range.end == current.old_range.end
         }
         EditIntent::Backspace => {
             previous.new_text.is_empty()
@@ -449,7 +477,8 @@ mod tests {
         manager.record_transaction(typing_change(0, "a"), EditIntent::Typing);
         manager.record_transaction(typing_change(1, "b"), EditIntent::Typing);
 
-        assert_eq!(manager.undo().unwrap().changes.len(), 2);
+        // The run is kept as one insertion, so undo replays a single change.
+        assert_eq!(manager.undo().unwrap().changes, [typing_change(0, "ab")]);
         assert!(manager.undo().is_none());
     }
 
@@ -557,10 +586,15 @@ mod tests {
             manager.record_transaction(typing_change(offset, "a"), EditIntent::Typing);
         }
 
-        assert_eq!(manager.undo().unwrap().changes.len(), 100);
+        // Each run is merged into one insertion, but the split still happens
+        // after the same number of keystrokes.
         assert_eq!(
-            manager.undo().unwrap().changes.len(),
-            MAX_CHANGES_PER_TRANSACTION
+            manager.undo().unwrap().changes,
+            [typing_change(MAX_CHANGES_PER_TRANSACTION, &"a".repeat(100))]
+        );
+        assert_eq!(
+            manager.undo().unwrap().changes,
+            [typing_change(0, &"a".repeat(MAX_CHANGES_PER_TRANSACTION))]
         );
         assert!(manager.undo().is_none());
     }

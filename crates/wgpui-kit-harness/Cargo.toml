@@ -1,9 +1,11 @@
 [package]
 name = "wgpui-kit-harness"
-description = "Native integration harness for wgpui-component (hello_world + core widgets)."
+description = "Native integration and desktop acceptance harness for WGPUI Kit."
 version = "0.1.0"
 publish = false
+license = "Apache-2.0"
 edition.workspace = true
+rust-version.workspace = true
 
 [[test]]
 name = "hello_world"
@@ -18,10 +20,17 @@ name = "theme_init"
 path = "tests/theme_init.rs"
 
 [dev-dependencies]
-gpui = { workspace = true, features = ["test-support"] }
-gpui-component = { workspace = true }
-gpui-component-assets = { workspace = true }
-gpui_platform = { workspace = true }
+wgpui = { workspace = true, features = ["test-support"] }
+wgpui-component = { workspace = true }
+wgpui-kit-assets = { workspace = true }
+wgpui-platform = { workspace = true }
 
 [lints]
 workspace = true
+
+[[bin]]
+name = "wgpui-native-acceptance"
+path = "src/native_acceptance.rs"
+
+[dependencies]
+wgpui-kit.workspace = true

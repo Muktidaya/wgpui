@@ -4,8 +4,6 @@
 //! [`Assets`] for the default component bundle, or [`AllAssets`] for the full
 //! catalog. Applications can provide their own source for additional icons.
 
-extern crate gpui as wgpui;
-
 mod icon;
 pub use icon::{IconName, IconNamed};
 
@@ -25,10 +23,10 @@ pub use icon::{IconName, IconNamed};
 /// ## Platform Differences
 ///
 /// - **Native (Desktop)**: Icons are embedded in the binary using RustEmbed
-/// - **WASM (Web)**: Icons are downloaded from CDN using web_sys::Request
-///   - This significantly reduces WASM bundle size
-///   - Icons are downloaded on-demand when first used
-///   - Downloaded icons are cached in memory
+/// - **WebAssembly adapter**: Reqwest downloads icons from the configured endpoint.
+///   - The default empty endpoint requests relative `/assets/icons/` paths.
+///   - Icons are requested on demand and cached in memory; no CDN is built in.
+///   - Framework/application WebAssembly acceptance is a separate platform gate.
 #[cfg(not(target_family = "wasm"))]
 mod native_assets;
 
@@ -41,24 +39,25 @@ pub use native_assets::{AllAssets, Assets};
 #[cfg(target_family = "wasm")]
 pub use wasm_assets::Assets;
 
-/// On WASM, the complete catalog uses the same on-demand CDN source.
+/// On WebAssembly, the complete catalog uses the same application-hosted source.
+/// This asset adapter alone does not establish full framework WebAssembly support.
 #[cfg(target_family = "wasm")]
 pub use wasm_assets::Assets as AllAssets;
 
 // Public only so exported macros can resolve dependencies in downstream crates,
-// including applications that depend solely on the gpui-kit umbrella crate.
+// including applications that depend solely on the WGPUI Kit umbrella crate.
 #[doc(hidden)]
 pub mod __private {
     pub use crate::icon::embedded::*;
-    pub use gpui::{AssetSource, Result, SharedString};
+    pub use wgpui::{AssetSource, Result, SharedString};
 }
 
 /// Embed only the selected icons in a native or WebAssembly application.
 ///
 /// ```ignore
-/// use gpui_kit::assets::{icon_assets, IconName};
+/// use wgpui_kit::assets::{icon_assets, IconName};
 /// icon_assets!(AppAssets, [Search, Check]);
-/// // gpui_kit::application().with_assets(AppAssets)
+/// // wgpui_kit::application().with_assets(AppAssets)
 /// ```
 ///
 /// Unlisted paths return `Ok(None)`. The selected SVG bytes are borrowed from

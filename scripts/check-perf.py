@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Exercise the benchmark runner's timing, metadata, and failure reporting."""
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
 import uuid
 
 root = Path(__file__).resolve().parents[1]
+toolchain = os.environ.get("RUSTUP_TOOLCHAIN", "1.95.0")
 fixture = '''#![allow(non_snake_case)]
 #[test] fn passing__ZED_PERF_FN() {
     std::thread::sleep(std::time::Duration::from_millis(5));
@@ -23,12 +25,12 @@ with tempfile.TemporaryDirectory(prefix='wgpui-perf-') as temporary:
     directory = Path(temporary)
     source = directory / 'fixture.rs'
     binary = directory / 'fixture-tests'
-    if __import__('os').name == 'nt':
+    if os.name == 'nt':
         binary = binary.with_suffix('.exe')
     source.write_text(fixture)
-    subprocess.run(['rustc', '+1.94.0', '--test', str(source), '-o', str(binary)], check=True)
+    subprocess.run(['rustc', '+' + toolchain, '--test', str(source), '-o', str(binary)], check=True)
     try:
-        subprocess.run(['cargo', '+1.94.0', 'run', '--offline', '-p', 'wgpui-perf', '--',
+        subprocess.run(['cargo', '+' + toolchain, 'run', '--offline', '-p', 'wgpui-perf', '--',
                         str(binary), '--json=' + identifier], cwd=root, check=True)
         paths = list((root / '.perf-runs').glob(identifier + '.*.json'))
         assert len(paths) == 1, paths

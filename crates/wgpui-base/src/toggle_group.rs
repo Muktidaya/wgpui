@@ -1,9 +1,9 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Axis, Div, ElementId, InteractiveElement, Interactivity, IntoElement,
     ParentElement, RenderOnce, Role, Stateful, StatefulInteractiveElement, StyleRefinement, Styled,
     Window, accesskit, div,
 };
-use smallvec::SmallVec;
 
 use crate::StyledExt as _;
 

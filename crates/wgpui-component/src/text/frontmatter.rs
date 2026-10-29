@@ -1,5 +1,5 @@
-use gpui::{App, IntoElement, SharedString, Window};
 use markdown::mdast;
+use wgpui::{App, IntoElement, SharedString, Window};
 
 use crate::description_list::{DescriptionItem, DescriptionList};
 
@@ -75,7 +75,7 @@ impl MarkdownPlugin for FrontmatterPlugin {
         let frontmatter = node.data::<Frontmatter>().expect("frontmatter node data");
 
         DescriptionList::horizontal()
-            .label_width(gpui::rems(12.))
+            .label_width(wgpui::rems(12.))
             .columns(1)
             .children(
                 frontmatter.entries.iter().map(|entry| {

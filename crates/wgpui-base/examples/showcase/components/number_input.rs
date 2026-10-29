@@ -1,8 +1,8 @@
-use gpui::{
+use wgpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement as _, Styled as _, div, px,
     relative,
 };
-use gpui_base::{Button, NumberInput};
+use wgpui_base::{Button, NumberInput};
 
 use super::super::BaseShowcase;
 
@@ -18,9 +18,9 @@ impl BaseShowcase {
                 .flex()
                 .items_center()
                 .justify_center()
-                .bg(gpui::black())
-                .text_color(gpui::white())
-                .hover(|this| this.bg(gpui::black().opacity(0.8)))
+                .bg(wgpui::black())
+                .text_color(wgpui::white())
+                .hover(|this| this.bg(wgpui::black().opacity(0.8)))
                 .child(icon)
         }
 
@@ -28,7 +28,7 @@ impl BaseShowcase {
             div()
                 .w(px(8.))
                 .h(px(1.))
-                .bg(gpui::white())
+                .bg(wgpui::white())
                 .into_any_element()
         }
 
@@ -43,7 +43,7 @@ impl BaseShowcase {
                         .left_0()
                         .w_full()
                         .h(px(1.))
-                        .bg(gpui::white()),
+                        .bg(wgpui::white()),
                 )
                 .child(
                     div()
@@ -52,7 +52,7 @@ impl BaseShowcase {
                         .top_0()
                         .h_full()
                         .w(px(1.))
-                        .bg(gpui::white()),
+                        .bg(wgpui::white()),
                 )
                 .into_any_element()
         }

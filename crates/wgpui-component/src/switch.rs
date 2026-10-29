@@ -1,13 +1,14 @@
 use crate::{
-    ActiveTheme, Disableable, Side, Sizable, Size, StyledExt, text::Text, tooltip::ComponentTooltip,
+    ActiveTheme, Disableable, FocusableExt, Side, Sizable, Size, StyleSized as _, StyledExt,
+    ThemeStyled as _, text::Text, tooltip::ComponentTooltip,
 };
-use gpui::{
+use std::{rc::Rc, time::Duration};
+use wgpui::{
     App, Background, ElementId, Hsla, InteractiveElement, IntoElement, ParentElement as _,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
     px,
 };
-use gpui_base::{Switch as BaseSwitch, SwitchThumb, SwitchTrack, spring};
-use std::rc::Rc;
+use wgpui_base::{Switch as BaseSwitch, SwitchThumb, SwitchTrack, spring};
 
 /// A Switch element that can be toggled on or off.
 #[derive(IntoElement)]
@@ -24,6 +25,9 @@ pub struct Switch {
     size: Size,
     color: Option<Hsla>,
     tooltip: ComponentTooltip,
+    tab_stop: bool,
+    tab_index: isize,
+    focus_ring_enabled: bool,
 }
 
 impl Switch {
@@ -42,6 +46,9 @@ impl Switch {
             size: Size::Medium,
             color: None,
             tooltip: ComponentTooltip::default(),
+            tab_stop: true,
+            tab_index: 0,
+            focus_ring_enabled: true,
         }
     }
 
@@ -62,7 +69,8 @@ impl Switch {
     ///
     /// A switch's name comes from its [`label`](Self::label) by default.
     /// Setting this replaces the announced name without changing what is
-    /// displayed.
+    /// displayed. A switch without a label has no accessible name, so set this
+    /// whenever the switch is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
         self
@@ -102,10 +110,31 @@ impl Switch {
         self.tooltip.text = Some((tooltip.into(), None));
         self
     }
+
+    /// Overrides how long the pointer must rest before the tooltip shows.
+    ///
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
+    pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
+        self.tooltip.show_delay = Some(delay);
+        self
+    }
+
+    /// Set whether the switch participates in keyboard focus traversal,
+    /// default is true.
+    pub fn tab_stop(mut self, tab_stop: bool) -> Self {
+        self.tab_stop = tab_stop;
+        self
+    }
+
+    /// Set the focus traversal index within a GPUI tab group, default is 0.
+    pub fn tab_index(mut self, tab_index: isize) -> Self {
+        self.tab_index = tab_index;
+        self
+    }
 }
 
 impl Styled for Switch {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -124,6 +153,17 @@ impl Disableable for Switch {
     }
 }
 
+impl FocusableExt for Switch {
+    fn focus_ring(mut self, enabled: bool) -> Self {
+        self.focus_ring_enabled = enabled;
+        self
+    }
+
+    fn is_focus_ring_enabled(&self) -> bool {
+        self.focus_ring_enabled
+    }
+}
+
 impl RenderOnce for Switch {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.checked;
@@ -132,6 +172,11 @@ impl RenderOnce for Switch {
             .accessibility_label
             .clone()
             .or_else(|| self.label.as_ref().map(|label| label.get_text(cx)));
+        let focus_handle = window
+            .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
+            .read(cx)
+            .clone();
+        let is_focused = focus_handle.is_focused(window);
 
         let checked_bg = self
             .color
@@ -148,10 +193,12 @@ impl RenderOnce for Switch {
 
         let (bg_width, bg_height) = match self.size {
             Size::XSmall | Size::Small => (px(28.), px(16.)),
+            Size::Large => (px(44.), px(24.)),
             _ => (px(36.), px(20.)),
         };
         let bar_width = match self.size {
             Size::XSmall | Size::Small => px(12.),
+            Size::Large => px(20.),
             _ => px(16.),
         };
         let inset = px(2.);
@@ -193,6 +240,9 @@ impl RenderOnce for Switch {
                 .when_some(on_click, |this, on_click| {
                     this.on_change(move |next, _, window, cx| on_click(&next, window, cx))
                 })
+                .tab_stop(self.tab_stop)
+                .tab_index(self.tab_index)
+                .track_focus(&focus_handle)
                 .h_flex()
                 .gap_2()
                 .items_start()
@@ -207,16 +257,29 @@ impl RenderOnce for Switch {
                         })
                         .w(bg_width)
                         .h(bg_height)
+                        .flex_shrink_0()
                         .rounded(radius)
                         .flex()
                         .items_center()
-                        .border(inset)
+                        // The thumb inset is a 1px border plus 1px padding,
+                        // not a 2px border: the focus ring tints the border
+                        // solid, and that 1px line is what keeps the ring
+                        // visible on an unchecked track. Its 50% halo alone
+                        // lands within a few values of `switch.background`
+                        // in both default modes.
+                        .border_1()
                         .border_color(cx.theme().transparent)
+                        .p(inset - px(1.))
                         .when(!checked, |this| this.bg(unchecked_bg))
                         .styles(|styles| {
                             styles
                                 .checked(|style| style.bg(checked_bg))
                                 .disabled(|style| style.bg(disabled_bg))
+                        })
+                        // The ring hugs the track, not the row, so the label
+                        // stays outside it.
+                        .when(is_focused && self.focus_ring_enabled, |this| {
+                            this.focus_ring_style(window, cx)
                         })
                         .map(|this| self.tooltip.apply(this))
                         .child(
@@ -234,11 +297,12 @@ impl RenderOnce for Switch {
                             .when(cfg!(test), |this| {
                                 this.debug_selector(|| "switch-label".into())
                             })
+                            .min_w_0()
                             .line_height(bg_height)
                             .child(label)
                             .map(|this| match self.size {
-                                Size::XSmall | Size::Small => this.text_sm(),
-                                _ => this.text_base(),
+                                Size::Size(_) => this.input_text_size(Size::Medium),
+                                size => this.input_text_size(size),
                             }),
                     )
                 }),
@@ -250,7 +314,7 @@ impl RenderOnce for Switch {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         StatefulInteractiveElement as _, TestAppContext, VisualTestContext, point,
     };
@@ -270,7 +334,7 @@ mod tests {
             .label("Wi-Fi")
             .accessibility_label("Toggle Wi-Fi");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Toggle Wi-Fi"),
             "an explicit name must win over the visible label"
         );
@@ -328,7 +392,8 @@ mod tests {
     }
 
     fn activate_key(cx: &mut VisualTestContext, key: &str) {
-        let keystroke = Keystroke::parse(key).unwrap();
+        let keystroke =
+            cx.update(|_, cx| Keystroke::parse_with_os(key, cx.platform_info().os).unwrap());
         cx.simulate_event(KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,
@@ -337,7 +402,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_pointer_activation_fires_once_and_focuses(cx: &mut TestAppContext) {
         let (cx, toggles, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -346,7 +411,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_switch_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, toggles, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -358,7 +423,7 @@ mod tests {
         assert_eq!(toggles.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_disabled_switch_is_inert_and_blocks_parent(cx: &mut TestAppContext) {
         let (cx, toggles, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -368,7 +433,141 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
+    struct FocusRingHarness {
+        disabled: bool,
+        focus_ring: bool,
+    }
+
+    impl Render for FocusRingHarness {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div().id("switch-parent").tab_group().size(px(100.)).child(
+                Switch::new("switch")
+                    .label("Airplane mode")
+                    .disabled(self.disabled)
+                    .focus_ring(self.focus_ring),
+            )
+        }
+    }
+
+    fn focus_ring_harness(
+        cx: &mut TestAppContext,
+        disabled: bool,
+        focus_ring: bool,
+    ) -> &mut VisualTestContext {
+        cx.update(crate::init);
+        let (_, cx) = cx.add_window_view(move |_, _| FocusRingHarness {
+            disabled,
+            focus_ring,
+        });
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx
+    }
+
+    #[wgpui::test]
+    fn focus_ring_hugs_the_track_when_the_switch_is_focused(cx: &mut TestAppContext) {
+        let cx = focus_ring_harness(cx, false, true);
+        assert!(
+            cx.debug_bounds("focus-ring").is_none(),
+            "an unfocused switch draws no ring"
+        );
+
+        cx.update(|window, cx| window.focus_next(cx));
+        cx.update(|window, cx| {
+            assert!(window.focused(cx).is_some());
+            window.draw(cx).clear();
+        });
+
+        let ring = cx
+            .debug_bounds("focus-ring")
+            .expect("a focused switch must draw its focus ring");
+        let bar = cx.debug_bounds("switch-bar").unwrap();
+        let label = cx.debug_bounds("switch-label").unwrap();
+        assert!(ring.contains(&bar.origin), "the ring surrounds the track");
+        assert!(
+            ring.right() < label.origin.x,
+            "the ring hugs the track and leaves the label outside"
+        );
+    }
+
+    #[wgpui::test]
+    fn focus_ring_can_be_turned_off(cx: &mut TestAppContext) {
+        let cx = focus_ring_harness(cx, false, false);
+        cx.update(|window, cx| window.focus_next(cx));
+        cx.update(|window, cx| {
+            assert!(window.focused(cx).is_some());
+            window.draw(cx).clear();
+        });
+
+        assert!(
+            cx.debug_bounds("focus-ring").is_none(),
+            "`focus_ring(false)` must not draw a ring"
+        );
+    }
+
+    #[wgpui::test]
+    fn disabled_switch_takes_no_focus_and_draws_no_ring(cx: &mut TestAppContext) {
+        let cx = focus_ring_harness(cx, true, true);
+        cx.update(|window, cx| window.focus_next(cx));
+        cx.update(|window, cx| {
+            assert!(window.focused(cx).is_none());
+            window.draw(cx).clear();
+        });
+
+        assert!(cx.debug_bounds("focus-ring").is_none());
+    }
+
+    #[wgpui::test]
+    fn long_labels_preserve_track_size_in_narrow_containers(cx: &mut TestAppContext) {
+        struct NarrowSwitch {
+            size: Size,
+            checked: bool,
+            disabled: bool,
+        }
+
+        impl Render for NarrowSwitch {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                div()
+                    .w(px(160.))
+                    .debug_selector(|| "narrow-switch".into())
+                    .child(
+                        Switch::new("switch")
+                            .with_size(self.size)
+                            .checked(self.checked)
+                            .disabled(self.disabled)
+                            .label("Automatically transcribe downloaded episodes"),
+                    )
+            }
+        }
+
+        cx.update(crate::init);
+        for (size, width, height) in [
+            (Size::Small, 28., 16.),
+            (Size::Medium, 36., 20.),
+            (Size::Large, 44., 24.),
+        ] {
+            for checked in [false, true] {
+                for disabled in [false, true] {
+                    let (_, cx) = cx.add_window_view(move |_, _| NarrowSwitch {
+                        size,
+                        checked,
+                        disabled,
+                    });
+                    cx.update(|window, cx| window.draw(cx).clear());
+
+                    let container = cx.debug_bounds("narrow-switch").unwrap();
+                    let track = cx.debug_bounds("switch-bar").unwrap();
+                    let label = cx.debug_bounds("switch-label").unwrap();
+                    assert_eq!(track.size.width, px(width), "the track must not shrink");
+                    assert_eq!(track.size.height, px(height));
+                    assert!(label.origin.x >= track.right());
+                    assert!(label.right() <= container.right());
+                    assert!(label.size.height > track.size.height, "the label must wrap");
+                }
+            }
+        }
+    }
+
+    #[wgpui::test]
     fn label_prepaints_with_the_base_switch_content(cx: &mut TestAppContext) {
         struct LabelHarness;
 

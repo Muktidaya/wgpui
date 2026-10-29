@@ -1,11 +1,13 @@
 use crate::{
-    AnyWindowHandle, Bounds, Capslock, Modifiers, Pixels, PlatformInputHandler, PlatformWindow,
-    Point, Size, WgpuSurfaceHandle, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
+    AnyWindowHandle, Bounds, Capslock, FrameCapture, FrameCaptureError, Modifiers, Pixels,
+    PlatformInputHandler, PlatformWindow, Point, Size, WgpuSurfaceHandle, WindowAppearance,
+    WindowBackgroundAppearance, WindowBounds,
     platform::{
         atlas::WgpuAtlas, dispatcher::CrossEvent, render_context::WgpuContext,
         renderer::WgpuRenderer,
     },
 };
+use futures::channel::oneshot;
 use std::{
     cell::{Cell, OnceCell, RefCell},
     rc::Rc,
@@ -24,7 +26,25 @@ pub(crate) struct CrossWindowInner {
     pub(crate) event_loop_proxy: EventLoopProxy<CrossEvent>,
     pub(crate) handle: AnyWindowHandle,
     pub(crate) hovered: Cell<bool>,
+    pub(crate) accessibility_adapter: OnceCell<RefCell<accesskit_winit::Adapter>>,
     pub(crate) state: CrossWindowState,
+    surfaces_closed: Cell<bool>,
+    surface_owner: OnceCell<crate::platform::surface_registry::SurfaceOwner>,
+}
+
+impl CrossWindowInner {
+    fn close_surfaces(&self) {
+        if !self.surfaces_closed.replace(true) {
+            if let Some(owner) = self.surface_owner.get() {
+                self.wgpu_context.surface_registry.close_owner(*owner);
+            }
+        }
+    }
+}
+impl Drop for CrossWindowInner {
+    fn drop(&mut self) {
+        self.close_surfaces();
+    }
 }
 
 #[derive(Default)]
@@ -32,8 +52,13 @@ pub(crate) struct CrossWindowState {
     pub(crate) callbacks: Callbacks,
     pub(crate) input_handler: RefCell<Option<PlatformInputHandler>>,
     pub(crate) mouse_position: Cell<Point<Pixels>>,
+    pub(crate) touch_ids: RefCell<collections::FxHashMap<u64, crate::TouchId>>,
+    pub(crate) next_touch_id: Cell<u64>,
     pub(crate) modifiers: Cell<Modifiers>,
     pub(crate) capslock: Cell<Capslock>,
+    pub(crate) occluded: Cell<bool>,
+    pub(crate) accessibility_active: Cell<bool>,
+    pub(crate) text_input_configuration: RefCell<crate::TextInputConfiguration>,
 }
 
 #[derive(Default)]
@@ -45,6 +70,9 @@ pub(crate) struct Callbacks {
     pub(crate) on_hover_status_change: Cell<Option<Box<dyn FnMut(bool)>>>,
     pub(crate) on_resize: Cell<Option<Box<dyn FnMut(crate::Size<crate::Pixels>, f32)>>>,
     pub(crate) on_moved: Cell<Option<Box<dyn FnMut()>>>,
+    pub(crate) on_visibility_change: Cell<Option<Box<dyn FnMut(bool)>>>,
+    pub(crate) on_visual_viewport_changed: Cell<Option<Box<dyn FnMut()>>>,
+    pub(crate) on_accessibility_event: Cell<Option<Box<dyn FnMut(accesskit_winit::WindowEvent)>>>,
     pub(crate) on_should_close: Cell<Option<Box<dyn FnMut() -> bool>>>,
     pub(crate) on_hit_test_window_control:
         Cell<Option<Box<dyn FnMut() -> Option<crate::WindowControlArea>>>>,
@@ -81,8 +109,27 @@ impl CrossWindow {
             event_loop_proxy,
             handle,
             hovered: Cell::new(false),
+            accessibility_adapter: OnceCell::new(),
             state: CrossWindowState::default(),
+            surfaces_closed: Cell::new(false),
+            surface_owner: OnceCell::new(),
         }))
+    }
+
+    pub(crate) fn close_surfaces(&self) {
+        self.0.close_surfaces();
+    }
+
+    pub(crate) fn configure_retry_deadline(&self) -> Option<std::time::Instant> {
+        let size = self.0.winit_window.get()?.inner_size();
+        // A minimized window cannot configure or draw; its resize event resumes recovery.
+        if size.width == 0 || size.height == 0 {
+            return None;
+        }
+        self.0
+            .renderer
+            .get()
+            .and_then(|renderer| renderer.borrow().configure_retry_deadline())
     }
 
     pub(crate) fn handle(&self) -> crate::AnyWindowHandle {
@@ -101,13 +148,49 @@ impl CrossWindow {
         }
     }
 
-    pub(crate) fn initialize(&self, winit_window: winit::window::Window) {
+    /// Runs `f` with the window's input handler taken out of its cell, then puts it back.
+    ///
+    /// The handler must never stay borrowed across `f`: applying text runs view code, and
+    /// that code can flush queued effects and re-enter the window — a queued
+    /// `Window::draw` takes the input handler back out — so a `borrow_mut()` still live
+    /// at the re-entry point panics with `RefCell already borrowed` and kills the process.
+    /// This mirrors the take/call/put-back discipline `Window` already uses around
+    /// `dispatch_input`, `accepts_text_input` and `selected_bounds`.
+    pub(crate) fn with_input_handler(&self, f: impl FnOnce(&mut PlatformInputHandler)) {
+        with_taken_handler(&self.0.state.input_handler, f);
+    }
+
+    pub(crate) fn initialize(
+        &self,
+        winit_window: winit::window::Window,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+    ) {
         let initial_size = winit_window.inner_size();
+        let owner = self
+            .0
+            .wgpu_context
+            .surface_registry
+            .open_owner(winit_window.id());
+        assert!(
+            self.0.surface_owner.set(owner).is_ok(),
+            "surface owner already initialized"
+        );
 
         self.0
             .winit_window
             .set(Arc::new(winit_window))
             .expect("winit_window already initialized");
+
+        self.0
+            .accessibility_adapter
+            .set(RefCell::new(
+                accesskit_winit::Adapter::with_event_loop_proxy(
+                    event_loop,
+                    self.window(),
+                    self.0.event_loop_proxy.clone(),
+                ),
+            ))
+            .unwrap_or_else(|_| panic!("accessibility adapter already initialized"));
 
         if initial_size.width > 0 && initial_size.height > 0 {
             let renderer = WgpuRenderer::new(
@@ -134,6 +217,32 @@ impl CrossWindow {
 }
 
 impl PlatformWindow for CrossWindow {
+    fn on_visual_viewport_changed(&self, callback: Box<dyn FnMut()>) {
+        self.0
+            .state
+            .callbacks
+            .on_visual_viewport_changed
+            .set(Some(callback));
+    }
+
+    fn is_a11y_active(&self) -> bool {
+        self.0.state.accessibility_active.get()
+    }
+
+    fn update_a11y(&self, update: accesskit::TreeUpdate) {
+        if let Some(adapter) = self.0.accessibility_adapter.get() {
+            adapter.borrow_mut().update_if_active(|| update);
+        }
+    }
+
+    fn on_accessibility_event(&self, callback: Box<dyn FnMut(accesskit_winit::WindowEvent)>) {
+        self.0
+            .state
+            .callbacks
+            .on_accessibility_event
+            .set(Some(callback));
+    }
+
     fn bounds(&self) -> Bounds<Pixels> {
         let scale_factor = self.window().scale_factor() as f32;
         let physical_size = self.window().inner_size();
@@ -153,6 +262,33 @@ impl PlatformWindow for CrossWindow {
                 height: Pixels(physical_size.height as f32 / scale_factor),
             },
         }
+    }
+
+    fn is_resizable(&self) -> bool {
+        self.window().is_resizable()
+    }
+
+    fn is_visible(&self) -> bool {
+        self.window().is_visible().unwrap_or(true) && !self.0.state.occluded.get()
+    }
+
+    fn set_text_input_configuration(&self, configuration: &crate::TextInputConfiguration) {
+        // Winit exposes IME purpose, but no per-field capitalization or enter-key hint.
+        // Preserve those preferences for backends that can apply richer native sessions.
+        self.0
+            .state
+            .text_input_configuration
+            .replace(configuration.clone());
+        self.window()
+            .set_ime_purpose(winit::window::ImePurpose::Normal);
+    }
+
+    fn show_soft_keyboard(&self) {
+        self.window().set_ime_allowed(true);
+    }
+
+    fn hide_soft_keyboard(&self) {
+        self.window().set_ime_allowed(false);
     }
 
     fn is_maximized(&self) -> bool {
@@ -262,7 +398,7 @@ impl PlatformWindow for CrossWindow {
     }
 
     fn set_background_appearance(&self, _background_appearance: WindowBackgroundAppearance) {
-        // Window chrome transparency is not implemented in 0.3.4.
+        // Window chrome transparency is not implemented by the WGPUI window backend.
     }
 
     fn minimize(&self) {
@@ -313,6 +449,14 @@ impl PlatformWindow for CrossWindow {
         self.0.state.callbacks.on_resize.set(Some(callback));
     }
 
+    fn on_visibility_change(&self, callback: Box<dyn FnMut(bool)>) {
+        self.0
+            .state
+            .callbacks
+            .on_visibility_change
+            .set(Some(callback));
+    }
+
     fn on_moved(&self, callback: Box<dyn FnMut()>) {
         self.0.state.callbacks.on_moved.set(Some(callback));
     }
@@ -350,35 +494,42 @@ impl PlatformWindow for CrossWindow {
         }
     }
 
+    fn close_surface_presentations(&self) {
+        self.close_surfaces();
+    }
+
     fn create_wgpu_surface(
         &self,
         width: u32,
         height: u32,
         format: wgpu::TextureFormat,
     ) -> Option<WgpuSurfaceHandle> {
+        if self.0.surfaces_closed.get() {
+            return None;
+        }
         let ctx = &self.0.wgpu_context;
         let registry = ctx.surface_registry.clone();
-        let surface_id = registry.create(&ctx.device, width, height, format);
+        let window_id = self.0.winit_window.get()?.id();
+        let owner = *self.0.surface_owner.get()?;
+        let surface_id = registry.create(&ctx.device, width, height, format, Some(owner))?;
 
         // Build the present trigger: sends a CrossEvent to wake the event loop
         // and request a redraw for this window.
         let proxy = self.0.event_loop_proxy.clone();
-        let window_id = self.0.winit_window.get().map(|w| w.id());
+        let delivery_registry = registry.clone();
         let present_trigger: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
-            if let Some(wid) = window_id {
-                let _ = proxy.send_event(CrossEvent::SurfacePresent(wid));
+            if let Err(error) = proxy.send_event(CrossEvent::SurfacePresent(window_id)) {
+                log::warn!("Surface presentation event could not be delivered: {error}");
+                delivery_registry.shutdown();
             }
         });
 
-        // capture winit window Arc so handle can request redraw directly
-        let winit_arc = self.0.winit_window.get().cloned();
         Some(WgpuSurfaceHandle::new(
             ctx.device.clone(),
             ctx.queue.clone(),
             surface_id,
             registry,
             present_trigger,
-            winit_arc,
             width,
             height,
             format,
@@ -387,6 +538,17 @@ impl PlatformWindow for CrossWindow {
 
     fn sprite_atlas(&self) -> std::sync::Arc<dyn crate::PlatformAtlas> {
         self.0.sprite_atlas.clone()
+    }
+
+    fn request_frame_capture(
+        &self,
+    ) -> Option<oneshot::Receiver<Result<FrameCapture, FrameCaptureError>>> {
+        let renderer = self.0.renderer.get()?;
+        let receiver = renderer.borrow().request_frame_capture();
+        // One redraw makes the frame this capture reads back. No loop is started, and this is
+        // the only redraw the request causes.
+        self.window().request_redraw();
+        Some(receiver)
     }
 
     fn gpu_specs(&self) -> Option<crate::GpuSpecs> {
@@ -418,5 +580,42 @@ impl raw_window_handle::HasWindowHandle for CrossWindow {
         &self,
     ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
         self.window().window_handle()
+    }
+}
+
+// Reentrant view updates can install a newer handler while the old one is in use.
+fn with_taken_handler<T>(slot: &RefCell<Option<T>>, callback: impl FnOnce(&mut T)) {
+    let Some(mut handler) = slot.borrow_mut().take() else {
+        return;
+    };
+    callback(&mut handler);
+    let mut current = slot.borrow_mut();
+    if current.is_none() {
+        *current = Some(handler);
+    }
+}
+
+#[cfg(test)]
+mod reentrant_handler_tests {
+    use super::*;
+
+    #[test]
+    fn text_application_releases_borrow_and_preserves_nested_replacement() {
+        let slot = RefCell::new(Some(String::from("old")));
+        with_taken_handler(&slot, |handler| {
+            handler.push_str(" text");
+            assert!(slot.borrow().is_none());
+            *slot.borrow_mut() = Some(String::from("new focused handler"));
+        });
+        assert_eq!(slot.borrow().as_deref(), Some("new focused handler"));
+    }
+
+    #[test]
+    fn text_application_restores_updated_handler_without_replacement() {
+        let slot = RefCell::new(Some(String::new()));
+        with_taken_handler(&slot, |handler| handler.push_str("é👩‍💻"));
+        assert_eq!(slot.borrow().as_deref(), Some("é👩‍💻"));
+        *slot.borrow_mut() = None;
+        with_taken_handler(&slot, |_| panic!("absent handler must not run"));
     }
 }

@@ -8,11 +8,10 @@
 //! Items carry a GPUI [`Action`], dispatched via [`Window::dispatch_action`]
 //! when selected — the same mechanism the application menu bar and key bindings
 //! use. A [`NativeMenu`] can therefore be built directly from GPUI
-//! [`gpui::MenuItem`]s (see [`NativeMenu::from_menu_items`] /
-//! [`From<gpui::Menu>`]).
+//! [`wgpui::MenuItem`]s (see [`From<wgpui::Menu>`]).
 //!
 //! ```ignore
-//! use gpui_kit::component::native_menu::NativeMenu;
+//! use wgpui_kit::component::native_menu::NativeMenu;
 //!
 //! NativeMenu::new()
 //!     .menu("Copy", Box::new(Copy))
@@ -29,12 +28,12 @@ use crate::Icon;
 use crate::icon::IconSource;
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-use gpui::AssetSource;
-use gpui::{Action, App, Pixels, Point, SharedString, Window};
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use gpui::{Image, ImageFormat};
-#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::{path::Path, sync::Arc};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use wgpui::AssetSource;
+use wgpui::{Action, App, Pixels, Point, SharedString, Window};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use wgpui::{Image, ImageFormat};
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -107,11 +106,11 @@ impl NativeMenu {
     /// Append an item showing `icon` next to its label.
     ///
     /// Native platform menus load absolute paths ([`Path::is_absolute`]) from the filesystem,
-    /// and every other path through the application [`gpui::AssetSource`].
+    /// and every other path through the application [`wgpui::AssetSource`].
     /// Icons created with [`Icon::data`] use their SVG bytes directly, without an asset lookup.
     /// [`crate::IconName`] resolves as an asset and works across all backends.
     /// - **macOS**: loaded into an `NSImage` as a template image, so it tints with the item
-    /// text and assigned to the item ([`NSMenuItem::image`]).
+    /// text and assigned to the item (`NSMenuItem::image`).
     /// - **Windows**: loaded into an `HBITMAP` and set as the item's
     /// content bitmap (`MENUITEMINFOW::hbmpItem`), shown beside the label. SVG files are
     /// rasterized, with `resvg`; other formats (PNG, JPEG, BMP, ...) are decoded by GDI+.
@@ -323,13 +322,13 @@ fn is_svg_bytes(bytes: &[u8]) -> bool {
 /// `Action`s, separators, submenus, `checked`, and `disabled` are mapped over;
 /// system menus (e.g. macOS Services) have no native popup equivalent and are
 /// skipped.
-impl From<gpui::Menu> for NativeMenu {
-    fn from(menu: gpui::Menu) -> Self {
+impl From<wgpui::Menu> for NativeMenu {
+    fn from(menu: wgpui::Menu) -> Self {
         let mut native = Self::new();
         for item in menu.items {
             match item {
-                gpui::MenuItem::Separator => native.items.push(NativeMenuItem::Separator),
-                gpui::MenuItem::Action {
+                wgpui::MenuItem::Separator => native.items.push(NativeMenuItem::Separator),
+                wgpui::MenuItem::Action {
                     name,
                     action,
                     checked,
@@ -342,12 +341,12 @@ impl From<gpui::Menu> for NativeMenu {
                     icon: None,
                     action: Some(action),
                 }),
-                gpui::MenuItem::Submenu(submenu) => native.items.push(NativeMenuItem::Submenu {
+                wgpui::MenuItem::Submenu(submenu) => native.items.push(NativeMenuItem::Submenu {
                     label: submenu.name.clone(),
                     disabled: submenu.disabled,
                     items: Self::from(submenu).items,
                 }),
-                gpui::MenuItem::SystemMenu(_) => {}
+                wgpui::MenuItem::SystemMenu(_) => {}
             }
         }
         native
@@ -426,11 +425,11 @@ mod tests {
         struct TestAssetSource(Option<&'static [u8]>);
 
         impl AssetSource for TestAssetSource {
-            fn load(&self, _path: &str) -> gpui::Result<Option<Cow<'static, [u8]>>> {
+            fn load(&self, _path: &str) -> wgpui::Result<Option<Cow<'static, [u8]>>> {
                 Ok(self.0.map(Cow::Borrowed))
             }
 
-            fn list(&self, _path: &str) -> gpui::Result<Vec<SharedString>> {
+            fn list(&self, _path: &str) -> wgpui::Result<Vec<SharedString>> {
                 Ok(Vec::new())
             }
         }
@@ -464,7 +463,7 @@ mod tests {
         #[test]
         fn test_native_menu_icon_asset_resolves_to_bytes() {
             let icon = Icon::new(IconName::Github);
-            let image = resolve_icon_image(&icon, &gpui_kit_assets::Assets)
+            let image = resolve_icon_image(&icon, &wgpui_kit_assets::Assets)
                 .expect("icon asset should resolve");
 
             assert_eq!(image.format, ImageFormat::Svg);

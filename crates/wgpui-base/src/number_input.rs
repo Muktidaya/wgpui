@@ -1,11 +1,11 @@
 use crate::input::InputState;
 use std::rc::Rc;
 
-use gpui::Focusable;
-use gpui::{
+use wgpui::Focusable;
+use wgpui::{
     AnyElement, App, Entity, EventEmitter, InteractiveElement as _, IntoElement, KeyBinding,
-    ParentElement, RenderOnce, Role, StatefulInteractiveElement as _, StyleRefinement, Styled,
-    Window, actions, div, prelude::FluentBuilder as _,
+    ParentElement, RenderOnce, Role, SharedString, StatefulInteractiveElement as _,
+    StyleRefinement, Styled, Window, actions, div, prelude::FluentBuilder as _,
 };
 
 use crate::{Button, InputBase, StyledExt as _};
@@ -31,15 +31,15 @@ pub enum StepAction {
 #[derive(Clone)]
 pub enum NumberStep {
     Fixed(f64),
-    ByValue(Rc<dyn Fn(f64, StepAction, &mut gpui::App) -> f64>),
+    ByValue(Rc<dyn Fn(f64, StepAction, &mut wgpui::App) -> f64>),
 }
 
 impl NumberStep {
-    pub fn by_value(f: impl Fn(f64, StepAction, &mut gpui::App) -> f64 + 'static) -> Self {
+    pub fn by_value(f: impl Fn(f64, StepAction, &mut wgpui::App) -> f64 + 'static) -> Self {
         Self::ByValue(Rc::new(f))
     }
 
-    pub(crate) fn value(&self, current: f64, action: StepAction, cx: &mut gpui::App) -> f64 {
+    pub(crate) fn value(&self, current: f64, action: StepAction, cx: &mut wgpui::App) -> f64 {
         match self {
             Self::Fixed(step) => *step,
             Self::ByValue(f) => f(current, action, cx),
@@ -65,7 +65,7 @@ impl InputState {
         &mut self,
         action: StepAction,
         window: &mut Window,
-        cx: &mut gpui::Context<Self>,
+        cx: &mut wgpui::Context<Self>,
     ) {
         if self.disabled {
             return;
@@ -105,6 +105,7 @@ pub struct NumberInput {
     increment_button: Option<ButtonDecorator>,
     input: Option<AnyElement>,
     controls_right: bool,
+    accessibility_label: Option<SharedString>,
 }
 
 /// The built-in text region of a [`NumberInput`].
@@ -146,7 +147,7 @@ impl ParentElement for NumberInputText {
 
 impl RenderOnce for NumberInputText {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
-        gpui::div()
+        wgpui::div()
             .min_w_0()
             .flex_1()
             .children(self.children)
@@ -166,6 +167,7 @@ impl NumberInput {
             increment_button: None,
             input: None,
             controls_right: false,
+            accessibility_label: None,
         }
     }
 
@@ -203,6 +205,15 @@ impl NumberInput {
     /// Stack both step buttons on the right side of the text region.
     pub fn controls_right(mut self) -> Self {
         self.controls_right = true;
+        self
+    }
+
+    /// Sets the name exposed to accessibility clients.
+    ///
+    /// A number input has no visible text of its own to be named by, so set
+    /// this unless the input is named some other way.
+    pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.accessibility_label = Some(label.into());
         self
     }
 }
@@ -302,6 +313,9 @@ impl RenderOnce for NumberInput {
             .items_center()
             .disabled(disabled)
             .role(Role::SpinButton)
+            .when_some(self.accessibility_label, |this, label| {
+                this.aria_label(label)
+            })
             .when_some(value, |this, value| this.aria_numeric_value(value))
             .key_context(CONTEXT)
             .on_action({
@@ -376,7 +390,7 @@ mod tests {
     use super::*;
 
     use crate::theme::Theme;
-    use gpui::{
+    use wgpui::{
         AppContext as _, Context, Entity, Modifiers, MouseButton, Render, TestAppContext,
         VisualTestContext, point, px,
     };
@@ -399,7 +413,7 @@ mod tests {
     /// Pressing a step button must not move focus off the editor, not even for
     /// the press itself: the frame draws a focus ring, so a focus round-trip
     /// makes it flicker on every click.
-    #[gpui::test]
+    #[wgpui::test]
     fn pressing_a_step_button_never_takes_focus_off_the_editor(cx: &mut TestAppContext) {
         cx.update(crate::init);
 
@@ -433,7 +447,7 @@ mod tests {
             MouseButton::Left,
             Modifiers::default(),
         );
-        cx.simulate_event(gpui::MouseDownEvent {
+        cx.simulate_event(wgpui::MouseDownEvent {
             button: MouseButton::Left,
             position: point(px(10.), px(10.)),
             modifiers: Modifiers::default(),
@@ -448,7 +462,7 @@ mod tests {
             );
         });
 
-        cx.simulate_event(gpui::MouseUpEvent {
+        cx.simulate_event(wgpui::MouseUpEvent {
             button: MouseButton::Left,
             position: point(px(10.), px(10.)),
             modifiers: Modifiers::default(),

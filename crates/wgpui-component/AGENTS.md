@@ -8,8 +8,8 @@ Before changing UI, interaction, interface language, layout, styling,
 components, or application architecture, read and follow the repository's
 canonical guides:
 
-- [Design Guides](../../upstream-kit/website/docs/design-guides.md)
-- [Coding Guides](../../upstream-kit/website/docs/coding-guides.md)
+- [Design Guides](../../docs/kit/design-guides.md)
+- [Coding Guides](../../docs/kit/coding-guides.md)
 
 These guides are requirements, not optional inspiration. Do not copy generic
 web conventions, infer a design system from one existing screen, or add a
@@ -27,10 +27,10 @@ natural Chinese rather than word-for-word translation.
 
 This is the styled implementation crate inside the WGPUI workspace. The
 canonical package map and acceptance state are in `../../docs/kit.md` and
-`../../STATUS.md`. Upstream v0.6.1 is pinned; framework and Kit versions remain
+`../../STATUS.md`. The source candidate ports upstream v0.8.1; framework and Kit versions remain
 independent. Kit is now an active workspace member and the application façade.
 Preserve the Base behavior / styled presentation boundary and native wgpu/winit
-backend. Internal `gpui` dependency aliases are intentional.
+backend. Workspace dependencies and Rust imports use canonical WGPUI names.
 
 ## Common Commands
 
@@ -38,10 +38,10 @@ backend. Internal `gpui` dependency aliases are intentional.
 
 ```bash
 # Workspace default example (story gallery is not a member)
-cargo +1.94.0 run -p wgpui-kit-hello-world
+cargo +1.95.0 run -p wgpui-kit-hello-world
 
 # Build the workspace
-cargo +1.94.0 build
+cargo +1.95.0 build
 
 # Lint check
 ../../scripts/clippy --workspace
@@ -65,16 +65,16 @@ assert presentation dimensions. Add tests when the change affects behavior,
 interaction, data flow, or prevents a meaningful regression.
 
 ```bash
-cargo +1.94.0 test -p wgpui-base --lib
-cargo +1.94.0 test -p wgpui-component --lib
-cargo +1.94.0 test -p wgpui-component-harness
+cargo +1.95.0 test -p wgpui-base --lib
+cargo +1.95.0 test -p wgpui-component --lib
+cargo +1.95.0 test -p wgpui-kit-harness
 ```
 
 ### Performance Profiling
 
 ```bash
-MTL_HUD_ENABLED=1 cargo +1.94.0 run -p wgpui-kit-hello-world
-samply record cargo +1.94.0 run -p wgpui-kit-hello-world
+MTL_HUD_ENABLED=1 cargo +1.95.0 run -p wgpui-kit-hello-world
+samply record cargo +1.95.0 run -p wgpui-kit-hello-world
 ```
 
 ## Core Architecture
@@ -82,16 +82,16 @@ samply record cargo +1.94.0 run -p wgpui-kit-hello-world
 ### Architecture Refactoring Constraints
 
 The implemented foundation architecture is documented in
-`upstream-kit/docs/ARCHITECTURE.md`, with styling and motion rules in
-`upstream-kit/docs/STYLING-AND-MOTION.md`. Preserve these constraints when designing or
+`docs/kit/architecture.md`, with styling and motion rules in
+`docs/kit/styling-and-motion.md`. Preserve these constraints when designing or
 implementing this architecture:
 
-- Do not modify `gpui-base` unless the user explicitly requests a Base-layer
+- Do not modify `wgpui-base` unless the user explicitly requests a Base-layer
   change. By default, implement component behavior and visual styling in
   `crates/wgpui-component` or the application layer.
 
-- Keep `gpui-component` as the ecosystem and product brand.
-- The adapter package is `wgpui-base`; vendored code may use the `gpui_base` alias. Preserve the base-layer architecture described by the upstream terminology without renaming published packages.
+- Preserve upstream GPUI Component attribution; use canonical WGPUI package and import names for this workspace.
+- The adapter package is `wgpui-base`; source imports use `wgpui_base`. Preserve the base-layer architecture described by the upstream terminology without renaming published packages.
 - Follow the ownership boundary: the framework owns behavior and infrastructure;
   the application owns component source and visual style.
 - Keep the base layer visually unopinionated. It may provide interaction behavior,
@@ -99,21 +99,21 @@ implementing this architecture:
   virtual lists, dock infrastructure, and semantic design tokens.
 - Theme APIs must expose semantic tokens (colors, spacing, radius, typography, and
   shadows), not an ever-growing set of component-specific styling fields.
-- Keep source distribution or registry tooling above the `gpui-base` seam; no
+- Keep source distribution or registry tooling above the `wgpui-base` seam; no
   registry or CLI crate is currently part of the workspace.
 - Preserve 100% backward compatibility for existing consumers, including current
-  imports such as `use gpui_component::button::Button;`.
+  imports such as `use wgpui_component::button::Button;`.
 
 ### Component Initialization
 
-**Critical requirement**: You must call `gpui_component::init(cx)` at your application's entry point before using any GPUI Component features.
+**Critical requirement**: You must call `wgpui_component::init(cx)` at your application's entry point before using any GPUI Component features.
 
 ```rust
 fn main() {
     let app = Application::new();
     app.run(move |cx| {
         // This must be called first
-        gpui_component::init(cx);
+        wgpui_component::init(cx);
 
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
@@ -153,7 +153,7 @@ The first view of every window must be a `Root`.
 ### Dock System
 
 Layout behavior lives in `crates/wgpui-base/src/dock`; `crates/wgpui-component/src/dock` is a
-presentation skin (`DockSkin`) over it. See `upstream-kit/docs/ARCHITECTURE.md`.
+presentation skin (`DockSkin`) over it. See `docs/kit/architecture.md`.
 
 - **`LayoutTree`**: Pure-data layout tree, the single source of truth.
   - `NodeKind::Split` / `Tabs` / `Tiles`: containers, addressed by `NodeId`
@@ -161,8 +161,8 @@ presentation skin (`DockSkin`) over it. See `upstream-kit/docs/ARCHITECTURE.md`.
 - **`DockArea`**: Owns the center and dock trees, reconciles them into a
   cache of container entities keyed by `NodeId`
 - **`TabGroup`** / **`TilesState`**: The `Tabs`/`Tiles` container entities
-- **`Panel`**: Split at the seam — `gpui_base::dock::Panel` for behavior,
-  `gpui_component::dock::Panel` for presentation; a panel implements both
+- **`Panel`**: Split at the seam — `wgpui_base::dock::Panel` for behavior,
+  `wgpui_component::dock::Panel` for presentation; a panel implements both
 - **`PanelRegistry`**: Resolves a persisted `panel_name` back to a panel type
 
 The Dock system supports:
@@ -202,7 +202,7 @@ Text input system based on Rope data structure:
    mutable temporary element followed by imperative reassignment when the builder API can
    express the same operation.
 7. **No `pub` fields on public data types**: A public struct handed across the
-   `gpui-base`/application seam — a state snapshot, capability set, render context, or
+   `wgpui-base`/application seam — a state snapshot, capability set, render context, or
    option set — keeps its fields private, is constructed with a builder, and is read
    through methods. Adding a `pub` field is a breaking change; adding one behind a builder
    is not. Setters and readers must not collide: an all-boolean type names setters after
@@ -210,7 +210,7 @@ Text input system based on Rope data structure:
    non-boolean fields prefixes every setter with `with_` and keeps the field name for
    readers. Value types whose fields are the definition and cannot grow (`Point`,
    `Selection`, `Edges`) are exempt. See the "Public Data Types Across the Seam" section
-   of `upstream-kit/docs/ARCHITECTURE.md`.
+   of `docs/kit/architecture.md`.
 8. **Spell `Context` out**: Name a context type `ComboboxTriggerContext`, never `…Ctx`.
    `cx` is reserved for GPUI's `App`, `Context<T>`, and `AsyncApp`, so `ctx` for anything
    else reads as a competing context. A callback receiving both takes the GPUI one as `cx`
@@ -249,7 +249,7 @@ The `Icon` element does not include SVG files by default. You need to:
 
 ## Dependencies
 
-- Runtime: WGPUI 0.3.6 from this repository root; vendored `gpui` dependency keys are Cargo aliases, not a Zed Git dependency.
+- Runtime: WGPUI 0.4.0 from this repository root; the `wgpui` dependency is the local framework, not a Zed Git dependency.
 - Tree-sitter: For syntax highlighting
 - Ropey: Rope data structure for text, and `RopeExt` trait with more features.
 - Markdown rendering: `markdown` crate
@@ -266,22 +266,12 @@ Uses `rust-i18n` crate.
 
 ## Documentation
 
-- The documentation site source is in `upstream-kit/website/`.
-- Site docs have two locales: English (`upstream-kit/website/docs/`) and Chinese (`upstream-kit/website/zh-CN/docs/`).
-- When modifying any documentation file, always sync changes to both `en` and `zh-CN` versions.
-- `upstream-kit/docs/` holds internal architecture specifications (RFC, migration status, reviews).
-  These are single-language and are not published to the site; see `upstream-kit/docs/README.md`.
-- `skills/gpui-component/references/{coding,design}-guides.md` are verbatim copies
-  of the English `upstream-kit/website/docs/` originals, vendored so the skill works after
-  `npx skills add` in a project that does not have this repo. After editing either
-  guide, copy it across:
-
-  ```bash
-  cp website/docs/design-guides.md skills/gpui-component/references/design-guides.md
-  cp website/docs/coding-guides.md skills/gpui-component/references/coding-guides.md
-  ```
-
-  CI fails if the copies drift. Never edit the copy directly — edit `upstream-kit/website/docs/`.
+The current architecture, design, coding, style and testing guides live in
+`docs/kit/`. Update those canonical guides and the public API documentation when
+behavior changes. The historical multilingual website and vendored skill copies
+are retired; their recovery and provenance are documented in
+`docs/kit/upstream-provenance.md`. Do not describe them as active site or skill
+packages, and do not copy unsupported shell/browser contracts into native docs.
 
 ## Platform Support
 
@@ -289,21 +279,20 @@ Uses `rust-i18n` crate.
 - Linux (x86_64)
 - Windows (x86_64)
 
-The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--lib --tests` checks/tests and a `hello_world` check. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
+The checked-in CI matrix covers Linux, macOS, and Windows with workspace `--all-targets` checks, `--lib --tests` tests and an explicit real-renderer target. It excludes the upstream gallery/WASM surface and does not prove every on-disk example works; consult dated CI evidence rather than assuming the latest run is green.
 
-## Skills Reference
+## Guide Reference
 
-This project has custom skills to assist with common development tasks:
-
-- [GPUI Kit reference](../../upstream-kit/skills/gpui-kit/SKILL.md): framework, component, and coding-guide references. This is vendored upstream guidance; its package/setup examples do not supersede the adapter's WGPUI package and workspace boundaries above.
-- [Design guide reference](skills/gpui-kit-design-guides/SKILL.md): the existing desktop design guidance.
-- The old separate contributing-skill directory is absent. Use this file, the canonical guides, and established repository examples for contribution and PR conventions.
-
-Read the appropriate skill when working on tasks related to these areas.
+Use the canonical [design](../../docs/kit/design-guides.md),
+[coding](../../docs/kit/coding-guides.md),
+[architecture](../../docs/kit/architecture.md) and
+[testing](../../docs/kit/testing.md) guides for the current workspace.
+Historical installable skill copies are recoverable in Git but are not active
+packages in this checkout.
 
 ## Testing Guidelines
 
-See [.agents/rules/component-testing.md](../../upstream-kit/.agents/rules/component-testing.md) for detailed testing principles:
+See [testing principles](../../docs/kit/testing.md) for detailed testing principles:
 
 - **Simplicity First**: Focus on complex logic and core functionality, avoid excessive simple tests
 - **Builder Pattern Testing**: Test builder composition when it has nontrivial behavior or invariants; avoid boilerplate setter assertions

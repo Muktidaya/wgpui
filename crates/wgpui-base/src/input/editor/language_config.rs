@@ -1,8 +1,8 @@
 //! Language-specific bracket pairing and indentation rules.
 
-use gpui::SharedString;
 use regex::Regex;
 use std::sync::Arc;
+use wgpui::SharedString;
 
 use super::SyntaxContext;
 

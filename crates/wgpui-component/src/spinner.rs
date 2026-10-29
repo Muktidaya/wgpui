@@ -1,9 +1,9 @@
 use crate::{Icon, IconName, Sizable, Size};
-use gpui::{
+use instant::Duration;
+use wgpui::{
     Animation, AnimationExt as _, App, Hsla, IntoElement, ParentElement, RenderOnce, Styled as _,
     Transformation, Window, div, ease_in_out, percentage, prelude::FluentBuilder as _,
 };
-use instant::Duration;
 
 /// A cycling loading spinner.
 #[derive(IntoElement)]
@@ -80,17 +80,17 @@ impl RenderOnce for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Render, TestAppContext, px, size};
+    use wgpui::{Render, TestAppContext, px, size};
 
     struct SpinnerHost;
 
     impl Render for SpinnerHost {
-        fn render(&mut self, _: &mut Window, _: &mut gpui::Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, _: &mut wgpui::Context<Self>) -> impl IntoElement {
             Spinner::new()
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn reduced_motion_spinner_is_static_and_requests_no_frame(cx: &mut TestAppContext) {
         cx.update(|cx| cx.set_reduce_motion(true));
         let window = cx.open_window(size(px(100.), px(100.)), |_, _| SpinnerHost);

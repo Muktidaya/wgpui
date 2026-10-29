@@ -1,12 +1,12 @@
 use std::{cell::Cell, rc::Rc};
 
-use gpui::{
+use wgpui::{
     Anchor, AnyElement, App, Bounds, Div, ElementId, InteractiveElement, Interactivity,
     IntoElement, ParentElement, Pixels, Point, RenderOnce, StatefulInteractiveElement,
-    StyleRefinement, Styled, Window, deferred, div, px,
+    StyleRefinement, Styled, Window, canvas, deferred, div, point, px,
 };
 
-use crate::{ElementExt as _, Positioner, StyledExt as _};
+use crate::{Positioner, ResolvedPosition, StyledExt as _};
 
 /// Distance kept between a popup and the window edge.
 const WINDOW_MARGIN: Pixels = px(8.);
@@ -28,9 +28,11 @@ struct PopupAnchorState {
 #[derive(IntoElement)]
 pub struct Popup {
     id: ElementId,
-    base: gpui::Stateful<Div>,
+    base: wgpui::Stateful<Div>,
     style: StyleRefinement,
     anchor: Anchor,
+    offset: Pixels,
+    on_position: Option<Box<dyn Fn(ResolvedPosition, Bounds<Pixels>)>>,
     trigger: AnyElement,
     content: Option<AnyElement>,
 }
@@ -43,6 +45,8 @@ impl Popup {
             id,
             style: StyleRefinement::default(),
             anchor: Anchor::TopLeft,
+            offset: px(0.),
+            on_position: None,
             trigger: trigger.into_any_element(),
             content: None,
         }
@@ -50,6 +54,21 @@ impl Popup {
 
     pub fn anchor(mut self, anchor: impl Into<Anchor>) -> Self {
         self.anchor = anchor.into();
+        self
+    }
+
+    /// Gap from the trigger along the anchor's outward direction, zero by default.
+    pub fn offset(mut self, offset: Pixels) -> Self {
+        self.offset = offset;
+        self
+    }
+
+    /// Observe resolved popup and trigger bounds before content prepaint.
+    pub fn on_position(
+        mut self,
+        callback: impl Fn(ResolvedPosition, Bounds<Pixels>) + 'static,
+    ) -> Self {
+        self.on_position = Some(Box::new(callback));
         self
     }
 
@@ -80,6 +99,20 @@ impl Popup {
     }
 }
 
+/// Match the popup's anchor to the opposite edge of the measured trigger.
+fn anchor_position(anchor: Anchor, trigger: Bounds<Pixels>, offset: Pixels) -> Point<Pixels> {
+    match anchor {
+        Anchor::TopLeft => trigger.bottom_left() + point(px(0.), offset),
+        Anchor::TopCenter => trigger.bottom_center() + point(px(0.), offset),
+        Anchor::TopRight => trigger.bottom_right() + point(px(0.), offset),
+        Anchor::BottomLeft => trigger.origin - point(px(0.), offset),
+        Anchor::BottomCenter => trigger.top_center() - point(px(0.), offset),
+        Anchor::BottomRight => trigger.top_right() - point(px(0.), offset),
+        Anchor::LeftCenter => trigger.right_center() + point(offset, px(0.)),
+        Anchor::RightCenter => trigger.left_center() - point(offset, px(0.)),
+    }
+}
+
 impl Styled for Popup {
     fn style(&mut self) -> &mut StyleRefinement {
         &mut self.style
@@ -99,30 +132,47 @@ impl RenderOnce for Popup {
         let state =
             window.use_keyed_state((self.id, "anchor"), cx, |_, _| PopupAnchorState::default());
         let anchor = self.anchor;
-        let position = Rc::new(Cell::new(Self::resolved_corner(
+        let trigger_bounds = Rc::new(Cell::new(state.read(cx).bounds));
+        let offset = self.offset;
+        let position = Rc::new(Cell::new(anchor_position(
             anchor,
             state.read(cx).bounds,
+            offset,
         )));
 
+        // A closed popup places nothing: it notes its trigger's bounds, for when
+        // it opens, without asking for another frame.
+        let has_content = self.content.is_some();
         let root = self
             .base
             .child(self.trigger)
-            .on_prepaint({
-                let state = state.clone();
-                let position = position.clone();
-                move |bounds, window, cx| {
-                    position.set(Self::resolved_corner(anchor, bounds));
-                    let first = state.update(cx, |state, _| {
-                        let first = !state.captured;
-                        state.bounds = bounds;
-                        state.captured = true;
-                        first
-                    });
-                    if first {
-                        window.request_animation_frame();
-                    }
-                }
-            })
+            .child(
+                canvas(
+                    {
+                        let state = state.clone();
+                        let position = position.clone();
+                        let trigger_bounds = trigger_bounds.clone();
+                        move |bounds, window, cx| {
+                            trigger_bounds.set(bounds);
+                            position.set(anchor_position(anchor, bounds, offset));
+                            let first = state.update(cx, |state, _| {
+                                let first = !state.captured;
+                                state.bounds = bounds;
+                                state.captured = true;
+                                first
+                            });
+                            if first && has_content {
+                                window.request_animation_frame();
+                            }
+                        }
+                    },
+                    |_, _, _, _| {},
+                )
+                .absolute()
+                .size_full()
+                .top_0()
+                .left_0(),
+            )
             .refine_style(&self.style);
 
         let Some(content) = self.content else {
@@ -132,9 +182,16 @@ impl RenderOnce for Popup {
             return root;
         }
 
+        let positioner =
+            Positioner::corner(anchor, position.get()).tracked_corner_position(position);
+        let positioner = if let Some(callback) = self.on_position {
+            positioner.on_position(move |position| callback(position, trigger_bounds.get()))
+        } else {
+            positioner
+        };
         root.child(
             deferred(
-                Positioner::corner(anchor, position.get())
+                positioner
                     .margin(WINDOW_MARGIN)
                     // The host blocks the mouse, so no caller has to remember:
                     // what a popup covers belongs to the popup.
@@ -149,13 +206,13 @@ impl RenderOnce for Popup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, px};
+    use wgpui::{Context, Render, px};
 
     #[test]
     fn resolved_corner_preserves_existing_anchor_math() {
         let bounds = Bounds {
             origin: Point::new(px(100.), px(100.)),
-            size: gpui::Size::new(px(200.), px(50.)),
+            size: wgpui::Size::new(px(200.), px(50.)),
         };
         assert_eq!(
             Popup::resolved_corner(Anchor::TopCenter, bounds),
@@ -218,8 +275,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn the_popup_surface_blocks_the_panel_it_covers(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn the_popup_surface_blocks_the_panel_it_covers(cx: &mut wgpui::TestAppContext) {
         let background_hovered = Rc::new(Cell::new(false));
         let content_hovered = Rc::new(Cell::new(false));
         let (_, window) = cx.add_window_view({
@@ -234,9 +291,9 @@ mod tests {
         window.update(|window, cx| window.draw(cx).clear());
 
         window.simulate_mouse_move(
-            gpui::point(px(20.), px(110.)),
+            wgpui::point(px(20.), px(110.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         assert!(!background_hovered.get());
         // The surface blocks what is behind it, not its own content: the
@@ -246,26 +303,73 @@ mod tests {
         // The same pointer outside the surface still reaches the panel, so the
         // assertion above is about occlusion and not a dead listener.
         window.simulate_mouse_move(
-            gpui::point(px(150.), px(180.)),
+            wgpui::point(px(150.), px(180.)),
             None,
-            gpui::Modifiers::default(),
+            wgpui::Modifiers::default(),
         );
         assert!(background_hovered.get());
     }
 
-    #[gpui::test]
-    fn trigger_capture_enables_deferred_content_on_the_next_frame(cx: &mut gpui::TestAppContext) {
+    /// A popup that may open later.
+    struct ClosedHarness {
+        open: bool,
+    }
+
+    impl Render for ClosedHarness {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let popup = Popup::new(
+                "popup",
+                div()
+                    .debug_selector(|| "popup-trigger".into())
+                    .size(px(100.)),
+            );
+            if self.open {
+                popup.content(
+                    div()
+                        .debug_selector(|| "popup-content".into())
+                        .size(px(20.)),
+                )
+            } else {
+                popup
+            }
+        }
+    }
+
+    /// A closed popup notes its trigger's bounds without asking for another
+    /// frame: a list of rows holding closed popups is not drawn again for
+    /// each row that shows. Opened, it places its content at once.
+    #[wgpui::test]
+    fn a_closed_popup_asks_for_no_frame_and_opens_at_once(cx: &mut wgpui::TestAppContext) {
+        let (view, window) = cx.add_window_view(|_, _| ClosedHarness { open: false });
+        window.update(|window, cx| {
+            window.draw(cx).clear();
+            assert_eq!(window.simulate_next_frame(cx), 0, "no frame was asked for");
+        });
+
+        view.update(window, |harness, cx| {
+            harness.open = true;
+            cx.notify();
+        });
+        window.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(
+            window.debug_bounds("popup-content").unwrap().size,
+            wgpui::Size::new(px(20.), px(20.))
+        );
+    }
+
+    #[wgpui::test]
+    fn trigger_capture_enables_deferred_content_on_the_next_frame(cx: &mut wgpui::TestAppContext) {
         let (_, window) = cx.add_window_view(|_, _| Harness);
         window.update(|window, cx| window.draw(cx).clear());
         window.update(|window, cx| window.draw(cx).clear());
 
         assert_eq!(
             window.debug_bounds("popup-trigger").unwrap().size,
-            gpui::Size::new(px(100.), px(100.))
+            wgpui::Size::new(px(100.), px(100.))
         );
         assert_eq!(
             window.debug_bounds("popup-content").unwrap().size,
-            gpui::Size::new(px(20.), px(20.))
+            wgpui::Size::new(px(20.), px(20.))
         );
     }
 }

@@ -54,6 +54,12 @@ impl Display for EntityId {
     }
 }
 
+/// The entity identities alive when a leak-detection checkpoint was captured.
+#[cfg(any(test, feature = "leak-detection"))]
+pub struct LeakDetectorSnapshot {
+    entity_ids: FxHashSet<EntityId>,
+}
+
 pub(crate) struct EntityMap {
     entities: SecondaryMap<EntityId, Box<dyn Any>>,
     pub accessed_entities: RefCell<FxHashSet<EntityId>>,
@@ -87,6 +93,37 @@ impl EntityMap {
     /// Returns a handle to the ref counts for test cleanup.
     pub fn ref_counts_drop_handle(&self) -> Arc<RwLock<EntityRefCounts>> {
         self.ref_counts.clone()
+    }
+
+    #[cfg(any(test, feature = "leak-detection"))]
+    pub fn leak_detector_snapshot(&self) -> LeakDetectorSnapshot {
+        let counts = self.ref_counts.read();
+        LeakDetectorSnapshot {
+            entity_ids: counts
+                .leak_detector
+                .entity_handles
+                .iter()
+                .filter(|(_, handles)| !handles.is_empty())
+                .map(|(id, _)| *id)
+                .collect(),
+        }
+    }
+
+    #[cfg(any(test, feature = "leak-detection"))]
+    pub fn assert_no_new_leaks(&self, snapshot: &LeakDetectorSnapshot) {
+        let counts = self.ref_counts.read();
+        let leaked: Vec<_> = counts
+            .leak_detector
+            .entity_handles
+            .iter()
+            .filter(|(id, handles)| !snapshot.entity_ids.contains(id) && !handles.is_empty())
+            .map(|(id, handles)| format!("{id:?}: {} live handles", handles.len()))
+            .collect();
+        assert!(
+            leaked.is_empty(),
+            "new entity leaks since checkpoint: {}",
+            leaked.join(", ")
+        );
     }
 
     /// Reserve a slot for an entity, which you can subsequently use with `insert`.

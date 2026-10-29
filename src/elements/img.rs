@@ -553,6 +553,16 @@ impl ImageSource {
         }
     }
 
+    /// Reports whether this image has a pending or completed cached asset load.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn is_asset_cached(&self, cx: &App) -> bool {
+        match self {
+            Self::Resource(resource) => cx.has_asset::<ImgResourceLoader>(resource),
+            Self::Image(image) => cx.has_asset::<AssetLogger<ImageDecoder>>(image),
+            Self::Custom(_) | Self::Render(_) => false,
+        }
+    }
+
     /// Remove this image source from the asset system
     pub fn remove_asset(&self, cx: &mut App) {
         match self {
@@ -633,69 +643,91 @@ impl Asset for ImageAssetLoader {
             };
 
             if let Ok(format) = image::guess_format(&bytes) {
-                let data = match format {
-                    ImageFormat::Gif => {
-                        let decoder = GifDecoder::new(Cursor::new(&bytes))?;
-                        let mut frames = SmallVec::new();
-
-                        for frame in decoder.into_frames() {
-                            let mut frame = frame?;
-                            // Convert from RGBA to BGRA.
-                            for pixel in frame.buffer_mut().chunks_exact_mut(4) {
-                                pixel.swap(0, 2);
-                            }
-                            frames.push(frame);
-                        }
-
-                        frames
-                    }
-                    ImageFormat::WebP => {
-                        let mut decoder = WebPDecoder::new(Cursor::new(&bytes))?;
-
-                        if decoder.has_animation() {
-                            let _ = decoder.set_background_color(Rgba([0, 0, 0, 0]));
-                            let mut frames = SmallVec::new();
-
-                            for frame in decoder.into_frames() {
-                                let mut frame = frame?;
-                                // Convert from RGBA to BGRA.
-                                for pixel in frame.buffer_mut().chunks_exact_mut(4) {
-                                    pixel.swap(0, 2);
-                                }
-                                frames.push(frame);
-                            }
-
-                            frames
-                        } else {
-                            let mut data = DynamicImage::from_decoder(decoder)?.into_rgba8();
-
-                            // Convert from RGBA to BGRA.
-                            for pixel in data.chunks_exact_mut(4) {
-                                pixel.swap(0, 2);
-                            }
-
-                            SmallVec::from_elem(Frame::new(data), 1)
-                        }
-                    }
-                    _ => {
-                        let mut data =
-                            image::load_from_memory_with_format(&bytes, format)?.into_rgba8();
-
-                        // Convert from RGBA to BGRA.
-                        for pixel in data.chunks_exact_mut(4) {
-                            pixel.swap(0, 2);
-                        }
-
-                        SmallVec::from_elem(Frame::new(data), 1)
-                    }
-                };
-
+                let data = decode_frames(&bytes, format)?;
                 Ok(Arc::new(RenderImage::new(data)))
             } else {
                 svg_renderer
-                    .render_single_frame(&bytes, 1.0, true)
+                    .render_single_frame(&bytes, 1.0, false)
                     .map_err(Into::into)
             }
+        }
+    }
+}
+
+/// Decode an image into the frames the atlas will receive.
+///
+/// The atlas is `Rgba8Unorm` (`platform/atlas.rs`) and nothing downstream
+/// swizzles, so these frames stay RGBA.
+fn decode_frames(
+    bytes: &[u8],
+    format: ImageFormat,
+) -> Result<SmallVec<[Frame; 1]>, ImageCacheError> {
+    Ok(match format {
+        ImageFormat::Gif => {
+            let decoder = GifDecoder::new(Cursor::new(bytes))?;
+            let mut frames = SmallVec::new();
+            for frame in decoder.into_frames() {
+                frames.push(frame?);
+            }
+            frames
+        }
+        ImageFormat::WebP => {
+            let mut decoder = WebPDecoder::new(Cursor::new(bytes))?;
+            if decoder.has_animation() {
+                let _ = decoder.set_background_color(Rgba([0, 0, 0, 0]));
+                let mut frames = SmallVec::new();
+                for frame in decoder.into_frames() {
+                    frames.push(frame?);
+                }
+                frames
+            } else {
+                let data = DynamicImage::from_decoder(decoder)?.into_rgba8();
+                SmallVec::from_elem(Frame::new(data), 1)
+            }
+        }
+        _ => {
+            let data = image::load_from_memory_with_format(bytes, format)?.into_rgba8();
+            SmallVec::from_elem(Frame::new(data), 1)
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Saturated colours only: exchanging red and blue leaves greys, blacks
+    /// and whites untouched, so a grey fixture cannot catch a swizzle.
+    #[test]
+    fn decoded_images_reach_the_atlas_as_rgba() {
+        for (name, rgb) in [
+            ("yellow", [255u8, 255, 0]),
+            ("red", [255, 0, 0]),
+            ("blue", [0, 0, 255]),
+        ] {
+            let mut source = image::RgbaImage::new(4, 4);
+            for pixel in source.pixels_mut() {
+                *pixel = Rgba([rgb[0], rgb[1], rgb[2], 255]);
+            }
+            let mut encoded = Cursor::new(Vec::new());
+            image::DynamicImage::ImageRgba8(source)
+                .write_to(&mut encoded, ImageFormat::Png)
+                .expect("the fixture encodes");
+
+            let frames =
+                decode_frames(encoded.get_ref(), ImageFormat::Png).expect("the fixture decodes");
+            let decoded = frames[0].buffer();
+            let got = [
+                decoded.as_raw()[0],
+                decoded.as_raw()[1],
+                decoded.as_raw()[2],
+            ];
+
+            assert_eq!(
+                got, rgb,
+                "{name} came back {got:?}: the atlas is Rgba8Unorm, so these bytes \
+                 must be red, green, blue in that order"
+            );
         }
     }
 }

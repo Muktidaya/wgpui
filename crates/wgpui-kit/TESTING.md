@@ -1,23 +1,22 @@
-# UI integration testing in GPUI Kit
+# UI integration testing in WGPUI Kit
 
 A UI integration test renders real components in a headless window, simulates
 clicks, keyboard input and scrolling, then checks state, focus, layout and owner
-callbacks. `#[gpui_kit::test]` runs the test; `gpui_kit::test` supplies the tools
+callbacks. `#[wgpui_kit::test]` runs the test; `wgpui_kit::test` supplies the tools
 to operate and inspect its UI.
 
-Enable `gpui-kit/test-support` under development dependencies and import
-`gpui_kit::test::{TestWindowExt, TestAppContextExt, TestSupportExt, ElementSnapshot}`.
-The implementation uses GPUI public APIs, with no fork, Cargo patch or separate crate.
+Enable `wgpui-kit/test-support` under development dependencies and import
+`wgpui_kit::test::{TestWindowExt, TestAppContextExt, TestSupportExt, ElementSnapshot}`.
+The helpers use WGPUI's public test support and the same component elements as applications.
 
-Read the [testing guide](../../website/docs/test.md) for
-setup, a compiled application workflow, the control coverage matrix, scoped IDs,
-state assertions, mouse/keyboard/scroll/drag operations, async waits and CI.
-The [Chinese guide](../../website/zh-CN/docs/test.md) covers the same API.
+See [the Kit guide](../../docs/kit.md), the [test helper implementation](src/test/),
+and [integration fixtures](tests/integration/) for setup, scoped IDs, state assertions,
+input operations and bounded asynchronous waits.
 
 ## Core semantics
 
 - `find` requires a target and explains missing/ambiguous paths; `try_find` permits absence.
-- `within` follows existing GPUI ID scopes, including unobserved parents. Pointer
+- `within` follows existing WGPUI ID scopes, including unobserved parents. Pointer
   operations and `drag_to` resolve scoped IDs; scoped keyboard operations require
   an observed focus binding inside the scope.
 - `ElementSnapshot` is immutable. Re-query after interactions; optional state means
@@ -56,15 +55,15 @@ setter alone bypasses observation. `native_parts_forward_their_public_focus_bind
 protects this builder path with real Table and Accordion parts.
 
 Queued actions must finish before subsequent test edits mutate the values they read.
-Legacy GPUI animations use wall time, so a test-clock wait is not an animation clock.
+Legacy component animations use wall time, so a test-clock wait is not an animation clock.
 Use reduced motion for Base motion geometry tests, or wait the actual legacy entrance
 before checking final bounds. Preserve real hit testing for hover-only close controls.
 
 ## Verification
 
 ```sh
-cargo test -p gpui-kit --features test-support --locked
-cargo test -p gpui-kit --no-default-features --features test-support --locked
+cargo +1.95.0 test -p wgpui-kit --features test-support --locked
+cargo +1.95.0 test -p wgpui-kit --no-default-features --features test-support --locked
 ```
 
 Regression coverage includes real form controls and selection, immutable snapshots,
@@ -75,12 +74,17 @@ Unicode input, disabled/read-only controls, masked-value privacy, cache invalida
 mount/remount, reordered composite IDs, multi-window/App isolation, accessibility forwarding,
 and stale registration cleanup when a 1,000-element list shrinks to 10 elements.
 
-The full command runs in the existing CI platform matrix. Large-list cases check
-correctness, not rendering performance. The `rendering` target additionally checks
-real Metal images on macOS, using a main-thread harness. It is opt-in (`test = false`):
-run `cargo test -p gpui-kit --features test-support --test rendering --locked` on a
-Metal-capable runner. The macOS CI job runs this command as a required step;
-Linux and Windows run the portable interaction/layout suite. It detects missing checkbox
-marks and invisible input text even when native state stays correct. Other platforms
-explicitly skip this target until GPUI supplies a headless renderer; this is not a
-complete golden-image suite.
+The interaction suites are selected by the existing CI platform matrix. Large-list
+cases check correctness, not rendering performance. The separate `rendering` target
+uses WGPUI's real offscreen WGPU renderer on macOS, Linux and Windows. Select it
+explicitly on a machine with a working GPU adapter:
+
+```sh
+cargo +1.95.0 test -p wgpui-kit --features test-support --test rendering --locked
+```
+
+This target fails when the required adapter or rendering operation is unavailable.
+It detects missing checkbox marks and invisible input text even when semantic
+state remains correct. It checks selected drawing contracts rather than a complete
+golden-image suite. Its results and native acceptance remain separate from portable
+interaction test results.

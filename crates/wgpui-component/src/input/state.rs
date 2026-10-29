@@ -1,9 +1,9 @@
-use gpui::{App, Entity, FocusHandle, Focusable as _, SharedString, Window};
-use gpui_base::OtpState;
+use crate::root::WindowState;
 use ropey::Rope;
+use wgpui::{App, Bounds, Entity, FocusHandle, Focusable as _, Pixels, SharedString, Window};
+use wgpui_base::OtpState;
 
 use super::{EditorState, InputState, TextareaState};
-use crate::Root;
 
 /// Any input-like state, regardless of which input element renders it.
 ///
@@ -52,11 +52,35 @@ macro_rules! dispatch {
 }
 
 impl TextInputState {
-    pub(crate) fn entity_id(&self) -> gpui::EntityId {
+    pub(crate) fn has_selection_focus(&self, window: &Window, cx: &App) -> bool {
+        dispatch!(self, |state| state.read(cx).has_selection_focus(window, cx))
+    }
+
+    pub(crate) fn install_token_presentation(
+        &self,
+        renderer: Option<wgpui_base::input::InlineTokenRenderer>,
+        listener: Option<wgpui_base::input::InlineTokenClickListener>,
+        secret: bool,
+        cx: &mut App,
+    ) {
+        dispatch!(self, |state| state.update(cx, |state, _| state
+            .install_token_presentation(renderer, listener, secret)))
+    }
+
+    pub(crate) fn install_token_hover_presentation(
+        &self,
+        hover_listener: Option<wgpui_base::input::InlineTokenHoverListener>,
+        cx: &mut App,
+    ) {
+        dispatch!(self, |state| state.update(cx, |state, _| state
+            .install_token_hover_presentation(hover_listener)))
+    }
+
+    pub(crate) fn entity_id(&self) -> wgpui::EntityId {
         dispatch!(self, |state| state.entity_id())
     }
 
-    pub(crate) fn presentation(&self, cx: &App) -> gpui_base::input::InputPresentation {
+    pub(crate) fn presentation(&self, cx: &App) -> wgpui_base::input::InputPresentation {
         dispatch!(self, |state| state.read(cx).presentation())
     }
 
@@ -82,7 +106,7 @@ impl TextInputState {
             .update(cx, |state, cx| state.toggle_masked(window, cx)))
     }
 
-    pub(crate) fn set_text_align(&self, align: gpui::TextAlign, cx: &mut App) {
+    pub(crate) fn set_text_align(&self, align: wgpui::TextAlign, cx: &mut App) {
         dispatch!(self, |state| state
             .update(cx, |state, cx| state.set_text_align(align, cx)))
     }
@@ -97,19 +121,31 @@ impl TextInputState {
             .update(cx, |state, cx| state.set_readonly(readonly, cx)))
     }
 
-    pub(crate) fn set_editor_style(&self, style: gpui_base::input::InputEditorStyle, cx: &mut App) {
+    pub(crate) fn set_editor_style(
+        &self,
+        style: wgpui_base::input::InputEditorStyle,
+        cx: &mut App,
+    ) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.set_editor_style(style)))
     }
 
-    pub(crate) fn set_editor_paddings(&self, paddings: gpui::Edges<gpui::Pixels>, cx: &mut App) {
+    pub(crate) fn set_accessibility(
+        &self,
+        accessibility: wgpui_base::input::InputAccessibility,
+        cx: &mut App,
+    ) {
+        dispatch!(self, |state| state
+            .update(cx, |state, _| state.set_accessibility(accessibility)))
+    }
+    pub(crate) fn set_editor_paddings(&self, paddings: wgpui::Edges<wgpui::Pixels>, cx: &mut App) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.set_editor_paddings(paddings)))
     }
 
     pub(crate) fn ensure_highlighter_factory(
         &self,
-        factory: gpui_base::input::InputHighlighterFactory,
+        factory: wgpui_base::input::InputHighlighterFactory,
         cx: &mut App,
     ) {
         dispatch!(self, |state| state
@@ -120,9 +156,9 @@ impl TextInputState {
         &self,
         handler: std::rc::Rc<
             dyn Fn(
-                gpui_base::input::NativeMenu,
-                gpui_base::input::InputContextMenuCapabilities,
-                gpui::Point<gpui::Pixels>,
+                wgpui_base::input::NativeMenu,
+                wgpui_base::input::InputContextMenuCapabilities,
+                wgpui::Point<wgpui::Pixels>,
                 &mut Window,
                 &mut App,
             ),
@@ -131,6 +167,57 @@ impl TextInputState {
     ) {
         dispatch!(self, |state| state
             .update(cx, |state, _| state.on_context_menu(handler)))
+    }
+
+    /// The selection a long press made, laid out for its handles and menu.
+    pub(crate) fn touch_selection(&self, cx: &App) -> Option<wgpui_base::TouchSelectionSnapshot> {
+        dispatch!(self, |state| state.read(cx).touch_selection())
+    }
+
+    pub(crate) fn context_menu_capabilities(
+        &self,
+        cx: &App,
+    ) -> wgpui_base::input::InputContextMenuCapabilities {
+        dispatch!(self, |state| state.read(cx).context_menu_capabilities())
+    }
+
+    /// Whether every character is already selected, so Select All has nothing
+    /// left to offer.
+    pub(crate) fn is_all_selected(&self, cx: &App) -> bool {
+        dispatch!(self, |state| {
+            let state = state.read(cx);
+            state.selected_range() == (0..state.text().len_bytes())
+        })
+    }
+
+    pub(crate) fn begin_edge_drag(
+        &self,
+        edge: wgpui_base::SelectionEdge,
+        finger: wgpui::Point<wgpui::Pixels>,
+        cx: &mut App,
+    ) {
+        dispatch!(self, |state| state
+            .update(cx, |state, cx| state.begin_edge_drag(edge, finger, cx)))
+    }
+
+    pub(crate) fn update_edge_drag(&self, finger: wgpui::Point<wgpui::Pixels>, cx: &mut App) {
+        dispatch!(self, |state| state
+            .update(cx, |state, cx| state.update_edge_drag(finger, cx)))
+    }
+
+    pub(crate) fn end_edge_drag(&self, cx: &mut App) {
+        dispatch!(self, |state| state
+            .update(cx, |state, cx| state.end_edge_drag(cx)))
+    }
+
+    pub(crate) fn close_edit_menu(&self, cx: &mut App) {
+        dispatch!(self, |state| state
+            .update(cx, |state, cx| state.close_edit_menu(cx)))
+    }
+
+    pub(crate) fn select_all_from_edit_menu(&self, window: &mut Window, cx: &mut App) {
+        dispatch!(self, |state| state.update(cx, |state, cx| state
+            .select_all_from_edit_menu(window, cx)))
     }
 
     /// Builds and syncs this input's overlays. See [`super::overlay`].
@@ -144,14 +231,9 @@ impl TextInputState {
         ))
     }
 
-    pub(crate) fn replace_all(&self, value: String, window: &mut Window, cx: &mut App) {
-        dispatch!(self, |state| state
-            .update(cx, |state, cx| state.replace_all(value, window, cx)))
-    }
-
     /// The text element itself, as a child to place in the frame.
-    pub(crate) fn into_any_element(self) -> gpui::AnyElement {
-        use gpui::IntoElement as _;
+    pub(crate) fn into_any_element(self) -> wgpui::AnyElement {
+        use wgpui::IntoElement as _;
         dispatch!(self, |state| state.into_any_element())
     }
 }
@@ -185,6 +267,30 @@ impl From<Entity<EditorState>> for TextInputState {
 }
 
 impl AnyInputState {
+    pub(crate) fn input_bounds(&self, cx: &App) -> Option<Bounds<Pixels>> {
+        match self {
+            Self::Input(state) => Some(state.read(cx).input_bounds()),
+            Self::Textarea(state) => Some(state.read(cx).input_bounds()),
+            Self::Editor(state) => Some(state.read(cx).input_bounds()),
+            Self::Otp(_) => None,
+        }
+    }
+
+    pub(crate) fn set_selection_focus(&self, focus: Option<FocusHandle>, cx: &mut App) {
+        match self {
+            Self::Input(state) => {
+                state.update(cx, |state, cx| state.set_selection_focus(focus, cx))
+            }
+            Self::Textarea(state) => {
+                state.update(cx, |state, cx| state.set_selection_focus(focus, cx))
+            }
+            Self::Editor(state) => {
+                state.update(cx, |state, cx| state.set_selection_focus(focus, cx))
+            }
+            Self::Otp(_) => {}
+        }
+    }
+
     /// Returns the [`InputState`], if this is an `Input` state.
     pub fn as_input(&self) -> Option<&Entity<InputState>> {
         match self {
@@ -273,7 +379,15 @@ pub(super) fn sync_focused_input_registry(
 ) {
     let state = state.into();
     let focused = state.focus_handle(cx).is_focused(window);
-    Root::try_update(window, cx, |root, _, cx| {
+    // Every input syncs as it renders; only one that gains or loses focus
+    // changes the registry, and notifying the window state otherwise would
+    // draw the whole window again on every frame an input renders in.
+    let unchanged = WindowState::try_read(window, cx)
+        .is_some_and(|root| (root.focused_input.as_ref() == Some(&state)) == focused);
+    if unchanged {
+        return;
+    }
+    WindowState::try_update(window, cx, |root, _, cx| {
         if focused {
             root.focused_input = Some(state.clone());
         } else if root.focused_input.as_ref() == Some(&state) {

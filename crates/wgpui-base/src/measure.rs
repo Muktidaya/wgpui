@@ -1,4 +1,4 @@
-use gpui::SharedString;
+use wgpui::SharedString;
 
 #[inline]
 pub fn measurement_enabled() -> bool {

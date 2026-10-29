@@ -1,6 +1,6 @@
 [package]
 name = "wgpui-kit"
-version = "0.6.1"
+version = "0.8.1"
 description = "Application toolkit for WGPUI: native wgpu/winit UI, components, and default assets."
 keywords = ["desktop", "gpui", "shadcn", "ui", "uikit"]
 categories = ["gui"]
@@ -11,71 +11,81 @@ repository = "https://github.com/Muktidaya/wgpui"
 readme = "README.md"
 publish = true
 edition.workspace = true
+rust-version.workspace = true
 
 [lints]
 workspace = true
 
 [features]
 default = ["component", "assets"]
-# The styled component library, `gpui_kit::component`. Initializes `gpui-base` too.
-component = ["dep:gpui-component"]
-# The default icon set for `gpui-component`, `gpui_kit::assets`.
-assets = ["dep:gpui-kit-assets"]
-# GPUI's test harness, native-platform rendering, and Kit UI test helpers.
-test-support = ["gpui/test-support", "gpui_platform/test-support", "gpui-base/test-support", "gpui-component?/test-support"]
-# Upstream frame-profiler feature is not ported; see docs/kit.md.
+# The styled component library, `wgpui_kit::component`. Initializes `wgpui-base` too.
+component = ["dep:wgpui-component"]
+# The default icon set for `wgpui-component`, `wgpui_kit::assets`.
+assets = ["dep:wgpui-kit-assets"]
+# WGPUI's test harness, native-platform rendering, and Kit UI test helpers.
+test-support = ["wgpui/test-support", "wgpui-platform/test-support", "wgpui-base/test-support", "wgpui-component?/test-support"]
+profiler = ["wgpui/profiler"]
+syntect = ["component", "wgpui-component/syntect"]
+speech = ["component", "wgpui-component/speech"]
 
-inspector = ["gpui/inspector", "gpui-base/inspector", "gpui-component?/inspector"]
-decimal = ["component", "gpui-component/decimal"]
-tree-sitter = ["component", "gpui-component/tree-sitter"]
-tree-sitter-languages = ["component", "gpui-component/tree-sitter-languages"]
-tree-sitter-astro = ["component", "gpui-component/tree-sitter-astro"]
-tree-sitter-bash = ["component", "gpui-component/tree-sitter-bash"]
-tree-sitter-c = ["component", "gpui-component/tree-sitter-c"]
-tree-sitter-cmake = ["component", "gpui-component/tree-sitter-cmake"]
-tree-sitter-cpp = ["component", "gpui-component/tree-sitter-cpp"]
-tree-sitter-csharp = ["component", "gpui-component/tree-sitter-csharp"]
-tree-sitter-css = ["component", "gpui-component/tree-sitter-css"]
-tree-sitter-diff = ["component", "gpui-component/tree-sitter-diff"]
-tree-sitter-ejs = ["component", "gpui-component/tree-sitter-ejs"]
-tree-sitter-elixir = ["component", "gpui-component/tree-sitter-elixir"]
-tree-sitter-erb = ["component", "gpui-component/tree-sitter-erb"]
-tree-sitter-go = ["component", "gpui-component/tree-sitter-go"]
-tree-sitter-graphql = ["component", "gpui-component/tree-sitter-graphql"]
-tree-sitter-html = ["component", "gpui-component/tree-sitter-html"]
-tree-sitter-java = ["component", "gpui-component/tree-sitter-java"]
-tree-sitter-javascript = ["component", "gpui-component/tree-sitter-javascript"]
-tree-sitter-jsdoc = ["component", "gpui-component/tree-sitter-jsdoc"]
-tree-sitter-kotlin = ["component", "gpui-component/tree-sitter-kotlin"]
-tree-sitter-lua = ["component", "gpui-component/tree-sitter-lua"]
-tree-sitter-make = ["component", "gpui-component/tree-sitter-make"]
-tree-sitter-markdown = ["component", "gpui-component/tree-sitter-markdown"]
-tree-sitter-markdown-inline = ["component", "gpui-component/tree-sitter-markdown-inline"]
-tree-sitter-php = ["component", "gpui-component/tree-sitter-php"]
-tree-sitter-proto = ["component", "gpui-component/tree-sitter-proto"]
-tree-sitter-python = ["component", "gpui-component/tree-sitter-python"]
-tree-sitter-ruby = ["component", "gpui-component/tree-sitter-ruby"]
-tree-sitter-rust = ["component", "gpui-component/tree-sitter-rust"]
-tree-sitter-scala = ["component", "gpui-component/tree-sitter-scala"]
-tree-sitter-sql = ["component", "gpui-component/tree-sitter-sql"]
-tree-sitter-svelte = ["component", "gpui-component/tree-sitter-svelte"]
-tree-sitter-swift = ["component", "gpui-component/tree-sitter-swift"]
-tree-sitter-toml = ["component", "gpui-component/tree-sitter-toml"]
-tree-sitter-tsx = ["component", "gpui-component/tree-sitter-tsx"]
-tree-sitter-typescript = ["component", "gpui-component/tree-sitter-typescript"]
-tree-sitter-yaml = ["component", "gpui-component/tree-sitter-yaml"]
-tree-sitter-zig = ["component", "gpui-component/tree-sitter-zig"]
+inspector = ["wgpui/inspector", "wgpui-base/inspector", "wgpui-component?/inspector"]
+decimal = ["component", "wgpui-component/decimal"]
+tree-sitter = ["component", "wgpui-component/tree-sitter"]
+tree-sitter-languages = ["component", "wgpui-component/tree-sitter-languages"]
+tree-sitter-astro = ["component", "wgpui-component/tree-sitter-astro"]
+tree-sitter-bash = ["component", "wgpui-component/tree-sitter-bash"]
+tree-sitter-c = ["component", "wgpui-component/tree-sitter-c"]
+tree-sitter-cmake = ["component", "wgpui-component/tree-sitter-cmake"]
+tree-sitter-cpp = ["component", "wgpui-component/tree-sitter-cpp"]
+tree-sitter-csharp = ["component", "wgpui-component/tree-sitter-csharp"]
+tree-sitter-css = ["component", "wgpui-component/tree-sitter-css"]
+tree-sitter-diff = ["component", "wgpui-component/tree-sitter-diff"]
+tree-sitter-ejs = ["component", "wgpui-component/tree-sitter-ejs"]
+tree-sitter-elixir = ["component", "wgpui-component/tree-sitter-elixir"]
+tree-sitter-erb = ["component", "wgpui-component/tree-sitter-erb"]
+tree-sitter-go = ["component", "wgpui-component/tree-sitter-go"]
+tree-sitter-graphql = ["component", "wgpui-component/tree-sitter-graphql"]
+tree-sitter-html = ["component", "wgpui-component/tree-sitter-html"]
+tree-sitter-java = ["component", "wgpui-component/tree-sitter-java"]
+tree-sitter-javascript = ["component", "wgpui-component/tree-sitter-javascript"]
+tree-sitter-jsdoc = ["component", "wgpui-component/tree-sitter-jsdoc"]
+tree-sitter-kotlin = ["component", "wgpui-component/tree-sitter-kotlin"]
+tree-sitter-lua = ["component", "wgpui-component/tree-sitter-lua"]
+tree-sitter-make = ["component", "wgpui-component/tree-sitter-make"]
+tree-sitter-markdown = ["component", "wgpui-component/tree-sitter-markdown"]
+tree-sitter-markdown-inline = ["component", "wgpui-component/tree-sitter-markdown-inline"]
+tree-sitter-php = ["component", "wgpui-component/tree-sitter-php"]
+tree-sitter-proto = ["component", "wgpui-component/tree-sitter-proto"]
+tree-sitter-python = ["component", "wgpui-component/tree-sitter-python"]
+tree-sitter-ruby = ["component", "wgpui-component/tree-sitter-ruby"]
+tree-sitter-rust = ["component", "wgpui-component/tree-sitter-rust"]
+tree-sitter-scala = ["component", "wgpui-component/tree-sitter-scala"]
+tree-sitter-sql = ["component", "wgpui-component/tree-sitter-sql"]
+tree-sitter-svelte = ["component", "wgpui-component/tree-sitter-svelte"]
+tree-sitter-swift = ["component", "wgpui-component/tree-sitter-swift"]
+tree-sitter-toml = ["component", "wgpui-component/tree-sitter-toml"]
+tree-sitter-tsx = ["component", "wgpui-component/tree-sitter-tsx"]
+tree-sitter-typescript = ["component", "wgpui-component/tree-sitter-typescript"]
+tree-sitter-yaml = ["component", "wgpui-component/tree-sitter-yaml"]
+tree-sitter-zig = ["component", "wgpui-component/tree-sitter-zig"]
 
 [dependencies]
-gpui.workspace = true
-gpui_platform.workspace = true
-gpui-base.workspace = true
-gpui-component = { workspace = true, optional = true }
-gpui-kit-assets = { workspace = true, optional = true }
+wgpui_derive.workspace = true
+wgpui.workspace = true
+wgpui-platform.workspace = true
+wgpui-base.workspace = true
+wgpui-component = { workspace = true, optional = true }
+wgpui-kit-assets = { workspace = true, optional = true }
 
 
 [dev-dependencies]
-gpui = { workspace = true, features = ["test-support"] }
+chrono = "0.4.45"
+lsp-types.workspace = true
+wgpui = { workspace = true, features = ["test-support"] }
+
+[[test]]
+name = "assets"
+required-features = ["assets"]
 
 [[test]]
 name = "window"
@@ -132,3 +142,13 @@ required-features = ["test-support", "component"]
 [[test]]
 name = "search"
 required-features = ["assets", "test-support", "component"]
+
+[[test]]
+name = "parity_ui"
+required-features = ["test-support", "component"]
+
+[[test]]
+name = "rendering"
+test = false
+harness = false
+required-features = ["test-support", "component", "assets"]

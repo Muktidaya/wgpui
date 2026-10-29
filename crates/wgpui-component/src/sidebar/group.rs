@@ -1,5 +1,5 @@
 use crate::{ActiveTheme, Collapsible, h_flex, sidebar::SidebarItem, v_flex};
-use gpui::{
+use wgpui::{
     App, ElementId, IntoElement, ParentElement, SharedString, Styled as _, Window, div,
     prelude::FluentBuilder as _,
 };

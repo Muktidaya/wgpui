@@ -8,7 +8,6 @@ use crate::{
         dispatcher::{CrossEvent, Dispatcher},
         keyboard::CrossKeyboardLayout,
         render_context::WgpuContext,
-        text_system::CosmicTextSystem,
         window::CrossWindow,
     },
     point, px, size,
@@ -47,7 +46,7 @@ pub(crate) fn with_active_platform<R>(f: impl FnOnce(&CrossPlatform) -> R) -> Op
 pub(crate) struct CrossPlatform {
     background_executor: BackgroundExecutor,
     foreground_executor: ForegroundExecutor,
-    text_system: Arc<CosmicTextSystem>,
+    text_system: Arc<dyn crate::PlatformTextSystem>,
     wgpu_context: Arc<WgpuContext>,
     main_rx: PriorityQueueReceiver<RunnableVariant>,
     event_loop: Cell<Option<winit::event_loop::EventLoop<CrossEvent>>>,
@@ -55,6 +54,18 @@ pub(crate) struct CrossPlatform {
     callbacks: PlatformCallbacks,
     displays: RefCell<Vec<Rc<dyn crate::PlatformDisplay>>>,
     menus: RefCell<Option<Vec<OwnedMenu>>>,
+    #[cfg(not(any(
+        target_os = "macos",
+        target_os = "windows",
+        target_os = "linux",
+        target_os = "freebsd"
+    )))]
+    clipboard: Arc<parking_lot::Mutex<Option<arboard::Clipboard>>>,
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    x11_clipboard:
+        Arc<parking_lot::Mutex<Option<Arc<crate::platform::x11_clipboard::X11Clipboard>>>>,
+    #[cfg(target_os = "linux")]
+    wayland_clipboard: Option<Arc<crate::platform::wayland_clipboard::WaylandClipboard>>,
 }
 
 #[derive(Default)]
@@ -69,12 +80,19 @@ struct PlatformCallbacks {
 
 struct AppState {
     windows: FxHashMap<winit::window::WindowId, CrossWindow>,
+    surface_registry: Arc<crate::platform::surface_registry::SurfaceRegistry>,
     on_finish_launching: Cell<Option<Box<dyn 'static + FnOnce()>>>,
     main_rx: PriorityQueueReceiver<RunnableVariant>,
     current_modifiers: Modifiers,
     pressed_button: Option<MouseButton>,
     click_state: ClickState,
     hover_paths: Vec<std::path::PathBuf>,
+}
+
+impl Drop for AppState {
+    fn drop(&mut self) {
+        self.surface_registry.shutdown();
+    }
 }
 
 struct ClickState {
@@ -90,6 +108,11 @@ impl CrossPlatform {
         let mut event_loop =
             winit::event_loop::EventLoop::<CrossEvent>::with_user_event().build()?;
         let event_loop_proxy = event_loop.create_proxy();
+        #[cfg(target_os = "linux")]
+        let wayland_clipboard = crate::platform::wayland_clipboard::WaylandClipboard::for_display(
+            event_loop.owned_display_handle(),
+        )?
+        .map(Arc::new);
 
         let dispatcher = Arc::new(Dispatcher::new(main_tx, event_loop_proxy.clone()));
         let background_executor = BackgroundExecutor::new(dispatcher.clone());
@@ -98,7 +121,7 @@ impl CrossPlatform {
         Ok(Self {
             background_executor,
             foreground_executor,
-            text_system: Arc::new(CosmicTextSystem::new()),
+            text_system: crate::platform::text_system::try_new()?,
             wgpu_context: Arc::new(WgpuContext::new()?),
             main_rx,
             event_loop: Cell::new(Some(event_loop)),
@@ -106,19 +129,36 @@ impl CrossPlatform {
             callbacks: PlatformCallbacks::default(),
             displays: RefCell::new(Vec::new()),
             menus: RefCell::new(None),
+            #[cfg(not(any(
+                target_os = "macos",
+                target_os = "windows",
+                target_os = "linux",
+                target_os = "freebsd"
+            )))]
+            clipboard: Arc::new(parking_lot::Mutex::new(None)),
+            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            x11_clipboard: Arc::new(parking_lot::Mutex::new(None)),
+            #[cfg(target_os = "linux")]
+            wayland_clipboard,
         })
     }
 
+    #[cfg(target_os = "macos")]
     pub(crate) fn perform_menu_action(&self, action_identifier: usize) {
         #[cfg(target_os = "macos")]
         crate::platform::macos_menu::with_action(action_identifier, |action| {
-            if let Some(mut callback) = self.callbacks.on_app_menu_action.take() {
-                callback(action);
-                self.callbacks.on_app_menu_action.set(Some(callback));
+            // Window lifecycle operations require the winit callback context.
+            // Clone now so rebuilding the menu cannot change the queued command.
+            if let Err(error) = self
+                .event_loop_proxy
+                .send_event(CrossEvent::MenuAction(action.boxed_clone()))
+            {
+                log::error!("Could not dispatch native menu action: {error}");
             }
         });
     }
 
+    #[cfg(target_os = "macos")]
     pub(crate) fn validate_menu_action(&self, action_identifier: usize) -> bool {
         #[cfg(target_os = "macos")]
         {
@@ -143,6 +183,7 @@ impl CrossPlatform {
         }
     }
 
+    #[cfg(target_os = "macos")]
     pub(crate) fn will_open_app_menu(&self) {
         if let Some(mut callback) = self.callbacks.on_will_open_app_menu.take() {
             callback();
@@ -154,6 +195,16 @@ impl CrossPlatform {
 impl Platform for CrossPlatform {
     fn background_executor(&self) -> BackgroundExecutor {
         self.background_executor.clone()
+    }
+
+    fn wgpu_gpu(&self) -> Option<crate::WgpuGpu> {
+        let ctx = &self.wgpu_context;
+        Some(crate::WgpuGpu {
+            instance: ctx.instance.clone(),
+            adapter: ctx.adapter.clone(),
+            device: ctx.device.clone(),
+            queue: ctx.queue.clone(),
+        })
     }
 
     fn foreground_executor(&self) -> ForegroundExecutor {
@@ -169,6 +220,7 @@ impl Platform for CrossPlatform {
 
         let mut app_state = AppState {
             windows: Default::default(),
+            surface_registry: self.wgpu_context.surface_registry.clone(),
             on_finish_launching: Cell::new(Some(on_finish_launching)),
             main_rx: self.main_rx.clone(),
             current_modifiers: Modifiers::default(),
@@ -183,10 +235,10 @@ impl Platform for CrossPlatform {
         };
 
         ACTIVE_PLATFORM.with(|platform| platform.set(Some(self as *const CrossPlatform)));
-        event_loop
-            .run_app(&mut app_state)
-            .expect("Failed to run App");
+        let result = event_loop.run_app(&mut app_state);
+        self.wgpu_context.surface_registry.shutdown();
         ACTIVE_PLATFORM.with(|platform| platform.set(None));
+        result.expect("Failed to run App");
     }
 
     fn quit(&self) {
@@ -199,21 +251,21 @@ impl Platform for CrossPlatform {
     }
 
     fn restart(&self, _binary_path: Option<std::path::PathBuf>) {
-        log::warn!("restart is not implemented in WGPUI 0.3.4");
+        log::warn!("restart is not implemented by the WGPUI platform backend");
     }
 
     fn activate(&self, _ignoring_other_apps: bool) {}
 
     fn hide(&self) {
-        log::warn!("hide is not implemented in WGPUI 0.3.4");
+        log::warn!("hide is not implemented by the WGPUI platform backend");
     }
 
     fn hide_other_apps(&self) {
-        log::warn!("hide_other_apps is not implemented in WGPUI 0.3.4");
+        log::warn!("hide_other_apps is not implemented by the WGPUI platform backend");
     }
 
     fn unhide_other_apps(&self) {
-        log::warn!("unhide_other_apps is not implemented in WGPUI 0.3.4");
+        log::warn!("unhide_other_apps is not implemented by the WGPUI platform backend");
     }
 
     fn displays(&self) -> Vec<Rc<dyn crate::PlatformDisplay>> {
@@ -249,6 +301,9 @@ impl Platform for CrossPlatform {
         let success = with_active_context(|event_loop, app_state| {
             let bounds = options.bounds;
             let attributes = winit::window::Window::default_attributes()
+                .with_visible(false)
+                .with_resizable(options.is_resizable)
+                .with_active(options.focus)
                 .with_title(
                     options
                         .titlebar
@@ -267,7 +322,8 @@ impl Platform for CrossPlatform {
             winit_window.set_ime_allowed(true);
             let window_id = winit_window.id();
 
-            window.initialize(winit_window);
+            window.initialize(winit_window, event_loop);
+            window.window().set_visible(options.show);
             app_state.windows.insert(window_id, window.clone());
             window.window().request_redraw();
         })
@@ -301,7 +357,7 @@ impl Platform for CrossPlatform {
 
     fn register_url_scheme(&self, _url: &str) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "register_url_scheme is not implemented in WGPUI 0.3.4"
+            "register_url_scheme is not implemented by the WGPUI platform backend"
         )))
     }
 
@@ -310,28 +366,16 @@ impl Platform for CrossPlatform {
         options: crate::PathPromptOptions,
     ) -> futures::channel::oneshot::Receiver<anyhow::Result<Option<Vec<std::path::PathBuf>>>> {
         let (sender, receiver) = futures::channel::oneshot::channel();
-        let files = options.files;
-        let directories = options.directories;
-        let multiple = options.multiple;
-        let prompt = options.prompt;
+        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        self.background_executor
+            .spawn(async move {
+                send_path_prompt_result(sender, portal_prompt_for_paths(options).await);
+            })
+            .detach();
+        #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
         self.foreground_executor
             .spawn(async move {
-                let mut dialog = rfd::FileDialog::new();
-                if let Some(prompt) = prompt {
-                    dialog = dialog.set_title(prompt.to_string());
-                }
-                let paths = if directories && !files {
-                    if multiple {
-                        dialog.pick_folders()
-                    } else {
-                        dialog.pick_folder().map(|path| vec![path])
-                    }
-                } else if multiple {
-                    dialog.pick_files()
-                } else {
-                    dialog.pick_file().map(|path| vec![path])
-                };
-                let _ = sender.send(Ok(paths));
+                send_path_prompt_result(sender, native_prompt_for_paths(options).await);
             })
             .detach();
         receiver
@@ -345,20 +389,34 @@ impl Platform for CrossPlatform {
         let (sender, receiver) = futures::channel::oneshot::channel();
         let directory = directory.to_path_buf();
         let suggested_name = suggested_name.map(str::to_string);
+        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        self.background_executor
+            .spawn(async move {
+                send_path_prompt_result(
+                    sender,
+                    portal_prompt_for_new_path(&directory, suggested_name.as_deref()).await,
+                );
+            })
+            .detach();
+        #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
         self.foreground_executor
             .spawn(async move {
-                let mut dialog = rfd::FileDialog::new().set_directory(&directory);
+                let mut dialog = rfd::AsyncFileDialog::new().set_directory(&directory);
                 if let Some(name) = suggested_name {
                     dialog = dialog.set_file_name(name);
                 }
-                let _ = sender.send(Ok(dialog.save_file()));
+                let path = dialog
+                    .save_file()
+                    .await
+                    .map(|file| file.path().to_path_buf());
+                send_path_prompt_result(sender, Ok(path));
             })
             .detach();
         receiver
     }
 
     fn can_select_mixed_files_and_dirs(&self) -> bool {
-        false
+        cfg!(target_os = "macos")
     }
 
     fn reveal_path(&self, path: &std::path::Path) {
@@ -407,14 +465,18 @@ impl Platform for CrossPlatform {
         self.callbacks.on_reopen.set(Some(callback));
     }
 
-    fn set_menus(&self, menus: Vec<crate::Menu>, keymap: &crate::Keymap) {
+    fn set_menus(&self, menus: Vec<crate::Menu>, _keymap: &crate::Keymap) {
         let owned_menus = menus
             .into_iter()
             .map(crate::Menu::owned)
             .collect::<Vec<_>>();
-        self.menus.replace(Some(owned_menus.clone()));
         #[cfg(target_os = "macos")]
-        crate::platform::macos_menu::install_menus(owned_menus, keymap);
+        let stored_menus = owned_menus.clone();
+        #[cfg(not(target_os = "macos"))]
+        let stored_menus = owned_menus;
+        self.menus.replace(Some(stored_menus));
+        #[cfg(target_os = "macos")]
+        crate::platform::macos_menu::install_menus(owned_menus, _keymap);
     }
 
     fn get_menus(&self) -> Option<Vec<crate::OwnedMenu>> {
@@ -422,7 +484,7 @@ impl Platform for CrossPlatform {
     }
 
     fn set_dock_menu(&self, _menu: Vec<crate::MenuItem>, _keymap: &crate::Keymap) {
-        log::warn!("set_dock_menu is not implemented in WGPUI 0.3.4");
+        log::warn!("set_dock_menu is not implemented by the WGPUI platform backend");
     }
 
     fn on_app_menu_action(&self, callback: Box<dyn FnMut(&dyn crate::Action)>) {
@@ -445,7 +507,7 @@ impl Platform for CrossPlatform {
 
     fn path_for_auxiliary_executable(&self, _name: &str) -> anyhow::Result<std::path::PathBuf> {
         Err(anyhow::anyhow!(
-            "path_for_auxiliary_executable is not implemented in WGPUI 0.3.4"
+            "path_for_auxiliary_executable is not implemented by the WGPUI platform backend"
         ))
     }
 
@@ -469,22 +531,95 @@ impl Platform for CrossPlatform {
     }
 
     fn write_to_clipboard(&self, item: crate::ClipboardItem) {
-        let Some(text) = item.text() else {
-            log::warn!("clipboard write skipped: no text entries");
-            return;
+        #[cfg(target_os = "macos")]
+        let result = crate::platform::macos_clipboard::write(item);
+        #[cfg(target_os = "windows")]
+        let result = crate::platform::windows_clipboard::write(item);
+        #[cfg(target_os = "linux")]
+        let result = if let Some(clipboard) = &self.wayland_clipboard {
+            clipboard.write(item)
+        } else {
+            x11_clipboard_handle(&self.x11_clipboard).and_then(|clipboard| clipboard.write(item))
         };
-        match arboard::Clipboard::new().and_then(|mut clipboard| clipboard.set_text(text)) {
-            Ok(()) => {}
-            Err(error) => log::warn!("write_to_clipboard failed: {error}"),
+        #[cfg(target_os = "freebsd")]
+        let result =
+            x11_clipboard_handle(&self.x11_clipboard).and_then(|clipboard| clipboard.write(item));
+        #[cfg(not(any(
+            target_os = "macos",
+            target_os = "windows",
+            target_os = "linux",
+            target_os = "freebsd"
+        )))]
+        let result = write_arboard_clipboard(&self.clipboard, item);
+        if let Err(error) = result {
+            log::warn!("clipboard write failed: {error:#}");
         }
     }
 
     fn read_from_clipboard(&self) -> Option<crate::ClipboardItem> {
-        arboard::Clipboard::new()
-            .ok()?
-            .get_text()
-            .ok()
-            .map(crate::ClipboardItem::new_string)
+        #[cfg(target_os = "macos")]
+        let result = crate::platform::macos_clipboard::read();
+        #[cfg(target_os = "windows")]
+        let result = crate::platform::windows_clipboard::read();
+        #[cfg(target_os = "linux")]
+        let result = if let Some(clipboard) = &self.wayland_clipboard {
+            clipboard.read()
+        } else {
+            x11_clipboard_handle(&self.x11_clipboard).and_then(|clipboard| clipboard.read())
+        };
+        #[cfg(target_os = "freebsd")]
+        let result =
+            x11_clipboard_handle(&self.x11_clipboard).and_then(|clipboard| clipboard.read());
+        #[cfg(not(any(
+            target_os = "macos",
+            target_os = "windows",
+            target_os = "linux",
+            target_os = "freebsd"
+        )))]
+        let result = read_arboard_clipboard(&self.clipboard);
+        match result {
+            Ok(item) => item,
+            Err(error) => {
+                log::warn!("clipboard read failed: {error:#}");
+                None
+            }
+        }
+    }
+
+    fn read_from_clipboard_async(&self) -> crate::Task<Result<Option<crate::ClipboardItem>>> {
+        #[cfg(target_os = "macos")]
+        {
+            self.background_executor()
+                .spawn(async move { crate::platform::macos_clipboard::read() })
+        }
+        #[cfg(target_os = "windows")]
+        {
+            self.background_executor()
+                .spawn(async move { crate::platform::windows_clipboard::read() })
+        }
+        #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        {
+            #[cfg(target_os = "linux")]
+            if let Some(clipboard) = self.wayland_clipboard.clone() {
+                return self
+                    .background_executor()
+                    .spawn(async move { clipboard.read() });
+            }
+            let clipboard = self.x11_clipboard.clone();
+            self.background_executor()
+                .spawn(async move { x11_clipboard_handle(&clipboard)?.read() })
+        }
+        #[cfg(not(any(
+            target_os = "macos",
+            target_os = "windows",
+            target_os = "linux",
+            target_os = "freebsd"
+        )))]
+        {
+            let clipboard = self.clipboard.clone();
+            self.background_executor()
+                .spawn(async move { read_arboard_clipboard(&clipboard) })
+        }
     }
 
     fn write_credentials(
@@ -494,7 +629,7 @@ impl Platform for CrossPlatform {
         _password: &[u8],
     ) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "write_credentials is not implemented in WGPUI 0.3.4"
+            "write_credentials is not implemented by the WGPUI platform backend"
         )))
     }
 
@@ -503,13 +638,13 @@ impl Platform for CrossPlatform {
         _url: &str,
     ) -> crate::Task<anyhow::Result<Option<(String, Vec<u8>)>>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "read_credentials is not implemented in WGPUI 0.3.4"
+            "read_credentials is not implemented by the WGPUI platform backend"
         )))
     }
 
     fn delete_credentials(&self, _url: &str) -> crate::Task<anyhow::Result<()>> {
         crate::Task::ready(Err(anyhow::anyhow!(
-            "delete_credentials is not implemented in WGPUI 0.3.4"
+            "delete_credentials is not implemented by the WGPUI platform backend"
         )))
     }
 
@@ -522,7 +657,7 @@ impl Platform for CrossPlatform {
     }
 
     fn on_keyboard_layout_change(&self, _callback: Box<dyn FnMut()>) {
-        // Keyboard layout change notifications are not wired in 0.3.4.
+        // Keyboard layout change notifications are not wired to the WGPUI platform backend.
     }
 }
 
@@ -543,12 +678,55 @@ impl AppState {
 }
 
 impl winit::application::ApplicationHandler<CrossEvent> for AppState {
-    fn new_events(&mut self, _event_loop: &ActiveEventLoop, _cause: winit::event::StartCause) {}
+    fn new_events(&mut self, _event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
+        if matches!(cause, winit::event::StartCause::ResumeTimeReached { .. }) {
+            let now = std::time::Instant::now();
+            for window in self.windows.values() {
+                if window
+                    .configure_retry_deadline()
+                    .is_some_and(|deadline| deadline <= now)
+                {
+                    window.window().request_redraw();
+                }
+            }
+        }
+    }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CrossEvent) {
         self.set_active_context(event_loop);
 
         match event {
+            CrossEvent::Accessibility(event) => {
+                if let Some(window) = self.windows.get(&event.window_id) {
+                    match &event.window_event {
+                        accesskit_winit::WindowEvent::InitialTreeRequested => {
+                            window.0.state.accessibility_active.set(true)
+                        }
+                        accesskit_winit::WindowEvent::AccessibilityDeactivated => {
+                            window.0.state.accessibility_active.set(false)
+                        }
+                        accesskit_winit::WindowEvent::ActionRequested(_) => {}
+                    }
+                    window.0.state.callbacks.invoke_mut(
+                        &window.0.state.callbacks.on_accessibility_event,
+                        |callback| callback(event.window_event.clone()),
+                    );
+                    window.window().request_redraw();
+                }
+            }
+            #[cfg(target_os = "macos")]
+            CrossEvent::MenuAction(action) => {
+                with_active_platform(|platform| {
+                    if let Some(mut callback) = platform.callbacks.on_app_menu_action.take() {
+                        callback(action.as_ref());
+                        platform.callbacks.on_app_menu_action.set(Some(callback));
+                    }
+                });
+                self.drain_main_queue();
+                for window in self.windows.values() {
+                    window.window().request_redraw();
+                }
+            }
             CrossEvent::WakeUp => {
                 self.drain_main_queue();
                 for window in self.windows.values() {
@@ -579,6 +757,17 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         self.drain_main_queue();
         refresh_displays(event_loop);
 
+        // A window removed by the app (`Window::remove_window`) dropped its
+        // `CrossWindow`, but the clone here kept the winit window, and so the
+        // native one, on screen, never drawn again. Release it too.
+        self.windows.retain(|_, window| {
+            let retain = Rc::strong_count(&window.0) > 1;
+            if !retain {
+                window.close_surfaces();
+            }
+            retain
+        });
+
         // Do NOT unconditionally request_redraw() here. Rendering is driven
         // by three sources:
         //   1. CrossEvent::WakeUp — sent by BackgroundExecutor::wake() from
@@ -592,18 +781,36 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         //
         // With no unconditional redraw, the event loop genuinely sleeps when
         // idle, dropping CPU usage to ~0%.
-        event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
+        let retry = self
+            .windows
+            .values()
+            .filter_map(CrossWindow::configure_retry_deadline)
+            .min();
+        event_loop.set_control_flow(match retry {
+            Some(deadline) => winit::event_loop::ControlFlow::WaitUntil(deadline),
+            None => winit::event_loop::ControlFlow::Wait,
+        });
 
         self.clear_active_context();
     }
 
-    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {}
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        #[cfg(feature = "profiler")]
+        crate::profiler::record_power_interruption();
+    }
 
-    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {}
+    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
+        self.surface_registry.shutdown();
+        for window in self.windows.values() {
+            window.close_surfaces();
+        }
+    }
 
     fn memory_warning(&mut self, _event_loop: &ActiveEventLoop) {}
 
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        #[cfg(feature = "profiler")]
+        crate::profiler::record_power_interruption();
         self.set_active_context(event_loop);
 
         if let Some(on_finish_launching) = self.on_finish_launching.take() {
@@ -621,12 +828,27 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
         event: winit::event::WindowEvent,
     ) {
         self.set_active_context(event_loop);
+        // Raw callback pointers must not escape early-return paths such as stale touch events.
+        let _callback_context = util::defer(|| ACTIVE_CONTEXT.with(|context| context.set(None)));
 
         let Some(window) = self.windows.get(&window_id) else {
             return;
         };
 
+        if let Some(adapter) = window.0.accessibility_adapter.get() {
+            adapter.borrow_mut().process_event(window.window(), &event);
+        }
         match event {
+            winit::event::WindowEvent::Occluded(occluded) => {
+                window.0.state.occluded.set(occluded);
+                window
+                    .0
+                    .state
+                    .callbacks
+                    .invoke_mut(&window.0.state.callbacks.on_visibility_change, |callback| {
+                        callback(!occluded)
+                    });
+            }
             winit::event::WindowEvent::Resized(physical_size) => {
                 if physical_size.width == 0 || physical_size.height == 0 {
                     return;
@@ -652,6 +874,10 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .invoke_mut(&window.0.state.callbacks.on_resize, |cb| {
                         cb(size, scale_factor);
                     });
+                window.0.state.callbacks.invoke_mut(
+                    &window.0.state.callbacks.on_visual_viewport_changed,
+                    |callback| callback(),
+                );
             }
 
             winit::event::WindowEvent::Moved(_) => {
@@ -665,6 +891,9 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
             }
 
             winit::event::WindowEvent::Focused(active) => {
+                if !active {
+                    window.0.state.touch_ids.borrow_mut().clear();
+                }
                 window
                     .0
                     .state
@@ -682,6 +911,14 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .invoke_mut(&window.0.state.callbacks.on_appearance_changed, |cb| cb());
             }
 
+            winit::event::WindowEvent::Destroyed => {
+                window.close_surfaces();
+                if let Some(callback) = window.0.state.callbacks.on_close.take() {
+                    callback();
+                }
+                self.windows.remove(&window_id);
+            }
+
             winit::event::WindowEvent::CloseRequested => {
                 let should_close = window
                     .0
@@ -697,6 +934,7 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     .unwrap_or(true);
 
                 if should_close {
+                    window.close_surfaces();
                     if let Some(cb) = window.0.state.callbacks.on_close.take() {
                         cb();
                     }
@@ -710,14 +948,20 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     return;
                 }
 
+                let surface_pending = window
+                    .0
+                    .wgpu_context
+                    .surface_registry
+                    .has_present_pending_for(window_id);
                 window.0.state.callbacks.invoke_mut(
                     &window.0.state.callbacks.on_request_frame,
                     |cb| {
                         cb(crate::RequestFrameOptions {
                             force_render: false,
-                            // Only present after an actual draw; don't keep the
-                            // GPU busy re-presenting the same frame every tick.
-                            require_presentation: false,
+                            // Only present after an actual draw or a surface present;
+                            // don't keep the GPU busy re-presenting the same frame every tick.
+                            require_presentation: surface_pending
+                                || window.configure_retry_deadline().is_some(),
                         });
                     },
                 );
@@ -769,9 +1013,9 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                     // winit delivers ordinary text in KeyboardInput, separately
                     // from IME commits. Only unconsumed text reaches the editor.
                     if propagate && let Some(text) = text_input {
-                        if let Some(handler) = window.0.state.input_handler.borrow_mut().as_mut() {
+                        window.with_input_handler(|handler| {
                             handler.replace_text_in_range(None, &text);
-                        }
+                        });
                     }
                 }
             }
@@ -907,14 +1151,89 @@ impl winit::application::ApplicationHandler<CrossEvent> for AppState {
                 let touch_phase = match phase {
                     winit::event::TouchPhase::Started => crate::TouchPhase::Started,
                     winit::event::TouchPhase::Moved => crate::TouchPhase::Moved,
-                    winit::event::TouchPhase::Ended | winit::event::TouchPhase::Cancelled => {
-                        crate::TouchPhase::Ended
-                    }
+                    winit::event::TouchPhase::Ended => crate::TouchPhase::Ended,
+                    winit::event::TouchPhase::Cancelled => crate::TouchPhase::Cancelled,
                 };
 
                 let platform_event = PlatformInput::ScrollWheel(ScrollWheelEvent {
                     position,
                     delta: scroll_delta,
+                    modifiers,
+                    touch_phase,
+                });
+
+                window
+                    .0
+                    .state
+                    .callbacks
+                    .invoke_mut(&window.0.state.callbacks.on_input, |cb| {
+                        cb(platform_event.clone());
+                    });
+            }
+
+            winit::event::WindowEvent::Touch(touch) => {
+                let id = if touch.phase == winit::event::TouchPhase::Started {
+                    let Some(next) = window.0.state.next_touch_id.get().checked_add(1) else {
+                        log::error!("touch identifier space exhausted");
+                        return;
+                    };
+                    window.0.state.next_touch_id.set(next);
+                    let id = crate::TouchId(next);
+                    window.0.state.touch_ids.borrow_mut().insert(touch.id, id);
+                    id
+                } else if let Some(id) = window.0.state.touch_ids.borrow().get(&touch.id).copied() {
+                    id
+                } else {
+                    return;
+                };
+                if matches!(
+                    touch.phase,
+                    winit::event::TouchPhase::Ended | winit::event::TouchPhase::Cancelled
+                ) {
+                    window.0.state.touch_ids.borrow_mut().remove(&touch.id);
+                }
+                let scale = f64::from(window.scale_factor());
+                let phase = match touch.phase {
+                    winit::event::TouchPhase::Started => crate::TouchPhase::Started,
+                    winit::event::TouchPhase::Moved => crate::TouchPhase::Moved,
+                    winit::event::TouchPhase::Ended => crate::TouchPhase::Ended,
+                    winit::event::TouchPhase::Cancelled => crate::TouchPhase::Cancelled,
+                };
+                let event = PlatformInput::Touch(crate::TouchEvent {
+                    id,
+                    phase,
+                    position: point(
+                        px((touch.location.x / scale) as f32),
+                        px((touch.location.y / scale) as f32),
+                    ),
+                    predicted_position: None,
+                    force: touch.force.map(|force| force.normalized() as f32),
+                });
+                window.0.state.callbacks.invoke_mut(
+                    &window.0.state.callbacks.on_input,
+                    |callback| {
+                        callback(event.clone());
+                    },
+                );
+            }
+
+            winit::event::WindowEvent::PinchGesture { delta, phase, .. } => {
+                let modifiers = window.0.state.modifiers.get();
+
+                // The platform reports no position for a pinch; see
+                // `PinchEvent::position` for why this one may be stale.
+                let position = window.0.state.mouse_position.get();
+
+                let touch_phase = match phase {
+                    winit::event::TouchPhase::Started => crate::TouchPhase::Started,
+                    winit::event::TouchPhase::Moved => crate::TouchPhase::Moved,
+                    winit::event::TouchPhase::Ended => crate::TouchPhase::Ended,
+                    winit::event::TouchPhase::Cancelled => crate::TouchPhase::Cancelled,
+                };
+
+                let platform_event = PlatformInput::Pinch(crate::PinchEvent {
+                    position,
+                    delta: delta as f32,
                     modifiers,
                     touch_phase,
                 });
@@ -1090,7 +1409,10 @@ fn winit_key_to_keystroke(
                 | NamedKey::Meta => return None,
                 _ => return None,
             };
-            (key_name.to_string(), (*named == NamedKey::Space).then(|| " ".to_owned()))
+            (
+                key_name.to_string(),
+                (*named == NamedKey::Space).then(|| " ".to_owned()),
+            )
         }
         WKey::Character(ch) => {
             let key = ch.to_lowercase();
@@ -1145,37 +1467,141 @@ fn dispatch_input(window: &CrossWindow, event: PlatformInput) {
         });
 }
 
-fn handle_ime(window: &CrossWindow, ime: winit::event::Ime) {
-    let mut input_handler = window.0.state.input_handler.borrow_mut();
-    let Some(handler) = input_handler.as_mut() else {
-        return;
-    };
-    match ime {
-        winit::event::Ime::Enabled => {}
-        winit::event::Ime::Preedit(text, cursor) => {
-            if text.is_empty() {
-                handler.unmark_text();
-            } else {
-                let selected = cursor.map(|(start, end)| {
-                    byte_offset_to_utf16(&text, start)..byte_offset_to_utf16(&text, end)
-                });
-                handler.replace_and_mark_text_in_range(None, &text, selected);
-            }
-        }
-        winit::event::Ime::Commit(text) => {
-            handler.replace_text_in_range(None, &text);
-            handler.unmark_text();
-        }
-        winit::event::Ime::Disabled => {
-            handler.unmark_text();
-        }
+fn send_path_prompt_result<T>(
+    sender: futures::channel::oneshot::Sender<Result<Option<T>>>,
+    result: Result<Option<T>>,
+) {
+    if sender.send(result).is_err() {
+        log::debug!("file picker requester was dropped before its response arrived");
     }
 }
 
-fn byte_offset_to_utf16(text: &str, byte: usize) -> usize {
-    text.get(..byte.min(text.len()))
-        .map(|prefix| prefix.encode_utf16().count())
-        .unwrap_or_else(|| text.encode_utf16().count())
+#[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+async fn native_prompt_for_paths(
+    options: crate::PathPromptOptions,
+) -> Result<Option<Vec<std::path::PathBuf>>> {
+    anyhow::ensure!(
+        options.files || options.directories,
+        "no selectable path types requested"
+    );
+    let mut dialog = rfd::AsyncFileDialog::new();
+    if let Some(prompt) = options.prompt {
+        dialog = dialog.set_title(prompt.to_string());
+    }
+    #[cfg(target_os = "macos")]
+    if options.files && options.directories {
+        let files = if options.multiple {
+            dialog.pick_files_or_folders().await
+        } else {
+            dialog.pick_file_or_folder().await.map(|file| vec![file])
+        };
+        return Ok(files.map(|files| {
+            files
+                .into_iter()
+                .map(|file| file.path().to_path_buf())
+                .collect()
+        }));
+    }
+    anyhow::ensure!(
+        !(options.files && options.directories),
+        "mixed file and directory selection is unsupported on this platform"
+    );
+    let files = if options.directories {
+        if options.multiple {
+            dialog.pick_folders().await
+        } else {
+            dialog.pick_folder().await.map(|file| vec![file])
+        }
+    } else if options.multiple {
+        dialog.pick_files().await
+    } else {
+        dialog.pick_file().await.map(|file| vec![file])
+    };
+    Ok(files.map(|files| {
+        files
+            .into_iter()
+            .map(|file| file.path().to_path_buf())
+            .collect()
+    }))
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+async fn portal_prompt_for_paths(
+    options: crate::PathPromptOptions,
+) -> Result<Option<Vec<std::path::PathBuf>>> {
+    anyhow::ensure!(
+        options.files || options.directories,
+        "no selectable path types requested"
+    );
+    anyhow::ensure!(
+        !(options.files && options.directories),
+        "mixed file and directory selection is unsupported by the file chooser portal"
+    );
+    let response = ashpd::desktop::file_chooser::SelectedFiles::open_file()
+        .title(options.prompt.as_ref().map(|prompt| prompt.as_ref()))
+        .directory(options.directories)
+        .multiple(options.multiple)
+        .modal(true)
+        .send()
+        .await;
+    portal_path_prompt_response(response.and_then(|request| request.response()))
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+async fn portal_prompt_for_new_path(
+    directory: &std::path::Path,
+    suggested_name: Option<&str>,
+) -> Result<Option<std::path::PathBuf>> {
+    let response = ashpd::desktop::file_chooser::SelectedFiles::save_file()
+        .current_folder(directory)?
+        .current_name(suggested_name)
+        .modal(true)
+        .send()
+        .await;
+    match portal_path_prompt_response(response.and_then(|request| request.response()))? {
+        None => Ok(None),
+        Some(paths) => match paths.as_slice() {
+            [path] => Ok(Some(path.clone())),
+            _ => anyhow::bail!("save file portal returned more than one path"),
+        },
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+fn portal_path_prompt_response(
+    response: ashpd::Result<ashpd::desktop::file_chooser::SelectedFiles>,
+) -> Result<Option<Vec<std::path::PathBuf>>> {
+    match response {
+        Ok(files) => {
+            let paths = portal_file_paths(files.uris())?;
+            anyhow::ensure!(
+                !paths.is_empty(),
+                "file chooser portal returned no selected paths"
+            );
+            Ok(Some(paths))
+        }
+        Err(ashpd::Error::Response(ashpd::desktop::ResponseError::Cancelled)) => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+fn portal_file_paths(uris: &[ashpd::Uri]) -> Result<Vec<std::path::PathBuf>> {
+    uris.iter()
+        .map(|uri| {
+            http_client::Url::parse(uri.as_str())?
+                .to_file_path()
+                .map_err(|()| anyhow::anyhow!("file chooser portal returned a non-local file URI"))
+        })
+        .collect()
+}
+
+fn handle_ime(window: &CrossWindow, ime: winit::event::Ime) {
+    window.with_input_handler(|handler| {
+        if let Err(error) = handler.handle_ime_event(ime) {
+            log::error!("failed to dispatch native IME event: {error:#}");
+        }
+    });
 }
 
 fn cursor_icon(style: crate::CursorStyle) -> winit::window::CursorIcon {
@@ -1212,6 +1638,7 @@ struct WinitDisplay {
     id: DisplayId,
     uuid: uuid::Uuid,
     bounds: Bounds<Pixels>,
+    refresh_interval: Option<std::time::Duration>,
 }
 
 impl WinitDisplay {
@@ -1230,6 +1657,10 @@ impl WinitDisplay {
             id: DisplayId(index),
             uuid,
             bounds: Bounds::new(origin, bounds_size),
+            refresh_interval: monitor
+                .refresh_rate_millihertz()
+                .filter(|rate| *rate > 0)
+                .map(|rate| std::time::Duration::from_secs_f64(1000.0 / f64::from(rate))),
         }
     }
 }
@@ -1252,6 +1683,10 @@ pub(crate) fn display_for_winit_monitor(
 }
 
 impl PlatformDisplay for WinitDisplay {
+    fn refresh_interval(&self) -> Option<std::time::Duration> {
+        self.refresh_interval
+    }
+
     fn id(&self) -> DisplayId {
         self.id
     }
@@ -1298,5 +1733,98 @@ mod keyboard_text_tests {
         assert_eq!(unhandled_key_text(&key), None);
         key.key_char = None;
         assert_eq!(unhandled_key_text(&key), None);
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[test]
+    fn portal_cancellation_is_distinct_from_failure_and_local_paths_are_lossless() {
+        assert!(
+            portal_path_prompt_response(Err(ashpd::Error::Response(
+                ashpd::desktop::ResponseError::Cancelled,
+            )))
+            .expect("cancelled portal request")
+            .is_none()
+        );
+        assert!(portal_path_prompt_response(Err(ashpd::Error::NoResponse)).is_err());
+        assert!(
+            portal_path_prompt_response(Err(ashpd::Error::Response(
+                ashpd::desktop::ResponseError::Other,
+            )))
+            .is_err()
+        );
+        assert_eq!(
+            portal_file_paths(&[
+                ashpd::Uri::parse("file:///tmp/WGPUI-%CE%94%20%E7%95%8C.txt")
+                    .expect("valid file URI"),
+            ])
+            .expect("decode local file URI"),
+            vec![std::path::PathBuf::from("/tmp/WGPUI-Δ 界.txt")]
+        );
+        assert!(
+            portal_file_paths(&[
+                ashpd::Uri::parse("https://example.com/file.txt").expect("valid remote URI"),
+            ])
+            .is_err()
+        );
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+fn x11_clipboard_handle(
+    clipboard: &parking_lot::Mutex<Option<Arc<crate::platform::x11_clipboard::X11Clipboard>>>,
+) -> Result<Arc<crate::platform::x11_clipboard::X11Clipboard>> {
+    let mut clipboard = clipboard.lock();
+    if let Some(clipboard) = clipboard.as_ref() {
+        return Ok(clipboard.clone());
+    }
+    let handle = Arc::new(crate::platform::x11_clipboard::X11Clipboard::new()?);
+    *clipboard = Some(handle.clone());
+    Ok(handle)
+}
+
+#[cfg(not(any(
+    target_os = "macos",
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "freebsd"
+)))]
+fn write_arboard_clipboard(
+    clipboard: &parking_lot::Mutex<Option<arboard::Clipboard>>,
+    item: crate::ClipboardItem,
+) -> Result<()> {
+    let text = item
+        .text()
+        .ok_or_else(|| anyhow::anyhow!("Clipboard payload has no text"))?;
+    let mut clipboard = clipboard.lock();
+    if clipboard.is_none() {
+        *clipboard = Some(arboard::Clipboard::new()?);
+    }
+    clipboard
+        .as_mut()
+        .ok_or_else(|| anyhow::anyhow!("Clipboard initialization did not produce a handle"))?
+        .set_text(text)?;
+    Ok(())
+}
+
+#[cfg(not(any(
+    target_os = "macos",
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "freebsd"
+)))]
+fn read_arboard_clipboard(
+    clipboard: &parking_lot::Mutex<Option<arboard::Clipboard>>,
+) -> Result<Option<crate::ClipboardItem>> {
+    let mut clipboard = clipboard.lock();
+    if clipboard.is_none() {
+        *clipboard = Some(arboard::Clipboard::new()?);
+    }
+    let clipboard = clipboard
+        .as_mut()
+        .ok_or_else(|| anyhow::anyhow!("clipboard initialization did not produce a handle"))?;
+    match clipboard.get_text() {
+        Ok(text) => Ok(Some(crate::ClipboardItem::new_string(text))),
+        Err(arboard::Error::ContentNotAvailable) => Ok(None),
+        Err(error) => Err(error.into()),
     }
 }

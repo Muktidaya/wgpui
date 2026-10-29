@@ -1,16 +1,16 @@
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
     RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     div, prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
-use crate::StyledExt as _;
+use crate::{StyledExt as _, TestSupportExt as _};
 
 /// An unstyled linear progress root with controlled value accessibility.
 #[derive(IntoElement)]
 pub struct Progress {
-    base: gpui::Stateful<Div>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     style: StyleRefinement,
     value: f32,
     indeterminate: bool,
@@ -21,7 +21,7 @@ pub struct Progress {
 impl Progress {
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
-            base: div().id(id),
+            base: div().id(id).test_support(),
             style: StyleRefinement::default(),
             value: 0.,
             indeterminate: false,
@@ -130,10 +130,10 @@ progress_part!(ProgressIndicator, "An unstyled progress indicator.");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Element as _, accesskit};
+    use wgpui::{Element as _, accesskit};
 
-    #[gpui::test]
-    fn clamps_and_projects_numeric_accessibility(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn clamps_and_projects_numeric_accessibility(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let mut node = accesskit::Node::new(Role::ProgressIndicator);
@@ -149,8 +149,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn indeterminate_progress_omits_numeric_value(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn indeterminate_progress_omits_numeric_value(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let mut node = accesskit::Node::new(Role::ProgressIndicator);
@@ -165,8 +165,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn progress_projects_its_accessible_name(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn progress_projects_its_accessible_name(cx: &mut wgpui::TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
             let mut node = accesskit::Node::new(Role::ProgressIndicator);

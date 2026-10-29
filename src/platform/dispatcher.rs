@@ -7,7 +7,10 @@ use std::thread::ThreadId;
 use winit::event_loop::EventLoopProxy;
 
 pub enum CrossEvent {
+    Accessibility(accesskit_winit::Event),
     WakeUp,
+    #[cfg(target_os = "macos")]
+    MenuAction(Box<dyn crate::Action>),
     SurfacePresent(winit::window::WindowId),
 }
 
@@ -102,5 +105,11 @@ impl super::priority_pool::Priority for Priority {
             Priority::Low => 2,
             _ => unreachable!(),
         }
+    }
+}
+
+impl From<accesskit_winit::Event> for CrossEvent {
+    fn from(event: accesskit_winit::Event) -> Self {
+        Self::Accessibility(event)
     }
 }

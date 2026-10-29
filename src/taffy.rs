@@ -6,7 +6,7 @@ use collections::{FxHashMap, FxHashSet};
 use stacksafe::{StackSafe, stacksafe};
 use std::{fmt::Debug, ops::Range};
 use taffy::{
-    TaffyTree, TraversePartialTree as _,
+    CoreStyle as _, TaffyTree, TraversePartialTree as _,
     geometry::{Point as TaffyPoint, Rect as TaffyRect, Size as TaffySize},
     style::AvailableSpace as TaffyAvailableSpace,
     tree::NodeId,
@@ -201,32 +201,43 @@ impl TaffyLayoutEngine {
             .compute_layout_with_measure(
                 id.into(),
                 available_space.into(),
-                |known_dimensions, available_space, _id, node_context, _style| {
-                    let Some(node_context) = node_context else {
-                        return taffy::geometry::Size::default();
-                    };
+                |inputs, _id, node_context, style| {
+                    taffy::compute_leaf_layout(
+                        inputs,
+                        style,
+                        |_, _| 0.0,
+                        |known_dimensions, available_space| {
+                            let Some(node_context) = node_context else {
+                                return taffy::geometry::Size::default();
+                            };
 
-                    let known_dimensions = Size {
-                        width: known_dimensions.width.map(|e| Pixels(e / scale_factor)),
-                        height: known_dimensions.height.map(|e| Pixels(e / scale_factor)),
-                    };
+                            let known_dimensions = Size {
+                                width: known_dimensions.width.map(|e| Pixels(e / scale_factor)),
+                                height: known_dimensions.height.map(|e| Pixels(e / scale_factor)),
+                            };
 
-                    let available_space: Size<AvailableSpace> = available_space.into();
-                    let untransform = |ev: AvailableSpace| match ev {
-                        AvailableSpace::Definite(pixels) => {
-                            AvailableSpace::Definite(Pixels(pixels.0 / scale_factor))
-                        }
-                        AvailableSpace::MinContent => AvailableSpace::MinContent,
-                        AvailableSpace::MaxContent => AvailableSpace::MaxContent,
-                    };
-                    let available_space = size(
-                        untransform(available_space.width),
-                        untransform(available_space.height),
-                    );
+                            let available_space: Size<AvailableSpace> = available_space.into();
+                            let untransform = |ev: AvailableSpace| match ev {
+                                AvailableSpace::Definite(pixels) => {
+                                    AvailableSpace::Definite(Pixels(pixels.0 / scale_factor))
+                                }
+                                AvailableSpace::MinContent => AvailableSpace::MinContent,
+                                AvailableSpace::MaxContent => AvailableSpace::MaxContent,
+                            };
+                            let available_space = size(
+                                untransform(available_space.width),
+                                untransform(available_space.height),
+                            );
 
-                    let a: Size<Pixels> =
-                        (node_context.measure)(known_dimensions, available_space, window, cx);
-                    size(a.width.0 * scale_factor, a.height.0 * scale_factor).into()
+                            let a: Size<Pixels> = (node_context.measure)(
+                                known_dimensions,
+                                available_space,
+                                window,
+                                cx,
+                            );
+                            size(a.width.0 * scale_factor, a.height.0 * scale_factor).into()
+                        },
+                    )
                 },
             )
             .expect(EXPECT_MESSAGE);
@@ -249,13 +260,38 @@ impl TaffyLayoutEngine {
             ),
         };
 
-        if let Some(parent_id) = self.taffy.parent(id.0) {
+        if let Some(parent_id) = self.layout_parent(id) {
             let parent_bounds = self.layout_bounds(parent_id.into(), scale_factor);
             bounds.origin += parent_bounds.origin;
         }
         self.absolute_layout_bounds.insert(id, bounds);
 
         bounds
+    }
+
+    fn layout_parent(&self, id: LayoutId) -> Option<NodeId> {
+        let parent = self.taffy.parent(id.0);
+        let position = self.taffy.style(id.0).expect(EXPECT_MESSAGE).position;
+        if position.is_out_of_flow() {
+            let mut ancestor = parent;
+            while let Some(ancestor_id) = ancestor {
+                // Out-of-flow locations are relative to the containing block, which can skip
+                // static ancestors. Adding the immediate parent's origin would count it twice.
+                let ancestor_parent = self.taffy.parent(ancestor_id);
+                if self
+                    .taffy
+                    .style(ancestor_id)
+                    .expect(EXPECT_MESSAGE)
+                    .is_containing_block()
+                    .for_position(position)
+                    || ancestor_parent.is_none()
+                {
+                    return Some(ancestor_id);
+                }
+                ancestor = ancestor_parent;
+            }
+        }
+        parent
     }
 }
 
@@ -327,10 +363,19 @@ impl ToTaffy<taffy::style::Style> for Style {
             margin: self.margin.to_taffy(rem_size, scale_factor),
             padding: self.padding.to_taffy(rem_size, scale_factor),
             border: self.border_widths.to_taffy(rem_size, scale_factor),
-            align_items: self.align_items.map(|x| x.into()),
+            align_items: self
+                .align_items
+                .map(Into::into)
+                .unwrap_or(taffy::AlignItems::NORMAL),
             align_self: self.align_self.map(|x| x.into()),
-            align_content: self.align_content.map(|x| x.into()),
-            justify_content: self.justify_content.map(|x| x.into()),
+            align_content: self
+                .align_content
+                .map(Into::into)
+                .unwrap_or(taffy::AlignContent::NORMAL),
+            justify_content: self
+                .justify_content
+                .map(Into::into)
+                .unwrap_or(taffy::JustifyContent::NORMAL),
             gap: self.gap.to_taffy(rem_size, scale_factor),
             flex_direction: self.flex_direction.into(),
             flex_wrap: self.flex_wrap.into(),
@@ -605,5 +650,121 @@ impl From<Size<Pixels>> for Size<AvailableSpace> {
             width: AvailableSpace::Definite(size.width),
             height: AvailableSpace::Definite(size.height),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::px;
+    use taffy::style_helpers::length;
+
+    #[test]
+    fn default_style_keeps_relative_positioning() {
+        let style = Style::default().to_taffy(px(16.0), 1.0);
+        assert_eq!(style.position, taffy::Position::Relative);
+        assert_eq!(style.align_items, taffy::AlignItems::NORMAL);
+        assert_eq!(style.align_content, taffy::AlignContent::NORMAL);
+        assert_eq!(style.justify_content, taffy::JustifyContent::NORMAL);
+    }
+
+    #[test]
+    fn absolute_bounds_use_the_containing_block() -> anyhow::Result<()> {
+        for scale_factor in [1.0, 2.0] {
+            for (parent_position, expected_origin) in [
+                (taffy::Position::Static, point(px(20.0), px(28.0))),
+                (taffy::Position::Relative, point(px(60.0), px(58.0))),
+            ] {
+                let mut engine = TaffyLayoutEngine::new();
+                let descendant = engine.taffy.new_leaf(taffy::Style {
+                    size: TaffySize {
+                        width: length(5.0 * scale_factor),
+                        height: length(5.0 * scale_factor),
+                    },
+                    ..Default::default()
+                })?;
+                let absolute = engine.taffy.new_with_children(
+                    taffy::Style {
+                        display: taffy::Display::Flex,
+                        position: taffy::Position::Absolute,
+                        size: TaffySize {
+                            width: length(20.0 * scale_factor),
+                            height: length(20.0 * scale_factor),
+                        },
+                        inset: TaffyRect {
+                            left: length(7.0 * scale_factor),
+                            top: length(11.0 * scale_factor),
+                            right: taffy::LengthPercentageAuto::auto(),
+                            bottom: taffy::LengthPercentageAuto::auto(),
+                        },
+                        padding: TaffyRect {
+                            left: length(3.0 * scale_factor),
+                            top: length(5.0 * scale_factor),
+                            right: length(0.0),
+                            bottom: length(0.0),
+                        },
+                        ..Default::default()
+                    },
+                    &[descendant],
+                )?;
+                let parent = engine.taffy.new_with_children(
+                    taffy::Style {
+                        display: taffy::Display::Flex,
+                        position: parent_position,
+                        size: TaffySize {
+                            width: length(100.0 * scale_factor),
+                            height: length(80.0 * scale_factor),
+                        },
+                        ..Default::default()
+                    },
+                    &[absolute],
+                )?;
+                let root = engine.taffy.new_with_children(
+                    taffy::Style {
+                        display: taffy::Display::Flex,
+                        position: taffy::Position::Relative,
+                        size: TaffySize {
+                            width: length(200.0 * scale_factor),
+                            height: length(160.0 * scale_factor),
+                        },
+                        inset: TaffyRect {
+                            left: length(13.0 * scale_factor),
+                            top: length(17.0 * scale_factor),
+                            right: taffy::LengthPercentageAuto::auto(),
+                            bottom: taffy::LengthPercentageAuto::auto(),
+                        },
+                        padding: TaffyRect {
+                            left: length(40.0 * scale_factor),
+                            top: length(30.0 * scale_factor),
+                            right: length(0.0),
+                            bottom: length(0.0),
+                        },
+                        ..Default::default()
+                    },
+                    &[parent],
+                )?;
+                engine.taffy.compute_layout(
+                    root,
+                    TaffySize {
+                        width: TaffyAvailableSpace::Definite(200.0 * scale_factor),
+                        height: TaffyAvailableSpace::Definite(160.0 * scale_factor),
+                    },
+                )?;
+
+                assert_eq!(
+                    engine.layout_bounds(absolute.into(), scale_factor).origin,
+                    expected_origin
+                );
+                assert_eq!(
+                    engine.layout_bounds(descendant.into(), scale_factor).origin,
+                    expected_origin + point(px(3.0), px(5.0))
+                );
+                assert_eq!(
+                    engine.layout_bounds(parent.into(), scale_factor).origin,
+                    point(px(53.0), px(47.0))
+                );
+            }
+        }
+        Ok(())
     }
 }

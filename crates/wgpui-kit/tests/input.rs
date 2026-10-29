@@ -1,7 +1,7 @@
-use gpui::{
+use wgpui::{
     AppContext, Context, Entity, TestAppContext, Window, WindowHandle, div, prelude::*, px,
 };
-use gpui_component::input::{Input, InputState};
+use wgpui_component::input::{Input, InputState};
 use wgpui_kit::test::TestWindowExt;
 
 struct Inputs {
@@ -32,7 +32,7 @@ impl Render for Inputs {
     }
 }
 fn inputs(cx: &mut TestAppContext) -> WindowHandle<Inputs> {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     cx.add_window(|window, cx| Inputs {
         first: cx.new(|cx| InputState::new(window, cx)),
         second: cx.new(|cx| InputState::new(window, cx)),
@@ -43,7 +43,7 @@ fn inputs(cx: &mut TestAppContext) -> WindowHandle<Inputs> {
     })
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn text_goes_only_to_the_focused_input(cx: &mut TestAppContext) {
     let handle = inputs(cx);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -67,7 +67,7 @@ fn text_goes_only_to_the_focused_input(cx: &mut TestAppContext) {
         .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn readonly_and_disabled_inputs_reject_native_typing(cx: &mut TestAppContext) {
     let handle = inputs(cx);
     for disabled in [false, true] {
@@ -94,7 +94,7 @@ fn readonly_and_disabled_inputs_reject_native_typing(cx: &mut TestAppContext) {
     }
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn masked_input_handles_typing_without_reporting_secret_value(cx: &mut TestAppContext) {
     let handle = inputs(cx);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -112,7 +112,7 @@ fn masked_input_handles_typing_without_reporting_secret_value(cx: &mut TestAppCo
         .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn existing_gpui_keyboard_editing_updates_observed_value(cx: &mut TestAppContext) {
     let handle = inputs(cx);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -158,14 +158,14 @@ impl Render for ScopedInputs {
     }
 }
 fn scoped_inputs(cx: &mut TestAppContext) -> WindowHandle<ScopedInputs> {
-    cx.update(gpui_component::init);
+    cx.update(wgpui_component::init);
     cx.add_window(|window, cx| ScopedInputs {
         left: cx.new(|cx| InputState::new(window, cx)),
         right: cx.new(|cx| InputState::new(window, cx)),
     })
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn scoped_keyboard_uses_the_focused_input_in_the_selected_scope(cx: &mut TestAppContext) {
     let handle = scoped_inputs(cx);
     cx.update_window(handle.into(), |_, window, cx| {
@@ -180,7 +180,7 @@ fn scoped_keyboard_uses_the_focused_input_in_the_selected_scope(cx: &mut TestApp
     .unwrap();
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn scoped_keyboard_rejects_focus_outside_the_selected_scope(cx: &mut TestAppContext) {
     let handle = scoped_inputs(cx);
     cx.update_window(handle.into(), |_, window, cx| {

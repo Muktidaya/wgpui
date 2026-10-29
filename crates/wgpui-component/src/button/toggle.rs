@@ -1,12 +1,12 @@
-use std::{cell::Cell, rc::Rc};
+use std::{cell::Cell, rc::Rc, time::Duration};
 
-use gpui::{
+use smallvec::{SmallVec, smallvec};
+use wgpui::{
     AnyElement, App, Axis, Corners, Edges, ElementId, InteractiveElement, IntoElement,
     ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled,
-    Window, prelude::FluentBuilder as _,
+    Window, prelude::FluentBuilder as _, relative,
 };
-use gpui_base::{Toggle as BaseToggle, ToggleGroup as BaseToggleGroup};
-use smallvec::{SmallVec, smallvec};
+use wgpui_base::{Toggle as BaseToggle, ToggleGroup as BaseToggleGroup};
 
 use crate::{ActiveTheme, Disableable, Icon, Sizable, Size, StyledExt, tooltip::ComponentTooltip};
 
@@ -71,6 +71,14 @@ impl Toggle {
     /// Set tooltip text for the toggle.
     pub fn tooltip(mut self, tooltip: impl Into<SharedString>) -> Self {
         self.tooltip.text = Some((tooltip.into(), None));
+        self
+    }
+
+    /// Overrides how long the pointer must rest before the tooltip shows.
+    ///
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
+    pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
+        self.tooltip.show_delay = Some(delay);
         self
     }
 
@@ -168,13 +176,14 @@ impl RenderOnce for Toggle {
             })
             .flex()
             .flex_row()
+            .line_height(relative(1.25))
             .items_center()
             .justify_center()
             .map(|this| match self.size {
                 Size::XSmall => this.min_w_5().h_5().px_0p5().text_xs(),
                 Size::Small => this.min_w_6().h_6().px_1().text_sm(),
-                Size::Large => this.min_w_9().h_9().px_3().text_lg(),
-                _ => this.min_w_8().h_8().px_2(),
+                Size::Large => this.min_w_9().h_9().px_3().text_base(),
+                _ => this.min_w_8().h_8().px_2().text_sm(),
             })
             .when(self.border_corners.top_left, |this| {
                 this.rounded_tl(rounding)
@@ -402,11 +411,11 @@ impl RenderOnce for ToggleGroup {
 mod tests {
     use super::*;
     use crate::{IconName, h_flex};
-    use gpui::{
+    use std::cell::{Cell, RefCell};
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render,
         StatefulInteractiveElement, TestAppContext, VisualTestContext, point, px,
     };
-    use std::cell::{Cell, RefCell};
 
     struct ToggleHarness {
         disabled: bool,
@@ -458,7 +467,8 @@ mod tests {
     }
 
     fn activate_key(cx: &mut VisualTestContext, key: &str) {
-        let keystroke = Keystroke::parse(key).unwrap();
+        let keystroke =
+            cx.update(|_, cx| Keystroke::parse_with_os(key, cx.platform_info().os).unwrap());
         cx.simulate_event(KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,
@@ -467,7 +477,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_pointer_activation_fires_once_and_focuses(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -475,7 +485,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_some()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_toggle_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, changes, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -485,7 +495,7 @@ mod tests {
         assert_eq!(changes.borrow().as_slice(), &[true, true]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn canonical_disabled_toggle_is_inert_and_blocks_parent(cx: &mut TestAppContext) {
         let (cx, changes, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -543,7 +553,7 @@ mod tests {
         (cx, child_clicks, group_changes)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_overrides_child_callback_even_without_group_callback(
         cx: &mut TestAppContext,
     ) {
@@ -553,7 +563,7 @@ mod tests {
         assert!(changes.borrow().is_empty());
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_pointer_flips_only_the_clicked_rendered_value(cx: &mut TestAppContext) {
         let (cx, child_clicks, changes) = toggle_group_harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -561,7 +571,7 @@ mod tests {
         assert_eq!(changes.borrow().as_slice(), &[vec![false, false]]);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_toggle_group_keyboard_click_does_not_reach_the_group_callback(
         cx: &mut TestAppContext,
     ) {
@@ -578,8 +588,8 @@ mod tests {
         assert_eq!(toggle.style.opacity, Some(0.37));
     }
 
-    #[gpui::test]
-    fn test_toggle_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_toggle_builder(_cx: &mut wgpui::TestAppContext) {
         let toggle = Toggle::new("complex-toggle")
             .label("Enable Feature")
             .icon(IconName::Check)
@@ -597,8 +607,8 @@ mod tests {
         assert!(toggle.on_click.is_some());
     }
 
-    #[gpui::test]
-    fn test_toggle_group_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_toggle_group_builder(_cx: &mut wgpui::TestAppContext) {
         let group = ToggleGroup::new("complex-group")
             .child(Toggle::new("toggle1").label("Option 1"))
             .child(Toggle::new("toggle2").label("Option 2").checked(true))

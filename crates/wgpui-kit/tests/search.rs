@@ -182,12 +182,12 @@ fn command_empty_and_disabled_only_results_cannot_confirm(cx: &mut TestAppContex
     }
 }
 
+use std::time::Duration;
 use wgpui_kit::component::{
     combobox::{Combobox, ComboboxEvent, ComboboxState},
     searchable_list::SearchableVec,
 };
 use wgpui_kit::test::TestAppContextExt;
-use std::time::Duration;
 
 type LanguageState = ComboboxState<SearchableVec<&'static str>>;
 struct Languages {

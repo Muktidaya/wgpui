@@ -30,6 +30,9 @@ pub(crate) struct TestPlatform {
     pub text_system: Arc<dyn PlatformTextSystem>,
     pub expect_restart: RefCell<Option<oneshot::Sender<Option<PathBuf>>>>,
     weak: Weak<Self>,
+    headless_renderer_factory:
+        Option<Box<dyn Fn() -> Result<Option<Box<dyn crate::PlatformHeadlessRenderer>>>>>,
+    pub(crate) platform_info: std::cell::Cell<crate::PlatformInfo>,
 }
 
 struct TestPrompt {
@@ -64,6 +67,17 @@ impl TestPlatform {
         foreground_executor: ForegroundExecutor,
         text_system: Arc<dyn PlatformTextSystem>,
     ) -> Rc<Self> {
+        Self::with_platform(executor, foreground_executor, text_system, None)
+    }
+
+    pub(crate) fn with_platform(
+        executor: BackgroundExecutor,
+        foreground_executor: ForegroundExecutor,
+        text_system: Arc<dyn PlatformTextSystem>,
+        headless_renderer_factory: Option<
+            Box<dyn Fn() -> Result<Option<Box<dyn crate::PlatformHeadlessRenderer>>>>,
+        >,
+    ) -> Rc<Self> {
         Rc::new_cyclic(|weak| TestPlatform {
             background_executor: executor,
             foreground_executor,
@@ -75,6 +89,8 @@ impl TestPlatform {
             expect_restart: Default::default(),
             current_clipboard_item: Mutex::new(None),
             weak: weak.clone(),
+            headless_renderer_factory,
+            platform_info: Default::default(),
             opened_url: Default::default(),
             text_system,
         })
@@ -205,6 +221,10 @@ impl TestPlatform {
 }
 
 impl Platform for TestPlatform {
+    fn platform_info(&self) -> crate::PlatformInfo {
+        self.platform_info.get()
+    }
+
     fn background_executor(&self) -> BackgroundExecutor {
         self.background_executor.clone()
     }
@@ -275,11 +295,16 @@ impl Platform for TestPlatform {
         handle: AnyWindowHandle,
         params: WindowParams,
     ) -> anyhow::Result<Box<dyn crate::PlatformWindow>> {
+        let renderer = match self.headless_renderer_factory.as_ref() {
+            Some(factory) => factory()?,
+            None => None,
+        };
         let window = TestWindow::new(
             handle,
             params,
             self.weak.clone(),
             self.active_display.clone(),
+            renderer,
         );
         Ok(Box::new(window))
     }

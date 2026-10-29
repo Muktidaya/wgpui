@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     Div, InteractiveElement, Interactivity, IntoElement, ParentElement as _, RenderOnce,
     StyleRefinement, Styled, div, prelude::FluentBuilder as _,
 };
@@ -74,7 +74,7 @@ impl InteractiveElement for AvatarGroup {
 }
 
 impl RenderOnce for AvatarGroup {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl IntoElement {
         let item_ml = -super::avatar_size(self.size) * 0.3;
         let avatars_len = self.avatars.len();
 
@@ -112,8 +112,8 @@ impl RenderOnce for AvatarGroup {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn test_avatar_group_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_avatar_group_builder(_cx: &mut wgpui::TestAppContext) {
         let group = AvatarGroup::new()
             .child(Avatar::new().name("Alice"))
             .child(Avatar::new().name("Bob"))

@@ -1,6 +1,6 @@
 // Native-only binary size measurement: WASM assets are fetched from an endpoint.
 #[cfg(not(target_family = "wasm"))]
-use gpui::AssetSource;
+use wgpui::AssetSource;
 #[cfg(not(target_family = "wasm"))]
 wgpui_kit_assets::icon_assets!(
     ExtraIcons,
@@ -21,13 +21,13 @@ wgpui_kit_assets::icon_assets!(
 struct AppAssets;
 #[cfg(not(target_family = "wasm"))]
 impl AssetSource for AppAssets {
-    fn load(&self, path: &str) -> gpui::Result<Option<std::borrow::Cow<'static, [u8]>>> {
+    fn load(&self, path: &str) -> wgpui::Result<Option<std::borrow::Cow<'static, [u8]>>> {
         if let Some(bytes) = ExtraIcons.load(path)? {
             return Ok(Some(bytes));
         }
         wgpui_kit_assets::Assets.load(path)
     }
-    fn list(&self, path: &str) -> gpui::Result<Vec<gpui::SharedString>> {
+    fn list(&self, path: &str) -> wgpui::Result<Vec<wgpui::SharedString>> {
         let mut paths = wgpui_kit_assets::Assets.list(path)?;
         paths.extend(ExtraIcons.list(path)?);
         paths.sort();

@@ -1,6 +1,6 @@
-use gpui::{AnyElement, IntoElement};
+use wgpui::{AnyElement, IntoElement};
 
-pub use gpui_base::ElementExt;
+pub use wgpui_base::ElementExt;
 
 use crate::{Sizable, Size};
 
@@ -15,7 +15,7 @@ pub trait ChildElement: Sizable + IntoElement {
     fn with_ix(mut self, ix: usize) -> Self;
 }
 
-/// A type-erased element that can accept a [`AnyChildElementOptions`] before being rendered.
+/// A type-erased element that can accept per-child index and size options before being rendered.
 pub struct AnyChildElement(Box<dyn FnOnce(ChildElementOptions) -> AnyElement>);
 
 impl AnyChildElement {

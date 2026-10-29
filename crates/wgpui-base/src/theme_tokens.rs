@@ -3,9 +3,9 @@
 //! These tokens describe visual roles and scales. They intentionally do not
 //! contain component names such as `button`, `table`, or `sidebar`.
 
-use gpui::{BoxShadow, FontWeight, Hsla, Pixels, SharedString, hsla, point, px, rgb};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use wgpui::{BoxShadow, FontWeight, Hsla, Pixels, SharedString, hsla, point, px, rgb};
 
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct SemanticThemeTokens {
@@ -176,7 +176,7 @@ impl Default for TypographyTokens {
     fn default() -> Self {
         Self {
             sans: ".SystemUIFont".into(),
-            mono: default_mono_font_family(),
+            mono: ".SystemMonospaceFont".into(),
             xs: text_style(12., 16.),
             sm: text_style(14., 20.),
             md: text_style(16., 24.),
@@ -212,16 +212,6 @@ fn text_style(size: f32, line_height: f32) -> TextStyleToken {
     }
 }
 
-fn default_mono_font_family() -> SharedString {
-    if cfg!(target_os = "macos") {
-        "Menlo".into()
-    } else if cfg!(target_os = "windows") {
-        "Consolas".into()
-    } else {
-        "DejaVu Sans Mono".into()
-    }
-}
-
 fn box_shadow(x: f32, y: f32, blur: f32, spread: f32, color: Hsla) -> BoxShadow {
     BoxShadow {
         color,
@@ -234,7 +224,14 @@ fn box_shadow(x: f32, y: f32, blur: f32, spread: f32, color: Hsla) -> BoxShadow 
 
 #[cfg(test)]
 mod tests {
-    use super::ColorTokens;
+    use super::{ColorTokens, TypographyTokens};
+
+    #[test]
+    fn default_typography_uses_the_os_font_aliases() {
+        let typography = TypographyTokens::default();
+        assert_eq!(typography.sans.as_ref(), ".SystemUIFont");
+        assert_eq!(typography.mono.as_ref(), ".SystemMonospaceFont");
+    }
 
     #[test]
     fn default_colors_are_the_light_palette_and_both_palettes_are_readable() {

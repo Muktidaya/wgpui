@@ -125,7 +125,7 @@ impl InputBaseState<EditorMode> {
 
     pub fn route_overlay_action(
         &mut self,
-        action: Box<dyn gpui::Action>,
+        action: Box<dyn wgpui::Action>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
@@ -136,7 +136,7 @@ impl InputBaseState<EditorMode> {
         &mut self,
         handler: impl Fn(
             InputOverlayKind,
-            Box<dyn gpui::Action>,
+            Box<dyn wgpui::Action>,
             &mut Window,
             &mut Context<InputBaseState<EditorMode>>,
         ) -> bool

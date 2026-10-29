@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use gpui::{App, Global, WeakEntity, Window};
+use wgpui::{App, Global, WeakEntity, Window};
 
 use super::{DockArea, PanelInfo, PanelState, PanelView};
 

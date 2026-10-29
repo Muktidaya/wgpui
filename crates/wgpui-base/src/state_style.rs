@@ -1,4 +1,4 @@
-use gpui::{Refineable as _, StyleRefinement, Styled, prelude::FluentBuilder};
+use wgpui::{Refineable as _, StyleRefinement, Styled, prelude::FluentBuilder};
 
 /// A semantic-state style builder.
 ///

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, ClickEvent, ElementId, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
     Role, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _,

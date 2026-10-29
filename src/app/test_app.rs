@@ -409,11 +409,16 @@ impl<V: 'static + Render> TestAppWindow<V> {
     }
 
     /// Simulate a mouse move.
-    pub fn simulate_mouse_move(&mut self, position: Point<Pixels>) {
+    pub fn simulate_mouse_move(
+        &mut self,
+        position: Point<Pixels>,
+        button: impl Into<Option<MouseButton>>,
+        modifiers: crate::Modifiers,
+    ) {
         self.simulate_event(MouseMoveEvent {
             position,
-            modifiers: Default::default(),
-            pressed_button: None,
+            modifiers,
+            pressed_button: button.into(),
         });
     }
 
@@ -478,6 +483,22 @@ impl<V: 'static + Render> TestAppWindow<V> {
             }
         }
         drop(app);
+        self.background_executor.run_until_parked();
+    }
+
+    /// Simulates moving this window to a display with a different scale factor.
+    pub fn simulate_scale_factor_change(&mut self, scale_factor: f32) {
+        let mut platform_window = {
+            let mut app = self.app.borrow_mut();
+            app.windows
+                .get_mut(self.handle.window_id())
+                .and_then(Option::as_mut)
+                .and_then(|window| window.platform_window.as_test())
+                .cloned()
+        };
+        if let Some(window) = platform_window.as_mut() {
+            window.simulate_scale_factor_change(scale_factor);
+        }
         self.background_executor.run_until_parked();
     }
 

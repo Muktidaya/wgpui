@@ -1,4 +1,4 @@
-use gpui::{App, Bounds, IntoElement, ParentElement, Pixels, Styled as _, Window, canvas};
+use wgpui::{App, Bounds, IntoElement, ParentElement, Pixels, Styled as _, Window, canvas};
 
 use crate::TextSelectionScopeId;
 
@@ -27,7 +27,11 @@ pub trait ElementExt: ParentElement + Sized {
                 move |bounds, window, cx| callback(bounds, window, cx),
                 |_, _, _, _| {},
             )
+            // Without an inset, an absolute child starts after the padding but
+            // is still sized to the padding box, overhanging the far edges.
             .absolute()
+            .top_0()
+            .left_0()
             .size_full(),
         )
     }

@@ -28,7 +28,7 @@ impl BaseShowcase {
                                     .flex()
                                     .items_center()
                                     .border_b_1()
-                                    .border_color(gpui::black())
+                                    .border_color(wgpui::black())
                                     .justify_between()
                                     .child(
                                         div()
@@ -44,7 +44,7 @@ impl BaseShowcase {
                                                     .justify_center()
                                                     .line_height(px(18.))
                                                     .border_1()
-                                                    .border_color(gpui::black())
+                                                    .border_color(wgpui::black())
                                                     .child(format!("{}", (ix % 9) + 1)),
                                             )
                                             .child(format!("Customer {:06}", ix + 1)),

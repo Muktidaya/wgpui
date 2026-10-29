@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 #[cfg(feature = "tree-sitter")]
-use gpui_base::input::Rope;
-use gpui_base::input::SyntaxContextProvider;
+use wgpui_base::input::Rope;
+use wgpui_base::input::SyntaxContextProvider;
 
 /// A syntax-context provider for `language`, or `None` when no grammar is
 /// compiled in (unknown language, plain text, or feature disabled).
@@ -10,8 +10,7 @@ use gpui_base::input::SyntaxContextProvider;
 pub(crate) fn syntax_context_provider(language: &str) -> Option<Rc<dyn SyntaxContextProvider>> {
     use crate::highlighter::LanguageRegistry;
 
-    let config = LanguageRegistry::singleton().language(language)?;
-    let grammar = config.language?;
+    let grammar = LanguageRegistry::singleton().grammar(language).ok()?;
     TreeSitterSyntaxContext::new(grammar)
         .map(|provider| Rc::new(provider) as Rc<dyn SyntaxContextProvider>)
 }
@@ -31,7 +30,10 @@ pub(crate) fn syntax_context_provider(_language: &str) -> Option<Rc<dyn SyntaxCo
 #[cfg(feature = "tree-sitter")]
 struct TreeSitterSyntaxContext {
     parser: std::cell::RefCell<tree_sitter::Parser>,
-    tree: std::cell::RefCell<Option<(String, tree_sitter::Tree)>>,
+    /// The last queried text and its tree, or `None` when that text's parse
+    /// ran out of budget. Cloning a `Rope` shares its storage, so the cache
+    /// holds no second copy of the document.
+    tree: std::cell::RefCell<Option<(Rope, Option<tree_sitter::Tree>)>>,
 }
 
 #[cfg(feature = "tree-sitter")]
@@ -48,14 +50,23 @@ impl TreeSitterSyntaxContext {
         })
     }
 
-    fn classify(kind: &str) -> Option<gpui_base::input::SyntaxContext> {
+    /// Whether the comment starting at `start` opens with `#` or `//`.
+    fn starts_line_comment(text: &Rope, start: usize) -> bool {
+        match text.get_byte(start) {
+            Some(b'#') => true,
+            Some(b'/') => text.get_byte(start + 1) == Some(b'/'),
+            _ => false,
+        }
+    }
+
+    fn classify(kind: &str) -> Option<wgpui_base::input::SyntaxContext> {
         let lower = kind.to_lowercase();
         if lower == "interpolation" || lower == "template_substitution" {
-            Some(gpui_base::input::SyntaxContext::Code)
+            Some(wgpui_base::input::SyntaxContext::Code)
         } else if lower.contains("comment") {
-            Some(gpui_base::input::SyntaxContext::Comment)
+            Some(wgpui_base::input::SyntaxContext::Comment)
         } else if lower.contains("string") {
-            Some(gpui_base::input::SyntaxContext::String)
+            Some(wgpui_base::input::SyntaxContext::String)
         } else {
             None
         }
@@ -64,15 +75,14 @@ impl TreeSitterSyntaxContext {
 
 #[cfg(feature = "tree-sitter")]
 impl SyntaxContextProvider for TreeSitterSyntaxContext {
-    fn context_at(&self, text: &Rope, offset: usize) -> gpui_base::input::SyntaxContext {
+    fn context_at(&self, text: &Rope, offset: usize) -> wgpui_base::input::SyntaxContext {
         use std::ops::ControlFlow;
 
-        let source = text.to_string();
-        let offset = offset.min(source.len());
+        let offset = offset.min(text.len_bytes());
         let mut cached = self.tree.borrow_mut();
         if cached
             .as_ref()
-            .is_none_or(|(previous, _)| previous != &source)
+            .is_none_or(|(cached_text, _)| cached_text != text)
         {
             let start = std::time::Instant::now();
             let mut progress = |_: &tree_sitter::ParseState| -> ControlFlow<()> {
@@ -87,19 +97,21 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
             // No InputEdit is available here, so an old tree cannot be reused
             // after the source changes.
             let tree = parser.parse_with_options(
-                &mut |byte_offset, _| source.get(byte_offset..).unwrap_or(""),
+                &mut |byte_offset, _| crate::highlighter::parse_input_bytes(text, byte_offset),
                 None,
                 Some(options),
             );
-            let Some(tree) = tree else {
+            if tree.is_none() {
                 // A timed-out parse must not resume against a different source.
                 parser.reset();
-                *cached = None;
-                return gpui_base::input::SyntaxContext::Code;
-            };
-            *cached = Some((source, tree));
+            }
+            // Remember a timed-out text too, so repeated queries on it answer
+            // `Code` at once instead of spending the budget again.
+            *cached = Some((text.clone(), tree));
         }
-        let (source, tree) = cached.as_ref().unwrap();
+        let Some((_, Some(tree))) = cached.as_ref() else {
+            return wgpui_base::input::SyntaxContext::Code;
+        };
         let mut node = tree.root_node().descendant_for_byte_range(offset, offset);
         // At the very end the range may match nothing; try the last byte.
         if node.is_none() && offset > 0 {
@@ -113,7 +125,7 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
                 if let Some(context) = Self::classify(n.kind()) {
                     // String delimiters delimit the scope: inserting at its start
                     // is outside, while inserting before its end is inside.
-                    if context == gpui_base::input::SyntaxContext::String
+                    if context == wgpui_base::input::SyntaxContext::String
                         && offset == n.start_byte()
                         && matches!(
                             n.kind(),
@@ -124,7 +136,7 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
                                 | "string_start"
                         )
                     {
-                        return gpui_base::input::SyntaxContext::Code;
+                        return wgpui_base::input::SyntaxContext::Code;
                     }
                     return context;
                 }
@@ -134,26 +146,26 @@ impl SyntaxContextProvider for TreeSitterSyntaxContext {
         // A zero-width query at a line comment's end may select the enclosing
         // node. Insertion there still extends the comment, unlike insertion
         // after a block comment's closing delimiter.
-        if offset > 0 && !matches!(source.as_bytes()[offset - 1], b'\n' | b'\r') {
+        if offset > 0 && !matches!(text.byte(offset - 1), b'\n' | b'\r') {
             let mut previous = tree
                 .root_node()
                 .descendant_for_byte_range(offset - 1, offset);
             while let Some(node) = previous {
                 if node.end_byte() == offset
-                    && Self::classify(node.kind()) == Some(gpui_base::input::SyntaxContext::Comment)
+                    && Self::classify(node.kind())
+                        == Some(wgpui_base::input::SyntaxContext::Comment)
                 {
-                    let comment = &source[node.start_byte()..node.end_byte()];
                     if node.kind() == "line_comment"
                         || (node.kind() == "comment"
-                            && (comment.starts_with('#') || comment.starts_with("//")))
+                            && Self::starts_line_comment(text, node.start_byte()))
                     {
-                        return gpui_base::input::SyntaxContext::Comment;
+                        return wgpui_base::input::SyntaxContext::Comment;
                     }
                 }
                 previous = node.parent();
             }
         }
-        gpui_base::input::SyntaxContext::Code
+        wgpui_base::input::SyntaxContext::Code
     }
 }
 
@@ -168,7 +180,7 @@ mod tests {
     #[cfg(all(feature = "tree-sitter-python", feature = "tree-sitter-rust"))]
     #[test]
     fn comment_end_tracks_insertion_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         for (language, source, offset, expected) in [
             ("python", "# note", 6, SyntaxContext::Comment),
             ("python", "# note\n", 6, SyntaxContext::Comment),
@@ -190,15 +202,18 @@ mod tests {
     #[cfg(feature = "tree-sitter-cmake")]
     #[test]
     fn closed_bracket_comment_is_not_a_line_comment() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         let provider = syntax_context_provider("cmake").unwrap();
         let text = Rope::from_str("#[[ note ]]");
-        assert_eq!(provider.context_at(&text, text.len()), SyntaxContext::Code);
+        assert_eq!(
+            provider.context_at(&text, text.len_bytes()),
+            SyntaxContext::Code
+        );
     }
 
     #[test]
     fn json_string_content_is_string_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
 
         let provider = json_provider();
         // {"key": "value"} — offset inside "value".
@@ -212,7 +227,7 @@ mod tests {
 
     #[test]
     fn json_punctuation_is_code_context() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
 
         let provider = json_provider();
         let text = Rope::from_str(r#"{"key": "value"}"#);
@@ -230,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_changed_source_matches_fresh_provider() {
-        use gpui_base::input::{Rope, SyntaxContext};
+        use wgpui_base::input::{Rope, SyntaxContext};
         let provider = json_provider();
         let old = Rope::from_str(r#"{"key": "value"}"#);
         assert_eq!(provider.context_at(&old, 10), SyntaxContext::String);

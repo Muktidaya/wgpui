@@ -1,7 +1,7 @@
 //! Common actions shared by keyboard-driven GPUI controls.
 
-use gpui::{Action, actions};
 use serde::Deserialize;
+use wgpui::{Action, actions};
 
 #[derive(Clone, Action, PartialEq, Eq, Deserialize)]
 #[action(namespace = ui, no_json)]

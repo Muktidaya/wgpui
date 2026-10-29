@@ -1,3 +1,4 @@
+use std::time::Duration;
 use wgpui_kit::component::{
     Disableable, IndexPath,
     checkbox::Checkbox,
@@ -7,7 +8,6 @@ use wgpui_kit::component::{
 };
 use wgpui_kit::test::{TestAppContextExt, TestWindowExt};
 use wgpui_kit::{AppContext, Context, Entity, TestAppContext, Window, div, prelude::*, px, size};
-use std::time::Duration;
 
 struct Form {
     agreed: bool,
@@ -95,7 +95,7 @@ fn checkbox_switch_and_tabs_report_controlled_state(cx: &mut TestAppContext) {
         window.click("notifications", cx);
         assert_eq!(window.find("notifications").checked(), Some(false));
         window.click("locked", cx);
-        assert_eq!(window.find("locked").disabled(), None);
+        assert_eq!(window.find("locked").disabled(), Some(true));
         assert_eq!(window.find("locked").checked(), Some(true));
         assert_eq!(
             window.within("settings-tabs").find(0usize).selected(),

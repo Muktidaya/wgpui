@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, ClickEvent, ElementId, InteractiveElement, IntoElement, MouseButton, ParentElement,
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, div,
 };
@@ -12,7 +12,7 @@ pub struct Link {
     style: StyleRefinement,
     href: Option<SharedString>,
     disabled: bool,
-    on_click: Option<Box<dyn Fn(&ClickEvent, &mut gpui::Window, &mut gpui::App) + 'static>>,
+    on_click: Option<Box<dyn Fn(&ClickEvent, &mut wgpui::Window, &mut wgpui::App) + 'static>>,
     children: Vec<AnyElement>,
 }
 
@@ -41,7 +41,7 @@ impl Link {
     /// Otherwise, the link will only open the href if set.
     pub fn on_click(
         mut self,
-        handler: impl Fn(&ClickEvent, &mut gpui::Window, &mut gpui::App) + 'static,
+        handler: impl Fn(&ClickEvent, &mut wgpui::Window, &mut wgpui::App) + 'static,
     ) -> Self {
         self.on_click = Some(Box::new(handler));
         self
@@ -55,19 +55,19 @@ impl Link {
 }
 
 impl Styled for Link {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl ParentElement for Link {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.children.extend(elements)
     }
 }
 
 impl RenderOnce for Link {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl IntoElement {
         let href = self.href.clone();
         let on_click = self.on_click;
 
@@ -109,7 +109,7 @@ impl RenderOnce for Link {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{Context, Modifiers, Render, TestAppContext, div, point, px};
+    use wgpui::{Context, Modifiers, Render, TestAppContext, div, point, px};
 
     use super::*;
 
@@ -119,7 +119,7 @@ mod tests {
     }
 
     impl Render for LinkHarness {
-        fn render(&mut self, _: &mut gpui::Window, _: &mut Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut wgpui::Window, _: &mut Context<Self>) -> impl IntoElement {
             let clicks = self.clicks.clone();
             Link::new("legacy-link")
                 .href("https://example.com")
@@ -134,7 +134,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_link_prepaints_children(cx: &mut TestAppContext) {
         let (cx, _) = harness(cx, false);
         let bounds = cx
@@ -148,7 +148,7 @@ mod tests {
     fn harness(
         cx: &mut TestAppContext,
         disabled: bool,
-    ) -> (&mut gpui::VisualTestContext, Rc<Cell<usize>>) {
+    ) -> (&mut wgpui::VisualTestContext, Rc<Cell<usize>>) {
         cx.update(crate::init);
         let clicks = Rc::new(Cell::new(0));
         let (_, cx) = cx.add_window_view({
@@ -159,7 +159,7 @@ mod tests {
         (cx, clicks)
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_link_preserves_pointer_open_and_callback(cx: &mut TestAppContext) {
         let (cx, clicks) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -168,7 +168,7 @@ mod tests {
         assert_eq!(clicks.get(), 1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_link_preserves_disabled_behavior(cx: &mut TestAppContext) {
         let (cx, clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -178,7 +178,7 @@ mod tests {
         assert_eq!(clicks.get(), 1);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn legacy_link_remains_pointer_only(cx: &mut TestAppContext) {
         let (cx, clicks) = harness(cx, false);
         cx.simulate_keystrokes("enter space");

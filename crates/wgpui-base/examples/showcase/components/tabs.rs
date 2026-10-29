@@ -34,7 +34,7 @@ impl BaseShowcase {
                                         super::example_rgb(0xffffff)
                                     })
                                     .when(self.selected_tab == index, |this| {
-                                        this.font_weight(gpui::FontWeight::SEMIBOLD)
+                                        this.font_weight(wgpui::FontWeight::SEMIBOLD)
                                     })
                                     .on_click(move |_, _, cx| {
                                         _ = entity.update(cx, |this, cx| {

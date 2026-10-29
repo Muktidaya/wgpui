@@ -1,7 +1,7 @@
-use gpui::{Context, IntoElement, ParentElement as _, Styled as _, Window};
+use wgpui::{Context, IntoElement, ParentElement as _, Styled as _, Window};
 #[cfg(test)]
-use gpui_base::ElementExt as _;
-use gpui_base::{SelectableText, TextSelection};
+use wgpui_base::ElementExt as _;
+use wgpui_base::{SelectableText, TextSelection};
 
 use super::*;
 
@@ -39,7 +39,7 @@ impl BaseShowcase {
             .border_color(super::example_rgb(0xe5e5e5))
             .child(
                 div()
-                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .font_weight(wgpui::FontWeight::SEMIBOLD)
                     .child(if active {
                         "Selection active"
                     } else {
@@ -104,7 +104,7 @@ impl BaseShowcase {
                     .child(
                         div()
                             .text_lg()
-                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .font_weight(wgpui::FontWeight::SEMIBOLD)
                             .child(
                                 SelectableText::with_handle(
                                     "selection-heading",
@@ -160,11 +160,11 @@ impl BaseShowcase {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{TestAppContext, point, px};
+    use wgpui::{TestAppContext, point, px};
 
     use crate::showcase::BaseShowcase;
 
-    #[gpui::test]
+    #[wgpui::test]
     fn text_selection_footer_stays_fixed_when_document_scrolls(cx: &mut TestAppContext) {
         let (view, window) =
             cx.add_window_view(|window, cx| BaseShowcase::new("text-selection", window, cx));

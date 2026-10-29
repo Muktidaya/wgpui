@@ -1,10 +1,10 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, IntoElement, ParentElement, Pixels, Rems, RenderOnce, StyleRefinement,
     Styled, Window, prelude::FluentBuilder as _, px,
 };
 
 use crate::{
-    Sizable, Size,
+    Sizable, Size, StyledExt,
     form::{Field, FieldProps},
     h_flex, v_flex,
 };
@@ -136,6 +136,7 @@ impl RenderOnce for Form {
                 self.fields
                     .into_iter()
                     .enumerate()
+                    .filter(|(_, field)| field.is_visible())
                     .map(|(ix, field)| field.props(ix, props)),
             )
             .when_some(self.footer, |this, footer| {
@@ -147,6 +148,7 @@ impl RenderOnce for Form {
                         .child(footer),
                 )
             })
+            .refine_style(&self.style)
     }
 }
 

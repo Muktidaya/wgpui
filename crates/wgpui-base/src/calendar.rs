@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::{h_flex, styled::StyledExt as _, v_flex};
 use chrono::{Datelike, Local, NaiveDate, Weekday};
-use gpui::{
+use wgpui::{
     AnyElement, App, Context, ElementId, Empty, Entity, EventEmitter, FocusHandle,
     InteractiveElement, IntoElement, ParentElement, Render, RenderOnce, SharedString,
     StatefulInteractiveElement, StyleRefinement, Styled, Window, div, px,
@@ -489,7 +489,7 @@ impl CalendarItemState {
 /// An unstyled, pre-wired calendar item passed to the item slot.
 #[derive(IntoElement)]
 pub struct CalendarItem {
-    base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<wgpui::Div>>,
     state: CalendarItemState,
     style: StyleRefinement,
     children: Vec<AnyElement>,
@@ -531,11 +531,11 @@ impl Styled for CalendarItem {
     }
 }
 impl InteractiveElement for CalendarItem {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -852,13 +852,13 @@ fn days_in_month(year: i32, month: u32, first_day: Weekday) -> Vec<Vec<NaiveDate
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use gpui::{AppContext as _, Context, Entity, IntoElement, Render, Subscription, Window};
+    use wgpui::{AppContext as _, Context, Entity, IntoElement, Render, Subscription, Window};
 
     use super::*;
 
-    #[gpui::test]
-    fn calendar_items_expose_names_in_every_view(cx: &mut gpui::TestAppContext) {
-        use gpui::{Element as _, accesskit};
+    #[wgpui::test]
+    fn calendar_items_expose_names_in_every_view(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{Element as _, accesskit};
         struct Names {
             calendar: Entity<CalendarState>,
             labels: Rc<RefCell<Vec<(CalendarItemKind, String)>>>,
@@ -931,15 +931,15 @@ mod tests {
             Empty
         }
     }
-    fn state(cx: &mut gpui::TestAppContext, date: Date) -> gpui::Entity<CalendarState> {
+    fn state(cx: &mut wgpui::TestAppContext, date: Date) -> wgpui::Entity<CalendarState> {
         let (state, _) = cx.add_window_view(CalendarState::new);
         state.update(cx, |state, _| {
             state.date = date;
         });
         state
     }
-    #[gpui::test]
-    fn range_selection_restarts_and_completes(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn range_selection_restarts_and_completes(cx: &mut wgpui::TestAppContext) {
         let s = state(cx, Date::Range(None, None));
         let a = NaiveDate::from_ymd_opt(2025, 2, 10).unwrap();
         let b = NaiveDate::from_ymd_opt(2025, 2, 12).unwrap();
@@ -954,8 +954,8 @@ mod tests {
         s.update(cx, |s, _| assert!(!s.select_date(a)));
         assert_eq!(s.read_with(cx, |s, _| s.date()), Date::Range(Some(a), None));
     }
-    #[gpui::test]
-    fn disabled_date_is_rejected(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn disabled_date_is_rejected(cx: &mut wgpui::TestAppContext) {
         let s = state(cx, Date::Single(None));
         s.update(cx, |s, _| {
             s.disabled_matcher = Some(Rc::new(Matcher::range(
@@ -967,8 +967,8 @@ mod tests {
             assert!(!s.select_date(NaiveDate::from_ymd_opt(2025, 1, 2).unwrap()))
         });
     }
-    #[gpui::test]
-    fn month_navigation_crosses_year(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn month_navigation_crosses_year(cx: &mut wgpui::TestAppContext) {
         let s = state(
             cx,
             Date::Single(Some(NaiveDate::from_ymd_opt(2025, 1, 1).unwrap())),
@@ -990,8 +990,8 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn six_week_month_is_not_truncated(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn six_week_month_is_not_truncated(cx: &mut wgpui::TestAppContext) {
         let s = state(
             cx,
             Date::Single(Some(NaiveDate::from_ymd_opt(2025, 8, 1).unwrap())),
@@ -1007,8 +1007,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn day_month_and_year_views_have_complete_transitions(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn day_month_and_year_views_have_complete_transitions(cx: &mut wgpui::TestAppContext) {
         let s = state(cx, Date::Single(None));
         s.update(cx, |s, _| {
             assert_eq!(s.view(), CalendarView::Day);
@@ -1028,8 +1028,8 @@ mod tests {
         assert_eq!(picker_grid_layout(CalendarView::Day), None);
     }
 
-    #[gpui::test]
-    fn year_page_navigation_respects_both_bounds(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn year_page_navigation_respects_both_bounds(cx: &mut wgpui::TestAppContext) {
         let s = state(cx, Date::Single(None));
         s.update(cx, |s, _| {
             s.apply_year_range((2000, 2041));
@@ -1043,8 +1043,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn activation_emits_only_for_complete_enabled_values(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn activation_emits_only_for_complete_enabled_values(cx: &mut wgpui::TestAppContext) {
         let (harness, _) = cx.add_window_view(EventHarness::new);
         let s = harness.read_with(cx, |h, _| h.calendar.clone());
         s.update(cx, |s, _| s.date = Date::Range(None, None));

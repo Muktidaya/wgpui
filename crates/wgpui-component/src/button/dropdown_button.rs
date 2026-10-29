@@ -1,7 +1,8 @@
-use gpui::Corners;
-use gpui::{
+use rust_i18n::t;
+use wgpui::Corners;
+use wgpui::{
     Anchor, App, Context, Edges, ElementId, InteractiveElement as _, IntoElement, ParentElement,
-    RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
+    RenderOnce, SharedString, StyleRefinement, Styled, Window, div, prelude::FluentBuilder,
 };
 
 use crate::{
@@ -30,6 +31,7 @@ pub struct DropdownButton {
         Option<Box<dyn Fn(PopupMenu, &mut Window, &mut Context<PopupMenu>) -> PopupMenu + 'static>>,
     selected: bool,
     disabled: bool,
+    menu_accessibility_label: Option<SharedString>,
     // The button props, applied to both halves. Unset means the inner
     // [`Button`] keeps whatever it was given.
     outline: bool,
@@ -48,6 +50,7 @@ impl DropdownButton {
             menu: None,
             selected: false,
             disabled: false,
+            menu_accessibility_label: None,
             outline: false,
             variant: None,
             size: None,
@@ -98,6 +101,16 @@ impl DropdownButton {
         self
     }
 
+    /// Set the name a screen reader announces for the menu trigger. Defaults
+    /// to the localized "More options".
+    ///
+    /// The trigger shows only a caret, so it has no visible label to read.
+    /// The inner [`Button`] names the action half.
+    pub fn menu_accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.menu_accessibility_label = Some(label.into());
+        self
+    }
+
     /// Set the button to outline style.
     ///
     /// See also: [`Button::outline`]
@@ -115,7 +128,7 @@ impl Disableable for DropdownButton {
 }
 
 impl Styled for DropdownButton {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -193,6 +206,10 @@ impl RenderOnce for DropdownButton {
                 this.child(
                     Button::new("popup")
                         .dropdown_caret(true)
+                        .accessibility_label(
+                            self.menu_accessibility_label
+                                .unwrap_or_else(|| t!("DropdownButton.more_options").into()),
+                        )
                         .border_corners(Corners {
                             top_left: false,
                             top_right: true,
@@ -227,8 +244,8 @@ impl RenderOnce for DropdownButton {
 mod tests {
     use super::*;
 
-    #[gpui::test]
-    fn test_dropdown_button_builder(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn test_dropdown_button_builder(_cx: &mut wgpui::TestAppContext) {
         let button = Button::new("inner").label("Action");
         let dropdown = DropdownButton::new("complex-dropdown")
             .button(button)
@@ -251,8 +268,8 @@ mod tests {
 
     /// An unset variant or size leaves the inner button's own to survive, so a
     /// caller can style the halves from either level.
-    #[gpui::test]
-    fn inner_button_keeps_its_own_variant_and_size(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_button_keeps_its_own_variant_and_size(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").danger().small())
             .dropdown_menu(|menu, _, _| menu);
@@ -261,8 +278,8 @@ mod tests {
         assert_eq!(dropdown.size, None);
     }
 
-    #[gpui::test]
-    fn inner_ghost_becomes_the_split_variant(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_ghost_becomes_the_split_variant(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").ghost())
             .dropdown_menu(|menu, _, _| menu);
@@ -270,8 +287,8 @@ mod tests {
         assert_eq!(dropdown.effective_variant(), ButtonVariant::Ghost);
     }
 
-    #[gpui::test]
-    fn inner_size_becomes_the_split_size(_cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn inner_size_becomes_the_split_size(_cx: &mut wgpui::TestAppContext) {
         let dropdown = DropdownButton::new("dropdown")
             .button(Button::new("inner").label("Action").small())
             .dropdown_menu(|menu, _, _| menu);

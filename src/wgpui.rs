@@ -4,8 +4,8 @@
 #![allow(clippy::collapsible_else_if)] // False positives in platform specific code
 #![allow(unused_mut)] // False positives in platform specific code
 
+// Same-package macro expansions use the library name in both library and example targets.
 extern crate self as wgpui;
-extern crate wgpui_derive as wgpui_macros;
 
 #[macro_use]
 mod action;
@@ -35,7 +35,8 @@ mod keymap;
 mod path_builder;
 mod platform;
 pub mod prelude;
-mod profiler;
+/// Task timings and optional frame, input, action, and view measurements.
+pub mod profiler;
 mod queue;
 mod scene;
 /// The scheduler module provides task scheduling, execution, and timing primitives.
@@ -64,6 +65,9 @@ pub mod _ownership_and_data_flow;
 #[doc(hidden)]
 pub mod private {
     pub use anyhow;
+    #[cfg(feature = "bench-support")]
+    pub use criterion;
+    pub use ctor;
     pub use inventory;
     pub use schemars;
     pub use serde;
@@ -76,24 +80,23 @@ mod seal {
     pub trait Sealed {}
 }
 
-pub use action::*;
+pub use a11y::{A11yActionListener, A11ySubtreeBuilder, AriaProperties};
 pub use accesskit;
 pub use accesskit::Action as AccessibleAction;
 pub use accesskit::{Orientation, Role, Toggled};
-pub use a11y::{A11yActionListener, A11ySubtreeBuilder, AriaProperties};
+pub use action::*;
 pub use anyhow::Result;
 pub use app::*;
 pub(crate) use arena::*;
 pub use asset_cache::*;
 pub use assets::*;
 pub use color::*;
-pub use ctor::ctor;
 pub use default_colors::*;
 pub use element::*;
 pub use elements::*;
 pub use executor::*;
-pub use gestures::*;
 pub use geometry::*;
+pub use gestures::*;
 pub use global::*;
 pub use http_client;
 pub use input::*;
@@ -108,6 +111,7 @@ pub(crate) use queue::{PriorityQueueReceiver, PriorityQueueSender};
 pub use refineable::*;
 pub use scene::*;
 pub use wgpui_derive::{AppContext, IntoElement, Render, VisualContext, register_action, test};
+pub use wgpui_derive::{bench, ctor};
 // Re-export scheduler types selectively to avoid ambiguity with executor wrappers.
 // Types like Task, BackgroundExecutor, ForegroundExecutor, FallibleTask, and Priority
 // are re-exported via the executor module which wraps them.
@@ -332,4 +336,96 @@ pub struct GpuSpecs {
     pub driver_name: String,
     /// Further information about the driver, as reported by Vulkan.
     pub driver_info: String,
+}
+
+/// Defines a group of UI benchmark functions.
+#[cfg(feature = "bench-support")]
+#[macro_export]
+macro_rules! bench_group {
+    ($name:ident, $($benchmark:path),+ $(,)?) => {
+        fn $name(criterion: &mut $crate::private::criterion::Criterion) {
+            $($benchmark(criterion);)+
+        }
+    };
+}
+
+/// Runs benchmark groups with Criterion's command-line configuration.
+#[cfg(feature = "bench-support")]
+#[macro_export]
+macro_rules! bench_main {
+    ($($group:path),+ $(,)?) => {
+        fn main() {
+            let mut criterion = $crate::private::criterion::Criterion::default().configure_from_args();
+            $($group(&mut criterion);)+
+            criterion.final_summary();
+        }
+    };
+}
+
+/// One complete-scene compositor frame that was captured on request.
+///
+/// This is the frame the compositor presented — WGPUI chrome and any hosted GPU surface
+/// content together — not a separate rendering of one embedded surface. Rows are tightly
+/// packed (`width * 4` bytes each) and the channel order follows
+/// [`format`](Self::format); the readback padding `wgpu` requires has already been removed,
+/// so the bytes can be consumed row by row without a stride.
+#[derive(Clone, Debug)]
+pub struct FrameCapture {
+    /// Width of the captured frame, in physical pixels.
+    pub width: u32,
+    /// Height of the captured frame, in physical pixels.
+    pub height: u32,
+    /// The format the captured pixels are in.
+    pub format: wgpu::TextureFormat,
+    /// Tightly packed pixels, `width * height * 4` bytes long.
+    pub bytes: Vec<u8>,
+}
+
+/// Why a requested frame capture produced no frame.
+#[derive(Debug)]
+pub enum FrameCaptureError {
+    /// The native surface cannot be copied on this adapter.
+    UnsupportedUsage,
+    /// A previously submitted frame capture is still being read back.
+    Busy,
+    /// The frame to capture had a zero width or height.
+    InvalidDimensions,
+    /// The compositor's surface format is not one this readback can copy.
+    UnsupportedFormat(wgpu::TextureFormat),
+    /// The readback buffer could not be mapped after its copy completed.
+    BufferMap,
+    /// Waiting for the readback copy to complete failed.
+    DevicePoll(wgpu::PollError),
+}
+
+impl std::fmt::Display for FrameCaptureError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnsupportedUsage => {
+                formatter.write_str("surface does not support frame capture copies")
+            }
+            Self::Busy => formatter.write_str("a frame capture is already in flight"),
+            Self::InvalidDimensions => {
+                formatter.write_str("frame capture dimensions must be non-zero")
+            }
+            Self::UnsupportedFormat(format) => {
+                write!(formatter, "unsupported frame capture format: {format:?}")
+            }
+            Self::BufferMap => formatter.write_str("frame capture buffer mapping failed"),
+            Self::DevicePoll(error) => write!(formatter, "frame capture GPU poll failed: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for FrameCaptureError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::DevicePoll(error) => Some(error),
+            Self::InvalidDimensions
+            | Self::UnsupportedFormat(_)
+            | Self::BufferMap
+            | Self::UnsupportedUsage
+            | Self::Busy => None,
+        }
+    }
 }

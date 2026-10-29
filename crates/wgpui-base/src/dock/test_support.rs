@@ -7,7 +7,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Context, Empty, Entity, EventEmitter, FocusHandle, Focusable,
     IntoElement, Render, TestAppContext, VisualTestContext, WeakEntity, Window,
 };

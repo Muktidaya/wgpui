@@ -152,7 +152,7 @@ fn main() {
 
     Application::new()
         .with_assets(Assets {
-            base: manifest_dir.join("examples"),
+            base: manifest_dir.join("examples/legacy"),
         })
         .run(move |cx: &mut App| {
             let http_client = ReqwestClient::user_agent("wgpui example").unwrap();
@@ -185,9 +185,9 @@ fn main() {
             cx.open_window(window_options, |_, cx| {
                 cx.new(|_| ImageShowcase {
                     // Relative path to your root project path
-                    local_resource: manifest_dir.join("examples/image/app-icon.png").into(),
+                    local_resource: manifest_dir.join("examples/legacy/image/geometric-demo.png").into(),
                     remote_resource: "https://picsum.photos/800/400".into(),
-                    asset_resource: "image/color.svg".into(),
+                    asset_resource: "image/colored-shapes-demo.svg".into(),
                 })
             })
             .unwrap();

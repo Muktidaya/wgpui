@@ -1,5 +1,5 @@
 use crate::{StyledExt as _, input::blink_cursor::BlinkCursor};
-use gpui::{
+use wgpui::{
     AnyElement, App, AppContext as _, Context, Empty, Entity, EventEmitter, FocusHandle, Focusable,
     InteractiveElement as _, IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce,
     SharedString, StyleRefinement, Styled, Subscription, Window, div, prelude::FluentBuilder as _,
@@ -230,7 +230,7 @@ mod tests {
         // Programmatic values intentionally do not use the keyboard editor path.
         // This captures the legacy contract: callers may display arbitrary or
         // over-length values, while actual key entry remains digit-only.
-        let value: gpui::SharedString = "token-over-length".into();
+        let value: wgpui::SharedString = "token-over-length".into();
         assert_eq!(value.as_ref(), "token-over-length");
         assert_eq!(OtpState::edit_value("token", "x", None, 2), None);
     }

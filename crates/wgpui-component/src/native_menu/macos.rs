@@ -2,13 +2,13 @@
 
 use std::{cell::Cell, sync::Arc};
 
-use gpui::{Action, App, AssetSource, Pixels, Point, Window};
 use objc2::rc::Retained;
 use objc2::runtime::{AnyObject, NSObject};
 use objc2::{AnyThread, DefinedClass, MainThreadMarker, define_class, msg_send, sel};
 use objc2_app_kit::{NSImage, NSMenu, NSMenuItem, NSView};
 use objc2_foundation::{NSData, NSPoint, NSSize, NSString};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+use wgpui::{Action, App, AssetSource, Pixels, Point, Window};
 
 use super::{NativeMenuItem, resolve_icon_image};
 

@@ -1,16 +1,16 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Axis, ClickEvent, Half, InteractiveElement as _, IntoElement, ParentElement,
     Pixels, RenderOnce, Role, StatefulInteractiveElement as _, StyleRefinement, Styled, Window,
     div, prelude::FluentBuilder as _, px, relative,
 };
-use gpui_base::TestSupportExt as _;
+use wgpui_base::TestSupportExt as _;
 
 use crate::{
     ActiveTheme as _, AxisExt, Icon, Sizable, Size, StyledExt as _,
     stepper::trigger::StepperTrigger,
 };
 
-/// A step item within a [`Stepper`].
+/// A step item within a [`Stepper`](crate::stepper::Stepper).
 #[derive(IntoElement)]
 pub struct StepperItem {
     step: usize,

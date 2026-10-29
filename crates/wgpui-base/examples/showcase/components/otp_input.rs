@@ -1,5 +1,5 @@
-use gpui::{Context, IntoElement, ParentElement as _, Styled as _, div};
-use gpui_base::OtpInput;
+use wgpui::{Context, IntoElement, ParentElement as _, Styled as _, div};
+use wgpui_base::OtpInput;
 
 use super::super::BaseShowcase;
 

@@ -1,22 +1,22 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 
 use crate::{
     ActiveTheme, Disableable, IconName, RoleOverride, Selectable, Sizable, Size, icon::IconNamed,
     text::Text, tooltip::ComponentTooltip, v_flex,
 };
-use crate::{StyledExt as _, ThemeStyled as _};
-use gpui::{
+use crate::{StyleSized as _, StyledExt as _, ThemeStyled as _};
+use wgpui::{
     AnyElement, App, ElementId, InteractiveElement, IntoElement, MouseButton, ParentElement,
     RenderOnce, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, px, relative, rems, svg,
 };
-use gpui_base::{CheckboxIndicator, spring};
+use wgpui_base::{CheckboxIndicator, spring};
 
 /// A Checkbox element.
 #[derive(IntoElement)]
 pub struct Checkbox {
     id: ElementId,
-    base: gpui_base::Checkbox,
+    base: wgpui_base::Checkbox,
     style: StyleRefinement,
     // `Text` is legacy presentation state. During render it is composed into
     // the Base Checkbox child seam together with application children.
@@ -40,7 +40,7 @@ impl Checkbox {
         let id = id.into();
         Self {
             id: id.clone(),
-            base: gpui_base::Checkbox::new(id),
+            base: wgpui_base::Checkbox::new(id),
             style: StyleRefinement::default(),
             label: None,
             accessibility_label: None,
@@ -68,6 +68,14 @@ impl Checkbox {
         self
     }
 
+    /// Overrides how long the pointer must rest before the tooltip shows.
+    ///
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
+    pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
+        self.tooltip.show_delay = Some(delay);
+        self
+    }
+
     /// Set the label for the checkbox.
     pub fn label(mut self, label: impl Into<Text>) -> Self {
         self.label = Some(label.into());
@@ -76,7 +84,9 @@ impl Checkbox {
 
     /// Set the name a screen reader announces, overriding the visible label.
     ///
-    /// This does not change the label drawn on screen.
+    /// This does not change the label drawn on screen. A checkbox without a
+    /// [`label`](Self::label) or text children has no accessible name, so set this
+    /// whenever the checkbox is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
         self
@@ -118,14 +128,14 @@ impl Checkbox {
 }
 
 impl InteractiveElement for Checkbox {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
 impl StatefulInteractiveElement for Checkbox {}
 
 impl Styled for Checkbox {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -215,6 +225,13 @@ pub(crate) fn checkbox_check_icon(
 impl RenderOnce for Checkbox {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.checked;
+        let has_content = self.label.is_some() || !self.children.is_empty();
+        let indicator_size = rems(match self.size {
+            Size::XSmall => 0.75,
+            Size::Small => 0.875,
+            Size::Large => 1.125,
+            _ => 1.,
+        });
 
         let base = self.base;
         let children = self.children;
@@ -266,11 +283,8 @@ impl RenderOnce for Checkbox {
             .line_height(relative(1.))
             .text_color(cx.theme().foreground)
             .map(|this| match self.size {
-                Size::XSmall => this.text_xs(),
-                Size::Small => this.text_sm(),
-                Size::Medium => this.text_base(),
-                Size::Large => this.text_lg(),
-                _ => this,
+                Size::Size(_) => this,
+                size => this.input_text_size(size),
             })
             .rounded(cx.theme().radius * 0.5)
             .when(is_focused && self.focus_ring_enabled, |this| {
@@ -282,13 +296,9 @@ impl RenderOnce for Checkbox {
                     .checked(checked)
                     .disabled(self.disabled)
                     .relative()
-                    .map(|this| match self.size {
-                        Size::XSmall => this.size_3(),
-                        Size::Small => this.size_3p5(),
-                        Size::Medium => this.size_4(),
-                        Size::Large => this.size(rems(1.125)),
-                        _ => this.size_4(),
-                    })
+                    .size(indicator_size)
+                    // Center on the first 1.25em line, including when the label wraps.
+                    .when(has_content, |this| this.mt(indicator_size * 0.125))
                     .flex_shrink_0()
                     .border_1()
                     .rounded(radius)
@@ -323,7 +333,7 @@ impl RenderOnce for Checkbox {
                     v_flex()
                         .flex_1()
                         .overflow_hidden()
-                        .line_height(relative(1.2))
+                        .line_height(relative(1.25))
                         .gap_1()
                         .map(|this| {
                             if let Some(label) = self.label {
@@ -334,7 +344,6 @@ impl RenderOnce for Checkbox {
                                         .when(self.disabled, |this| {
                                             this.text_color(cx.theme().muted_foreground)
                                         })
-                                        .line_height(relative(1.))
                                         .child(label),
                                 )
                             } else {
@@ -357,7 +366,7 @@ impl RenderOnce for Checkbox {
 mod tests {
     use std::{cell::Cell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         Context, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers, Render, TestAppContext,
         VisualTestContext, point,
     };
@@ -373,7 +382,7 @@ mod tests {
             .label("Remember me")
             .accessibility_label("Remember this account");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Remember this account"),
             "an explicit name must win over the visible label"
         );
@@ -431,7 +440,8 @@ mod tests {
     }
 
     fn activate_key(cx: &mut VisualTestContext, key: &str) {
-        let keystroke = Keystroke::parse(key).unwrap();
+        let keystroke =
+            cx.update(|_, cx| Keystroke::parse_with_os(key, cx.platform_info().os).unwrap());
         cx.simulate_event(KeyDownEvent {
             keystroke: keystroke.clone(),
             is_held: false,
@@ -440,7 +450,7 @@ mod tests {
         cx.simulate_event(KeyUpEvent { keystroke });
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_pointer_activation_fires_once_without_moving_focus(cx: &mut TestAppContext) {
         let (cx, clicks, _) = harness(cx, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -449,7 +459,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_supports_tab_enter_and_space(cx: &mut TestAppContext) {
         let (cx, clicks, _) = harness(cx, false);
         cx.update(|window, cx| window.focus_next(cx));
@@ -461,7 +471,7 @@ mod tests {
         assert_eq!(clicks.get(), 2);
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_disabled_is_inert_and_pointer_activation_bubbles(cx: &mut TestAppContext) {
         let (cx, clicks, parent_clicks) = harness(cx, true);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
@@ -471,7 +481,7 @@ mod tests {
         cx.update(|window, cx| assert!(window.focused(cx).is_none()));
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn facade_prepaints_label_and_custom_content_through_the_base_slot(cx: &mut TestAppContext) {
         struct ContentHarness;
 

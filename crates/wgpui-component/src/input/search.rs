@@ -2,7 +2,7 @@ use ropey::Rope;
 use rust_i18n::t;
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     App, AppContext as _, Context, Empty, Entity, FocusHandle, Focusable, Half,
     InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, Styled, Subscription,
     WeakEntity, Window, actions, div, prelude::FluentBuilder as _,
@@ -25,7 +25,7 @@ const CONTEXT: &'static str = "SearchPanel";
 actions!(input, [Tab]);
 
 #[cfg(test)]
-use gpui_base::input::SearchMatcher;
+use wgpui_base::input::SearchMatcher;
 
 #[derive(Clone, Copy)]
 #[cfg(test)]
@@ -62,19 +62,23 @@ pub(super) struct SearchPanel<M: crate::input::overlay::OverlayMode> {
     editor: WeakEntity<InputBaseState<M>>,
     search_input: Entity<InputState>,
     replace_input: Entity<InputState>,
-    session: gpui_base::input::SearchSession,
+    session: wgpui_base::input::SearchSession,
     input_width: Pixels,
 
     _subscriptions: Vec<Subscription>,
 }
 
 impl<M: crate::input::overlay::OverlayMode> SearchPanel<M> {
-    pub(super) fn sync_session(&mut self, session: &gpui_base::input::SearchSession) {
+    pub(super) fn replace_mode(&self) -> bool {
+        self.session.replace_mode
+    }
+
+    pub(super) fn sync_session(&mut self, session: &wgpui_base::input::SearchSession) {
         self.session = session.clone();
     }
 
     /// The query the panel's search input currently holds.
-    pub(super) fn query(&self, cx: &App) -> gpui::SharedString {
+    pub(super) fn query(&self, cx: &App) -> wgpui::SharedString {
         self.search_input.read(cx).value()
     }
 
@@ -111,7 +115,7 @@ impl<M: crate::input::overlay::OverlayMode> SearchPanel<M> {
                 editor: editor.downgrade(),
                 search_input,
                 replace_input,
-                session: gpui_base::input::SearchSession::default(),
+                session: wgpui_base::input::SearchSession::default(),
                 input_width: Pixels::ZERO,
                 _subscriptions,
             }
@@ -135,7 +139,7 @@ impl<M: crate::input::overlay::OverlayMode> SearchPanel<M> {
         }
 
         self.search_input.update(cx, |this, cx| {
-            if selected_text.len() > 0 {
+            if selected_text.len_bytes() > 0 {
                 this.set_value(selected_text.to_string(), window, cx);
             }
             this.select_all(window, cx);

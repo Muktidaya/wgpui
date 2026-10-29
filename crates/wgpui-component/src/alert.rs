@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, ClickEvent, ElementId, Empty, Hsla, InteractiveElement, IntoElement, ParentElement as _,
     RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     div, prelude::FluentBuilder as _, px, rems, transparent_white,
@@ -165,7 +165,7 @@ impl Sizable for Alert {
 }
 
 impl Styled for Alert {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }

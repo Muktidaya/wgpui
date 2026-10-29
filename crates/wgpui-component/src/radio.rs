@@ -1,16 +1,16 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 
-use crate::ThemeStyled as _;
 use crate::{
     ActiveTheme, AxisExt, Sizable, Size, StyledExt, checkbox::checkbox_check_icon, h_flex,
     text::Text, tooltip::ComponentTooltip, v_flex,
 };
-use gpui::{
+use crate::{StyleSized as _, ThemeStyled as _};
+use wgpui::{
     AnyElement, App, Axis, ElementId, InteractiveElement, IntoElement, ParentElement, RenderOnce,
     SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder, relative, rems,
 };
-use gpui_base::{Radio as BaseRadio, RadioGroup as BaseRadioGroup};
+use wgpui_base::{Radio as BaseRadio, RadioGroup as BaseRadioGroup};
 
 /// A Radio element.
 ///
@@ -63,6 +63,14 @@ impl Radio {
     /// Set tooltip text for the radio.
     pub fn tooltip(mut self, tooltip: impl Into<SharedString>) -> Self {
         self.tooltip.text = Some((tooltip.into(), None));
+        self
+    }
+
+    /// Overrides how long the pointer must rest before the tooltip shows.
+    ///
+    /// Defaults to [`wgpui_base::TooltipDefaults::show_delay`].
+    pub fn tooltip_show_delay(mut self, delay: Duration) -> Self {
+        self.tooltip.show_delay = Some(delay);
         self
     }
 
@@ -142,13 +150,13 @@ impl crate::FocusableExt for Radio {
 }
 
 impl Styled for Radio {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl InteractiveElement for Radio {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -164,6 +172,13 @@ impl ParentElement for Radio {
 impl RenderOnce for Radio {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let checked = self.checked;
+        let has_content = self.label.is_some() || !self.children.is_empty();
+        let indicator_size = rems(match self.size {
+            Size::XSmall => 0.75,
+            Size::Small => 0.875,
+            Size::Large => 1.125,
+            _ => 1.,
+        });
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
             .read(cx)
@@ -210,23 +225,16 @@ impl RenderOnce for Radio {
                 this.focus_ring_style(window, cx)
             })
             .map(|this| match self.size {
-                Size::XSmall => this.text_xs(),
-                Size::Small => this.text_sm(),
-                Size::Medium => this.text_base(),
-                Size::Large => this.text_lg(),
-                _ => this,
+                Size::Size(_) => this,
+                size => this.input_text_size(size),
             })
             .refine_style(&self.style)
             .child(
                 div()
                     .relative()
-                    .map(|this| match self.size {
-                        Size::XSmall => this.size_3(),
-                        Size::Small => this.size_3p5(),
-                        Size::Medium => this.size_4(),
-                        Size::Large => this.size(rems(1.125)),
-                        _ => this.size_4(),
-                    })
+                    .size(indicator_size)
+                    // Center on the first 1.25em line, including when the label wraps.
+                    .when(has_content, |this| this.mt(indicator_size * 0.125))
                     .flex_shrink_0()
                     .rounded_full_style(cx)
                     .border_1()
@@ -244,13 +252,12 @@ impl RenderOnce for Radio {
                 this.child(
                     v_flex()
                         .w_full()
-                        .line_height(relative(1.2))
+                        .line_height(relative(1.25))
                         .gap_1()
                         .when_some(self.label, |this, label| {
                             this.child(
                                 div()
                                     .size_full()
-                                    .line_height(relative(1.))
                                     .when(self.disabled, |this| {
                                         this.text_color(cx.theme().muted_foreground)
                                     })
@@ -260,7 +267,7 @@ impl RenderOnce for Radio {
                         .children(self.children),
                 )
             })
-            .on_mouse_down(gpui::MouseButton::Left, |_, window, _| {
+            .on_mouse_down(wgpui::MouseButton::Left, |_, window, _| {
                 window.prevent_default()
             })
             .when_some(self.on_click.clone(), |this, on_click| {
@@ -404,12 +411,13 @@ impl RenderOnce for RadioGroup {
                         radio.id = ix.into();
                         radio.position_in_set = Some(ix + 1);
                         radio.size_of_set = Some(total);
-                        radio.disabled(disabled).checked(checked).when_some(
-                            on_click.clone(),
-                            |this, on_click| {
+                        let item_disabled = radio.disabled;
+                        radio
+                            .disabled(disabled || item_disabled)
+                            .checked(checked)
+                            .when_some(on_click.clone(), |this, on_click| {
                                 this.on_click(move |_, window, cx| on_click(&ix, window, cx))
-                            },
-                        )
+                            })
                     })),
             )
     }
@@ -432,7 +440,7 @@ mod tests {
             .label("Automatic")
             .accessibility_label("Choose automatic mode");
         assert_eq!(
-            named.accessibility_label.as_deref().map(|s| s.as_ref()),
+            named.accessibility_label.as_deref(),
             Some("Choose automatic mode"),
             "an explicit name must win over the visible label"
         );

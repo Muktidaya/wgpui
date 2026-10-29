@@ -1,4 +1,4 @@
-use gpui::relative;
+use wgpui::relative;
 
 use super::*;
 

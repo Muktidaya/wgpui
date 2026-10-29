@@ -1,15 +1,15 @@
 use crate::TestSupportExt as _;
 use std::ops::Range;
 
-use gpui::{
+use wgpui::{
     AccessibleAction, Along, AnyElement, App, AppContext as _, Axis, Bounds, Context, Div,
-    DragMoveEvent, Empty, Entity, EntityId, EventEmitter, InteractiveElement, IntoElement,
-    MouseButton, MouseDownEvent, Orientation, ParentElement, Pixels, Point, Render, RenderOnce,
-    Role, StatefulInteractiveElement, StyleRefinement, Styled, Window, div,
-    prelude::FluentBuilder as _, px,
+    DragMoveEvent, Empty, Entity, EntityId, EventEmitter, HitboxBehavior, InteractiveElement,
+    IntoElement, MouseButton, MouseDownEvent, Orientation, ParentElement, Pixels, Point, Render,
+    RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement, Styled,
+    TouchDragEvent, TouchPhase, Window, div, prelude::FluentBuilder as _, px,
 };
 
-use crate::{element_ext::ElementExt, geometry::AxisExt};
+use crate::{a11y_disabled::A11yDisabledExt as _, element_ext::ElementExt, geometry::AxisExt};
 
 /// Events emitted by the [`SliderState`].
 pub enum SliderEvent {
@@ -140,7 +140,7 @@ pub enum SliderScale {
     /// # For example
     ///
     /// ```
-    /// use gpui_base::slider::{SliderScale, SliderState};
+    /// use wgpui_base::slider::{SliderScale, SliderState};
     ///
     /// let slider = SliderState::new()
     ///     .min(1.0)    // Must be > 0 for logarithmic scale
@@ -180,6 +180,17 @@ pub struct SliderState {
     /// Tracks whether the user is currently interacting with the slider so we
     /// only emit [`SliderEvent::Release`] after a real press/drag.
     dragging: bool,
+    /// The touch drag this slider claimed, while one is live.
+    touch_drag: Option<TouchDrag>,
+}
+
+/// A touch drag claimed by a slider.
+#[derive(Clone, Copy)]
+struct TouchDrag {
+    /// Identifies the gesture: every event of one drag carries the same start.
+    start_position: Point<Pixels>,
+    /// Whether it moves the range start thumb.
+    is_start: bool,
 }
 
 impl SliderState {
@@ -194,6 +205,7 @@ impl SliderState {
             bounds: Bounds::default(),
             scale: SliderScale::default(),
             dragging: false,
+            touch_drag: None,
         }
     }
 
@@ -380,6 +392,19 @@ impl SliderState {
         cx.notify();
     }
 
+    /// Whether `position` is closer to the range start thumb than to the end thumb.
+    fn is_nearer_start(&self, axis: Axis, position: Point<Pixels>) -> bool {
+        let size = self.bounds.size.along(axis);
+        let along = if axis.is_horizontal() {
+            position.x - self.bounds.left()
+        } else {
+            self.bounds.bottom() - position.y
+        };
+        let center =
+            ((self.percentage.end - self.percentage.start) / 2. + self.percentage.start) * size;
+        along < center
+    }
+
     /// Emit [`SliderEvent::Release`] if the user was actively interacting
     /// with the slider. Called on mouse-up both inside and outside the slider.
     #[doc(hidden)]
@@ -418,6 +443,7 @@ pub struct Slider {
     state: Entity<SliderState>,
     axis: Axis,
     disabled: bool,
+    accessibility_label: Option<SharedString>,
     base: Div,
     children: Vec<AnyElement>,
 }
@@ -428,6 +454,7 @@ impl Slider {
             state: state.clone(),
             axis: Axis::Horizontal,
             disabled: false,
+            accessibility_label: None,
             base: div(),
             children: Vec::new(),
         }
@@ -450,6 +477,12 @@ impl Slider {
 
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
+        self
+    }
+
+    /// Sets the label exposed to accessibility clients.
+    pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.accessibility_label = Some(label.into());
         self
     }
 }
@@ -477,6 +510,9 @@ impl RenderOnce for Slider {
             .id(("slider", entity_id))
             .test_support()
             .role(Role::Slider)
+            .when_some(self.accessibility_label, |this, label| {
+                this.aria_label(label)
+            })
             .aria_numeric_value(state.value().end() as f64)
             .aria_min_numeric_value(state.min_value() as f64)
             .aria_max_numeric_value(state.max_value() as f64)
@@ -486,28 +522,30 @@ impl RenderOnce for Slider {
             } else {
                 Orientation::Horizontal
             })
-            .on_a11y_action(AccessibleAction::Increment, {
-                let state = slider_state.clone();
-                move |_, window, cx| {
-                    state.update(cx, |state, cx| {
-                        let value =
-                            (state.value().end() + state.step_value()).min(state.max_value());
-                        state.set_value(value, window, cx);
-                    });
-                }
-            })
-            .on_a11y_action(AccessibleAction::Decrement, {
-                let state = slider_state.clone();
-                move |_, window, cx| {
-                    state.update(cx, |state, cx| {
-                        let value =
-                            (state.value().end() - state.step_value()).max(state.min_value());
-                        state.set_value(value, window, cx);
-                    });
-                }
-            })
+            // A disabled slider takes no value, from the pointer or from
+            // assistive technology.
             .when(!self.disabled, |this| {
-                this.on_mouse_up(
+                this.on_a11y_action(AccessibleAction::Increment, {
+                    let state = slider_state.clone();
+                    move |_, window, cx| {
+                        state.update(cx, |state, cx| {
+                            let value =
+                                (state.value().end() + state.step_value()).min(state.max_value());
+                            state.set_value(value, window, cx);
+                        });
+                    }
+                })
+                .on_a11y_action(AccessibleAction::Decrement, {
+                    let state = slider_state.clone();
+                    move |_, window, cx| {
+                        state.update(cx, |state, cx| {
+                            let value =
+                                (state.value().end() - state.step_value()).max(state.min_value());
+                            state.set_value(value, window, cx);
+                        });
+                    }
+                })
+                .on_mouse_up(
                     MouseButton::Left,
                     window.listener_for(&self.state, |state, _, _, cx| state.handle_release(cx)),
                 )
@@ -517,6 +555,7 @@ impl RenderOnce for Slider {
                 )
             })
             .children(self.children)
+            .a11y_disabled(self.disabled)
     }
 }
 
@@ -564,7 +603,7 @@ impl Styled for SliderTrack {
 }
 
 impl InteractiveElement for SliderTrack {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -576,10 +615,73 @@ impl RenderOnce for SliderTrack {
         let state = self.state.read(cx);
         let is_range = state.value().is_range();
         let percentage = state.percentage();
+        // Touch: GPUI routes a finger drag to `TouchDragEvent` (claimed with
+        // `prevent_default`) or to scrolling; `on_drag` below is mouse-only. Claim
+        // drags that start on the track, as the scrollbar thumb does.
+        let touch_layer = (!self.disabled).then(|| {
+            let slider_state = self.state.clone();
+            wgpui::canvas(
+                |bounds, window, _| window.insert_hitbox(bounds, HitboxBehavior::Normal),
+                move |_, hitbox, window, _| {
+                    let slider_state = slider_state.clone();
+                    window.on_mouse_event(move |event: &TouchDragEvent, phase, window, cx| {
+                        if !phase.bubble() {
+                            return;
+                        }
+                        slider_state.update(cx, |state, cx| {
+                            if event.phase == TouchPhase::Started {
+                                // A drag whose end never arrived (the slider was
+                                // disabled or not painted) ends when another begins.
+                                if state.touch_drag.take().is_some() {
+                                    state.handle_release(cx);
+                                }
+                                // The hitbox, not the bounds, so a layer covering
+                                // the track keeps its own drags.
+                                if window.default_prevented() || !hitbox.is_hovered(window) {
+                                    return;
+                                }
+                                window.prevent_default();
+                                let is_start =
+                                    is_range && state.is_nearer_start(axis, event.start_position);
+                                state.touch_drag = Some(TouchDrag {
+                                    start_position: event.start_position,
+                                    is_start,
+                                });
+                            }
+                            let Some(drag) = state.touch_drag else {
+                                return;
+                            };
+                            if drag.start_position != event.start_position {
+                                return;
+                            }
+                            cx.stop_propagation();
+                            match event.phase {
+                                TouchPhase::Started | TouchPhase::Moved => {
+                                    state.update_value_by_position(
+                                        axis,
+                                        event.position,
+                                        drag.is_start,
+                                        window,
+                                        cx,
+                                    );
+                                }
+                                TouchPhase::Ended | TouchPhase::Cancelled => {
+                                    state.touch_drag = None;
+                                    state.handle_release(cx);
+                                }
+                            }
+                        });
+                    });
+                },
+            )
+            .absolute()
+            .size_full()
+        });
         self.base
             .id("slider-bar-container")
             .test_support()
             .children(self.children)
+            .children(touch_layer)
             .when(!self.disabled, |this| {
                 this.on_mouse_down(
                     MouseButton::Left,
@@ -666,7 +768,7 @@ impl Styled for SliderIndicator {
 }
 
 impl InteractiveElement for SliderIndicator {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -680,7 +782,14 @@ impl RenderOnce for SliderIndicator {
             .children(self.children)
             .on_prepaint({
                 let state = self.state;
-                move |bounds, _, cx| state.update(cx, |state, _| state.set_bounds(bounds))
+                // Only when they moved: with retained views, an update while
+                // the window draws renders every view that reads the state
+                // again.
+                move |bounds, _, cx| {
+                    if state.read(cx).bounds != bounds {
+                        state.update(cx, |state, _| state.set_bounds(bounds));
+                    }
+                }
             })
     }
 }
@@ -735,7 +844,7 @@ impl Styled for SliderThumb {
 }
 
 impl InteractiveElement for SliderThumb {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }

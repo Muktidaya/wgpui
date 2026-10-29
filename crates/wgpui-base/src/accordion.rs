@@ -1,12 +1,12 @@
 use crate::TestSupportExt as _;
 use std::rc::Rc;
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, Div, ElementId, InteractiveElement, Interactivity, IntoElement,
     ParentElement, RenderOnce, Role, StatefulInteractiveElement, StyleRefinement, Styled, Window,
     div, prelude::FluentBuilder as _,
 };
-use smallvec::SmallVec;
 
 use crate::StyledExt as _;
 
@@ -15,7 +15,7 @@ type ChangeHandler = Rc<dyn Fn(bool, &ClickEvent, &mut Window, &mut App)>;
 /// An unstyled accordion root for application-owned items.
 #[derive(IntoElement)]
 pub struct Accordion {
-    base: crate::ObservedElement<gpui::Stateful<Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -47,7 +47,7 @@ impl InteractiveElement for Accordion {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -255,7 +255,7 @@ impl ParentElement for AccordionPanel {
 impl RenderOnce for AccordionPanel {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
         if !self.open && !self.keep_mounted {
-            return gpui::Empty.into_any_element();
+            return wgpui::Empty.into_any_element();
         }
 
         let content = div().children(self.children).refine_style(&self.style);
@@ -276,7 +276,7 @@ impl RenderOnce for AccordionPanel {
 /// animation. Activating the trigger requests the opposite of `open`.
 #[derive(IntoElement)]
 pub struct AccordionTrigger {
-    base: crate::ObservedElement<gpui::Stateful<Div>>,
+    base: crate::ObservedElement<wgpui::Stateful<Div>>,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
     open: bool,
@@ -333,7 +333,7 @@ impl InteractiveElement for AccordionTrigger {
         self.base.interactivity()
     }
 
-    fn track_focus(mut self, handle: &gpui::FocusHandle) -> Self {
+    fn track_focus(mut self, handle: &wgpui::FocusHandle) -> Self {
         self.base = self.base.track_focus(handle);
         self
     }
@@ -364,13 +364,13 @@ mod tests {
     use super::*;
     use std::{cell::RefCell, rc::Rc};
 
-    use gpui::{
+    use wgpui::{
         Context, Element as _, Modifiers, Render, Role, VisualTestContext, accesskit, canvas,
         point, px,
     };
 
-    #[gpui::test]
-    fn trigger_projects_expanded_accessibility_state(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_projects_expanded_accessibility_state(cx: &mut wgpui::TestAppContext) {
         let requested = Rc::new(RefCell::new(Vec::new()));
         let captured = Rc::new(RefCell::new(None));
 
@@ -434,7 +434,7 @@ mod tests {
     }
 
     fn harness(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut wgpui::TestAppContext,
         open: bool,
         disabled: bool,
     ) -> (&mut VisualTestContext, Rc<RefCell<Vec<bool>>>) {
@@ -451,8 +451,10 @@ mod tests {
         (cx, requested)
     }
 
-    #[gpui::test]
-    fn pointer_requests_next_controlled_state_and_respects_disabled(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn pointer_requests_next_controlled_state_and_respects_disabled(
+        cx: &mut wgpui::TestAppContext,
+    ) {
         let (cx, requested) = harness(cx, false, false);
         cx.simulate_click(point(px(10.), px(10.)), Modifiers::default());
         assert_eq!(&*requested.borrow(), &[true]);
@@ -462,8 +464,8 @@ mod tests {
         assert!(requested.borrow().is_empty());
     }
 
-    #[gpui::test]
-    fn header_and_panel_project_structural_roles(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn header_and_panel_project_structural_roles(cx: &mut wgpui::TestAppContext) {
         let captured = Rc::new(RefCell::new(Vec::new()));
 
         struct Probe(Rc<RefCell<Vec<accesskit::Node>>>);

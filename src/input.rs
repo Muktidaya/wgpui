@@ -8,6 +8,15 @@ use std::ops::Range;
 ///
 /// See [`InputHandler`] for details on how to implement each method.
 pub trait EntityInputHandler: 'static + Sized {
+    /// Text assistance requested by this input region.
+    fn text_input_configuration(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> crate::TextInputConfiguration {
+        crate::TextInputConfiguration::default()
+    }
+
     /// See [`InputHandler::text_for_range`] for details
     fn text_for_range(
         &mut self,
@@ -54,6 +63,13 @@ pub trait EntityInputHandler: 'static + Sized {
         cx: &mut Context<Self>,
     );
 
+    /// See [`InputHandler::clear_marked_text`] for details.
+    fn clear_marked_text(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.marked_text_range(window, cx).is_some() {
+            self.replace_and_mark_text_in_range(None, "", Some(0..0), window, cx);
+        }
+    }
+
     /// See [`InputHandler::bounds_for_range`] for details
     fn bounds_for_range(
         &mut self,
@@ -97,6 +113,15 @@ impl<V: 'static> ElementInputHandler<V> {
 }
 
 impl<V: EntityInputHandler> InputHandler for ElementInputHandler<V> {
+    fn text_input_configuration(
+        &mut self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> crate::TextInputConfiguration {
+        self.view
+            .update(cx, |view, cx| view.text_input_configuration(window, cx))
+    }
+
     fn selected_text_range(
         &mut self,
         ignore_disabled_input: bool,
@@ -159,6 +184,11 @@ impl<V: EntityInputHandler> InputHandler for ElementInputHandler<V> {
     fn unmark_text(&mut self, window: &mut Window, cx: &mut App) {
         self.view
             .update(cx, |view, cx| view.unmark_text(window, cx));
+    }
+
+    fn clear_marked_text(&mut self, window: &mut Window, cx: &mut App) {
+        self.view
+            .update(cx, |view, cx| view.clear_marked_text(window, cx));
     }
 
     fn bounds_for_range(

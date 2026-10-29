@@ -14,6 +14,9 @@ pub trait InputEvent: Sealed + 'static {
 /// A key event from the platform.
 pub trait KeyEvent: InputEvent {}
 
+/// A recognized gesture from the platform or portable touch recognizer.
+pub trait GestureEvent: InputEvent {}
+
 /// A mouse event from the platform.
 pub trait MouseEvent: InputEvent {}
 
@@ -92,6 +95,50 @@ pub enum TouchPhase {
     Ended,
     /// The touch phase was cancelled.
     Cancelled,
+}
+
+/// Identifies one touch (finger or stylus contact) for its lifetime, from
+/// [`TouchPhase::Started`] through [`TouchPhase::Ended`] or
+/// [`TouchPhase::Cancelled`].
+///
+/// The value is opaque and assigned by the platform. A platform window must
+/// not reuse an identifier for a later touch.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct TouchId(pub u64);
+
+/// A raw touch event from the platform.
+///
+///
+/// Dispatch contract (core implementation pending): a touch is hit-tested
+/// once, at [`TouchPhase::Started`], occlusion-aware; all subsequent events
+/// for the same [`TouchId`] are delivered to the elements under the starting
+/// position, even after the touch moves outside them.
+#[derive(Clone, Debug, Default)]
+pub struct TouchEvent {
+    /// Which touch this event belongs to.
+    pub id: TouchId,
+    /// The phase of the touch.
+    pub phase: TouchPhase,
+    /// The position of the touch in window coordinates.
+    pub position: Point<Pixels>,
+    /// Where the platform predicts the touch will be roughly one frame from
+    /// now, in the same coordinate space as `position`, when the platform
+    /// offers a prediction for a [`TouchPhase::Moved`] event.
+    ///
+    /// Best-effort latency compensation only: it may influence how far a
+    /// recognized pan scrolls within a frame, but never hit testing, gesture
+    /// classification, or velocity estimation, and any error it introduces
+    /// must be corrected by later events for the same touch.
+    pub predicted_position: Option<Point<Pixels>>,
+    /// Normalized touch force in `0.0..=1.0`, if the hardware reports it.
+    pub force: Option<f32>,
+}
+
+impl Sealed for TouchEvent {}
+impl InputEvent for TouchEvent {
+    fn to_platform_input(self) -> PlatformInput {
+        PlatformInput::Touch(self)
+    }
 }
 
 /// A mouse down event from the platform
@@ -405,6 +452,85 @@ impl MouseMoveEvent {
     }
 }
 
+/// One step of scrolling from a mouse wheel, trackpad, or touch pan.
+#[derive(Clone, Debug, Default)]
+pub struct ScrollEvent {
+    /// The position the scroll targets. For touch pans this is where the pan
+    /// started, so the whole gesture stays with the container it began on.
+    pub position: Point<Pixels>,
+
+    /// The change in scroll position for this event.
+    pub delta: ScrollDelta,
+
+    /// The modifiers that were held down when the scroll happened.
+    pub modifiers: Modifiers,
+
+    /// The phase of the scroll gesture.
+    pub touch_phase: TouchPhase,
+
+    /// The kind of input that produced this scroll.
+    pub source: ScrollSource,
+}
+
+/// The kind of input that produced a [`ScrollEvent`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScrollSource {
+    /// A scroll the platform reported from a pointing device, such as a mouse
+    /// wheel or a trackpad. [`ScrollDelta::precise`] tells continuous devices
+    /// apart from wheel notches.
+    #[default]
+    Pointer,
+    /// A pan of a finger on a touchscreen, recognized by GPUI, including the
+    /// momentum GPUI synthesizes after the finger lifts.
+    Touch,
+}
+
+impl Sealed for ScrollEvent {}
+impl InputEvent for ScrollEvent {
+    fn to_platform_input(self) -> PlatformInput {
+        PlatformInput::Scroll(self)
+    }
+}
+impl MouseEvent for ScrollEvent {}
+
+impl Deref for ScrollEvent {
+    type Target = Modifiers;
+
+    fn deref(&self) -> &Self::Target {
+        &self.modifiers
+    }
+}
+
+/// A pinch (magnification) gesture from a trackpad.
+#[derive(Clone, Debug, Default)]
+pub struct PinchEvent {
+    /// The last known pointer position, not the location of the gesture.
+    ///
+    /// The platform reports no position for a pinch. Neither a pinch nor a
+    /// two-finger scroll moves the cursor, so this may be arbitrarily stale:
+    /// magnifying about it will pull the view back to wherever the cursor was
+    /// last left.
+    pub position: Point<Pixels>,
+
+    /// The change in magnification since the last event, as a fraction:
+    /// `scale *= 1.0 + delta`.
+    pub delta: f32,
+
+    /// The modifiers that were held down during the gesture.
+    pub modifiers: Modifiers,
+
+    /// The phase of the touch event.
+    pub touch_phase: TouchPhase,
+}
+
+impl Sealed for PinchEvent {}
+impl InputEvent for PinchEvent {
+    fn to_platform_input(self) -> PlatformInput {
+        PlatformInput::Pinch(self)
+    }
+}
+impl MouseEvent for PinchEvent {}
+
 /// A mouse wheel event from the platform.
 #[derive(Clone, Debug, Default)]
 pub struct ScrollWheelEvent {
@@ -545,6 +671,11 @@ impl Deref for MouseExitEvent {
 pub struct ExternalPaths(pub(crate) SmallVec<[PathBuf; 2]>);
 
 impl ExternalPaths {
+    /// Creates a dropped-file payload from filesystem paths.
+    pub fn new(paths: impl IntoIterator<Item = PathBuf>) -> Self {
+        Self(paths.into_iter().collect())
+    }
+
     /// Convert this collection of paths into a slice.
     pub fn paths(&self) -> &[PathBuf] {
         &self.0
@@ -609,11 +740,44 @@ pub enum PlatformInput {
     MouseExited(MouseExitEvent),
     /// The scroll wheel was used.
     ScrollWheel(ScrollWheelEvent),
+    /// A scroll from a pointing device or touch pan.
+    Scroll(ScrollEvent),
+    /// A raw touchscreen contact.
+    Touch(TouchEvent),
+    /// An element-claimed touch drag.
+    TouchDrag(crate::TouchDragEvent),
+    /// A phased long press.
+    LongPress(crate::LongPressEvent),
+    /// A back-navigation gesture.
+    BackGesture(crate::BackGestureEvent),
+
+    /// A pinch (magnification) gesture was performed on a trackpad.
+    Pinch(PinchEvent),
     /// Files were dragged and dropped onto the window.
     FileDrop(FileDropEvent),
 }
 
 impl PlatformInput {
+    /// A stable diagnostic name for this input kind.
+    pub fn kind_name(&self) -> &'static str {
+        match self {
+            Self::KeyDown(_) => "key_down",
+            Self::KeyUp(_) => "key_up",
+            Self::ModifiersChanged(_) => "modifiers_changed",
+            Self::MouseDown(_) => "mouse_down",
+            Self::MouseUp(_) => "mouse_up",
+            Self::MouseMove(_) => "mouse_move",
+            Self::MouseExited(_) => "mouse_exited",
+            Self::ScrollWheel(_) | Self::Scroll(_) => "scroll",
+            Self::Touch(_) => "touch",
+            Self::TouchDrag(_) => "touch_drag",
+            Self::LongPress(_) => "long_press",
+            Self::BackGesture(_) => "back_gesture",
+            Self::Pinch(_) => "pinch",
+            Self::FileDrop(_) => "file_drop",
+        }
+    }
+
     pub(crate) fn mouse_event(&self) -> Option<&dyn Any> {
         match self {
             PlatformInput::KeyDown { .. } => None,
@@ -624,7 +788,13 @@ impl PlatformInput {
             PlatformInput::MouseMove(event) => Some(event),
             PlatformInput::MouseExited(event) => Some(event),
             PlatformInput::ScrollWheel(event) => Some(event),
+            PlatformInput::Pinch(event) => Some(event),
             PlatformInput::FileDrop(event) => Some(event),
+            PlatformInput::Scroll(event) => Some(event),
+            PlatformInput::Touch(_) => None,
+            PlatformInput::TouchDrag(event) => Some(event),
+            PlatformInput::LongPress(event) => Some(event),
+            PlatformInput::BackGesture(event) => Some(event),
         }
     }
 
@@ -638,7 +808,13 @@ impl PlatformInput {
             PlatformInput::MouseMove(_) => None,
             PlatformInput::MouseExited(_) => None,
             PlatformInput::ScrollWheel(_) => None,
+            PlatformInput::Pinch(_) => None,
             PlatformInput::FileDrop(_) => None,
+            PlatformInput::Scroll(_)
+            | PlatformInput::Touch(_)
+            | PlatformInput::TouchDrag(_)
+            | PlatformInput::LongPress(_)
+            | PlatformInput::BackGesture(_) => None,
         }
     }
 }

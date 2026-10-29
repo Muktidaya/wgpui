@@ -1,31 +1,55 @@
-use gpui::{
+use wgpui::{
     AnyElement, App, Bounds, ClickEvent, Element, ElementId, Entity, GlobalElementId,
     HighlightStyle, InspectorElementId, IntoElement, LayoutId, Pixels, RenderOnce, SharedString,
     StyleRefinement, Styled, Window,
 };
 
+use std::time::Duration;
+
 use super::{
     MarkdownExtensions, MarkdownNode, MarkdownParseContext, MarkdownPlugin, SelectionFormat,
-    TableData, TextViewState, TextViewStyle,
+    TableData, TextViewMotion, TextViewState, TextViewStyle,
 };
-use gpui_base::text::CodeBlock;
+use wgpui_base::{Easing, text::CodeBlock};
+
+/// How long a word of streamed text takes to reach full color, and how much later each further
+/// word of the same chunk starts. Measured frame by frame from claude.ai: a chunk lands as
+/// ~6 words every ~100 ms and goes from transparent to solid in ~250-300 ms, its words lighting
+/// up a few milliseconds apart rather than all at once.
+///
+/// The two pull in opposite directions and both matter.
+///
+/// `stagger × words` is how long a chunk takes to light up end to end, and it has to stay well
+/// under the interval between chunks: let it reach that and chunks overlap into one continuous
+/// drip of single words, which is what staggering was meant to avoid. At 10 ms a 6-word chunk
+/// lights up in 60 ms -- one gesture, with a visible gradient inside it.
+///
+/// The fade has to outlast that interval instead. How many words are visibly mid-fade at any
+/// moment is the reveal rate times the fade, so a short fade leaves a couple of grey glyphs on
+/// the tail and no gradient to speak of.
+const STREAM_FADE: Duration = Duration::from_millis(280);
+const STREAM_FADE_STAGGER: Duration = Duration::from_millis(10);
 
 /// The component-level rich text element.
 ///
-/// The rendering, parsing and selection all live in [`gpui_base::TextView`];
+/// The rendering, parsing and selection all live in [`wgpui_base::TextView`];
 /// this wrapper exists so that the component API -- `TextViewStyle`, the
 /// component `HighlightTheme`, and the element's associated types -- keeps
 /// working unchanged.
 #[derive(Clone)]
 pub struct TextView {
     id: ElementId,
-    inner: gpui_base::TextView,
+    inner: wgpui_base::TextView,
     text_style: Option<TextViewStyle>,
+    motion: Option<TextViewMotion>,
+    /// `None` leaves the state's own policy alone; `Some(false)` turns a
+    /// fade off that an earlier frame turned on.
+    stream_fade: Option<bool>,
 }
 
 impl Styled for TextView {
     fn style(&mut self) -> &mut StyleRefinement {
-        gpui::Styled::style(&mut self.inner)
+        wgpui::Styled::style(&mut self.inner)
     }
 }
 
@@ -34,8 +58,10 @@ impl TextView {
     pub fn new(state: &Entity<TextViewState>) -> Self {
         Self {
             id: ElementId::Name(state.entity_id().to_string().into()),
-            inner: gpui_base::TextView::new(state),
+            inner: wgpui_base::TextView::new(state),
             text_style: None,
+            motion: None,
+            stream_fade: None,
         }
     }
     /// Creates a text view that parses `text` as Markdown.
@@ -43,8 +69,10 @@ impl TextView {
         let id = id.into();
         Self {
             id: id.clone(),
-            inner: gpui_base::TextView::markdown(id, text),
+            inner: wgpui_base::TextView::markdown(id, text),
             text_style: None,
+            motion: None,
+            stream_fade: None,
         }
     }
     /// Creates a text view that parses `text` as HTML.
@@ -52,9 +80,23 @@ impl TextView {
         let id = id.into();
         Self {
             id: id.clone(),
-            inner: gpui_base::TextView::html(id, text),
+            inner: wgpui_base::TextView::html(id, text),
             text_style: None,
+            motion: None,
+            stream_fade: None,
         }
+    }
+    /// Overrides the source of every document image, including embedded data URLs.
+    ///
+    /// Used for both rendering and intrinsic-size measurement. The returned source
+    /// is authoritative: pending or failed loads never fall back to the document URL.
+    /// Without this override, images use Base's default URI and data URL handling.
+    pub fn image_source<F>(mut self, resolver: F) -> Self
+    where
+        F: Fn(&wgpui::SharedUri) -> wgpui::ImageSource + Send + Sync + 'static,
+    {
+        self.inner = self.inner.image_source(resolver);
+        self
     }
     /// Sets the style, folded onto the one derived from the active theme.
     pub fn style(mut self, style: TextViewStyle) -> Self {
@@ -66,6 +108,26 @@ impl TextView {
         self.inner = self.inner.selectable(value);
         self
     }
+    /// Refines inline code typography, background, border, radius, and padding
+    /// over the resolved theme or explicit style. Other layout properties are
+    /// ignored. Unspecified properties are inherited.
+    pub fn inline_code_style(mut self, style: StyleRefinement) -> Self {
+        self.inner = self.inner.inline_code_style(style);
+        self
+    }
+    /// Refines bullet and number list markers over the resolved theme or
+    /// explicit style. The text color also outlines unchecked task-list
+    /// checkboxes. Unspecified properties are inherited.
+    pub fn list_style(mut self, style: StyleRefinement) -> Self {
+        self.inner = self.inner.list_style(style);
+        self
+    }
+    /// Refines the blockquote container, including its left border, over the
+    /// resolved theme or explicit style. Unspecified properties are inherited.
+    pub fn blockquote_style(mut self, style: StyleRefinement) -> Self {
+        self.inner = self.inner.blockquote_style(style);
+        self
+    }
     /// Sets whether a copied selection carries Markdown source or plain text.
     pub fn selection_format(mut self, value: SelectionFormat) -> Self {
         self.inner = self.inner.selection_format(value);
@@ -74,6 +136,22 @@ impl TextView {
     /// Sets whether the view scrolls its own content.
     pub fn scrollable(mut self, value: bool) -> Self {
         self.inner = self.inner.scrollable(value);
+        self
+    }
+    /// Fades streamed text in the way Claude reveals a reply: the words a `set_text` or
+    /// `push_str` adds start transparent and light up one after another, each reaching full
+    /// color over 280 ms. A chunk far larger than one keystroke burst -- a backfill, a replay --
+    /// fades as a whole instead, since nobody typed it. Text that replaces rather than extends
+    /// the current content shows at once, and reduced motion disables the fade. Use
+    /// [`Self::motion`] for other timing.
+    pub fn stream_fade(mut self, value: bool) -> Self {
+        self.stream_fade = Some(value);
+        self
+    }
+    /// Sets the motion policy explicitly, overriding [`Self::stream_fade`]'s
+    /// theme timing.
+    pub fn motion(mut self, motion: TextViewMotion) -> Self {
+        self.motion = Some(motion);
         self
     }
     /// Clamps the rendered content to `value` lines.
@@ -107,6 +185,15 @@ impl TextView {
         self.inner = self.inner.on_link_click(f);
         self
     }
+    /// Scrolls a container that ignores scroll requests to the line of
+    /// `TextViewState::reveal_range`, with the line's window bounds.
+    pub fn on_reveal<F>(mut self, f: F) -> Self
+    where
+        F: Fn(Bounds<Pixels>, &mut Window, &mut App) + 'static,
+    {
+        self.inner = self.inner.on_reveal(f);
+        self
+    }
     /// Sets which Markdown extensions the parser accepts.
     pub fn markdown_extensions(mut self, value: MarkdownExtensions) -> Self {
         self.inner = self.inner.markdown_extensions(value);
@@ -117,6 +204,7 @@ impl TextView {
         self.inner = self.inner.markdown_mdx();
         self
     }
+
     /// Parses custom block nodes out of the Markdown AST.
     pub fn markdown_block_parser<F>(mut self, parser: F) -> Self
     where
@@ -191,19 +279,33 @@ impl Element for TextView {
             // caller ever replaced the theme -- a pointer comparison against
             // the shared default -- rather than comparing two whole themes
             // field by field.
-            #[cfg(feature = "tree-sitter")]
+            #[cfg(any(feature = "tree-sitter", feature = "syntect"))]
             if !std::sync::Arc::ptr_eq(
                 &style.highlight_theme,
                 &crate::highlighter::HighlightTheme::default_light(),
             ) {
-                inner = inner.code_block_highlighter(super::component_code_block_highlighter(
-                    style.highlight_theme.clone(),
+                inner = inner.shared_code_block_highlighter(super::shared_code_block_highlighter(
+                    &style.highlight_theme,
                 ));
             }
             inner = inner.style(resolve_component_style(
                 crate::ActiveTheme::theme(cx),
                 style,
             ));
+        }
+        let motion = self.motion.clone().or_else(|| {
+            self.stream_fade.map(|fade| {
+                if !fade {
+                    return TextViewMotion::default();
+                }
+                TextViewMotion::default()
+                    .with_stream_fade(STREAM_FADE)
+                    .with_stream_fade_stagger(STREAM_FADE_STAGGER)
+                    .with_stream_fade_easing(Easing::EaseOut)
+            })
+        });
+        if let Some(motion) = motion {
+            inner = inner.motion(motion);
         }
         let mut element = inner.into_any_element();
         let layout_id = element.request_layout(window, cx);
@@ -246,11 +348,11 @@ impl Element for TextView {
 pub(super) fn resolve_component_style(
     theme: &crate::Theme,
     legacy: TextViewStyle,
-) -> gpui_base::TextViewStyle {
+) -> wgpui_base::TextViewStyle {
     let themed = super::base_text_view_style(theme);
 
-    let refined = |mut base: gpui::StyleRefinement, overlay: &StyleRefinement| {
-        gpui_base::refine_style_refinement(&mut base, overlay);
+    let refined = |mut base: wgpui::StyleRefinement, overlay: &StyleRefinement| {
+        wgpui_base::refine_style_refinement(&mut base, overlay);
         base
     };
     let code_block = refined(themed.code_block().clone(), &legacy.code_block);
@@ -266,18 +368,38 @@ pub(super) fn resolve_component_style(
     // a dark theme.
     let is_dark = themed.is_dark() || legacy.is_dark;
 
-    let mut style = themed
+    let heading_base_font_size = legacy.heading_base_font_size;
+    let heading_font_size = legacy.heading_font_size;
+    // A style that never touched heading sizes keeps the Base default, which
+    // scales headings with the body text; only an explicit base size or
+    // resolver pins them to pixels.
+    let pins_heading_size = heading_font_size.is_some()
+        || heading_base_font_size != TextViewStyle::default().heading_base_font_size;
+    let style = themed
         .with_paragraph_gap(legacy.paragraph_gap)
-        .with_heading_base_font_size(legacy.heading_base_font_size)
+        .with_heading(move |level| {
+            if !pins_heading_size {
+                return StyleRefinement::default();
+            }
+            let default_size = match level {
+                1 => wgpui::rems(2.),
+                2 => wgpui::rems(1.5),
+                3 => wgpui::rems(1.25),
+                4 => wgpui::rems(1.125),
+                _ => wgpui::rems(1.),
+            }
+            .to_pixels(heading_base_font_size);
+            let text_size = heading_font_size.as_ref().map_or(default_size, |resolve| {
+                resolve(level, heading_base_font_size)
+            });
+            StyleRefinement::default().text_size(text_size)
+        })
         .with_code_block(code_block)
         .with_table(table)
         .with_table_head(table_head)
         .with_table_cell(table_cell)
         .with_inline_code(inline_code)
         .with_dark(is_dark);
-    if let Some(heading_font_size) = legacy.heading_font_size {
-        style = style.with_heading_font_size(move |level, base| heading_font_size(level, base));
-    }
     style
 }
 
@@ -357,7 +479,7 @@ impl Text {
     pub(crate) fn get_text(&self, cx: &App) -> SharedString {
         match self {
             Self::String(value) => value.clone(),
-            Self::TextView(view) => gpui_base::Text::from(view.inner.clone()).get_text(cx),
+            Self::TextView(view) => wgpui_base::Text::from(view.inner.clone()).get_text(cx),
         }
     }
 }
@@ -394,7 +516,7 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
     };
 
-    use gpui::{
+    use wgpui::{
         Context, IntoElement, ParentElement as _, Render, TestAppContext, VisualTestContext, div,
     };
 
@@ -403,7 +525,7 @@ mod tests {
     }
 
     impl Render for StatelessMarkdown {
-        fn render(&mut self, _: &mut gpui::Window, _: &mut Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut wgpui::Window, _: &mut Context<Self>) -> impl IntoElement {
             self.renders.fetch_add(1, Ordering::Relaxed);
             div().child(
                 super::markdown(include_str!("../../tests/fixtures/test.md"))
@@ -412,7 +534,7 @@ mod tests {
         }
     }
 
-    #[gpui::test]
+    #[wgpui::test]
     fn stateless_markdown_facade_settles_after_parsing(cx: &mut TestAppContext) {
         cx.update(crate::init);
         let renders = Arc::new(AtomicUsize::new(0));
@@ -423,10 +545,13 @@ mod tests {
         let cx: &mut VisualTestContext = cx;
 
         cx.run_until_parked();
-        assert!(
-            renders.load(Ordering::Relaxed) <= 2,
-            "an unchanged compatibility TextView must settle after its parse, but rendered {} times",
+        cx.update(|window, cx| window.draw(cx).clear());
+        let renders_after_redraw = renders.load(Ordering::Relaxed);
+        cx.run_until_parked();
+        assert_eq!(
             renders.load(Ordering::Relaxed),
+            renders_after_redraw,
+            "an unchanged compatibility TextView must not schedule another render after its parse",
         );
     }
 }

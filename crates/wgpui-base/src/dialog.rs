@@ -4,13 +4,13 @@ use std::{
     rc::Rc,
 };
 
-use gpui::{
+use smallvec::SmallVec;
+use wgpui::{
     AnyElement, App, ClickEvent, FocusHandle, InteractiveElement as _, IntoElement, KeyBinding,
     MouseButton, ParentElement, Pixels, RenderOnce, Role, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, anchored, deferred, div, point, prelude::FluentBuilder as _,
     px,
 };
-use smallvec::SmallVec;
 
 use crate::actions::{Cancel, Confirm};
 use crate::{FocusTrapElement as _, StyledExt as _};
@@ -185,6 +185,9 @@ impl RenderOnce for DialogTrigger {
 
 macro_rules! dialog_part {
     ($(#[$meta:meta])* $name:ident, $id:literal) => {
+        dialog_part!($(#[$meta])* $name, $id, false);
+    };
+    ($(#[$meta:meta])* $name:ident, $id:literal, $occlude:literal) => {
         $(#[$meta])*
         #[derive(IntoElement)]
         pub struct $name {
@@ -223,6 +226,9 @@ macro_rules! dialog_part {
             fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
                 div()
                     .id($id)
+                    // The popup sits over the backdrop, whose press dismisses
+                    // the dialog, so it keeps presses on itself from falling through.
+                    .when($occlude, |this| this.occlude())
                     .children(self.children)
                     .refine_style(&self.style)
             }
@@ -239,13 +245,14 @@ dialog_part!(
 dialog_part!(
     /// Unstyled popup part containing dialog content.
     DialogPopup,
-    "dialog-popup"
+    "dialog-popup",
+    true
 );
 
 /// Unstyled title slot for a dialog surface.
 #[derive(IntoElement)]
 pub struct DialogTitle {
-    base: gpui::Div,
+    base: wgpui::Div,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -287,7 +294,7 @@ impl RenderOnce for DialogTitle {
 /// Unstyled descriptive-content slot for a dialog surface.
 #[derive(IntoElement)]
 pub struct DialogDescription {
-    base: gpui::Div,
+    base: wgpui::Div,
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 2]>,
 }
@@ -332,6 +339,9 @@ pub struct DialogClose {
     style: StyleRefinement,
     children: SmallVec<[AnyElement; 1]>,
     trigger: Option<AnyElement>,
+    /// The focus node activation dispatches from, filled at render and read
+    /// when clicked, so the trigger built earlier reaches it too.
+    anchor: Rc<RefCell<Option<FocusHandle>>>,
 }
 
 impl DialogClose {
@@ -340,6 +350,7 @@ impl DialogClose {
             style: StyleRefinement::default(),
             children: SmallVec::new(),
             trigger: None,
+            anchor: Rc::default(),
         }
     }
 
@@ -349,15 +360,26 @@ impl DialogClose {
     /// activation. The builder only needs to supply presentation.
     /// The wrapper does not also handle clicks when a trigger is supplied.
     pub fn trigger<E: IntoElement>(mut self, build: impl FnOnce(crate::Button) -> E) -> Self {
+        let anchor = self.anchor.clone();
         let button = crate::Button::new("close")
             .accessibility_label("Close")
-            .on_click(Self::activate);
+            .on_click(move |_, window, cx| Self::activate(&anchor, window, cx));
         self.trigger = Some(build(button).into_any_element());
         self
     }
 
-    fn activate(_: &ClickEvent, window: &mut Window, cx: &mut App) {
-        window.dispatch_action(Box::new(Cancel), cx);
+    /// Dispatches [`Cancel`] from the control's own focus node, so it reaches
+    /// the dialog the control sits in whatever holds focus at that moment: a
+    /// surface that keeps taking focus back (a native web view, an
+    /// always-on-top window) would otherwise leave the control inert.
+    fn activate(anchor: &RefCell<Option<FocusHandle>>, window: &mut Window, cx: &mut App) {
+        // Clone out before dispatching so the dialog's handlers never run
+        // while the cell is borrowed.
+        let anchor = anchor.borrow().clone();
+        match anchor {
+            Some(anchor) => anchor.dispatch_action(&Cancel, window, cx),
+            None => window.dispatch_action(Box::new(Cancel), cx),
+        }
     }
 }
 impl Default for DialogClose {
@@ -376,10 +398,22 @@ impl Styled for DialogClose {
     }
 }
 impl RenderOnce for DialogClose {
-    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let anchor = window
+            .use_keyed_state("dialog-close-anchor", cx, |_, cx| cx.focus_handle())
+            .read(cx)
+            .clone();
+        *self.anchor.borrow_mut() = Some(anchor.clone());
+        let cell = self.anchor;
         div()
             .id("dialog-close")
-            .when(self.trigger.is_none(), |this| this.on_click(Self::activate))
+            // A zero-size, out-of-flow node that tracks the anchor: it is never
+            // hovered, so it takes no focus on its own and does not enter the
+            // Tab order, but it sits inside this dialog's dispatch path.
+            .child(div().absolute().size_0().track_focus(&anchor))
+            .when(self.trigger.is_none(), |this| {
+                this.on_click(move |_, window, cx| Self::activate(&cell, window, cx))
+            })
             .children(self.trigger)
             .children(self.children)
             .refine_style(&self.style)
@@ -521,6 +555,11 @@ impl RenderOnce for Dialog {
                     .left_0()
                     .w(viewport.width)
                     .h(viewport.height)
+                    // A popup in normal flow lands centered; `refine_style`
+                    // below lets the caller lay the host out differently.
+                    .flex()
+                    .items_center()
+                    .justify_center()
                     .role(self.role)
                     .track_focus(&self.focus)
                     .focus_trap(format!("dialog-{}", self.layer), &self.focus)
@@ -609,13 +648,13 @@ impl RenderOnce for Dialog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{Context, Render, point};
     use std::{cell::RefCell, rc::Rc};
+    use wgpui::{Context, Render, point};
 
-    #[gpui::test]
-    fn close_trigger_supplies_accessible_button(cx: &mut gpui::TestAppContext) {
-        use gpui::{Element as _, accesskit, canvas};
+    #[wgpui::test]
+    fn close_trigger_supplies_accessible_button(cx: &mut wgpui::TestAppContext) {
         use std::sync::{Arc, Mutex};
+        use wgpui::{Element as _, accesskit, canvas};
 
         struct Probe(Arc<Mutex<Option<accesskit::Node>>>);
         impl Render for Probe {
@@ -646,9 +685,9 @@ mod tests {
         assert!(node.supports_action(accesskit::Action::Click));
     }
 
-    #[gpui::test]
-    fn close_trigger_activates_once_and_respects_cancel_veto(cx: &mut gpui::TestAppContext) {
-        use gpui::{KeyDownEvent, KeyUpEvent, Keystroke};
+    #[wgpui::test]
+    fn close_trigger_activates_once_and_respects_cancel_veto(cx: &mut wgpui::TestAppContext) {
+        use wgpui::{KeyDownEvent, KeyUpEvent, Keystroke};
 
         struct Harness {
             focus: FocusHandle,
@@ -688,11 +727,13 @@ mod tests {
                 attempts,
             }
         });
-        cx.update(|window, cx| {
+        let viewport = cx.update(|window, cx| {
             view.read(cx).focus.clone().focus(window, cx);
             window.draw(cx).clear();
+            window.viewport_size()
         });
-        cx.simulate_click(point(px(20.), px(20.)), Default::default());
+        let popup_center = point(viewport.width / 2., viewport.height / 2.);
+        cx.simulate_click(popup_center, Default::default());
         cx.run_until_parked();
         assert_eq!(attempts.get(), 1);
         assert!(handle.is_open(), "on_cancel can veto pointer dismissal");
@@ -722,8 +763,8 @@ mod tests {
         }
     }
 
-    #[gpui::test]
-    fn trigger_opens_shared_handle_and_reports_reason(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn trigger_opens_shared_handle_and_reports_reason(cx: &mut wgpui::TestAppContext) {
         let handle = DialogHandle::new(false);
         let changes = Rc::new(RefCell::new(Vec::new()));
         *handle.on_open_change.borrow_mut() = Some({
@@ -747,10 +788,10 @@ mod tests {
     /// The backdrop is the dimming surface every caller hands over as an
     /// `absolute()` element, so it has to have the host's box to resolve
     /// against — a collapsed wrapper leaves it zero-sized and invisible.
-    #[gpui::test]
-    fn the_backdrop_fills_the_host(cx: &mut gpui::TestAppContext) {
-        use gpui::{Bounds, canvas};
+    #[wgpui::test]
+    fn the_backdrop_fills_the_host(cx: &mut wgpui::TestAppContext) {
         use std::cell::Cell;
+        use wgpui::{Bounds, canvas};
 
         struct Harness {
             focus: FocusHandle,
@@ -793,6 +834,77 @@ mod tests {
             bounds.get().size,
             viewport,
             "a zero-sized backdrop paints no overlay behind the dialog"
+        );
+    }
+
+    /// The backdrop sits under the popup, so a press on the popup must not
+    /// reach it and dismiss the dialog.
+    #[wgpui::test]
+    fn pressing_the_popup_does_not_dismiss(cx: &mut wgpui::TestAppContext) {
+        struct Harness(DialogHandle);
+        impl Render for Harness {
+            fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                Dialog::new(cx)
+                    .handle(self.0.clone())
+                    .backdrop(div().absolute().size_full())
+                    .popup(DialogPopup::new().size(px(100.)))
+            }
+        }
+
+        cx.update(crate::init);
+        let handle = DialogHandle::new(true);
+        let (_, cx) = cx.add_window_view({
+            let handle = handle.clone();
+            move |_, _| Harness(handle)
+        });
+        let viewport = cx.update(|window, cx| {
+            window.draw(cx).clear();
+            window.viewport_size()
+        });
+
+        cx.simulate_click(
+            point(viewport.width / 2., viewport.height / 2.),
+            Default::default(),
+        );
+        assert!(
+            handle.is_open(),
+            "a press on the popup keeps the dialog open"
+        );
+
+        cx.simulate_click(point(px(5.), px(5.)), Default::default());
+        assert!(!handle.is_open(), "a press on the backdrop still dismisses");
+    }
+
+    #[wgpui::test]
+    fn the_popup_is_centered_by_default(cx: &mut wgpui::TestAppContext) {
+        use std::cell::Cell;
+        use wgpui::{Bounds, canvas};
+
+        struct Harness(Rc<Cell<Bounds<Pixels>>>);
+        impl Render for Harness {
+            fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+                let bounds = self.0.clone();
+                Dialog::new(cx).popup(
+                    canvas(move |popup, _, _| bounds.set(popup), |_, _, _, _| {}).size(px(100.)),
+                )
+            }
+        }
+
+        cx.update(crate::init);
+        let bounds = Rc::new(Cell::new(Bounds::default()));
+        let (_, cx) = cx.add_window_view({
+            let bounds = bounds.clone();
+            move |_, _| Harness(bounds)
+        });
+        let viewport = cx.update(|window, cx| {
+            let viewport = window.viewport_size();
+            window.draw(cx).clear();
+            viewport
+        });
+
+        assert_eq!(
+            bounds.get().center(),
+            point(viewport.width / 2., viewport.height / 2.)
         );
     }
 }

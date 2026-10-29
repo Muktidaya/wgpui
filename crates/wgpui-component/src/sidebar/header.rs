@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     AnyElement, Div, InteractiveElement, IntoElement, ParentElement, RenderOnce, StyleRefinement,
     Styled, div, prelude::FluentBuilder as _,
 };
@@ -57,19 +57,19 @@ impl Collapsible for SidebarHeader {
 }
 
 impl ParentElement for SidebarHeader {
-    fn extend(&mut self, elements: impl IntoIterator<Item = gpui::AnyElement>) {
+    fn extend(&mut self, elements: impl IntoIterator<Item = wgpui::AnyElement>) {
         self.children.extend(elements);
     }
 }
 
 impl Styled for SidebarHeader {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
 
 impl InteractiveElement for SidebarHeader {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+    fn interactivity(&mut self) -> &mut wgpui::Interactivity {
         self.base.interactivity()
     }
 }
@@ -77,7 +77,7 @@ impl InteractiveElement for SidebarHeader {
 impl DropdownMenu for SidebarHeader {}
 
 impl RenderOnce for SidebarHeader {
-    fn render(self, _: &mut gpui::Window, cx: &mut gpui::App) -> impl gpui::IntoElement {
+    fn render(self, _: &mut wgpui::Window, cx: &mut wgpui::App) -> impl wgpui::IntoElement {
         self.base
             .id("sidebar-header")
             .h_flex()

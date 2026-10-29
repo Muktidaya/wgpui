@@ -19,7 +19,9 @@ pub(crate) type PathVertex_ScaledPixels = PathVertex<ScaledPixels>;
 pub(crate) type DrawOrder = u32;
 
 #[derive(Default)]
-pub(crate) struct Scene {
+#[doc(hidden)]
+#[allow(missing_docs)]
+pub struct Scene {
     pub(crate) paint_operations: Vec<PaintOperation>,
     primitive_bounds: BoundsTree<ScaledPixels>,
     layer_stack: Vec<DrawOrder>,
@@ -32,6 +34,7 @@ pub(crate) struct Scene {
     pub(crate) surfaces: Vec<PaintSurface>,
 }
 
+#[allow(missing_docs)]
 impl Scene {
     pub fn clear(&mut self) {
         self.paint_operations.clear();
@@ -62,7 +65,7 @@ impl Scene {
         self.paint_operations.push(PaintOperation::EndLayer);
     }
 
-    pub fn insert_primitive(&mut self, primitive: impl Into<Primitive>) {
+    pub(crate) fn insert_primitive(&mut self, primitive: impl Into<Primitive>) {
         let mut primitive = primitive.into();
         let clipped_bounds = primitive
             .bounds()
@@ -421,14 +424,23 @@ pub(crate) enum PrimitiveBatch<'a> {
 
 #[derive(Default, Debug, Clone)]
 #[repr(C)]
-pub(crate) struct Quad {
+/// A painted rectangle in display-scaled coordinates.
+pub struct Quad {
+    /// Scene ordering index.
     pub order: DrawOrder,
+    /// Border drawing pattern.
     pub border_style: BorderStyle,
+    /// Unclipped rectangle bounds.
     pub bounds: Bounds<ScaledPixels>,
+    /// Clip applied when the rectangle is drawn.
     pub content_mask: ContentMask<ScaledPixels>,
+    /// Rectangle fill.
     pub background: Background,
+    /// Border color.
     pub border_color: Hsla,
+    /// Radius of each corner.
     pub corner_radii: Corners<ScaledPixels>,
+    /// Thickness of each border edge.
     pub border_widths: Edges<ScaledPixels>,
 }
 
@@ -440,13 +452,21 @@ impl From<Quad> for Primitive {
 
 #[derive(Debug, Clone)]
 #[repr(C)]
-pub(crate) struct Underline {
+/// A painted text underline in display-scaled coordinates.
+pub struct Underline {
+    /// Scene ordering index.
     pub order: DrawOrder,
+    /// Padding required by the renderer's buffer layout.
     pub pad: u32, // align to 8 bytes
+    /// Unclipped underline bounds.
     pub bounds: Bounds<ScaledPixels>,
+    /// Clip applied when the underline is drawn.
     pub content_mask: ContentMask<ScaledPixels>,
+    /// Underline color.
     pub color: Hsla,
+    /// Underline stroke thickness.
     pub thickness: ScaledPixels,
+    /// Whether the renderer uses a wave pattern.
     pub wavy: u32,
 }
 
@@ -653,9 +673,12 @@ pub(crate) struct PathId(pub(crate) usize);
 pub struct Path<P: Clone + Debug + Default + PartialEq> {
     pub(crate) id: PathId,
     pub(crate) order: DrawOrder,
-    pub(crate) bounds: Bounds<P>,
-    pub(crate) content_mask: ContentMask<P>,
-    pub(crate) vertices: Vec<PathVertex<P>>,
+    /// Bounds of the path geometry.
+    pub bounds: Bounds<P>,
+    /// Clip bounds for this vertex.
+    pub content_mask: ContentMask<P>,
+    /// Finished path vertices, which may be translated together with its bounds.
+    pub vertices: Vec<PathVertex<P>>,
     pub(crate) color: Background,
     start: Point<P>,
     current: Point<P>,
@@ -793,13 +816,18 @@ impl From<Path<ScaledPixels>> for Primitive {
 
 #[derive(Clone, Debug)]
 #[repr(C)]
-pub(crate) struct PathVertex<P: Clone + Debug + Default + PartialEq> {
-    pub(crate) xy_position: Point<P>,
-    pub(crate) st_position: Point<f32>,
-    pub(crate) content_mask: ContentMask<P>,
+/// A vertex of triangulated path geometry.
+pub struct PathVertex<P: Clone + Debug + Default + PartialEq> {
+    /// Position of this vertex in the path coordinate space.
+    pub xy_position: Point<P>,
+    /// Coordinates used by the path coverage shader.
+    pub st_position: Point<f32>,
+    /// Clip bounds for this vertex.
+    pub content_mask: ContentMask<P>,
 }
 
 impl PathVertex<Pixels> {
+    /// Scales this vertex and its clip into display pixel coordinates.
     pub fn scale(&self, factor: f32) -> PathVertex<ScaledPixels> {
         PathVertex {
             xy_position: self.xy_position.scale(factor),

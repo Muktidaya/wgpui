@@ -20,6 +20,7 @@ pub(crate) struct TestWindowState {
     pub(crate) edited: bool,
     platform: Weak<TestPlatform>,
     sprite_atlas: Arc<dyn PlatformAtlas>,
+    headless_renderer: Option<Box<dyn crate::PlatformHeadlessRenderer>>,
     pub(crate) should_close_handler: Option<Box<dyn FnMut() -> bool>>,
     hit_test_window_control_callback: Option<Box<dyn FnMut() -> Option<WindowControlArea>>>,
     input_callback: Option<Box<dyn FnMut(PlatformInput) -> DispatchEventResult>>,
@@ -27,8 +28,19 @@ pub(crate) struct TestWindowState {
     hover_status_change_callback: Option<Box<dyn FnMut(bool)>>,
     resize_callback: Option<Box<dyn FnMut(Size<Pixels>, f32)>>,
     moved_callback: Option<Box<dyn FnMut()>>,
+    visibility_callback: Option<Box<dyn FnMut(bool)>>,
+    visual_viewport: Option<Bounds<Pixels>>,
+    visual_viewport_callback: Option<Box<dyn FnMut()>>,
     input_handler: Option<PlatformInputHandler>,
     is_fullscreen: bool,
+    scale_factor: f32,
+    is_resizable: bool,
+    is_visible: bool,
+    pub(crate) soft_keyboard_requested: bool,
+    pub(crate) accessibility_active: bool,
+    pub(crate) accessibility_tree: Option<accesskit::TreeUpdate>,
+    accessibility_callback: Option<Box<dyn FnMut(accesskit_winit::WindowEvent)>>,
+    pub(crate) text_input_configuration: crate::TextInputConfiguration,
 }
 
 #[derive(Clone)]
@@ -56,13 +68,26 @@ impl TestWindow {
         params: WindowParams,
         platform: Weak<TestPlatform>,
         display: Rc<dyn PlatformDisplay>,
+        headless_renderer: Option<Box<dyn crate::PlatformHeadlessRenderer>>,
     ) -> Self {
         Self(Rc::new(Mutex::new(TestWindowState {
             bounds: params.bounds,
+            scale_factor: 2.0,
+            is_resizable: params.is_resizable,
+            is_visible: params.show,
+            soft_keyboard_requested: false,
+            accessibility_active: false,
+            accessibility_tree: None,
+            accessibility_callback: None,
+            text_input_configuration: Default::default(),
             display,
             platform,
             handle,
-            sprite_atlas: Arc::new(TestAtlas::new()),
+            sprite_atlas: headless_renderer
+                .as_ref()
+                .map(|renderer| renderer.sprite_atlas())
+                .unwrap_or_else(|| Arc::new(TestAtlas::new())),
+            headless_renderer,
             title: Default::default(),
             edited: false,
             should_close_handler: None,
@@ -72,9 +97,19 @@ impl TestWindow {
             hover_status_change_callback: None,
             resize_callback: None,
             moved_callback: None,
+            visibility_callback: None,
+            visual_viewport: None,
+            visual_viewport_callback: None,
             input_handler: None,
             is_fullscreen: false,
         })))
+    }
+
+    pub fn simulate_scale_factor_change(&mut self, scale_factor: f32) {
+        assert!(scale_factor.is_finite() && scale_factor > 0.0);
+        self.0.lock().scale_factor = scale_factor;
+        let size = self.0.lock().bounds.size;
+        self.simulate_resize(size);
     }
 
     pub fn simulate_resize(&mut self, size: Size<Pixels>) {
@@ -99,6 +134,46 @@ impl TestWindow {
         self.0.lock().active_status_change_callback = Some(callback);
     }
 
+    pub fn simulate_visibility_change(&mut self, visible: bool) {
+        let mut state = self.0.lock();
+        state.is_visible = visible;
+        let callback = state.visibility_callback.take();
+        drop(state);
+        if let Some(mut callback) = callback {
+            callback(visible);
+            self.0.lock().visibility_callback = Some(callback);
+        }
+    }
+
+    pub fn simulate_visual_viewport_change(&self, bounds: Bounds<Pixels>) {
+        let callback = {
+            let mut state = self.0.lock();
+            state.visual_viewport = Some(bounds);
+            state.visual_viewport_callback.take()
+        };
+        if let Some(mut callback) = callback {
+            callback();
+            self.0.lock().visual_viewport_callback = Some(callback);
+        }
+    }
+
+    pub fn simulate_accessibility_event(&mut self, event: accesskit_winit::WindowEvent) {
+        let mut state = self.0.lock();
+        match &event {
+            accesskit_winit::WindowEvent::InitialTreeRequested => state.accessibility_active = true,
+            accesskit_winit::WindowEvent::AccessibilityDeactivated => {
+                state.accessibility_active = false
+            }
+            accesskit_winit::WindowEvent::ActionRequested(_) => {}
+        }
+        let callback = state.accessibility_callback.take();
+        drop(state);
+        if let Some(mut callback) = callback {
+            callback(event);
+            self.0.lock().accessibility_callback = Some(callback);
+        }
+    }
+
     pub fn simulate_input(&mut self, event: PlatformInput) -> bool {
         let mut lock = self.0.lock();
         let Some(mut callback) = lock.input_callback.take() else {
@@ -109,9 +184,42 @@ impl TestWindow {
         self.0.lock().input_callback = Some(callback);
         !result.propagate
     }
+
+    pub(crate) fn simulate_ime_event(&mut self, event: crate::ImeEvent) -> anyhow::Result<()> {
+        let mut handler = self
+            .take_input_handler()
+            .ok_or_else(|| anyhow::anyhow!("the window has no focused text input handler"))?;
+        let result = handler.handle_ime_event(event);
+        let mut state = self.0.lock();
+        if state.input_handler.is_none() {
+            state.input_handler = Some(handler);
+        }
+        result
+    }
 }
 
 impl PlatformWindow for TestWindow {
+    fn visual_viewport_bounds(&self) -> Bounds<Pixels> {
+        let state = self.0.lock();
+        state
+            .visual_viewport
+            .unwrap_or_else(|| Bounds::new(Point::default(), state.bounds.size))
+    }
+
+    fn on_visual_viewport_changed(&self, callback: Box<dyn FnMut()>) {
+        self.0.lock().visual_viewport_callback = Some(callback);
+    }
+
+    fn is_a11y_active(&self) -> bool {
+        self.0.lock().accessibility_active
+    }
+    fn update_a11y(&self, update: accesskit::TreeUpdate) {
+        self.0.lock().accessibility_tree = Some(update);
+    }
+    fn on_accessibility_event(&self, callback: Box<dyn FnMut(accesskit_winit::WindowEvent)>) {
+        self.0.lock().accessibility_callback = Some(callback);
+    }
+
     fn bounds(&self) -> Bounds<Pixels> {
         self.0.lock().bounds
     }
@@ -134,7 +242,27 @@ impl PlatformWindow for TestWindow {
     }
 
     fn scale_factor(&self) -> f32 {
-        2.0
+        self.0.lock().scale_factor
+    }
+
+    fn is_resizable(&self) -> bool {
+        self.0.lock().is_resizable
+    }
+
+    fn is_visible(&self) -> bool {
+        self.0.lock().is_visible
+    }
+
+    fn set_text_input_configuration(&self, configuration: &crate::TextInputConfiguration) {
+        self.0.lock().text_input_configuration = configuration.clone();
+    }
+
+    fn show_soft_keyboard(&self) {
+        self.0.lock().soft_keyboard_requested = true;
+    }
+
+    fn hide_soft_keyboard(&self) {
+        self.0.lock().soft_keyboard_requested = false;
     }
 
     fn appearance(&self) -> WindowAppearance {
@@ -250,6 +378,10 @@ impl PlatformWindow for TestWindow {
         self.0.lock().resize_callback = Some(callback)
     }
 
+    fn on_visibility_change(&self, callback: Box<dyn FnMut(bool)>) {
+        self.0.lock().visibility_callback = Some(callback);
+    }
+
     fn on_moved(&self, callback: Box<dyn FnMut()>) {
         self.0.lock().moved_callback = Some(callback)
     }
@@ -266,7 +398,30 @@ impl PlatformWindow for TestWindow {
 
     fn on_appearance_changed(&self, _callback: Box<dyn FnMut()>) {}
 
-    fn draw(&self, _scene: &crate::Scene) {}
+    fn draw(&self, scene: &crate::Scene) {
+        let mut state = self.0.lock();
+        let size = crate::size(
+            crate::DevicePixels((state.bounds.size.width.0 * state.scale_factor).ceil() as i32),
+            crate::DevicePixels((state.bounds.size.height.0 * state.scale_factor).ceil() as i32),
+        );
+        if let Some(renderer) = state.headless_renderer.as_mut() {
+            if let Err(error) = renderer.render_scene(scene, size) {
+                log::error!("headless frame submission failed: {error:#}");
+            }
+        }
+    }
+
+    fn render_to_image(&self, scene: &crate::Scene) -> anyhow::Result<image::RgbaImage> {
+        let mut state = self.0.lock();
+        let size = crate::size(
+            crate::DevicePixels((state.bounds.size.width.0 * state.scale_factor).ceil() as i32),
+            crate::DevicePixels((state.bounds.size.height.0 * state.scale_factor).ceil() as i32),
+        );
+        let renderer = state.headless_renderer.as_mut().ok_or_else(|| {
+            anyhow::anyhow!("screenshot capture requires a real headless renderer")
+        })?;
+        renderer.render_scene_to_image(scene, size)
+    }
 
     fn sprite_atlas(&self) -> sync::Arc<dyn crate::PlatformAtlas> {
         self.0.lock().sprite_atlas.clone()

@@ -16,23 +16,24 @@
 //! modes go on [`MultiLineMode`]. Reaching for the wrong one is a compile
 //! error rather than a debug assertion.
 //!
-//! [`super::LayoutMode`] carries the same distinction at runtime, since the
+//! the internal layout mode carries the same distinction at runtime, since the
 //! engine branches on it while editing. The marker only decides which API is
 //! reachable.
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gpui::{Div, Entity, Stateful, Window};
 use ropey::Rope;
+use wgpui::{Div, Entity, Stateful, Window};
 
 use super::decorations::DecorationCollections;
 use super::lsp::{ContextMenuContent, HoverDefinition, InlineCompletion};
 use crate::input::{
-    HighlightStyleResolver, InputEdit, InputHighlighter, SyntaxContext, TextDecoration,
+    HighlightStyleResolver, InputEdit, InputHighlighter, RangeDecoration, SyntaxContext,
+    TextDecoration,
 };
 use crate::input::{HoverPopoverState, Lsp};
-use gpui::Task;
+use wgpui::Task;
 
 use super::InputBaseState;
 
@@ -82,13 +83,18 @@ pub trait InputExtras: Default + 'static {
         Vec::new()
     }
 
+    /// Geometric decorations intersecting visible, non-folded buffer spans.
+    fn range_decorations(&self, _ranges: &[std::ops::Range<usize>]) -> Vec<&RangeDecoration> {
+        Vec::new()
+    }
+
     /// Semantic-token styles for a visible range, when an LSP supplies them.
     fn semantic_token_styles(
         &self,
         _text: &Rope,
         _range: &std::ops::Range<usize>,
         _resolver: &dyn HighlightStyleResolver,
-    ) -> Vec<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         Vec::new()
     }
 
@@ -97,7 +103,7 @@ pub trait InputExtras: Default + 'static {
         &self,
         _text: &Rope,
         _range: &std::ops::Range<usize>,
-    ) -> Vec<(std::ops::Range<usize>, gpui::Hsla)> {
+    ) -> Vec<(std::ops::Range<usize>, wgpui::Hsla)> {
         Vec::new()
     }
 
@@ -131,7 +137,7 @@ impl InputExtras for () {}
 pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Whether this kind of input spans more than one line.
     ///
-    /// The kind decides this, not the layout: [`super::LayoutMode`] carries
+    /// The kind decides this, not the layout: the internal layout mode carries
     /// how many rows to show and how to grow, which is a different question
     /// from whether the input is a text field or a document. Deriving it from
     /// the layout let the two disagree — an auto-growing textarea capped at
@@ -160,15 +166,26 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _text: &Rope,
         _folding: bool,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
+    ) {
+    }
+
+    /// Drives the syntax highlighter once for several edits applied as one
+    /// change, each paired with the text right after it.
+    fn drive_highlighter_batch(
+        _highlighter: &Rc<RefCell<Option<Box<dyn InputHighlighter>>>>,
+        _edits: &[(InputEdit, Rope)],
+        _folding: bool,
+        _window: &mut Window,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// The range highlighted while Cmd-hovering a symbol, with its style.
     fn hover_definition_style(
         _state: &InputBaseState<Self>,
-        _cx: &gpui::App,
-    ) -> Option<(std::ops::Range<usize>, gpui::HighlightStyle)> {
+        _cx: &wgpui::App,
+    ) -> Option<(std::ops::Range<usize>, wgpui::HighlightStyle)> {
         None
     }
 
@@ -176,8 +193,8 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn hover_definition_hitbox(
         _state: &InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &gpui::App,
-    ) -> Option<gpui::Hitbox> {
+        _cx: &wgpui::App,
+    ) -> Option<wgpui::Hitbox> {
         None
     }
 
@@ -207,7 +224,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn refresh_language_features(
         _state: &mut InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -215,7 +232,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn accept_inline_completion(
         _state: &mut InputBaseState<Self>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -228,10 +245,10 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Reacts to a click, for Cmd-click go-to-definition.
     fn on_click(
         _state: &mut InputBaseState<Self>,
-        _event: &gpui::MouseDownEvent,
+        _event: &wgpui::MouseDownEvent,
         _offset: usize,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -239,7 +256,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     /// Drops hover state when the pointer leaves or focus moves.
     fn clear_hover_state(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -249,35 +266,35 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _range: &std::ops::Range<usize>,
         _text: &str,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Drops any inline completion after the text or cursor moved.
     fn clear_inline_completion(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Closes any open completion or code-action menu.
     fn hide_context_menu(
         _state: &mut InputBaseState<Self>,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
     /// Whether a completion or code-action menu is currently open.
-    fn is_context_menu_open(_state: &InputBaseState<Self>, _cx: &gpui::App) -> bool {
+    fn is_context_menu_open(_state: &InputBaseState<Self>, _cx: &wgpui::App) -> bool {
         false
     }
 
     /// Lets an open menu consume the action first. Returns true when it did.
     fn handle_context_menu_action(
         _state: &mut InputBaseState<Self>,
-        _action: Box<dyn gpui::Action>,
+        _action: Box<dyn wgpui::Action>,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) -> bool {
         false
     }
@@ -290,7 +307,7 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
         _state: &mut InputBaseState<Self>,
         _offset: usize,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -298,9 +315,9 @@ pub trait InputModeKind: sealed::Sealed + Sized + 'static {
     fn on_mouse_move(
         _state: &mut InputBaseState<Self>,
         _offset: usize,
-        _event: &gpui::MouseMoveEvent,
+        _event: &wgpui::MouseMoveEvent,
         _window: &mut Window,
-        _cx: &mut gpui::Context<InputBaseState<Self>>,
+        _cx: &mut wgpui::Context<InputBaseState<Self>>,
     ) {
     }
 
@@ -336,6 +353,7 @@ impl InputModeKind for TextareaMode {
 pub struct EditorExtras {
     pub(crate) lsp: Lsp,
     pub(crate) decorations: DecorationCollections,
+    pub(crate) range_decorations: DecorationCollections<RangeDecoration>,
     pub(crate) inline_completion: InlineCompletion,
     pub(crate) context_menu_content: ContextMenuContent,
     pub(crate) hover_popover: Option<HoverPopoverState>,
@@ -348,6 +366,7 @@ impl Default for EditorExtras {
         Self {
             lsp: Lsp::default(),
             decorations: DecorationCollections::default(),
+            range_decorations: DecorationCollections::default(),
             inline_completion: InlineCompletion::default(),
             context_menu_content: ContextMenuContent::default(),
             hover_popover: None,

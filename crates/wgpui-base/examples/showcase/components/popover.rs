@@ -1,5 +1,5 @@
-use gpui::{InteractiveElement as _, IntoElement, ParentElement as _, Styled as _, div, relative};
-use gpui_base::{Button, Popover};
+use wgpui::{InteractiveElement as _, IntoElement, ParentElement as _, Styled as _, div, relative};
+use wgpui_base::{Button, Popover};
 
 use super::super::BaseShowcase;
 
@@ -14,8 +14,8 @@ impl BaseShowcase {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .bg(gpui::black())
-                    .text_color(gpui::white())
+                    .bg(wgpui::black())
+                    .text_color(wgpui::white())
                     .child("Open Popover"),
             )
             .content(|_, _, cx| {
@@ -47,8 +47,8 @@ impl BaseShowcase {
                                 .flex()
                                 .items_center()
                                 .justify_center()
-                                .bg(gpui::black())
-                                .text_color(gpui::white())
+                                .bg(wgpui::black())
+                                .text_color(wgpui::white())
                                 .on_click(move |_, window, cx| {
                                     _ = state.update(cx, |state, cx| state.dismiss(window, cx));
                                 })

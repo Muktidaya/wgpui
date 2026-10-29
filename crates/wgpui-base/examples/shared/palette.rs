@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use gpui::{App, Rgba, Window, WindowAppearance};
+use wgpui::{App, Rgba, Window, WindowAppearance};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ExamplePalette {
@@ -96,37 +96,37 @@ pub fn activate(window: &Window, cx: &mut App) {
 
 fn apply_base_theme(palette: ExamplePalette, cx: &mut App) {
     let dark = palette == ExamplePalette::for_dark(true);
-    let theme = gpui_base::Theme::global_mut(cx);
+    let theme = wgpui_base::Theme::global_mut(cx);
     theme.appearance = if dark {
-        gpui_base::ThemeAppearance::Dark
+        wgpui_base::ThemeAppearance::Dark
     } else {
-        gpui_base::ThemeAppearance::Light
+        wgpui_base::ThemeAppearance::Light
     };
 
     let colors = &mut theme.tokens.colors;
-    colors.background = gpui::rgb(palette.canvas).into();
-    colors.foreground = gpui::rgb(palette.foreground).into();
-    colors.surface = gpui::rgb(palette.surface).into();
-    colors.surface_foreground = gpui::rgb(palette.foreground).into();
-    colors.primary = gpui::rgb(palette.accent).into();
-    colors.primary_foreground = gpui::rgb(palette.accent_foreground).into();
-    colors.secondary = gpui::rgb(palette.elevated).into();
-    colors.secondary_foreground = gpui::rgb(palette.foreground).into();
-    colors.muted = gpui::rgb(palette.elevated).into();
-    colors.muted_foreground = gpui::rgb(palette.muted_foreground).into();
-    colors.accent = gpui::rgb(palette.hover).into();
-    colors.accent_foreground = gpui::rgb(palette.foreground).into();
-    colors.border = gpui::rgb(palette.border).into();
-    colors.input = gpui::rgb(palette.border).into();
-    colors.ring = gpui::rgb(palette.accent).into();
+    colors.background = wgpui::rgb(palette.canvas).into();
+    colors.foreground = wgpui::rgb(palette.foreground).into();
+    colors.surface = wgpui::rgb(palette.surface).into();
+    colors.surface_foreground = wgpui::rgb(palette.foreground).into();
+    colors.primary = wgpui::rgb(palette.accent).into();
+    colors.primary_foreground = wgpui::rgb(palette.accent_foreground).into();
+    colors.secondary = wgpui::rgb(palette.elevated).into();
+    colors.secondary_foreground = wgpui::rgb(palette.foreground).into();
+    colors.muted = wgpui::rgb(palette.elevated).into();
+    colors.muted_foreground = wgpui::rgb(palette.muted_foreground).into();
+    colors.accent = wgpui::rgb(palette.hover).into();
+    colors.accent_foreground = wgpui::rgb(palette.foreground).into();
+    colors.border = wgpui::rgb(palette.border).into();
+    colors.input = wgpui::rgb(palette.border).into();
+    colors.ring = wgpui::rgb(palette.accent).into();
 }
 
 pub fn example_rgb(color: u32) -> Rgba {
-    gpui::rgb(ACTIVE.get().resolve(color))
+    wgpui::rgb(ACTIVE.get().resolve(color))
 }
 
 pub fn canvas() -> Rgba {
-    gpui::rgb(ACTIVE.get().canvas)
+    wgpui::rgb(ACTIVE.get().canvas)
 }
 
 #[cfg(test)]
@@ -150,15 +150,15 @@ mod tests {
         assert_eq!(dark.resolve(0x2563eb), 0x2563eb);
     }
 
-    #[gpui::test]
-    fn dark_palette_projects_dark_base_theme(cx: &mut gpui::TestAppContext) {
+    #[wgpui::test]
+    fn dark_palette_projects_dark_base_theme(cx: &mut wgpui::TestAppContext) {
         cx.update(|cx| apply_base_theme(ExamplePalette::for_dark(true), cx));
 
         cx.update(|cx| {
-            let theme = gpui_base::Theme::global(cx);
-            assert_eq!(theme.appearance, gpui_base::ThemeAppearance::Dark);
-            assert_eq!(theme.tokens.colors.foreground, gpui::rgb(0xffffff).into());
-            assert_eq!(theme.tokens.colors.border, gpui::rgb(0x404040).into());
+            let theme = wgpui_base::Theme::global(cx);
+            assert_eq!(theme.appearance, wgpui_base::ThemeAppearance::Dark);
+            assert_eq!(theme.tokens.colors.foreground, wgpui::rgb(0xffffff).into());
+            assert_eq!(theme.tokens.colors.border, wgpui::rgb(0x404040).into());
         });
     }
 }

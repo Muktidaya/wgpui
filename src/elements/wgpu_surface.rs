@@ -5,7 +5,7 @@ use refineable::Refineable as _;
 use crate::{
     App, Bounds, Element, ElementId, GlobalElementId, InspectorElementId, IntoElement, LayoutId,
     Pixels, Style, StyleRefinement, Styled, Window,
-    platform::surface_registry::{SurfaceId, SurfaceRegistry},
+    platform::surface_registry::{SurfaceId, SurfacePresentation, SurfaceRegistry},
 };
 
 /// Inner state shared across clones of `WgpuSurfaceHandle`.
@@ -13,13 +13,10 @@ use crate::{
 struct WgpuSurfaceHandleInner {
     surface_id: SurfaceId,
     registry: Arc<SurfaceRegistry>,
+    presentation: Arc<SurfacePresentation>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     present_trigger: Arc<dyn Fn() + Send + Sync>,
-    /// Optional direct handle to the winit window.  Having an `Arc` lets
-    /// us call `request_redraw()` from another thread without touching the
-    /// event bus.
-    winit_window: Option<Arc<winit::window::Window>>,
     size: Mutex<(u32, u32)>,
     format: wgpu::TextureFormat,
 }
@@ -28,6 +25,23 @@ impl Drop for WgpuSurfaceHandleInner {
     fn drop(&mut self) {
         self.registry.remove(self.surface_id);
     }
+}
+
+/// The WGPU objects the windows render with (`App::wgpu_gpu`). All are
+/// cheap handles to the same objects, not copies. The framework owns their
+/// lifetime; applications must not destroy the shared device. Native surfaces
+/// created by applications must use this instance and a supported surface format.
+#[derive(Clone, Debug)]
+pub struct WgpuGpu {
+    /// The instance the device came from: a surface used with the device
+    /// must be made with it.
+    pub instance: wgpu::Instance,
+    /// The adapter, for a surface's capabilities.
+    pub adapter: wgpu::Adapter,
+    /// The device the window renders with.
+    pub device: wgpu::Device,
+    /// The device's queue.
+    pub queue: wgpu::Queue,
 }
 
 /// A handle to a double-buffered WGPU surface.
@@ -59,7 +73,6 @@ impl WgpuSurfaceHandle {
         surface_id: SurfaceId,
         registry: Arc<SurfaceRegistry>,
         present_trigger: Arc<dyn Fn() + Send + Sync>,
-        winit_window: Option<Arc<winit::window::Window>>,
         width: u32,
         height: u32,
         format: wgpu::TextureFormat,
@@ -67,11 +80,11 @@ impl WgpuSurfaceHandle {
         Self {
             inner: Arc::new(WgpuSurfaceHandleInner {
                 surface_id,
+                presentation: registry.presentation(surface_id),
                 registry,
                 device,
                 queue,
                 present_trigger,
-                winit_window,
                 size: Mutex::new((width, height)),
                 format,
             }),
@@ -113,15 +126,20 @@ impl WgpuSurfaceHandle {
     /// Request the window to re-present its scene without a full layout/paint.
     /// The renderer will pick up the current front buffer texture.
     pub fn request_present(&self) {
-        (self.inner.present_trigger)();
+        if !self.is_closed() {
+            (self.inner.present_trigger)();
+        }
+    }
+
+    /// Whether this surface's window has closed or its event loop has shut down.
+    /// Closure is terminal: presentation becomes a no-op and buffer views are unavailable.
+    pub fn is_closed(&self) -> bool {
+        self.inner.presentation.is_closed()
     }
 
     /// Convenience: swap buffers and immediately request a present.
     ///
-    /// If the handle was created with a `CrossWindow` (default on WGPU
-    /// platforms), this method will call `window.request_redraw()` directly
-    /// from the render thread, sidestepping the `CrossEvent` event bus.  The
-    /// underlying queue is still coalesced to prevent flooding.
+    /// Requests are coalesced to prevent flooding.
     pub fn present(&self) {
         self.swap_buffers();
         if Self::benchmark_mode() {
@@ -136,11 +154,7 @@ impl WgpuSurfaceHandle {
             .registry
             .set_present_pending(self.inner.surface_id)
         {
-            if let Some(winit) = &self.inner.winit_window {
-                winit.request_redraw();
-            } else {
-                self.request_present();
-            }
+            self.request_present();
         }
     }
 
@@ -156,14 +170,13 @@ impl WgpuSurfaceHandle {
             .is_present_pending(self.inner.surface_id)
     }
 
-    /// Block until the pending flag clears, yielding the thread.
+    /// Block until the frame is consumed or the owning window closes.
+    /// A closed handle returns immediately, including after later `present()` calls.
     pub fn wait_for_present(&self) {
         if Self::benchmark_mode() {
             return;
         }
-        while self.is_present_pending() {
-            std::thread::sleep(std::time::Duration::from_micros(50));
-        }
+        self.inner.presentation.wait();
     }
 
     /// The texture format used by this surface's buffers.

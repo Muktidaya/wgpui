@@ -1,17 +1,16 @@
-use gpui_base::TestSupportExt as _;
 use std::{rc::Rc, time::Duration};
+use wgpui_base::TestSupportExt as _;
 
-use gpui::{
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use wgpui::{
     Animation, AnimationExt as _, AnyElement, App, ClickEvent, DefiniteLength, DismissEvent, Edges,
     EventEmitter, FocusHandle, InteractiveElement as _, IntoElement, ParentElement, Pixels,
     RenderOnce, StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_base::{
-    Sheet as BaseSheet, TextSelectionScopeExt as _, TextSelectionScopeId,
-    actions::Cancel,
+use wgpui_base::{
+    Sheet as BaseSheet, TextSelectionScopeExt as _, TextSelectionScopeId, actions::Cancel,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     ActiveTheme, IconName, Placement, Sizable, StyledExt as _, WindowExt as _,
@@ -129,7 +128,7 @@ impl ParentElement for Sheet {
     }
 }
 impl Styled for Sheet {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -139,8 +138,15 @@ impl RenderOnce for Sheet {
         let placement = self.placement;
         let selection_scope = self.selection_scope;
         let frame_insets = crate::window_border::window_content_insets(window);
+        let safe_insets = crate::window_border::window_safe_insets(window);
+        let frame_insets = Edges {
+            top: frame_insets.top.max(safe_insets.top),
+            right: frame_insets.right.max(safe_insets.right),
+            bottom: frame_insets.bottom.max(safe_insets.bottom),
+            left: frame_insets.left.max(safe_insets.left),
+        };
         let size = window.viewport_size()
-            - gpui::size(
+            - wgpui::size(
                 frame_insets.left + frame_insets.right,
                 frame_insets.top + frame_insets.bottom,
             );

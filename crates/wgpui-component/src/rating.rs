@@ -2,11 +2,11 @@ use crate::theme::ActiveTheme;
 use crate::{Disableable, Icon, IconName, Sizable, Size, StyledExt, h_flex};
 use std::rc::Rc;
 
-use gpui::{
+use wgpui::{
     App, ElementId, InteractiveElement, IntoElement, ParentElement, RenderOnce, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
 };
-use gpui::{ClickEvent, Hsla, StatefulInteractiveElement};
+use wgpui::{ClickEvent, Hsla, StatefulInteractiveElement};
 
 /// A simple star Rating element.
 #[derive(IntoElement)]
@@ -82,7 +82,7 @@ impl Rating {
 }
 
 impl Styled for Rating {
-    fn style(&mut self) -> &mut gpui::StyleRefinement {
+    fn style(&mut self) -> &mut wgpui::StyleRefinement {
         &mut self.style
     }
 }
@@ -140,7 +140,7 @@ impl RenderOnce for Rating {
             .flex_nowrap()
             .refine_style(&self.style)
             .on_hover(window.listener_for(&state, move |state, hovered, _, cx| {
-                if !hovered {
+                if !hovered && state.hovered_value != 0 {
                     state.hovered_value = 0;
                     cx.notify();
                 }
@@ -169,8 +169,10 @@ impl RenderOnce for Rating {
                                 this.on_mouse_move(window.listener_for(
                                     &state,
                                     move |state, _, _, cx| {
-                                        state.hovered_value = ix;
-                                        cx.notify();
+                                        if state.hovered_value != ix {
+                                            state.hovered_value = ix;
+                                            cx.notify();
+                                        }
                                     },
                                 ))
                                 .on_click({

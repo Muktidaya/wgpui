@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use super::{LanguageConfig, Rope, SyntaxContext, SyntaxContextProvider};
-use gpui::{App, Global, SharedString};
+use wgpui::{App, Global, SharedString};
 
 /// Supplies language identities, editing defaults, and syntax providers to Base.
 ///

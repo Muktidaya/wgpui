@@ -1,8 +1,6 @@
-extern crate gpui as wgpui;
-
-use gpui::{Context, IntoElement, ParentElement, Render, Styled, TestAppContext, Window, div};
-use gpui_component::{button::*, *};
-use gpui_component_assets::Assets;
+use wgpui::{Context, IntoElement, ParentElement, Render, Styled, TestAppContext, Window, div};
+use wgpui_component::{button::*, *};
+use wgpui_kit_assets::Assets;
 
 struct Example;
 
@@ -29,9 +27,9 @@ fn assets_load() {
     let _ = Assets;
 }
 
-#[gpui::test]
+#[wgpui::test]
 fn hello_world_window_opens(cx: &mut TestAppContext) {
     cx.skip_drawing();
-    cx.update(|cx| gpui_component::init(cx));
+    cx.update(|cx| wgpui_component::init(cx));
     let _window = cx.add_window(|_window, _cx| Example);
 }

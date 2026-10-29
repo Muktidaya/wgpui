@@ -1,4 +1,4 @@
-use gpui::{
+use wgpui::{
     App, ClickEvent, InteractiveElement, OngoingScroll, Pixels, Point, Stateful,
     StatefulInteractiveElement, TouchPhase, Window,
 };
