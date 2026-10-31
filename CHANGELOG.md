@@ -89,10 +89,16 @@ published lines; their earlier release evidence does not validate this source.
 - These changes incorporate contributions authored by ceeray and Joshua Sibelman
   through jtwg's pull requests, retaining their original commit histories.
 
+### Build environment
+
+Project-maintained Nix flake, package and development-shell support is retired.
+Use Cargo and the platform's native dependencies. Linux support, native
+backends and their test requirements remain unchanged.
+
 ### Candidate acceptance
 
 Implementation presence is distinct from completed acceptance. Final source,
-feature combinations, package/registry consumers, Linux/Nix and native
+feature combinations, package/registry consumers, Linux and native
 validation remain in progress. This is the standard-backend Kit port;
 GPUI Fast's automatic-retention contracts are excluded, while explicit
 cached views remain available. Browser, webview/shell and mobile platform

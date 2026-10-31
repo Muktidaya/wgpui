@@ -6,10 +6,11 @@
 //! the features it needs are on, which is what each file's `[[test]]` entry
 //! used to say with `required-features`.
 //!
-//! Two stay targets of their own. `rendering` needs a real renderer and its
+//! Three stay targets of their own. `rendering` needs a real renderer and its
 //! own harness, and is selected with `--test rendering`. `ui` is the example
 //! the testing guide shows and tells a reader to copy as a `tests/ui.rs` of
 //! their own, beside `tests/common/mod.rs`, so it stays in that shape.
+//! `parity_ui` keeps its application-facing acceptance example independent.
 
 #[cfg(feature = "test-support")]
 #[path = "../support/common.rs"]
@@ -64,7 +65,6 @@ mod search;
 mod semantic_controls;
 #[cfg(all(feature = "test-support", feature = "component"))]
 mod slider_steps;
-#[cfg(feature = "test-support")]
 mod test_macro;
 #[cfg(all(feature = "test-support", feature = "component"))]
 mod text_selection;
@@ -72,3 +72,44 @@ mod text_selection;
 mod touch_selection;
 #[cfg(feature = "test-support")]
 mod window;
+
+// Raw framework windows intentionally exercise setup without Base Root.
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/collections.rs"]
+mod framework_collections;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/components.rs"]
+mod framework_components;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/controls.rs"]
+mod framework_controls;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/date_picker.rs"]
+mod framework_date_picker;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/disclosure.rs"]
+mod framework_disclosure;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/dock.rs"]
+mod framework_dock;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/input.rs"]
+mod framework_input;
+#[cfg(feature = "test-support")]
+#[path = "framework_windows/interactions.rs"]
+mod framework_interactions;
+#[cfg(feature = "test-support")]
+#[path = "framework_windows/lifecycle.rs"]
+mod framework_lifecycle;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/menu.rs"]
+mod framework_menu;
+#[cfg(all(feature = "test-support", feature = "component"))]
+#[path = "framework_windows/overlays.rs"]
+mod framework_overlays;
+#[cfg(all(feature = "assets", feature = "test-support", feature = "component"))]
+#[path = "framework_windows/search.rs"]
+mod framework_search;
+#[cfg(feature = "test-support")]
+#[path = "framework_windows/window.rs"]
+mod framework_window;

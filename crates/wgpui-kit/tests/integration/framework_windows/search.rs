@@ -6,7 +6,7 @@ use wgpui_kit::component::{
 use wgpui_kit::test::{TestSupportExt, TestWindowExt};
 use wgpui_kit::{AppContext, Context, Entity, TestAppContext, Window, div, prelude::*, px, size};
 
-wgpui_kit::actions!(search_test, [Save]);
+wgpui_kit::actions!(framework_search_test, [Save]);
 
 struct Palette {
     state: Entity<CommandState>,
