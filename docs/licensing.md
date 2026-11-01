@@ -60,16 +60,23 @@ below; they do not relicense icons, illustrations or theme material. The approve
 metadata update leaves the existing full texts and scope notices applicable. Archive/source integrity verification is separate from permission and
 notice review. This inventory does not declare blanket licensing acceptance.
 
-### Qualified SeaHash follow-up
+### SeaHash primary-source follow-up
 
-The source mirror `redox-unofficial-mirrors/seahash` adds a complete MIT text
-in commit `3088c5c912b70b586d27bf553fbe964e025a2c89`, immediately after the
+The primary SeaHash repository adds the [MIT permission text](licensing-notices/seahash-MIT.txt)
+in primary commit [`3088c5c912b70b586d27bf553fbe964e025a2c89`](https://gitlab.redox-os.org/redox-os/seahash/-/commit/3088c5c912b70b586d27bf553fbe964e025a2c89), whose parent is the exact
 locked source revision `94b632aeac099031c373599313d5b5f0acbbaec0`. Its sole
-change is the license file; the text contains no copyright line. This supplies
-qualified mirrored-history evidence, rather than primary GitLab verification.
-A copyright notice from another Ticki project must not be substituted for a
-missing SeaHash notice. The pinned archive's missing text and primary-source
-verification question remain recorded separately.
+change adds that license file; the original source is unchanged. The 1,023-byte
+primary text has SHA-256
+`23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3`.
+The previously qualified mirror bytes match this primary evidence.
+
+The text contains no copyright line. Do not substitute a notice from another
+project or infer a copyright holder from package authors or the committer who
+added the file. The pinned archive still omits the text. Primary-source
+availability and commit/file identity are now verified; the absent copyright
+line and archive omission remain explicit qualifications. This evidence does
+not resolve the separate `dispatch` or `mac` notice findings or establish
+blanket licensing acceptance.
 
 ### simd_helpers notice resolution
 
