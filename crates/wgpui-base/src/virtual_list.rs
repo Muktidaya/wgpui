@@ -350,6 +350,8 @@ pub struct VirtualListFrameState {
 #[derive(Default, Clone)]
 pub struct ItemSizeLayout {
     items_sizes: Rc<Vec<Size<Pixels>>>,
+    axis: Option<Axis>,
+    gap: Pixels,
     content_size: Size<Pixels>,
     sizes: Rc<[Pixels]>,
     origins: Rc<[Pixels]>,
@@ -378,6 +380,31 @@ impl ItemSizeLayout {
             },
         })
     }
+}
+
+fn inferred_size(
+    known_dimensions: Size<Option<Pixels>>,
+    available_space: Size<AvailableSpace>,
+    content_size: Size<Pixels>,
+) -> Size<Pixels> {
+    let resolve = |known: Option<Pixels>, available: AvailableSpace, content: Pixels| {
+        known.unwrap_or(match available {
+            AvailableSpace::Definite(value) => value,
+            AvailableSpace::MinContent | AvailableSpace::MaxContent => content,
+        })
+    };
+    size(
+        resolve(
+            known_dimensions.width,
+            available_space.width,
+            content_size.width,
+        ),
+        resolve(
+            known_dimensions.height,
+            available_space.height,
+            content_size.height,
+        ),
+    )
 }
 
 /// The items that intersect `viewport` along the list axis, plus one item of
@@ -474,8 +501,13 @@ impl Element for VirtualList {
                             .along(self.axis)
                             .to_pixels(font_size.into(), rem_size);
 
-                        if state.items_sizes != self.item_sizes {
+                        if state.items_sizes != self.item_sizes
+                            || state.axis != Some(self.axis)
+                            || state.gap != gap
+                        {
                             state.items_sizes = self.item_sizes.clone();
+                            state.axis = Some(self.axis);
+                            state.gap = gap;
                             // Prepare each item's size by axis
                             state.sizes = self
                                 .item_sizes
@@ -520,66 +552,27 @@ impl Element for VirtualList {
                     },
                 );
 
-                let axis = self.axis;
-                let layout_id =
-                    match self.sizing_behavior {
-                        ListSizingBehavior::Infer => {
-                            window.with_text_style(style.text_style().cloned(), |window| {
-                                let size_layout = size_layout.clone();
+                let layout_id = match self.sizing_behavior {
+                    ListSizingBehavior::Infer => {
+                        window.with_text_style(style.text_style().cloned(), |window| {
+                            let size_layout = size_layout.clone();
 
-                                window.request_measured_layout(style, {
-                                    move |known_dimensions, available_space, _, _| {
-                                        let mut size = Size::default();
-                                        if axis.is_horizontal() {
-                                            size.width = known_dimensions.width.unwrap_or(
-                                                match available_space.width {
-                                                    AvailableSpace::Definite(x) => x,
-                                                    AvailableSpace::MinContent
-                                                    | AvailableSpace::MaxContent => {
-                                                        size_layout.content_size.width
-                                                    }
-                                                },
-                                            );
-                                            size.height = known_dimensions.width.unwrap_or(
-                                                match available_space.height {
-                                                    AvailableSpace::Definite(x) => x,
-                                                    AvailableSpace::MinContent
-                                                    | AvailableSpace::MaxContent => {
-                                                        size_layout.content_size.height
-                                                    }
-                                                },
-                                            );
-                                        } else {
-                                            size.width = known_dimensions.width.unwrap_or(
-                                                match available_space.width {
-                                                    AvailableSpace::Definite(x) => x,
-                                                    AvailableSpace::MinContent
-                                                    | AvailableSpace::MaxContent => {
-                                                        size_layout.content_size.width
-                                                    }
-                                                },
-                                            );
-                                            size.height = known_dimensions.height.unwrap_or(
-                                                match available_space.height {
-                                                    AvailableSpace::Definite(x) => x,
-                                                    AvailableSpace::MinContent
-                                                    | AvailableSpace::MaxContent => {
-                                                        size_layout.content_size.height
-                                                    }
-                                                },
-                                            );
-                                        }
-
-                                        size
-                                    }
-                                })
+                            window.request_measured_layout(style, {
+                                move |known_dimensions, available_space, _, _| {
+                                    inferred_size(
+                                        known_dimensions,
+                                        available_space,
+                                        size_layout.content_size,
+                                    )
+                                }
                             })
-                        }
-                        ListSizingBehavior::Auto => window
-                            .with_text_style(style.text_style().cloned(), |window| {
-                                window.request_layout(style, None, cx)
-                            }),
-                    };
+                        })
+                    }
+                    ListSizingBehavior::Auto => window
+                        .with_text_style(style.text_style().cloned(), |window| {
+                            window.request_layout(style, None, cx)
+                        }),
+                };
 
                 layout_id
             },
@@ -772,6 +765,7 @@ mod tests {
 
     struct VirtualListHarness {
         axis: Axis,
+        gap: Pixels,
         item_sizes: Rc<Vec<Size<Pixels>>>,
         scroll_handle: VirtualListScrollHandle,
         visible_ranges: Rc<RefCell<Vec<Range<usize>>>>,
@@ -794,6 +788,7 @@ mod tests {
                 },
             )
             .track_scroll(&self.scroll_handle)
+            .gap(self.gap)
             .w(px(60.))
             .h(px(60.))
         }
@@ -813,6 +808,7 @@ mod tests {
             let visible_ranges = visible_ranges.clone();
             move |_, _| VirtualListHarness {
                 axis,
+                gap: px(0.),
                 item_sizes,
                 scroll_handle,
                 visible_ranges,
@@ -876,6 +872,104 @@ mod tests {
         assert!(visible_range(&origins, &sizes, px(300.)..px(360.)).is_empty());
     }
 
+    #[test]
+    fn inferred_size_uses_each_axis_constraint_and_content_fallback() {
+        let content = size(px(220.), px(25.));
+        let available = size(
+            AvailableSpace::Definite(px(180.)),
+            AvailableSpace::MaxContent,
+        );
+        assert_eq!(
+            inferred_size(size(Some(px(90.)), Some(px(30.))), available, content),
+            size(px(90.), px(30.))
+        );
+        assert_eq!(
+            inferred_size(size(Some(px(90.)), None), available, content),
+            size(px(90.), px(25.))
+        );
+        assert_eq!(
+            inferred_size(size(None, Some(px(30.))), available, content),
+            size(px(180.), px(30.))
+        );
+        assert_eq!(
+            inferred_size(
+                size(Some(px(90.)), None),
+                size(
+                    AvailableSpace::MaxContent,
+                    AvailableSpace::Definite(px(45.))
+                ),
+                content,
+            ),
+            size(px(90.), px(45.))
+        );
+        assert_eq!(
+            inferred_size(
+                size(None, None),
+                size(AvailableSpace::MinContent, AvailableSpace::MaxContent),
+                content,
+            ),
+            content
+        );
+    }
+
+    #[wgpui::test]
+    fn changing_gap_rebuilds_geometry_for_the_same_list(cx: &mut TestAppContext) {
+        let scroll_handle = VirtualListScrollHandle::new();
+        let visible_ranges = Rc::new(RefCell::new(Vec::new()));
+        let (view, cx) = cx.add_window_view({
+            let scroll_handle = scroll_handle.clone();
+            let visible_ranges = visible_ranges.clone();
+            move |_, _| VirtualListHarness {
+                axis: Axis::Vertical,
+                gap: px(0.),
+                item_sizes: Rc::new(vec![size(px(20.), px(10.)); 10]),
+                scroll_handle,
+                visible_ranges,
+            }
+        });
+
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(scroll_handle.max_offset().height, px(40.));
+        assert_eq!(visible_ranges.borrow().last(), Some(&(0..8)));
+
+        view.update(cx, |view, cx| {
+            view.gap = px(5.);
+            cx.notify();
+        });
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(scroll_handle.max_offset().height, px(85.));
+        assert_eq!(visible_ranges.borrow().last(), Some(&(0..6)));
+    }
+
+    #[wgpui::test]
+    fn changing_axis_rebuilds_geometry_for_the_same_list(cx: &mut TestAppContext) {
+        let scroll_handle = VirtualListScrollHandle::new();
+        let visible_ranges = Rc::new(RefCell::new(Vec::new()));
+        let (view, cx) = cx.add_window_view({
+            let scroll_handle = scroll_handle.clone();
+            let visible_ranges = visible_ranges.clone();
+            move |_, _| VirtualListHarness {
+                axis: Axis::Vertical,
+                gap: px(0.),
+                item_sizes: Rc::new(vec![size(px(20.), px(10.)); 10]),
+                scroll_handle,
+                visible_ranges,
+            }
+        });
+
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(scroll_handle.max_offset().height, px(40.));
+        assert_eq!(visible_ranges.borrow().last(), Some(&(0..8)));
+
+        view.update(cx, |view, cx| {
+            view.axis = Axis::Horizontal;
+            cx.notify();
+        });
+        cx.update(|window, cx| window.draw(cx).clear());
+        assert_eq!(scroll_handle.max_offset().width, px(140.));
+        assert_eq!(visible_ranges.borrow().last(), Some(&(0..5)));
+    }
+
     #[wgpui::test]
     fn vertical_visible_range_and_deferred_scroll_are_preserved(cx: &mut TestAppContext) {
         exercise_axis(cx, Axis::Vertical);
@@ -886,13 +980,13 @@ mod tests {
         exercise_axis(cx, Axis::Horizontal);
     }
 
-    #[wgpui::test]
-    fn empty_list_draws_without_requesting_items(cx: &mut TestAppContext) {
+    fn exercise_empty_list(cx: &mut TestAppContext, axis: Axis) {
         let visible_ranges = Rc::new(RefCell::new(Vec::new()));
         let (_, cx) = cx.add_window_view({
             let visible_ranges = visible_ranges.clone();
             move |_, _| VirtualListHarness {
-                axis: Axis::Vertical,
+                axis,
+                gap: px(0.),
                 item_sizes: Rc::new(Vec::new()),
                 scroll_handle: VirtualListScrollHandle::new(),
                 visible_ranges,
@@ -901,5 +995,15 @@ mod tests {
 
         cx.update(|window, cx| window.draw(cx).clear());
         assert!(visible_ranges.borrow().is_empty());
+    }
+
+    #[wgpui::test]
+    fn empty_vertical_list_draws_without_requesting_items(cx: &mut TestAppContext) {
+        exercise_empty_list(cx, Axis::Vertical);
+    }
+
+    #[wgpui::test]
+    fn empty_horizontal_list_draws_without_requesting_items(cx: &mut TestAppContext) {
+        exercise_empty_list(cx, Axis::Horizontal);
     }
 }
