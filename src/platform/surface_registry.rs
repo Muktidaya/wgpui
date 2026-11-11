@@ -10,6 +10,10 @@ pub struct SurfaceId(pub(crate) u64);
 struct DoubleBuffer {
     textures: [wgpu::Texture; 2],
     views: [wgpu::TextureView; 2],
+    /// Each texture's own size. A front buffer kept by a resize keeps its old
+    /// size until it is swapped to the back and replaced.
+    sizes: [(u32, u32); 2],
+    device: wgpu::Device,
     front: usize,
     /// Changes whenever resize replaces the textures while preserving the surface id.
     revision: u64,
@@ -224,15 +228,38 @@ impl SurfaceRegistry {
             .unwrap_or_else(|| Arc::new(SurfacePresentation::new(PresentStatus::Closed)))
     }
 
-    /// Swap front and back buffers (pointer swap, no GPU work).
+    /// Swap front and back buffers (pointer swap, no GPU work). A back buffer
+    /// kept from before a resize is replaced with one at the current size.
     pub fn swap_buffers(&self, id: SurfaceId) {
         if let Some(db) = self.surfaces.lock().unwrap().surfaces.get_mut(&id) {
             db.front = 1 - db.front;
+            let back = 1 - db.front;
+            if db.sizes[back] != (db.width, db.height) {
+                let texture = Self::create_texture(
+                    &db.device,
+                    db.width,
+                    db.height,
+                    db.format,
+                    "surface_buffer",
+                );
+                db.views[back] = texture.create_view(&wgpu::TextureViewDescriptor::default());
+                db.textures[back] = texture;
+                db.sizes[back] = (db.width, db.height);
+                db.revision = db.revision.wrapping_add(1);
+            }
         }
     }
 
-    /// Resize both buffers, creating new textures.
-    pub fn resize(&self, device: &wgpu::Device, id: SurfaceId, width: u32, height: u32) {
+    /// Resize both buffers, creating new textures. With `keep_front`, the front
+    /// buffer is kept, so its last frame stays visible until the next swap.
+    pub fn resize(
+        &self,
+        device: &wgpu::Device,
+        id: SurfaceId,
+        width: u32,
+        height: u32,
+        keep_front: bool,
+    ) {
         let mut state = self.surfaces.lock().unwrap();
         let surfaces = &mut state.surfaces;
         if let Some(db) = surfaces.get_mut(&id) {
@@ -241,6 +268,13 @@ impl SurfaceRegistry {
             }
             let mut new_db = Self::create_double_buffer(device, width, height, db.format);
             new_db.revision = db.revision.wrapping_add(1);
+            if keep_front {
+                let front = db.front;
+                new_db.front = front;
+                new_db.textures[front] = db.textures[front].clone();
+                new_db.views[front] = db.views[front].clone();
+                new_db.sizes[front] = db.sizes[front];
+            }
             db.data = new_db;
         }
     }
@@ -362,6 +396,29 @@ impl SurfaceRegistry {
         }
     }
 
+    fn create_texture(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        format: wgpu::TextureFormat,
+        label: &str,
+    ) -> wgpu::Texture {
+        device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size: wgpu::Extent3d {
+                width: width.max(1),
+                height: height.max(1),
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        })
+    }
+
     fn create_double_buffer(
         device: &wgpu::Device,
         width: u32,
@@ -371,32 +428,16 @@ impl SurfaceRegistry {
         let w = width.max(1);
         let h = height.max(1);
 
-        let create_texture = |label: &str| {
-            device.create_texture(&wgpu::TextureDescriptor {
-                label: Some(label),
-                size: wgpu::Extent3d {
-                    width: w,
-                    height: h,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            })
-        };
-
-        let tex0 = create_texture("surface_buffer_0");
-        let tex1 = create_texture("surface_buffer_1");
+        let tex0 = Self::create_texture(device, w, h, format, "surface_buffer_0");
+        let tex1 = Self::create_texture(device, w, h, format, "surface_buffer_1");
         let view0 = tex0.create_view(&wgpu::TextureViewDescriptor::default());
         let view1 = tex1.create_view(&wgpu::TextureViewDescriptor::default());
 
         DoubleBuffer {
             textures: [tex0, tex1],
             views: [view0, view1],
+            sizes: [(w, h); 2],
+            device: device.clone(),
             front: 0,
             revision: 0,
             width: w,
@@ -413,6 +454,52 @@ mod tests {
         sync::{Barrier, mpsc},
         time::Duration,
     };
+
+    fn sizes(registry: &SurfaceRegistry, id: SurfaceId) -> (usize, [(u32, u32); 2]) {
+        let state = registry.surfaces.lock().unwrap();
+        let db = &state.surfaces[&id];
+        (db.front, db.sizes)
+    }
+
+    #[test]
+    fn resize_replaces_both_buffers_by_default() {
+        let context = super::super::render_context::WgpuContext::new().expect("wgpu device");
+        let device = &context.device;
+        let registry = SurfaceRegistry::new();
+        let format = wgpu::TextureFormat::Rgba8Unorm;
+        let id = registry.create(device, 100, 50, format, None).unwrap();
+        registry.swap_buffers(id);
+        let (was, _, before) = registry.binding_snapshot(id).unwrap();
+        registry.resize(device, id, 200, 100, false);
+        let (front, _, after) = registry.binding_snapshot(id).unwrap();
+        assert!(!after.contains(&before[was]), "the last frame is gone");
+        assert_ne!(after[front], after[1 - front]);
+        assert_eq!(sizes(&registry, id).1, [(200, 100); 2]);
+    }
+
+    #[test]
+    fn resize_keeping_the_front_shows_it_until_the_next_swap() {
+        let context = super::super::render_context::WgpuContext::new().expect("wgpu device");
+        let device = &context.device;
+        let registry = SurfaceRegistry::new();
+        let format = wgpu::TextureFormat::Rgba8Unorm;
+        let id = registry.create(device, 100, 50, format, None).unwrap();
+        registry.swap_buffers(id);
+        let (was, revision, before) = registry.binding_snapshot(id).unwrap();
+        registry.resize(device, id, 200, 100, true);
+        let (front, resized, after) = registry.binding_snapshot(id).unwrap();
+        assert_eq!(front, was);
+        assert_eq!(before[front], after[front], "the last frame stays in front");
+        assert_ne!(revision, resized);
+        let (_, size) = registry.lock_and_get_back_with_size(id).unwrap();
+        assert_eq!(size, (200, 100), "the back buffer renders at the new size");
+        assert_eq!(sizes(&registry, id).1[front], (100, 50));
+
+        registry.swap_buffers(id);
+        let (front, swapped, _) = registry.binding_snapshot(id).unwrap();
+        assert_ne!(resized, swapped);
+        assert_eq!(sizes(&registry, id), (front, [(200, 100); 2]));
+    }
 
     #[test]
     fn missing_surface_never_schedules_a_pending_frame() {

@@ -190,14 +190,19 @@ impl WgpuSurfaceHandle {
     }
 
     /// Resize the surface's double buffers. Called by the element when bounds change.
-    pub(crate) fn resize(&self, width: u32, height: u32) {
+    /// With `keep_front`, the front buffer is kept until the next swap.
+    pub(crate) fn resize(&self, width: u32, height: u32, keep_front: bool) {
         let mut size = self.inner.size.lock().unwrap();
         if size.0 == width && size.1 == height {
             return;
         }
-        self.inner
-            .registry
-            .resize(&self.inner.device, self.inner.surface_id, width, height);
+        self.inner.registry.resize(
+            &self.inner.device,
+            self.inner.surface_id,
+            width,
+            height,
+            keep_front,
+        );
         *size = (width, height);
     }
 }
@@ -208,6 +213,8 @@ pub fn wgpu_surface(handle: WgpuSurfaceHandle) -> WgpuSurface {
         handle,
         style: StyleRefinement::default(),
         on_resize: None,
+        hold_size: false,
+        keep_frame_on_resize: false,
     }
 }
 
@@ -220,16 +227,40 @@ pub struct WgpuSurface {
     handle: WgpuSurfaceHandle,
     style: StyleRefinement,
     on_resize: Option<Box<dyn Fn(u32, u32, &WgpuSurfaceHandle) + 'static>>,
+    hold_size: bool,
+    keep_frame_on_resize: bool,
 }
 
 impl WgpuSurface {
+    /// While `hold` is true, the surface keeps its current size and its last
+    /// frame is scaled to the element's bounds. Useful during a zoom or other
+    /// continuous resize, to render once at the final size instead of every frame.
+    pub fn hold_size(mut self, hold: bool) -> Self {
+        self.hold_size = hold;
+        self
+    }
+
+    /// When true, a resize keeps the last frame on screen, scaled to the new
+    /// bounds, until a frame rendered at the new size is swapped in. By default
+    /// a resize replaces both buffers and the surface is blank until rendered.
+    pub fn keep_frame_on_resize(mut self, keep: bool) -> Self {
+        self.keep_frame_on_resize = keep;
+        self
+    }
+
     /// Register a callback invoked when the element's layout bounds change.
     /// The surface textures are automatically resized; use this to recreate
-    /// any external resources that depend on the size.
+    /// any external resources that depend on the size. Not invoked while
+    /// [`hold_size`](Self::hold_size) is set.
     pub fn on_resize(mut self, callback: impl Fn(u32, u32, &WgpuSurfaceHandle) + 'static) -> Self {
         self.on_resize = Some(Box::new(callback));
         self
     }
+}
+
+/// The size to resize the surface to, if any.
+fn resize_to(hold: bool, bounds: (u32, u32), current: (u32, u32)) -> Option<(u32, u32)> {
+    (!hold && bounds != current).then_some(bounds)
 }
 
 impl Element for WgpuSurface {
@@ -271,9 +302,11 @@ impl Element for WgpuSurface {
         let pixel_w = (bounds.size.width.0 * scale).round() as u32;
         let pixel_h = (bounds.size.height.0 * scale).round() as u32;
 
-        let (cur_w, cur_h) = self.handle.size();
-        if pixel_w != cur_w || pixel_h != cur_h {
-            self.handle.resize(pixel_w, pixel_h);
+        if let Some((pixel_w, pixel_h)) =
+            resize_to(self.hold_size, (pixel_w, pixel_h), self.handle.size())
+        {
+            self.handle
+                .resize(pixel_w, pixel_h, self.keep_frame_on_resize);
             if let Some(cb) = &self.on_resize {
                 cb(pixel_w, pixel_h, &self.handle);
             }
@@ -307,5 +340,17 @@ impl IntoElement for WgpuSurface {
 impl Styled for WgpuSurface {
     fn style(&mut self) -> &mut StyleRefinement {
         &mut self.style
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resize_to;
+
+    #[test]
+    fn hold_size_skips_the_resize() {
+        assert_eq!(resize_to(false, (200, 100), (100, 50)), Some((200, 100)));
+        assert_eq!(resize_to(false, (100, 50), (100, 50)), None);
+        assert_eq!(resize_to(true, (200, 100), (100, 50)), None);
     }
 }
