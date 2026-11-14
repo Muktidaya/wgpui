@@ -249,7 +249,7 @@ The `Icon` element does not include SVG files by default. You need to:
 
 ## Dependencies
 
-- Runtime: WGPUI 0.4.0 from this repository root; the `wgpui` dependency is the local framework, not a Zed Git dependency.
+- Runtime: WGPUI 0.4.1 from this repository root; the `wgpui` dependency is the local framework, not a Zed Git dependency.
 - Tree-sitter: For syntax highlighting
 - Ropey: Rope data structure for text, and `RopeExt` trait with more features.
 - Markdown rendering: `markdown` crate

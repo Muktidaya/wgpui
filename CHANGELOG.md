@@ -1,11 +1,17 @@
 # Changelog
 
-## 0.4.0 — Unreleased source candidate
+## 0.4.1 — Unreleased source candidate
 
-The candidate uses WGPUI/derive 0.4.0, Kit-family/FPS 0.8.1 and HTTP facade
-0.1.0, with **Rust 1.95** as the common minimum. It remains under validation
-and is not published. Framework/derive 0.3.6 and Kit-family 0.6.1 remain the
-published lines; their earlier release evidence does not validate this source.
+Framework and derive are prepared at 0.4.1; Kit-family/FPS remain at 0.8.1
+and the HTTP facade at 0.1.0, with **Rust 1.95** as the common minimum.
+This source candidate remains under validation and is not published.
+
+## 0.4.0 — Earlier unreleased source candidate
+
+The 0.4.0 candidate used WGPUI/derive 0.4.0, Kit-family/FPS 0.8.1 and HTTP
+facade 0.1.0 with Rust 1.95. Framework/derive 0.3.6 and Kit-family 0.6.1
+remain the published lines; their earlier release evidence does not validate
+the current source.
 
 ### Compatibility
 

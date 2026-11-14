@@ -31,7 +31,7 @@ rerun successfully after this correction.
 
 ## Dependency and Kit 0.8.1 source candidate
 
-The current source candidate uses framework/derive 0.4.0, Kit-family 0.8.1 and the stable HTTP facade 0.1.0 with a common Rust 1.95 minimum. It ports Kit behavior onto WGPUI's existing wgpu and winit backend.
+The current source candidate uses framework/derive 0.4.1, Kit-family 0.8.1 and the stable HTTP facade 0.1.0 with a common Rust 1.95 minimum. It ports Kit behavior onto WGPUI's existing wgpu and winit backend.
 
 The October 28 dependency metadata audit covers all 13 workspace packages and 166 active direct registry package names. Of these, 164 select their reviewed latest stable release. The latest `windows` SDK crate requires `windows-core` 0.62.2 and `windows-numerics` 0.3.1; their separately published 0.100.0 releases have incompatible Rust types and remain explicit SDK compatibility exceptions. The resolved graph contains 869 registry instances, including 166 below their absolute latest release under recorded owning constraints. No selected package is a prerelease or yanked. Registry metadata and the lockfile agree; metadata does not establish build or native behavior acceptance.
 

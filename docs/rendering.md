@@ -1,4 +1,4 @@
-# GPU surfaces and frame capture in WGPUI 0.4.0
+# GPU surfaces and frame capture in WGPUI 0.4.1
 
 Processed `RenderImage` frames and color-glyph atlas uploads use straight-alpha
 RGBA bytes in `Rgba8Unorm` textures. Image decoders retain RGBA. Core Text and

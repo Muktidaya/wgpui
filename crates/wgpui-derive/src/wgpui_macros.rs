@@ -205,7 +205,7 @@ pub fn test(args: TokenStream, function: TokenStream) -> TokenStream {
     test::test(args, function)
 }
 
-/// Legacy property-testing attribute; unsupported by WGPUI 0.4.0.
+/// Legacy property-testing attribute; unsupported by WGPUI 0.4.1.
 ///
 /// The retained implementation targets an older Proptest scheduler bridge
 /// (`proptest`, `seed_strategy`, and `run_test_once`) that this framework does
