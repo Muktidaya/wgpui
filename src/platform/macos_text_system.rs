@@ -922,7 +922,7 @@ mod tests {
             assert!(bytes.iter().any(|value| *value > 0));
             let phase_params = RenderGlyphParams {
                 subpixel_variant: point(1, 0),
-                ..params.clone()
+                ..params
             };
             let phase_bounds = system.glyph_raster_bounds(&phase_params)?;
             let phase_raster = system.rasterize_glyph(&phase_params, phase_bounds)?;
@@ -936,7 +936,7 @@ mod tests {
                 let params = RenderGlyphParams {
                     scale_factor: scale,
                     subpixel_variant: point(phase, 0),
-                    ..params.clone()
+                    ..params
                 };
                 let bounds = system.glyph_raster_bounds(&params)?;
                 let (dimensions, bytes) = system.rasterize_glyph(&params, bounds)?;

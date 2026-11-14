@@ -21,9 +21,9 @@ than being skipped.
 
 ```sh
 # Release working tree: exact 13-file directory roster
-cargo +1.95.0 test -p wgpui-component --test source_theme_catalog
+cargo +1.100.0 test -p wgpui-component --test source_theme_catalog
 # Release working tree or unpacked crate: all 13 shipped catalogs
-cargo +1.95.0 test -p wgpui-component --test packaged_theme_catalog
+cargo +1.100.0 test -p wgpui-component --test packaged_theme_catalog
 ```
 
 Earlier commits and snapshots still contain the eight removed files. Their

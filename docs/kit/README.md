@@ -1,6 +1,6 @@
 # WGPUI Kit engineering guides
 
-These guides describe the native WGPUI 0.4.0 / Kit 0.8.1 workspace. They adapt
+These guides describe the native WGPUI 0.4.1 / Kit 0.8.1 workspace. They adapt
 useful architecture, design, styling and testing guidance from the historical
 Component/Kit source while current Rust APIs remain authoritative.
 

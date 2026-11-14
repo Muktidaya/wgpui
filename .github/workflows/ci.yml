@@ -13,6 +13,8 @@ jobs:
           persist-credentials: false
       - name: Public export regression checks
         run: python3 scripts/test_public_boundary.py
+      - name: Offline Rust release preparation checks
+        run: python3 -m unittest discover -s scripts -p 'test_rust_release_check.py' -v
       - name: Check proposed public text
         env:
           PUBLIC_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -29,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-15, windows-latest]
-        toolchain: ['1.95.0', stable]
+        toolchain: ['1.100.0']
     runs-on: ${{ matrix.os }}
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
@@ -82,7 +84,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-15, windows-latest]
-        toolchain: ['1.95.0', stable]
+        toolchain: ['1.100.0']
     runs-on: ${{ matrix.os }}
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}

@@ -1,6 +1,6 @@
 # Upstream provenance and retired reference source
 
-The active WGPUI 0.4.0 / Kit 0.8.1 implementation adapts upstream GPUI Kit v0.8.1,
+The active WGPUI 0.4.1 / Kit 0.8.1 implementation adapts upstream GPUI Kit v0.8.1,
 commit `99576db58ec8103417c41a092e891b4022d24e7e`. The preceding imported v0.6.1
 baseline was `36b51819deb52c947a79f8de29e0e9175eda7464`.
 

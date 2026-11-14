@@ -37,7 +37,7 @@ The derive package retains its existing crates.io name `wgpui_derive`: hyphens a
 
 ## Source candidate compatibility
 
-The source candidate uses WGPUI and derive 0.4.0, Kit-family 0.8.1 and wgpui-http-client 0.1.0, with Rust 1.95 as the common minimum. These candidate versions are separate from the published releases described above.
+The source candidate uses WGPUI and derive 0.4.1, Kit-family 0.8.1 and wgpui-http-client 0.1.0, with Rust 1.100.0 as the common minimum. These candidate versions are separate from the published releases described above.
 
 The resolved source dependency cohort includes wgpu 30.0.1, winit 0.30.13, Taffy 0.15.1, AccessKit 0.25.2, Ropey 1.6.1, Tree-sitter 0.27.1, html5ever 0.40.1, Reqwest 0.13.5, async-tar 0.6.1, image 0.25.10 and Syntect 5.3.0. These are the versions recorded in this source lockfile; dependency compatibility ranges and platform library minimums are separate contracts.
 
@@ -91,10 +91,10 @@ Framework changes needed by the port include shaped character widths, device-pix
 ## Development
 
 ```sh
-cargo +1.95.0 test --workspace --lib --tests
-cargo +1.95.0 test -p wgpui-kit --features test-support --lib --tests
-cargo +1.95.0 check -p wgpui-kit --all-features
-cargo +1.95.0 run -p wgpui-kit-hello-world
+cargo +1.100.0 test --workspace --lib --tests
+cargo +1.100.0 test -p wgpui-kit --features test-support --lib --tests
+cargo +1.100.0 check -p wgpui-kit --all-features
+cargo +1.100.0 run -p wgpui-kit-hello-world
 ```
 
 The performance runner's protocol remains compatible with existing `util_macros::perf` tests; renaming the package does not rename its existing benchmark metadata protocol.

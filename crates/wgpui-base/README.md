@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/crates/l/wgpui-base.svg)](LICENSE-APACHE)
 
-Unstyled behavior and infrastructure for [WGPUI](https://github.com/Muktidaya/wgpui) applications, adapted from Longbridge GPUI Kit v0.8.1. The current source candidate pairs **wgpui-base 0.8.1** with **WGPUI 0.4.0** and requires **Rust 1.95**. Candidate validation and publication are in progress; [release status](../../STATUS.md) records acceptance and publication evidence.
+Unstyled behavior and infrastructure for [WGPUI](https://github.com/Muktidaya/wgpui) applications, adapted from Longbridge GPUI Kit v0.8.1. The current source candidate pairs **wgpui-base 0.8.1** with **WGPUI 0.4.1** and requires **Rust 1.100.0**. Candidate validation and publication are in progress; [release status](../../STATUS.md) records acceptance and publication evidence.
 
 The published Base 0.6.1 and framework 0.3.6 releases remain distinct from this source candidate. Base and the framework use independent version numbers.
 
@@ -12,7 +12,7 @@ Version requirements for the candidate, once published:
 
 ```toml
 [dependencies]
-wgpui = "0.4.0"
+wgpui = "0.4.1"
 wgpui-base = "0.8.1"
 ```
 
@@ -126,11 +126,11 @@ Base includes **NavStack**, **History** (browser-style trail), and **UndoHistory
 
 ## Development
 
-From the consolidated WGPUI repository root, using Rust 1.95 or later:
+From the consolidated WGPUI repository root, using Rust 1.100.0 or later:
 
 ```bash
-cargo +1.95.0 check --locked -p wgpui-base --all-features --all-targets
-cargo +1.95.0 test --locked -p wgpui-base --all-features --lib
+cargo +1.100.0 check --locked -p wgpui-base --all-features --all-targets
+cargo +1.100.0 test --locked -p wgpui-base --all-features --lib
 ```
 
 ## Related

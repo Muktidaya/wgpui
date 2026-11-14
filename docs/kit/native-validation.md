@@ -3,7 +3,7 @@
 Use the native acceptance harness from the repository root:
 
 ```sh
-cargo +1.95.0 run -p wgpui-kit-harness --bin wgpui-native-acceptance
+cargo +1.100.0 run -p wgpui-kit-harness --bin wgpui-native-acceptance
 ```
 
 It covers actual windows, editing, actions, clipboard operations, file pickers

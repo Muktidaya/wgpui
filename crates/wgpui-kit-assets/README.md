@@ -2,7 +2,7 @@
 
 Bundled Lucide icons for WGPUI Kit, adapted from Longbridge GPUI Kit v0.8.1.
 The current source candidate is **wgpui-kit-assets 0.8.1**, paired with
-**WGPUI 0.4.0**, and requires **Rust 1.95**. Validation and publication are
+**WGPUI 0.4.1**, and requires **Rust 1.100.0**. Validation and publication are
 in progress; see [release status](../../STATUS.md). The published assets/Kit
 0.6.1 and framework 0.3.6 releases remain separate from this candidate.
 

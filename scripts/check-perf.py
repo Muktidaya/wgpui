@@ -8,7 +8,7 @@ import tempfile
 import uuid
 
 root = Path(__file__).resolve().parents[1]
-toolchain = os.environ.get("RUSTUP_TOOLCHAIN", "1.95.0")
+toolchain = os.environ.get("RUSTUP_TOOLCHAIN", "1.100.0")
 fixture = '''#![allow(non_snake_case)]
 #[test] fn passing__ZED_PERF_FN() {
     std::thread::sleep(std::time::Duration::from_millis(5));

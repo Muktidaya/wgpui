@@ -4,7 +4,7 @@ A performance HUD adapted from GPUI Kit v0.8.1 for WGPUI applications. It displa
 
 Frame measurements come from WGPUI's draw and presentation instrumentation. The HUD uses each frame's own timestamp, filters events by window, and excludes frames caused solely by its readout clock. MAX FPS estimates redraw capacity from measured draw cost and the monitor's reported refresh interval. The FPS mode counts frames submitted for presentation; neither value establishes physical scanout timing.
 
-This source candidate is version 0.8.1 and requires Rust 1.95 or newer. It accompanies WGPUI 0.4.0 and Kit 0.8.1; use the package from this workspace until it is published.
+This source candidate is version 0.8.1 and requires Rust 1.100.0 or newer. It accompanies WGPUI 0.4.1 and Kit 0.8.1; use the package from this workspace until it is published.
 
 Usage:
     use wgpui_kit::*;

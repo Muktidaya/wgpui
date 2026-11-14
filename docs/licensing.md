@@ -1,4 +1,4 @@
-# WGPUI 0.4.0 licensing inventory
+# WGPUI 0.4.1 licensing inventory
 
 The framework's Apache-2.0 terms and retained Zed/gpui-pre copyright notice are
 in [LICENSE](../LICENSE). The combined file preserves the original GPUI license
@@ -28,7 +28,7 @@ The current locked, all-feature, all-platform workspace graph contains 869
 registry package instances and 13 workspace packages. This includes optional,
 build and development dependencies, and is not the dependency set of every
 individual crate or binary. The workspace packages retain their own versions:
-framework/derive 0.4.0, Kit/FPS 0.8.1 and supporting 0.1.0 packages.
+framework/derive 0.4.1, Kit/FPS 0.8.1 and supporting 0.1.0 packages.
 
 The source crates refer to Cargo dependencies rather than vendoring all of their
 source. A downstream binary distribution must assess its actual feature/platform

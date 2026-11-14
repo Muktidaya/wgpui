@@ -8146,7 +8146,7 @@ dependencies = [
 
 [[package]]
 name = "wgpui"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -8470,7 +8470,7 @@ dependencies = [
 
 [[package]]
 name = "wgpui_derive"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "heck",
  "proc-macro-crate",

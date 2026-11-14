@@ -9,7 +9,11 @@ fn release_source_catalog_matches_current_loader() -> anyhow::Result<()> {
     assert_eq!(index.published.len(), 13);
     assert_eq!(index.history_only.len(), 8);
     let expected = index.published;
-    assert!(expected.iter().all(|name| !index.history_only.contains(name)));
+    assert!(
+        expected
+            .iter()
+            .all(|name| !index.history_only.contains(name))
+    );
     let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("themes");
     let mut files = std::collections::BTreeSet::new();
     for entry in std::fs::read_dir(directory)? {

@@ -791,11 +791,11 @@
     }
   ],
   "acceptance": {
-    "compile": "cargo +1.95.0 check --workspace --all-targets --all-features --locked",
-    "behavior": "cargo +1.95.0 test --workspace --all-features --lib --tests --locked",
-    "rendering": "cargo +1.95.0 test -p wgpui-kit --test rendering --all-features --locked",
+    "compile": "cargo +1.100.0 check --workspace --all-targets --all-features --locked",
+    "behavior": "cargo +1.100.0 test --workspace --all-features --lib --tests --locked",
+    "rendering": "cargo +1.100.0 test -p wgpui-kit --test rendering --all-features --locked",
     "consumers": "python3 scripts/check-kit-consumers.py",
-    "lint": "RUSTUP_TOOLCHAIN=1.95.0 ./scripts/clippy --workspace"
+    "lint": "RUSTUP_TOOLCHAIN=1.100.0 ./scripts/clippy --workspace"
   },
   "boundaries": [
     "Alternative GPUI engines are outside WGPUI's backend selection.",

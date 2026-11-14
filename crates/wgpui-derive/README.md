@@ -5,8 +5,8 @@ Procedural macros used by [WGPUI](https://github.com/Muktidaya/wgpui):
 `register_action!`, test and benchmark attributes, constructor attributes,
 style helpers, and optional inspector reflection.
 
-The current source candidate is **wgpui_derive 0.4.0** for **WGPUI 0.4.0**
-and the **WGPUI Kit 0.8.1** facade, with **Rust 1.95** as the minimum.
+The current source candidate is **wgpui_derive 0.4.1** for **WGPUI 0.4.1**
+and the **WGPUI Kit 0.8.1** facade, with **Rust 1.100.0** as the minimum.
 Candidate validation and publication are in progress. The published
 framework/derive 0.3.6 and Kit 0.6.1 releases remain separate; see
 [release status](../../STATUS.md).
@@ -16,7 +16,7 @@ The corresponding candidate dependency declarations, once published, are:
 
 ```toml
 [dependencies]
-wgpui = "0.4.0"
+wgpui = "0.4.1"
 ```
 
 Or, for the Kit facade:
