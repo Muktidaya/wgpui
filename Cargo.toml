@@ -371,7 +371,7 @@ nonminimal_bool = "allow"
 [workspace.package]
 publish = false
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.100.0"
 
 [workspace.dependencies]
 # Canonical WGPUI package keys; external upstream crates keep their actual names.

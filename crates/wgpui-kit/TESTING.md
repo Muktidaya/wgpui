@@ -62,8 +62,8 @@ before checking final bounds. Preserve real hit testing for hover-only close con
 ## Verification
 
 ```sh
-cargo +1.95.0 test -p wgpui-kit --features test-support --locked
-cargo +1.95.0 test -p wgpui-kit --no-default-features --features test-support --locked
+cargo +1.100.0 test -p wgpui-kit --features test-support --locked
+cargo +1.100.0 test -p wgpui-kit --no-default-features --features test-support --locked
 ```
 
 Regression coverage includes real form controls and selection, immutable snapshots,
@@ -80,7 +80,7 @@ uses WGPUI's real offscreen WGPU renderer on macOS, Linux and Windows. Select it
 explicitly on a machine with a working GPU adapter:
 
 ```sh
-cargo +1.95.0 test -p wgpui-kit --features test-support --test rendering --locked
+cargo +1.100.0 test -p wgpui-kit --features test-support --test rendering --locked
 ```
 
 This target fails when the required adapter or rendering operation is unavailable.

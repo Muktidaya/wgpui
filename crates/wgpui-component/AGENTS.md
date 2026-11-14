@@ -38,10 +38,10 @@ backend. Workspace dependencies and Rust imports use canonical WGPUI names.
 
 ```bash
 # Workspace default example (story gallery is not a member)
-cargo +1.95.0 run -p wgpui-kit-hello-world
+cargo +1.100.0 run -p wgpui-kit-hello-world
 
 # Build the workspace
-cargo +1.95.0 build
+cargo +1.100.0 build
 
 # Lint check
 ../../scripts/clippy --workspace
@@ -65,16 +65,16 @@ assert presentation dimensions. Add tests when the change affects behavior,
 interaction, data flow, or prevents a meaningful regression.
 
 ```bash
-cargo +1.95.0 test -p wgpui-base --lib
-cargo +1.95.0 test -p wgpui-component --lib
-cargo +1.95.0 test -p wgpui-kit-harness
+cargo +1.100.0 test -p wgpui-base --lib
+cargo +1.100.0 test -p wgpui-component --lib
+cargo +1.100.0 test -p wgpui-kit-harness
 ```
 
 ### Performance Profiling
 
 ```bash
-MTL_HUD_ENABLED=1 cargo +1.95.0 run -p wgpui-kit-hello-world
-samply record cargo +1.95.0 run -p wgpui-kit-hello-world
+MTL_HUD_ENABLED=1 cargo +1.100.0 run -p wgpui-kit-hello-world
+samply record cargo +1.100.0 run -p wgpui-kit-hello-world
 ```
 
 ## Core Architecture

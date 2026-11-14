@@ -23,7 +23,9 @@ wgpui = { version = "0.4.1" }
 
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.
 
-The source candidate is WGPUI 0.4.1 with Kit 0.8.1 and requires Rust 1.95. See [source compatibility](https://github.com/Muktidaya/wgpui/blob/d5029ce3068c30540524c7262598373f7525ceb6/docs/kit.md#source-candidate-compatibility) for the stable Ropey, HTTP, constructor and grammar API changes. The declaration above targets this source candidate. Until publication, use a path dependency on this repository. Historical published versions are recorded in [release status](https://github.com/Muktidaya/wgpui/blob/d5029ce3068c30540524c7262598373f7525ceb6/STATUS.md).
+The source candidate is WGPUI 0.4.1 with Kit 0.8.1 and requires Rust 1.100.0. See [source compatibility](https://github.com/Muktidaya/wgpui/blob/d5029ce3068c30540524c7262598373f7525ceb6/docs/kit.md#source-candidate-compatibility) for the stable Ropey, HTTP, constructor and grammar API changes. The declaration above targets this source candidate. Until publication, use a path dependency on this repository. Historical published versions are recorded in [release status](https://github.com/Muktidaya/wgpui/blob/d5029ce3068c30540524c7262598373f7525ceb6/STATUS.md).
+
+The project compiler is pinned in `rust-toolchain.toml`; the [release checklist](docs/rust-release-checklist.md) describes the explicit, read-only stable-version check and review process.
 
 ## License
 

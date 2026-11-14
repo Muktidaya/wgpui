@@ -4,7 +4,7 @@ This unpublished workspace package contains deterministic integration tests and 
 
 Run the native application with:
 
-    cargo +1.95.0 run -p wgpui-kit-harness --bin wgpui-native-acceptance
+    cargo +1.100.0 run -p wgpui-kit-harness --bin wgpui-native-acceptance
 
 It exercises actual WGPUI windows and the selected native backend. The controls cover pointer actions, keyboard editing, menu/key actions, clipboard round trips, file/folder/multiple/save path selection, cancellation, secondary windows and window closing. The application emits NATIVE records for the operations it observes, including entered text and selected paths. Picker operations also emit a foreground responsiveness record while pending.
 

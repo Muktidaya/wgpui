@@ -57,8 +57,8 @@ dispatch, capture request ownership, capability selection and retry backoff.
 Run the real renderer regressions explicitly with an available GPU:
 
 ```sh
-cargo +1.95.0 test --locked -p wgpui --all-features --lib platform::renderer::offscreen_tests -- --ignored --test-threads=1
-cargo +1.95.0 test --locked -p wgpui-kit --all-features --test rendering -- --test-threads=1
+cargo +1.100.0 test --locked -p wgpui --all-features --lib platform::renderer::offscreen_tests -- --ignored --test-threads=1
+cargo +1.100.0 test --locked -p wgpui-kit --all-features --test rendering -- --test-threads=1
 ```
 
 Offscreen results do not establish native multi-display recovery, trackpad input,

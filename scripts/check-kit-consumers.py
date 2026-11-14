@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 
 root = Path(__file__).resolve().parents[1]
-toolchain = os.environ.get("RUSTUP_TOOLCHAIN", "1.95.0")
+toolchain = os.environ.get("RUSTUP_TOOLCHAIN", "1.100.0")
 source = '''use UI::{App, AppContext as _, Context, IntoElement, Render, RenderOnce, TestAppContext, Window, WindowOptions, div};
 use UI::prelude::*;
 UI::actions!(consumer, [Activate]);

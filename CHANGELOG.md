@@ -3,7 +3,7 @@
 ## 0.4.1 — Unreleased source candidate
 
 Framework and derive are prepared at 0.4.1; Kit-family/FPS remain at 0.8.1
-and the HTTP facade at 0.1.0, with **Rust 1.95** as the common minimum.
+and the HTTP facade at 0.1.0, with a proposed **Rust 1.100.0** minimum.
 This source candidate remains under validation and is not published.
 
 ## 0.4.0 — Earlier unreleased source candidate

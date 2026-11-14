@@ -23,8 +23,8 @@ Two native examples were selected from the retired snapshot and adapted to Kit's
 current window/root setup:
 
 ```sh
-cargo +1.95.0 run -p wgpui-kit-hello-world --bin tooltip_top_edge
-cargo +1.95.0 run -p wgpui-kit-hello-world --bin custom_title_bar
+cargo +1.100.0 run -p wgpui-kit-hello-world --bin tooltip_top_edge
+cargo +1.100.0 run -p wgpui-kit-hello-world --bin custom_title_bar
 ```
 
 The tooltip fixture deliberately uses physical edge geometry to exercise flipping.

@@ -5,7 +5,7 @@ Longbridge GPUI Kit v0.8.1. Applications normally consume these through
 `wgpui-kit`; this package is an implementation dependency.
 
 The current source candidate is **wgpui-kit-macros 0.8.1** for the
-**WGPUI Kit 0.8.1** and **WGPUI 0.4.1** source line, with **Rust 1.95**
+**WGPUI Kit 0.8.1** and **WGPUI 0.4.1** source line, with **Rust 1.100.0**
 as the minimum. Candidate validation and publication are in progress.
 Published Kit-family 0.6.1 and framework 0.3.6 releases remain separate;
 see [release status](../../STATUS.md).
