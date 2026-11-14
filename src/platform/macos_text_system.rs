@@ -936,7 +936,7 @@ mod tests {
                 let params = RenderGlyphParams {
                     scale_factor: scale,
                     subpixel_variant: point(phase, 0),
-                    ..params.clone()
+                    ..params
                 };
                 let bounds = system.glyph_raster_bounds(&params)?;
                 let (dimensions, bytes) = system.rasterize_glyph(&params, bounds)?;
