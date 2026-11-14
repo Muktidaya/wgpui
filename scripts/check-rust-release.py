@@ -59,7 +59,7 @@ def check(latest: str, toolchain: dict, workspace: dict) -> None:
 def prepare_patch(files: dict[str, str], old: str, new: str) -> str:
     if not re.fullmatch(r"\d+\.\d+\.\d+", old) or not re.fullmatch(r"\d+\.\d+\.\d+", new):
         raise ValueError("expected exact numeric compiler versions")
-    token = re.compile(rf"(?<![\d.]){re.escape(old)}(?![\d.])")
+    token = re.compile(rf"(?<![\d.]){re.escape(old)}(?!\d|\.\d)")
     patches = []
     for path, count in SCOPE.items():
         content = files[path]

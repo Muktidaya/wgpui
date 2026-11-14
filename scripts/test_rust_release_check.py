@@ -13,7 +13,7 @@ spec.loader.exec_module(module)
 
 
 class RustReleaseCheckTests(unittest.TestCase):
-    def run_prepare_with_fake_inputs(self, manifest, *, drift=False):
+    def run_prepare_with_fake_inputs(self, manifest, *, drift=False, mode="--prepare-patch", readme_version="1.100.0"):
         class Response:
             def __enter__(self):
                 return self
@@ -29,6 +29,7 @@ class RustReleaseCheckTests(unittest.TestCase):
 
         virtual_root = Path("/virtual/wgpui")
         files = {path: "1.100.0\n" * count for path, count in module.SCOPE.items()}
+        files["README.md"] = f"WGPUI requires Rust {readme_version}. See the guide.\n"
         if drift:
             files[".github/workflows/ci.yml"] = "1.100.0\n"
 
@@ -48,7 +49,7 @@ class RustReleaseCheckTests(unittest.TestCase):
              patch.object(module, "build_opener", return_value=SimpleNamespace(open=lambda *args, **kwargs: Response())), \
              patch.object(Path, "open", autospec=True, side_effect=fake_open), \
              patch.object(Path, "read_text", autospec=True, side_effect=fake_read_text), \
-             patch("sys.argv", ["check-rust-release.py", "--prepare-patch"]), \
+             patch("sys.argv", ["check-rust-release.py", mode]), \
              patch("sys.stdout", stdout), patch("sys.stderr", stderr):
             result = module.main()
         return result, stdout.getvalue(), stderr.getvalue()
@@ -98,7 +99,30 @@ class RustReleaseCheckTests(unittest.TestCase):
             self.assertIn(f"--- a/{path}\n", stdout)
             self.assertIn(f"+++ b/{path}\n", stdout)
         self.assertIn("+1.101.0", stdout)
+        self.assertIn("+WGPUI requires Rust 1.101.0. See the guide.\n", stdout)
         self.assertIn("SHA-256", stderr)
+
+    def test_main_check_accepts_sentence_final_period(self):
+        manifest = b'date = "2026-11-13"\n[pkg.rust]\nversion = "1.100.0 (0ef1bc386 2026-11-12)"\n'
+        result, stdout, stderr = self.run_prepare_with_fake_inputs(manifest, mode="--check")
+        self.assertEqual(result, 0)
+        self.assertIn("project and declared minimum match", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_main_paths_reject_numeric_extensions_without_partial_patch(self):
+        manifests = {
+            "--check": b'date = "2026-11-13"\n[pkg.rust]\nversion = "1.100.0 (0ef1bc386 2026-11-12)"\n',
+            "--prepare-patch": b'date = "2026-12-01"\n[pkg.rust]\nversion = "1.101.0 (abc123 2026-11-30)"\n',
+        }
+        for mode, manifest in manifests.items():
+            for version in ("1.100.01", "1.100.0.1"):
+                with self.subTest(mode=mode, version=version):
+                    result, stdout, stderr = self.run_prepare_with_fake_inputs(
+                        manifest, mode=mode, readme_version=version
+                    )
+                    self.assertEqual(result, 1)
+                    self.assertEqual(stdout, "")
+                    self.assertIn("reviewed scope changed: README.md", stderr)
 
     def test_main_prepare_drift_or_malformed_manifest_never_emits_partial_patch(self):
         valid = b'date = "2026-12-01"\n[pkg.rust]\nversion = "1.101.0 (abc123 2026-11-30)"\n'
