@@ -5,6 +5,10 @@
 Framework and derive are prepared at 0.4.1; Kit-family/FPS remain at 0.8.1
 and the HTTP facade at 0.1.0, with a proposed **Rust 1.100.0** minimum.
 This source candidate remains under validation and is not published.
+The proposed compiler minimum also applies to workspace packages that inherit
+it, including the independently versioned 0.8.1 Kit family. Raising that floor
+is a consumer support policy change, not a claim that older compilers cannot
+compile earlier source.
 
 ## 0.4.0 — Earlier unreleased source candidate
 

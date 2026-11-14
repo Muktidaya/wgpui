@@ -33,6 +33,23 @@ class RustReleaseCheckTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             module.check("1.100.0", {}, {})
 
+    def test_patch_is_reviewable_and_scope_is_fail_closed(self):
+        files = {path: "1.100.0\n" * count for path, count in module.SCOPE.items()}
+        patch_text = module.prepare_patch(files, "1.100.0", "1.101.0")
+        self.assertIn("--- a/rust-toolchain.toml", patch_text)
+        self.assertIn("+1.101.0", patch_text)
+        files[".github/workflows/ci.yml"] = "1.100.0\n"
+        with self.assertRaisesRegex(ValueError, "reviewed scope changed"):
+            module.prepare_patch(files, "1.100.0", "1.101.0")
+
+    def test_patch_rejects_nonversion_input_and_version_substrings(self):
+        files = {path: "1.100.0\n" * count for path, count in module.SCOPE.items()}
+        with self.assertRaises(ValueError):
+            module.prepare_patch(files, "1.100.0", "stable")
+        files["rust-toolchain.toml"] = "1.100.01\n"
+        with self.assertRaises(ValueError):
+            module.prepare_patch(files, "1.100.0", "1.101.0")
+
     def test_network_failure_is_reported(self):
         def unavailable(*args, **kwargs):
             raise OSError("offline")
