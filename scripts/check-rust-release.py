@@ -66,9 +66,13 @@ def prepare_patch(files: dict[str, str], old: str, new: str) -> str:
         if len(token.findall(content)) != count:
             raise ValueError(f"reviewed scope changed: {path}")
         updated = token.sub(new, content)
-        patches.extend(difflib.unified_diff(content.splitlines(keepends=True),
-                                           updated.splitlines(keepends=True),
-                                           fromfile=f"a/{path}", tofile=f"b/{path}"))
+        for line in difflib.unified_diff(
+            content.splitlines(keepends=True), updated.splitlines(keepends=True),
+            fromfile=f"a/{path}", tofile=f"b/{path}",
+        ):
+            patches.append(line)
+            if not line.endswith("\n"):
+                patches.append("\n\\ No newline at end of file\n")
     return "".join(patches)
 
 
