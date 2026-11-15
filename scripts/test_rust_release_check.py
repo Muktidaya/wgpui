@@ -13,7 +13,10 @@ spec.loader.exec_module(module)
 
 
 class RustReleaseCheckTests(unittest.TestCase):
-    def run_prepare_with_fake_inputs(self, manifest, *, drift=False, mode="--prepare-patch", readme_version="1.100.0"):
+    def run_prepare_with_fake_inputs(
+        self, manifest, *, drift=False, mode="--prepare-patch",
+        readme_version="1.100.0", readme_ending="\n",
+    ):
         class Response:
             def __enter__(self):
                 return self
@@ -29,7 +32,7 @@ class RustReleaseCheckTests(unittest.TestCase):
 
         virtual_root = Path("/virtual/wgpui")
         files = {path: "1.100.0\n" * count for path, count in module.SCOPE.items()}
-        files["README.md"] = f"WGPUI requires Rust {readme_version}. See the guide.\n"
+        files["README.md"] = f"WGPUI requires Rust {readme_version}. See the guide.{readme_ending}"
         if drift:
             files[".github/workflows/ci.yml"] = "1.100.0\n"
 
@@ -100,6 +103,33 @@ class RustReleaseCheckTests(unittest.TestCase):
             self.assertIn(f"+++ b/{path}\n", stdout)
         self.assertIn("+1.101.0", stdout)
         self.assertIn("+WGPUI requires Rust 1.101.0. See the guide.\n", stdout)
+        self.assertIn("SHA-256", stderr)
+
+    def test_patch_marks_unterminated_changed_and_context_lines(self):
+        cases = [
+            ("1.100.0", "@@ -1 +1 @@\n-1.100.0\n\\ No newline at end of file\n"
+             "+1.101.0\n\\ No newline at end of file\n"),
+            ("1.100.0\nretained context", "@@ -1,2 +1,2 @@\n-1.100.0\n+1.101.0\n"
+             " retained context\n\\ No newline at end of file\n"),
+        ]
+        with patch.object(module, "SCOPE", {"README.md": 1}):
+            for content, expected_hunk in cases:
+                with self.subTest(content=content):
+                    self.assertEqual(
+                        module.prepare_patch({"README.md": content}, "1.100.0", "1.101.0"),
+                        "--- a/README.md\n+++ b/README.md\n" + expected_hunk,
+                    )
+
+    def test_main_prepare_preserves_unterminated_file_boundary(self):
+        manifest = b'date = "2026-12-01"\n[pkg.rust]\nversion = "1.101.0 (abc123 2026-11-30)"\n'
+        result, stdout, stderr = self.run_prepare_with_fake_inputs(manifest, readme_ending="")
+        self.assertEqual(result, 0)
+        self.assertIn(
+            "-WGPUI requires Rust 1.100.0. See the guide.\n\\ No newline at end of file\n"
+            "+WGPUI requires Rust 1.101.0. See the guide.\n\\ No newline at end of file\n"
+            "--- a/STATUS.md\n",
+            stdout,
+        )
         self.assertIn("SHA-256", stderr)
 
     def test_main_check_accepts_sentence_final_period(self):
