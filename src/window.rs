@@ -54,6 +54,10 @@ use uuid::Uuid;
 
 mod prompts;
 
+#[cfg(test)]
+#[path = "window/a11y_action_redraw_tests.rs"]
+mod a11y_action_redraw_tests;
+
 use crate::InputEvent;
 use crate::gestures::{RecognizedTouchGesture, TouchGestureRecognizer};
 use crate::util::atomic_incr_if_not_zero;
@@ -917,6 +921,8 @@ pub struct Window {
     pub(crate) a11y_nodes: crate::a11y::A11yNodeBuilder,
     a11y_frame_active: Option<bool>,
     a11y_actions: FxHashMap<accesskit::NodeId, Vec<(accesskit::Action, crate::A11yActionListener)>>,
+    /// Tracks draws that may replace a route while its listener vector is leased.
+    a11y_draw_epoch: u64,
     a11y_focus_handles: FxHashMap<accesskit::NodeId, FocusHandle>,
     a11y_bounds: FxHashMap<accesskit::NodeId, Bounds<Pixels>>,
     a11y_next_anonymous_id: u64,
@@ -1413,6 +1419,7 @@ impl Window {
             a11y_nodes: crate::a11y::A11yNodeBuilder::new(),
             a11y_frame_active: None,
             a11y_actions: FxHashMap::default(),
+            a11y_draw_epoch: 0,
             a11y_focus_handles: FxHashMap::default(),
             a11y_bounds: FxHashMap::default(),
             a11y_next_anonymous_id: 0,
@@ -1772,6 +1779,7 @@ impl Window {
         let mut target = Some(request.target_node);
         while let Some(id) = target {
             if let Some(mut listeners) = self.a11y_actions.remove(&id) {
+                let draw_epoch = self.a11y_draw_epoch;
                 let mut handled = false;
                 for (action, listener) in &mut listeners {
                     if *action == request.action {
@@ -1779,7 +1787,9 @@ impl Window {
                         handled = true;
                     }
                 }
-                self.a11y_actions.insert(id, listeners);
+                if self.a11y_draw_epoch == draw_epoch {
+                    self.a11y_actions.entry(id).or_insert(listeners);
+                }
                 if handled {
                     return;
                 }
@@ -2393,6 +2403,10 @@ impl Window {
     /// the contents of the new `Scene`, use `Self::present`.
     #[profiling::function]
     pub fn draw(&mut self, cx: &mut App) -> ArenaClearNeeded {
+        self.a11y_draw_epoch = self
+            .a11y_draw_epoch
+            .checked_add(1)
+            .expect("accessibility draw epoch overflow");
         self.a11y_frame_active = Some(self.platform_window.is_a11y_active());
         if self.is_a11y_active() {
             let title = SharedString::from(self.platform_window.get_title());
