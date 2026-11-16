@@ -134,8 +134,6 @@ fn completed_callback_draw_preserves_published_route(
     let next_token = Rc::new(Cell::new(0));
     let (_owner, cx) = cx.add_window_view({
         let ledger = ledger.clone();
-        let fired = fired.clone();
-        let next_token = next_token.clone();
         move |_, _| UncachedRedrawProbe {
             revision: 1,
             redraw_revision,
@@ -295,8 +293,6 @@ fn uncached_no_draw_retains_fnmut_state(cx: &mut TestAppContext) {
     let next_token = Rc::new(Cell::new(0));
     let (_owner, cx) = cx.add_window_view({
         let ledger = ledger.clone();
-        let fired = fired.clone();
-        let next_token = next_token.clone();
         move |_, _| UncachedRedrawProbe {
             revision: 1,
             redraw_revision: 1,
@@ -343,8 +339,6 @@ fn completed_callback_draw_removal_does_not_restore_stale_route(cx: &mut TestApp
     let next_token = Rc::new(Cell::new(0));
     let (_owner, cx) = cx.add_window_view({
         let ledger = ledger.clone();
-        let fired = fired.clone();
-        let next_token = next_token.clone();
         move |_, _| UncachedRedrawProbe {
             revision: 1,
             redraw_revision: 1,
