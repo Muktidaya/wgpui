@@ -24,7 +24,7 @@ historical reference files and replaced demo images remain recoverable in Git.
 
 ## Dependency and distribution scope
 
-The current locked, all-feature, all-platform workspace graph contains 869
+The current locked, all-feature, all-platform workspace graph contains 856
 registry package instances and 13 workspace packages. This includes optional,
 build and development dependencies, and is not the dependency set of every
 individual crate or binary. The workspace packages retain their own versions:
