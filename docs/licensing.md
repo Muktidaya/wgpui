@@ -24,11 +24,11 @@ historical reference files and replaced demo images remain recoverable in Git.
 
 ## Dependency and distribution scope
 
-The current locked, all-feature, all-platform workspace graph contains 869
+The current locked, all-feature, all-platform workspace graph contains 856
 registry package instances and 13 workspace packages. This includes optional,
 build and development dependencies, and is not the dependency set of every
 individual crate or binary. The workspace packages retain their own versions:
-framework/derive 0.4.1, Kit/FPS 0.8.1 and supporting 0.1.0 packages.
+framework/derive 0.4.1, Base 0.8.2, Kit/FPS 0.8.1 and supporting 0.1.0 packages.
 
 The source crates refer to Cargo dependencies rather than vendoring all of their
 source. A downstream binary distribution must assess its actual feature/platform
