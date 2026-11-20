@@ -224,10 +224,7 @@ fn completed_callback_draw_preserves_published_route(
         calls[1], new,
         "second request reaches the callback published by completed draw"
     );
-    assert_ne!(
-        calls[1], old,
-        "old callback vector was not restored"
-    );
+    assert_ne!(calls[1], old, "old callback vector was not restored");
     let first_call = events
         .iter()
         .position(|event| {
@@ -326,7 +323,10 @@ fn uncached_no_draw_retains_fnmut_state(cx: &mut TestAppContext) {
     assert_eq!([ordinals[0].1, ordinals[1].1], [1, 2]);
     assert!(
         !events.iter().any(|event| {
-            matches!(event, RouteEvent::Created { .. } | RouteEvent::Dropped { .. })
+            matches!(
+                event,
+                RouteEvent::Created { .. } | RouteEvent::Dropped { .. }
+            )
         }),
         "no draw creates or drops a route in the bounded observation"
     );
@@ -384,7 +384,10 @@ fn completed_callback_draw_removal_does_not_restore_stale_route(cx: &mut TestApp
     let mut reachable = HashSet::new();
     let mut pending = vec![root];
     while let Some(id) = pending.pop() {
-        assert!(reachable.insert(id), "tree contains no repeated reachable node");
+        assert!(
+            reachable.insert(id),
+            "tree contains no repeated reachable node"
+        );
         let node = nodes
             .get(&id)
             .expect("reachable child exists in published nodes");
@@ -401,7 +404,11 @@ fn completed_callback_draw_removal_does_not_restore_stale_route(cx: &mut TestApp
             _ => None,
         })
         .collect();
-    assert_eq!(calls.len(), 1, "second request does not invoke stale callback");
+    assert_eq!(
+        calls.len(),
+        1,
+        "second request does not invoke stale callback"
+    );
     let old = calls[0];
     assert!(
         events.contains(&RouteEvent::Dropped {
