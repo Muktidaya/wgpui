@@ -1,5 +1,20 @@
 # Release status
 
+The proposed release comprises `wgpui_derive` 0.4.1, `wgpui` 0.4.1 and
+`wgpui-base` 0.8.2. These three versions declare Rust 1.100.0.
+The current crates.io baseline is framework and derive 0.4.0, Base, Kit,
+Component, FPS, Kit assets, Kit macros and Platform 0.8.1, and HTTP 0.1.0.
+See the [release notes](CHANGELOG.md) for the changes since that baseline.
+
+The source at `a923fe8` passed all seven jobs on the public verification
+workflow, including offscreen rendering and workspace-path consumer checks
+on Windows, Ubuntu and macOS. Native screen-reader interaction, window
+lifecycle and physical GPU resize behavior still require hands-on validation.
+See the [workflow run](https://github.com/Muktidaya/wgpui/actions/runs/44082955476)
+and the [native validation guide](docs/kit/native-validation.md).
+
+## Historical 0.3.6 and Kit 0.6.1 validation
+
 WGPUI and wgpui_derive 0.3.6, and WGPUI Kit/Base/Component/assets/macros/platform 0.6.1 are published on crates.io. Source release tags are linked below. The repository history has been sanitized; release source code is unchanged.
 
 - [WGPUI 0.3.6](https://github.com/Muktidaya/wgpui/releases/tag/v0.3.6)
@@ -29,9 +44,9 @@ terminates the process and the application reopens. The 102 framework tests were
 rerun successfully after this correction.
 
 
-## Dependency and Kit 0.8.1 source candidate
+## Historical dependency and Kit 0.8.1 source validation
 
-The current source candidate uses framework/derive 0.4.1, Kit-family 0.8.1 and the stable HTTP facade 0.1.0 with a proposed common Rust 1.100.0 minimum. It ports Kit behavior onto WGPUI's existing wgpu and winit backend.
+The following records describe the dependency migration and its validation before the Kit 0.8.1 release.
 
 The October 28 dependency metadata audit covers all 13 workspace packages and 166 active direct registry package names. Of these, 164 select their reviewed latest stable release. The latest `windows` SDK crate requires `windows-core` 0.62.2 and `windows-numerics` 0.3.1; their separately published 0.100.0 releases have incompatible Rust types and remain explicit SDK compatibility exceptions. The resolved graph contains 869 registry instances, including 166 below their absolute latest release under recorded owning constraints. No selected package is a prerelease or yanked. Registry metadata and the lockfile agree; metadata does not establish build or native behavior acceptance.
 

@@ -1,21 +1,27 @@
 # Changelog
 
-## 0.4.1 — Unreleased source candidate
+## WGPUI 0.4.1 and Base 0.8.2 — release candidate
 
-Framework and derive are prepared at 0.4.1; Kit-family/FPS remain at 0.8.1
-and the HTTP facade at 0.1.0, with a proposed **Rust 1.100.0** minimum.
-This source candidate remains under validation and is not published.
-The proposed compiler minimum also applies to workspace packages that inherit
-it, including the independently versioned 0.8.1 Kit family. Raising that floor
-is a consumer support policy change, not a claim that older compilers cannot
-compile earlier source.
+- `WgpuSurface::keep_frame_on_resize(true)` displays the last presented frame
+  at the new bounds until the application presents a replacement. Use
+  `hold_size(true)` during a continuous resize to keep the current texture
+  dimensions and defer the resize callback. Both options default to false.
+- If an accessibility action callback redraws the window, subsequent actions
+  now use the listener registered by that draw. Removing the node during the
+  callback also removes its route. Without a redraw, the listener retains its
+  mutable state between actions.
+- In `wgpui-base` 0.8.2, changing a virtual list's axis or item gap recomputes
+  cached item positions. Lists with inferred sizes now resolve width and height
+  independently, fixing horizontal lists whose width constraint affected height.
+- `wgpui` 0.4.1, `wgpui_derive` 0.4.1 and `wgpui-base` 0.8.2 raise their
+  declared minimum from Rust 1.95 to **Rust 1.100.0**. Applications that need
+  the virtual-list fix should resolve Base to 0.8.2. The Kit facade already
+  accepts compatible Base patch versions.
 
-## 0.4.0 — Earlier unreleased source candidate
+## 0.4.0 — 2026-11-02
 
-The 0.4.0 candidate used WGPUI/derive 0.4.0, Kit-family/FPS 0.8.1 and HTTP
-facade 0.1.0 with Rust 1.95. Framework/derive 0.3.6 and Kit-family 0.6.1
-remain the published lines; their earlier release evidence does not validate
-the current source.
+The published release included WGPUI and derive 0.4.0, the Kit family and FPS
+0.8.1, and the HTTP facade 0.1.0. These versions declare Rust 1.95.
 
 ### Compatibility
 
@@ -105,11 +111,10 @@ Project-maintained Nix flake, package and development-shell support is retired.
 Use Cargo and the platform's native dependencies. Linux support, native
 backends and their test requirements remain unchanged.
 
-### Candidate acceptance
+### Validation during 0.4.0 preparation
 
-Implementation presence is distinct from completed acceptance. Final source,
-feature combinations, package/registry consumers, Linux and native
-validation remain in progress. This is the standard-backend Kit port;
+At the source-candidate checkpoint, final source, feature combinations,
+package consumers and native validation were still under review. This is the standard-backend Kit port;
 GPUI Fast's automatic-retention contracts are excluded, while explicit
 cached views remain available. Browser, webview/shell and mobile platform
 integration remain separate work. See [release status](STATUS.md),
@@ -120,8 +125,7 @@ crate: `windows-core` 0.62.2 and `windows-numerics` 0.3.1. Their newer 0.100.0
 releases have incompatible Rust type identities.
 
 Dependency requirements use stable release lines, with transitive instances
-still constrained by their owning packages. No absolute-latest-transitive
-or completed publication claim is made by this candidate entry.
+constrained by their owning packages.
 
 ## 0.3.5 — 2026-09-05
 

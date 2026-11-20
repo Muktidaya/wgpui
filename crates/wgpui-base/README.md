@@ -2,9 +2,7 @@
 
 [![License](https://img.shields.io/crates/l/wgpui-base.svg)](LICENSE-APACHE)
 
-Unstyled behavior and infrastructure for [WGPUI](https://github.com/Muktidaya/wgpui) applications, adapted from Longbridge GPUI Kit v0.8.1. The current source candidate pairs **wgpui-base 0.8.1** with **WGPUI 0.4.1** and requires **Rust 1.100.0**. Candidate validation and publication are in progress; [release status](../../STATUS.md) records acceptance and publication evidence.
-
-The published Base 0.6.1 and framework 0.3.6 releases remain distinct from this source candidate. Base and the framework use independent version numbers.
+Unstyled behavior and infrastructure for [WGPUI](https://github.com/Muktidaya/wgpui) applications, adapted from Longbridge GPUI Kit v0.8.1. **wgpui-base 0.8.2** uses **WGPUI 0.4.1** and requires **Rust 1.100.0** or newer. Base and the framework use independent version numbers.
 
 Use [WGPUI Kit](../../docs/kit.md) for the application facade, or [`wgpui-component`](../wgpui-component) for ready-to-use styled controls. Use `wgpui-base` if your application should own its visual styles while reusing interaction, focus, accessibility, animation, virtual lists, and theme tokens.
 
@@ -13,10 +11,10 @@ Version requirements for the candidate, once published:
 ```toml
 [dependencies]
 wgpui = "0.4.1"
-wgpui-base = "0.8.1"
+wgpui-base = "0.8.2"
 ```
 
-Until these candidate versions are published, use path dependencies on this repository: the framework is at the repository root and Base is at `crates/wgpui-base`. See the [Kit guide](../../docs/kit.md#source-candidate-compatibility) for dependency and public type compatibility. Source and application imports use the canonical `wgpui` and `wgpui_base` names.
+For source development, the framework is at the repository root and Base is at `crates/wgpui-base`. Source and application imports use the canonical `wgpui` and `wgpui_base` names. See the [Kit compatibility guide](../../docs/kit.md#source-candidate-compatibility).
 
 ## Where it fits
 

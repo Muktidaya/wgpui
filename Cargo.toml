@@ -378,7 +378,7 @@ rust-version = "1.100.0"
 wgpui = { version = "0.4.1", path = "." }
 wgpui_derive = { version = "0.4.1", path = "crates/wgpui-derive" }
 wgpui-platform = { path = "crates/wgpui-platform", version = "0.8.1" }
-wgpui-base = { path = "crates/wgpui-base", version = "0.8.1" }
+wgpui-base = { path = "crates/wgpui-base", version = "0.8.2" }
 wgpui-component = { path = "crates/wgpui-component", version = "0.8.1" }
 wgpui-kit = { path = "crates/wgpui-kit", version = "0.8.1" }
 wgpui-kit-macros = { path = "crates/wgpui-kit-macros", version = "0.8.1" }

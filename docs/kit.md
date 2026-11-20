@@ -7,7 +7,7 @@ WGPUI Kit is the application-facing façade over WGPUI, Base, styled components,
 wgpui-kit = "0.8.1"
 ```
 
-This declaration targets the source candidate. Until publication, use its workspace path. Historical Kit 0.6.1 and framework 0.3.6 releases are published on crates.io; [STATUS.md](../STATUS.md) records release evidence. For local development use `path = "../wgpui/crates/wgpui-kit"`.
+Kit 0.8.1 is published on crates.io. For local development use `path = "../wgpui/crates/wgpui-kit"`. The [release status](../STATUS.md) records the current framework and Base candidates.
 
 ```rust
 use wgpui_kit::*;
@@ -33,11 +33,11 @@ use wgpui_kit::component::{button::Button, Root};
 
 The styled component package remains available for existing consumers. New applications should normally use Kit. The assets and macro package names now follow Kit; workspace dependency keys and Rust imports use the canonical WGPUI names. The assets package uses the distinct Cargo `links` identity `wgpui-kit-default-icons` so it does not conflict with the old assets package.
 
-The derive package retains its existing crates.io name `wgpui_derive`: hyphens and underscores share a registry namespace. Its directory and framework dependency key use `wgpui-derive`, with `package = "wgpui_derive"`.
+The derive package and its framework dependency key use the crates.io name `wgpui_derive`. Its source directory is `crates/wgpui-derive`.
 
 ## Source candidate compatibility
 
-The source candidate uses WGPUI and derive 0.4.1, Kit-family 0.8.1 and wgpui-http-client 0.1.0, with Rust 1.100.0 as the common minimum. These candidate versions are separate from the published releases described above.
+The source workspace uses WGPUI and derive 0.4.1, Base 0.8.2, the Kit facade 0.8.1 and wgpui-http-client 0.1.0, with Rust 1.100.0 as the workspace minimum. Published Kit 0.8.1 accepts compatible framework and Base patch releases.
 
 The resolved source dependency cohort includes wgpu 30.0.1, winit 0.30.13, Taffy 0.15.1, AccessKit 0.25.2, Ropey 1.6.1, Tree-sitter 0.27.1, html5ever 0.40.1, Reqwest 0.13.5, async-tar 0.6.1, image 0.25.10 and Syntect 5.3.0. These are the versions recorded in this source lockfile; dependency compatibility ranges and platform library minimums are separate contracts.
 

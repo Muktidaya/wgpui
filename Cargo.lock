@@ -8233,7 +8233,7 @@ dependencies = [
 
 [[package]]
 name = "wgpui-base"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "aho-corasick",
  "anyhow",

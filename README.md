@@ -23,7 +23,7 @@ wgpui = { version = "0.4.1" }
 
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.
 
-The source candidate is WGPUI 0.4.1 with Kit 0.8.1 and requires Rust 1.100.0. See [source compatibility](docs/kit.md#source-candidate-compatibility) for the stable Ropey, HTTP, constructor and grammar API changes. The declaration above targets this source candidate. Until publication, use a path dependency on this repository. Historical published versions are recorded in [release status](STATUS.md).
+WGPUI 0.4.1 requires Rust 1.100.0 or newer. The companion Base 0.8.2 release contains the virtual-list fixes. See the [changelog](CHANGELOG.md) for the framework and Base changes and the [Kit compatibility guide](docs/kit.md#source-candidate-compatibility) for the public dependency and macro contracts.
 
 The project compiler is pinned in `rust-toolchain.toml`; the [release checklist](docs/rust-release-checklist.md) describes the explicit, read-only stable-version check and review process.
 
