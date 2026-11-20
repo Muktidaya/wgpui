@@ -16,14 +16,18 @@ Headless Linux rendering tests require a Vulkan implementation as well as the lo
 
 ## Usage
 
+To install from crates.io once 0.4.1 is published, add this dependency:
+
 ```toml
 [dependencies]
 wgpui = { version = "0.4.1" }
 ```
 
+To try an unpublished revision, clone the repository and use `wgpui = { path = "../wgpui" }` in your application’s manifest. Adjust the relative path to the checkout root. Cargo will use the framework and derive sources from that checkout.
+
 See `examples/learn/wgpu_surface.rs` for embedding a wgpu render target, `examples/learn/paths.rs` for GPU paths, `examples/learn/custom_drawing.rs` for canvas drawing, and `examples/legacy/hello_world.rs` for a window.
 
-WGPUI 0.4.1 requires Rust 1.100.0 or newer. The companion Base 0.8.2 release contains the virtual-list fixes. See the [changelog](CHANGELOG.md) for the framework and Base changes and the [Kit compatibility guide](docs/kit.md#source-candidate-compatibility) for the public dependency and macro contracts.
+WGPUI 0.4.1 requires Rust 1.100.0 or newer. Base 0.8.2 contains the companion virtual-list fixes. See the [changelog](CHANGELOG.md) for the framework and Base changes and the [Kit compatibility guide](docs/kit.md#source-candidate-compatibility) for the public dependency and macro contracts.
 
 The project compiler is pinned in `rust-toolchain.toml`; the [release checklist](docs/rust-release-checklist.md) describes the explicit, read-only stable-version check and review process.
 
